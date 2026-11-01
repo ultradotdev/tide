@@ -99,6 +99,10 @@ pub const PAYLOAD_FILES: [&str; 5] = [
     "uninstall.sh",
 ];
 
+/// Installer scripts published beside the archives, so
+/// `releases/latest/download/install.sh` is the canonical one-line installer.
+pub const INSTALLER_ASSETS: [&str; 2] = ["install.sh", "uninstall.sh"];
+
 pub fn archive_stem(filename: &str) -> Result<&str> {
     if let Some(stem) = filename.strip_suffix(".tar.gz") {
         return Ok(stem);
@@ -563,11 +567,12 @@ pub fn archive_prepared_payload(
     Ok(archive)
 }
 
-/// Writes `SHA256SUMS` for the four archives and two notarization receipts.
+/// Writes `SHA256SUMS` for the four archives, two notarization receipts and
+/// the two installer scripts.
 pub fn write_release_checksums(asset_paths: &[PathBuf], output: &Path) -> Result<()> {
     ensure!(
-        asset_paths.len() == 6,
-        "Exactly four archives and two notarization receipts are required for release checksums"
+        asset_paths.len() == 8,
+        "Exactly four archives, two notarization receipts and two installer scripts are required for release checksums"
     );
     let mut named: Vec<(String, &PathBuf)> = asset_paths
         .iter()
@@ -847,6 +852,20 @@ pub fn generate_release_checksums(repository_root: &Path, assets_directory: &Pat
         );
         paths.push(assets.join(receipt));
     }
+    // Published installers must be exactly the scripts of the released source.
+    for script in INSTALLER_ASSETS {
+        let asset = assets.join(script);
+        ensure!(
+            names.iter().any(|name| name == script),
+            "Missing installer script: {script}"
+        );
+        ensure_plain_file(&asset, "Installer script")?;
+        ensure!(
+            sha256_file(&asset)? == sha256_file(&contract.root.join(script))?,
+            "{script} differs from the released source"
+        );
+        paths.push(asset);
+    }
     let unexpected: Vec<&String> = names
         .iter()
         .filter(|name| {
@@ -855,6 +874,7 @@ pub fn generate_release_checksums(repository_root: &Path, assets_directory: &Pat
                 .iter()
                 .any(|artifact| &artifact.filename == *name)
                 && !receipts.contains(name)
+                && !INSTALLER_ASSETS.contains(&name.as_str())
         })
         .collect();
     ensure!(
@@ -1081,7 +1101,7 @@ pub mod tests {
     }
 
     #[test]
-    fn checksums_all_archives_and_public_notarization_receipts() {
+    fn checksums_all_archives_receipts_and_installer_scripts() {
         let scratch = tempfile::tempdir().unwrap();
         let names = [
             "tide-v0.10.0-darwin-arm64.zip",
@@ -1090,6 +1110,8 @@ pub mod tests {
             "tide-v0.10.0-darwin-x64.notarization.json",
             "tide-v0.10.0-linux-arm64.tar.gz",
             "tide-v0.10.0-linux-x64.tar.gz",
+            "install.sh",
+            "uninstall.sh",
         ];
         let paths: Vec<PathBuf> = names.iter().map(|name| scratch.path().join(name)).collect();
         for (index, path) in paths.iter().enumerate() {
@@ -1105,7 +1127,45 @@ pub mod tests {
         let mut sorted = names.to_vec();
         sorted.sort_unstable();
         assert_eq!(listed, sorted);
-        assert!(write_release_checksums(&paths[..5], &sums).is_err());
+        assert!(write_release_checksums(&paths[..7], &sums).is_err());
+    }
+
+    #[test]
+    fn generated_checksums_require_the_released_installer_scripts() {
+        let scratch = tempfile::tempdir().unwrap();
+        let assets = scratch.path();
+        let contract = load_contract(&repo_root()).unwrap();
+        for artifact in &contract.artifacts {
+            std::fs::write(assets.join(&artifact.filename), &artifact.id).unwrap();
+            if artifact.platform == "darwin" {
+                let receipt = format!(
+                    "{}.notarization.json",
+                    archive_stem(&artifact.filename).unwrap()
+                );
+                std::fs::write(assets.join(receipt), "{}").unwrap();
+            }
+        }
+        let missing = generate_release_checksums(&repo_root(), assets).unwrap_err();
+        assert!(
+            missing
+                .to_string()
+                .contains("Missing installer script: install.sh")
+        );
+        for script in INSTALLER_ASSETS {
+            std::fs::copy(repo_root().join(script), assets.join(script)).unwrap();
+        }
+        std::fs::write(assets.join("uninstall.sh"), "#!/bin/sh\nexit 0\n").unwrap();
+        let changed = generate_release_checksums(&repo_root(), assets).unwrap_err();
+        assert!(changed.to_string().contains("uninstall.sh differs"));
+        std::fs::copy(
+            repo_root().join("uninstall.sh"),
+            assets.join("uninstall.sh"),
+        )
+        .unwrap();
+        generate_release_checksums(&repo_root(), assets).unwrap();
+        let sums = std::fs::read_to_string(assets.join("SHA256SUMS")).unwrap();
+        assert_eq!(sums.lines().count(), 8);
+        assert!(sums.contains("  install.sh\n") && sums.contains("  uninstall.sh\n"));
     }
 
     #[test]

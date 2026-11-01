@@ -237,6 +237,24 @@ pub fn verify_release_artifacts(root: &Path, list: bool, scenario: Option<&str>)
             }),
         ),
         (
+            "installer-release-assets",
+            Box::new(|| {
+                ensure!(
+                    workflow.contains("cp install.sh uninstall.sh")
+                        && workflow.contains("release/install.sh")
+                        && workflow.contains("release/uninstall.sh"),
+                    "install.sh and uninstall.sh are not published release assets"
+                );
+                ensure!(
+                    packaging.contains(
+                        "pubconstINSTALLER_ASSETS:[&str;2]=[\"install.sh\",\"uninstall.sh\"]"
+                    ) && packaging.contains("differsfromthereleasedsource"),
+                    "Published installers are not checksummed against the released source"
+                );
+                Ok(())
+            }),
+        ),
+        (
             "github-attestation-contract",
             Box::new(|| {
                 ensure!(

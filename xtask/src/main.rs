@@ -75,7 +75,7 @@ enum Task {
         #[arg(long)]
         payload_root: Option<PathBuf>,
     },
-    /// Write SHA256SUMS for exactly the four archives and two notarization receipts.
+    /// Write SHA256SUMS for the four archives, two notarization receipts and installer scripts.
     GenerateReleaseChecksums {
         #[arg(long)]
         repository_root: PathBuf,
