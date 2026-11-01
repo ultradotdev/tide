@@ -1201,7 +1201,7 @@ mod tests {
         let mut recorder = RecordingRunner::new(move |argv, _| {
             let joined = argv.join(" ");
             Ok(if joined.ends_with("list-keychains -d user") {
-                stdout("    \"/Users/runner/Library/Keychains/login.keychain-db\"\n")
+                stdout("    \"/opt/ci/keychains/login.keychain-db\"\n")
             } else if joined.contains("find-identity") {
                 stdout("  1) ABCDEF0123 \"Developer ID Application: Ultra.dev (ABCDEFGHIJ)\"\n")
             } else if joined.contains("--display --verbose=2") {
@@ -1257,7 +1257,7 @@ mod tests {
         assert!(position("set-key-partition-list") < search);
         assert!(search < position("codesign --force"));
         assert!(commands[search].contains("release.keychain-db"));
-        assert!(commands[search].ends_with("/Users/runner/Library/Keychains/login.keychain-db"));
+        assert!(commands[search].ends_with("/opt/ci/keychains/login.keychain-db"));
         assert!(position("codesign --force") < position("notarytool submit"));
         assert!(position("notarytool submit") < position("notarytool log"));
         assert!(position("notarytool log") < position("ditto -x -k"));
