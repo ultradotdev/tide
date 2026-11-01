@@ -13,9 +13,23 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
-case "$0" in */uninstall.sh) ;; *) die 'run the uninstaller bundled with an installed Tide release' ;; esac
+# Run outside a release (`curl ... | sh`), hand over to the active release's own
+# uninstaller, which verifies ownership before it removes anything.
+case "$0" in
+  */uninstall.sh) ;;
+  *)
+    case "${HOME:-}" in /*) ;; *) die 'HOME must be absolute' ;; esac
+    managed=${TIDE_INSTALL_ROOT:-$HOME/.local/lib/tide}
+    case "$managed" in /*/tide) ;; *) die 'TIDE_INSTALL_ROOT must be an absolute path ending in /tide' ;; esac
+    [ -f "$managed/current/uninstall.sh" ] || die "no managed Tide installation was found at $managed; if Tide was installed with Homebrew, run: brew uninstall tide"
+    set --
+    [ "$purge" -eq 0 ] || set -- "$@" --purge
+    [ "$yes" -eq 0 ] || set -- "$@" --yes
+    exec /bin/sh "$managed/current/uninstall.sh" "$@"
+    ;;
+esac
 [ ! -L "$0" ] || die 'refusing a symlinked uninstaller'
-release=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+release=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
 identity=${release##*/}
 case "$identity" in ''|.|..|*[!0-9A-Za-z.-]*) die 'invalid release identity' ;; esac
 releases=${release%/*}

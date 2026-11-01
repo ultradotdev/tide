@@ -5,8 +5,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 /// `install-rust-local`: compatibility wrapper for the common managed installer.
@@ -118,6 +118,22 @@ pub fn verify_local_install(debug: &Path, release: &Path) -> Result<()> {
     let debug_text = debug.display().to_string();
     let release_text = release.display().to_string();
     let current = prefix.join("lib/tide/current");
+    // `curl … | sh` feeds a copy of uninstall.sh to sh, which hands over to the
+    // active release's own uninstaller.
+    let piped_uninstall = || -> Result<TimedOutput> {
+        let mut command = Command::new("/bin/sh");
+        command
+            .envs(env.iter().map(|(key, value)| (key, value)))
+            .env("TIDE_INSTALL_ROOT", prefix.join("lib/tide"))
+            .stdin(std::fs::File::open(repo_root().join("uninstall.sh"))?);
+        run_with_timeout(&mut command, timeout)
+    };
+    let nothing = piped_uninstall()?;
+    ensure!(
+        !nothing.success && nothing.stderr.contains("brew uninstall tide"),
+        "A piped uninstall without an installation did not explain itself: {}",
+        nothing.stderr
+    );
 
     manage(&["--binary", &debug_text], true)?;
     check()?;
@@ -202,7 +218,12 @@ pub fn verify_local_install(debug: &Path, release: &Path) -> Result<()> {
     );
     manage(&["--rollback"], true)?;
     check()?;
-    manage(&["--uninstall"], true)?;
+    let piped = piped_uninstall()?;
+    ensure!(piped.success, "{}", piped.stderr);
+    ensure!(
+        std::fs::symlink_metadata(&launcher).is_err() && !prefix.join("lib/tide").exists(),
+        "A piped uninstall left the managed installation behind"
+    );
     ensure!(
         ![".zshrc", ".bashrc", ".profile"]
             .iter()
@@ -210,30 +231,34 @@ pub fn verify_local_install(debug: &Path, release: &Path) -> Result<()> {
         "The installer edited a shell profile"
     );
     println!(
-        "Rust install, binary checks, upgrade/rollback, safe CLI uninstall/purge, legacy migration and foreign-executable refusal passed."
+        "Rust install, binary checks, upgrade/rollback, safe CLI and piped uninstall/purge, legacy migration and foreign-executable refusal passed."
     );
     Ok(())
 }
 
-/// Serves files below a directory over loopback HTTP until dropped.
+/// Serves files below a directory over loopback HTTP until dropped. Redirect
+/// routes stand in for GitHub's `/releases/latest` to `/releases/tag/v…` hop.
 struct StaticServer {
     port: u16,
     stop: Arc<AtomicBool>,
+    requests: Arc<Mutex<Vec<String>>>,
     thread: Option<std::thread::JoinHandle<()>>,
 }
 
 impl StaticServer {
-    fn start(directory: PathBuf) -> Result<Self> {
+    fn start(directory: PathBuf, redirects: Vec<(String, String)>) -> Result<Self> {
         let listener = TcpListener::bind(("127.0.0.1", 0))?;
         listener.set_nonblocking(true)?;
         let port = listener.local_addr()?.port();
         let stop = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&stop);
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let log = Arc::clone(&requests);
         let thread = std::thread::spawn(move || {
             while !flag.load(Ordering::Relaxed) {
                 match listener.accept() {
                     Ok((stream, _)) => {
-                        let _ = serve(&directory, stream);
+                        let _ = serve(&directory, &redirects, port, &log, stream);
                     }
                     Err(_) => std::thread::sleep(Duration::from_millis(10)),
                 }
@@ -242,8 +267,21 @@ impl StaticServer {
         Ok(Self {
             port,
             stop,
+            requests,
             thread: Some(thread),
         })
+    }
+
+    fn url(&self, path: &str) -> String {
+        format!("http://127.0.0.1:{}{path}", self.port)
+    }
+
+    /// Request paths received so far, in order.
+    fn requests(&self) -> Vec<String> {
+        self.requests
+            .lock()
+            .map(|log| log.clone())
+            .unwrap_or_default()
     }
 }
 
@@ -256,7 +294,13 @@ impl Drop for StaticServer {
     }
 }
 
-fn serve(directory: &Path, stream: TcpStream) -> Result<()> {
+fn serve(
+    directory: &Path,
+    redirects: &[(String, String)],
+    port: u16,
+    log: &Mutex<Vec<String>>,
+    stream: TcpStream,
+) -> Result<()> {
     stream.set_nonblocking(false)?;
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     let mut reader = BufReader::new(stream.try_clone()?);
@@ -269,9 +313,20 @@ fn serve(directory: &Path, stream: TcpStream) -> Result<()> {
         }
     }
     let path = request.split_whitespace().nth(1).unwrap_or("/");
+    if let Ok(mut log) = log.lock() {
+        log.push(path.to_owned());
+    }
     let safe = !path.split('/').any(|part| part == "..");
     let file = directory.join(path.trim_start_matches('/'));
     let mut stream = stream;
+    if let Some((_, target)) = redirects.iter().find(|(from, _)| from == path) {
+        write!(
+            stream,
+            "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{port}{target}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        )?;
+        stream.flush()?;
+        return Ok(());
+    }
     match std::fs::read(&file) {
         Ok(body) if safe && file.is_file() => {
             write!(
@@ -416,17 +471,51 @@ pub fn verify_release_install(binary: &Path) -> Result<()> {
     let installer = repo.join("install.sh");
     let sh = path("/bin/sh");
 
+    // Without a version, install.sh follows GitHub's latest-release redirect.
+    let server = StaticServer::start(
+        server_root.clone(),
+        vec![
+            (
+                "/releases/latest".into(),
+                format!("/releases/tag/v{version}"),
+            ),
+            ("/unreleased/latest".into(), "/releases".into()),
+        ],
+    )?;
+    let mut download_env = env.clone();
+    download_env.push(("TIDE_RELEASE_BASE_URL".into(), server.url("")));
+    let mut unresolved_env = download_env.clone();
+    unresolved_env.push((
+        "TIDE_LATEST_VERSION_URL".into(),
+        server.url("/unreleased/latest"),
+    ));
+    let unresolved = run(&unresolved_env, sh, &[&installer], false)?;
+    ensure!(
+        unresolved.stderr.contains("no published Tide release")
+            && !server
+                .requests()
+                .iter()
+                .any(|request| request.ends_with("/SHA256SUMS")),
+        "A redirect without a release tag did not stop the installer: {}",
+        unresolved.stderr
+    );
+    let mut latest_env = download_env.clone();
+    latest_env.push((
+        "TIDE_LATEST_VERSION_URL".into(),
+        server.url("/releases/latest"),
+    ));
+    let checksums = format!("/v{version}/SHA256SUMS");
+
     if platform == "linux" {
         let archive = published.join(format!("{stem}.tar.gz"));
         archive_payload(&archive, &payload, &stem, false)?;
-        let server = StaticServer::start(server_root.clone())?;
-        let mut env = env.clone();
+        run(&latest_env, sh, &[&installer], true)?;
+        ensure!(
+            server.requests().contains(&checksums),
+            "The latest-release redirect did not select v{version}"
+        );
+        let mut env = download_env.clone();
         env.push(("TIDE_VERSION".into(), version.clone()));
-        env.push((
-            "TIDE_RELEASE_BASE_URL".into(),
-            format!("http://127.0.0.1:{}", server.port),
-        ));
-        run(&env, sh, &[&installer], true)?;
         ensure!(
             read_link(&store.join("current"))? == format!("releases/{version}"),
             "Download did not activate"
@@ -465,8 +554,14 @@ pub fn verify_release_install(binary: &Path) -> Result<()> {
             read_link(&store.join("current"))? == before,
             "Concurrent install changed the active build"
         );
-        drop(server);
     } else {
+        // Nothing is published for macOS here: the resolved version must still
+        // select that release's checksums before signed downloads are refused.
+        run(&latest_env, sh, &[&installer], false)?;
+        ensure!(
+            server.requests().contains(&checksums),
+            "The latest-release redirect did not select v{version}"
+        );
         // Unsigned macOS CI artifacts exercise only the explicit trusted-local path.
         // Real codesign/notarization and signed bootstrap acceptance are separate gates.
         run(&env, &binary, &[path("--install-release"), &payload], true)?;
@@ -479,6 +574,7 @@ pub fn verify_release_install(binary: &Path) -> Result<()> {
             "Local build is not the rollback target"
         );
     }
+    drop(server);
     for flag in ["--version", "--check-catalogs", "--check-terminal"] {
         run(&env, &launcher, &[path(flag)], true)?;
     }
@@ -494,6 +590,7 @@ pub fn verify_release_install(binary: &Path) -> Result<()> {
     println!(
         "Real Rust payload activation, local-to-release upgrade, rollback preservation and safe uninstall passed."
     );
+    println!("GitHub latest-release redirect resolution and untagged-redirect refusal passed.");
     if platform == "linux" {
         println!(
             "Linux HTTP bootstrap, corrupt payload, archive traversal and concurrent-install refusal passed."
@@ -526,7 +623,11 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         std::fs::create_dir(root.path().join("v1")).unwrap();
         std::fs::write(root.path().join("v1/SHA256SUMS"), "abc  file\n").unwrap();
-        let server = StaticServer::start(root.path().to_path_buf()).unwrap();
+        let server = StaticServer::start(
+            root.path().to_path_buf(),
+            vec![("/releases/latest".into(), "/releases/tag/v1".into())],
+        )
+        .unwrap();
         let found = http_get(server.port, "/v1/SHA256SUMS").unwrap();
         assert!(found.starts_with("HTTP/1.1 200 OK") && found.ends_with("abc  file\n"));
         assert!(
@@ -538,6 +639,24 @@ mod tests {
             http_get(server.port, "/../etc/passwd")
                 .unwrap()
                 .starts_with("HTTP/1.1 404")
+        );
+        let redirect = http_get(server.port, "/releases/latest").unwrap();
+        assert!(
+            redirect.starts_with("HTTP/1.1 302")
+                && redirect.contains(&format!(
+                    "Location: http://127.0.0.1:{}/releases/tag/v1\r\n",
+                    server.port
+                )),
+            "{redirect}"
+        );
+        assert_eq!(
+            server.requests(),
+            [
+                "/v1/SHA256SUMS",
+                "/v1/missing",
+                "/../etc/passwd",
+                "/releases/latest"
+            ]
         );
     }
 
