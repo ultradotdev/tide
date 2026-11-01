@@ -8,7 +8,7 @@ _v0.10.0_
 
 Tide combines a code editor, Git tools, PostgreSQL, shells and external coding agents in a persistent terminal workspace. The application is a native Rust executable, and its maintainer tooling is a Rust `cargo xtask` crate.
 
-This repository is preparing its first public release. The Rust 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable. The commands below work once the release is published on GitHub.
+This repository is preparing its first public release. The 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable. The commands below work once the release is published on GitHub.
 
 ## Install
 
@@ -49,7 +49,7 @@ cargo build --locked --release -p tide
 ./target/release/tide .
 ```
 
-Use the optimized release build for everyday use. `cargo run --locked -p tide -- .` runs a debug build, which has substantially more runtime overhead. The executable embeds its configuration catalogs, syntax grammars and themes; no PTY sidecar or Bun runtime is required.
+Use the optimized release build for everyday use. `cargo run --locked -p tide -- .` runs a debug build, which has substantially more runtime overhead. The executable embeds its configuration catalogs, syntax grammars and themes and needs no separate runtime.
 
 To install a source build through the same managed installer:
 
@@ -96,7 +96,7 @@ See [getting started](docs/getting-started.md) for prefixes, rollback and where 
 4. Use `F6` to cycle regions and `F7` / `F8` to cycle main panes. Split panes and move tabs through their menus or palette commands.
 5. Open a shell, a query, or an available agent from Add Tab. The Agents sidebar groups workspace sessions by provider and focuses sessions already open.
 
-The [generated keyboard reference](docs/reference/keyboard-shortcuts.md) lists effective Rust defaults, including context-specific controls and terminal-safe alternatives. The [command reference](docs/reference/commands.md) lists routed commands and compatibility aliases.
+The [generated keyboard reference](docs/reference/keyboard-shortcuts.md) lists effective defaults, including context-specific controls and terminal-safe alternatives. The [command reference](docs/reference/commands.md) lists routed commands and compatibility aliases.
 
 ## Candidate measurements
 
@@ -107,7 +107,7 @@ The unpublished 0.10.0 candidate was measured with Rust 1.97.1 release builds, a
 | macOS ARM64 | 91.94 ms | 1.20 ms | 1.77 ms |
 | Linux x64 | 80.32 ms | 1.39 ms | 1.77 ms |
 
-These are synthetic fixture measurements on shared CI runners. They are not a controlled TypeScript/Rust benchmark or a promise about every machine. Reproduce the workload after building with `cargo xtask measure-rust-performance --binary target/release/tide`.
+These are synthetic fixture measurements on shared CI runners. They are not a controlled benchmark or a promise about every machine. Reproduce the workload after building with `cargo xtask measure-rust-performance --binary target/release/tide`.
 
 | Candidate target | Executable | Download archive |
 | --- | --- | --- |

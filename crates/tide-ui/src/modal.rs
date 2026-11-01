@@ -2781,7 +2781,7 @@ mod tests {
     }
 
     #[test]
-    fn default_modal_geometry_matches_typescript() {
+    fn default_modal_geometry_is_centred_and_bounded() {
         let modal = CommandPaletteModal::new(items());
         let area = modal.base().geometry(Rect::new(0, 0, 120, 40));
         assert_eq!(area.width, 60);

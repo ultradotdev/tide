@@ -1,8 +1,7 @@
 //! `cargo xtask`: Tide's maintainer tooling.
 //!
-//! Each subcommand replaces a former `scripts/*.ts`, `*.py` or `*.sh` tool and
-//! keeps its name. Signing, notarization, Docker and GitHub API commands run
-//! through injectable runners and are never exercised by the test suite.
+//! Signing, notarization, Docker and GitHub API commands run through injectable
+//! runners and are never exercised by the test suite.
 mod docs;
 mod gates;
 mod governance;
@@ -490,13 +489,13 @@ mod tests {
     use clap::CommandFactory;
 
     #[test]
-    fn the_cli_is_well_formed_and_lists_every_former_script() {
+    fn the_cli_is_well_formed_and_lists_every_maintainer_task() {
         Cli::command().debug_assert();
         let names: Vec<String> = Cli::command()
             .get_subcommands()
             .map(|command| command.get_name().to_owned())
             .collect();
-        for former in [
+        for task in [
             "package-release-artifact",
             "generate-release-checksums",
             "homebrew-formula",
@@ -525,7 +524,7 @@ mod tests {
             "verify-rust-test-readiness",
             "build-rust-linux-release",
         ] {
-            assert!(names.contains(&former.to_owned()), "missing {former}");
+            assert!(names.contains(&task.to_owned()), "missing {task}");
         }
     }
 

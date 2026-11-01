@@ -88,7 +88,7 @@ pub fn release_matrix(repository_root: &Path, platform: &str) -> Result<Matrix> 
     Ok(Matrix { include })
 }
 
-/// The Cargo workspace version replaces the retired `package.json` version.
+/// The release version: the Cargo workspace package version.
 fn workspace_version(repository_root: &Path) -> Result<String> {
     let manifest = read_text(&repository_root.join("Cargo.toml"))?;
     let package = manifest

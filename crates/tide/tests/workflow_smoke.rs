@@ -966,7 +966,7 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
             password.as_deref(),
         ))
         .unwrap();
-    runtime.block_on(backend.execute("DROP TABLE IF EXISTS tide_ui_parity;CREATE TABLE tide_ui_parity (id int PRIMARY KEY,label text);INSERT INTO tide_ui_parity VALUES (10,'ten'),(2,'two')",true)).unwrap();
+    runtime.block_on(backend.execute("DROP TABLE IF EXISTS tide_ui_workflow;CREATE TABLE tide_ui_workflow (id int PRIMARY KEY,label text);INSERT INTO tide_ui_workflow VALUES (10,'ten'),(2,'two')",true)).unwrap();
     let fixture = Fixture::new();
     fixture.preferences(r#"{"tui.agentsSidebar.visible":false,"editor.minimap.enabled":false}"#);
     let directory = fixture.home.path().join("CONFIG/tide");
@@ -988,7 +988,7 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
         s.text().contains("SQL · UI Fixture")
     });
     session
-        .write(b"\x1b[200~SELECT * FROM public.tide_ui_parity ORDER BY id DESC;\x1b[201~\x12")
+        .write(b"\x1b[200~SELECT * FROM public.tide_ui_workflow ORDER BY id DESC;\x1b[201~\x12")
         .unwrap();
     let snapshot = wait_screen(&session, &mut screen, |s| {
         s.text().contains("2 rows") && s.text().contains("ten")
@@ -1019,7 +1019,7 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
         s.text().contains("Database: row saved")
     });
     let result = runtime
-        .block_on(backend.execute("SELECT label FROM tide_ui_parity WHERE id=2", false))
+        .block_on(backend.execute("SELECT label FROM tide_ui_workflow WHERE id=2", false))
         .unwrap();
     assert_eq!(result.rows[0]["label"], changed);
     let snapshot = screen.snapshot();
@@ -1041,7 +1041,10 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
         !s.text().contains("Delete Row") && s.text().contains("← Results")
     });
     let count = runtime
-        .block_on(backend.execute("SELECT count(*) AS n FROM tide_ui_parity WHERE id=2", false))
+        .block_on(backend.execute(
+            "SELECT count(*) AS n FROM tide_ui_workflow WHERE id=2",
+            false,
+        ))
         .unwrap();
     assert_eq!(count.rows[0]["n"], 1);
     click(&mut session, position(&snapshot, "[Delete]", None, 36));
@@ -1051,7 +1054,10 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
         s.text().contains("Database: row deleted")
     });
     let count = runtime
-        .block_on(backend.execute("SELECT count(*) AS n FROM tide_ui_parity WHERE id=2", false))
+        .block_on(backend.execute(
+            "SELECT count(*) AS n FROM tide_ui_workflow WHERE id=2",
+            false,
+        ))
         .unwrap();
     assert_eq!(count.rows[0]["n"], 0);
     palette_command(&mut session, &mut screen, "Database: Query History");
@@ -1157,7 +1163,7 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
     let status = wait_exit(&mut session, |_| {});
     assert_eq!(status.expect("discard did not quit"), 0);
     runtime
-        .block_on(backend.execute("DROP TABLE tide_ui_parity", true))
+        .block_on(backend.execute("DROP TABLE tide_ui_workflow", true))
         .unwrap();
 }
 

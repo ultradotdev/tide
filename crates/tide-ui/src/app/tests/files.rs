@@ -251,8 +251,8 @@ async fn save_before_close_waits_for_hunk_save_and_preserves_canceled_or_newer_e
 }
 
 #[test]
-fn save_before_close_scopes_cover_all_tabs_panes_session_switch_and_legacy_close() {
-    for scope in ["all", "pane", "session", "legacy"] {
+fn save_before_close_scopes_cover_all_tabs_panes_session_switch_and_active_close() {
+    for scope in ["all", "pane", "session", "active"] {
         let (_home, mut app) = test_app();
         if scope == "session" {
             app.save_session_as("other");
@@ -278,7 +278,7 @@ fn save_before_close_scopes_cover_all_tabs_panes_session_switch_and_legacy_close
             "all" => app.close_all(),
             "pane" => app.close_pane(pane),
             "session" => app.open_named_session("other"),
-            "legacy" => {
+            "active" => {
                 app.overlay = Some(modal::confirm(
                     ConfirmAction::CloseDirty,
                     "Close",
@@ -291,7 +291,7 @@ fn save_before_close_scopes_cover_all_tabs_panes_session_switch_and_legacy_close
         assert_eq!(std::fs::read_to_string(&second).unwrap(), "changed second");
         assert_eq!(
             std::fs::read_to_string(&first).unwrap(),
-            if scope == "legacy" {
+            if scope == "active" {
                 "first"
             } else {
                 "changed first"
@@ -309,7 +309,7 @@ fn save_before_close_scopes_cover_all_tabs_panes_session_switch_and_legacy_close
             ),
             "pane" => assert_eq!(app.workbench.pane_ids().len(), 1),
             "session" => assert_eq!(app.session_name.as_deref(), Some("other")),
-            "legacy" => {
+            "active" => {
                 assert!(app.workbench.pane_ids().iter().all(|id| {
                     app.workbench.pane(*id).unwrap().tabs.iter().all(|tab| {
                         tab.editor().and_then(EditorState::path) != Some(second.as_path())

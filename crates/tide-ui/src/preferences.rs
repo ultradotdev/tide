@@ -59,7 +59,7 @@ pub fn supported(key: &str) -> bool {
 
 pub fn validate(key: &str, value: &Value) -> Result<(), String> {
     if !supported(key) {
-        return Err("This preference has no supported Rust runtime control".into());
+        return Err("This preference has no supported runtime control".into());
     }
     let (range, choices) = constraints(key);
     let valid = if range.1 > 0 {

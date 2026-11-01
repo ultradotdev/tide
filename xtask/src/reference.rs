@@ -201,13 +201,13 @@ Modal buttons, list navigation and editor input also have controls local to thei
     let configuration_md = format!(
         "# Configuration and Storage
 
-Rust Tide loads embedded defaults and then user `settings.jsonc`. Supported settings are validated by the runtime. Unsupported and unknown values are preserved for compatibility; preserving a value does not enable a feature.
+Tide loads embedded defaults and then user `settings.jsonc`. Supported settings are validated by the runtime. Other keys are kept in the file but have no effect.
 
 | Category | Default root | Contents |
 | --- | --- | --- |
 | Configuration | `$XDG_CONFIG_HOME/tide` or `~/.config/tide` | Settings, keybindings, themes, saved connections |
 | Data | `$XDG_DATA_HOME/tide` or `~/.local/share/tide` | Encrypted secrets and database history |
-| State | `$XDG_STATE_HOME/tide` or `~/.local/state/tide` | Rust sessions, recovery and logs |
+| State | `$XDG_STATE_HOME/tide` or `~/.local/state/tide` | Sessions, recovery and logs |
 | Cache | `$XDG_CACHE_HOME/tide` or `~/.cache/tide` | Rebuildable application data |
 | Workspace | `<workspace>/.tide` | Project-scoped database connection records |
 
@@ -215,7 +215,7 @@ XDG overrides must be absolute. See [getting started](../getting-started.md) for
 
 ## Supported settings
 
-Open Settings from the command palette. Values below come from the same defaults and constraints used by the Rust workbench. An empty terminal shell selects the user's normal shell. Theme names must match a built-in or loaded user theme.
+Open Settings from the command palette. Values below come from the same defaults and constraints used by the workbench. An empty terminal shell selects the user's normal shell. Theme names must match a built-in or loaded user theme.
 
 | Key | Default | Accepted value |
 | --- | --- | --- |

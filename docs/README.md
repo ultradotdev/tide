@@ -1,6 +1,6 @@
 # Tide Documentation
 
-This documentation describes the Rust 0.10.0 implementation. Public archives are still unpublished.
+This documentation describes Tide 0.10.0. Public archives are still unpublished.
 
 - [Getting started and installation](getting-started.md)
 - [Workbench and panes](features/workbench.md)

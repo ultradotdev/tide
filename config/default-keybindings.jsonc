@@ -225,5 +225,12 @@
   { "key": "ctrl+shift+k", "command": "lsp.goToDefinition" }, // Go to definition
   { "key": "ctrl+i", "command": "lsp.showHover" }, // Show hover info (type info, docs)
   { "key": "ctrl+space", "command": "lsp.triggerCompletion" }, // Trigger autocomplete
-  { "key": "ctrl+shift+space", "command": "lsp.triggerSignatureHelp" } // Show signature help
+  { "key": "ctrl+shift+space", "command": "lsp.triggerSignatureHelp" }, // Show signature help
+
+  // Terminal-friendly additions
+  { "key": "ctrl+.", "command": "lsp.codeActions", "when": "editorFocus" }, // Code actions
+  { "key": "ctrl+alt+a", "command": "agents.openSession" }, // Open any agent session
+  { "key": "ctrl+space", "command": "database.complete", "when": "sqlEditorFocus" }, // Complete SQL
+  { "key": "ctrl+alt+up", "command": "workbench.focusPaneUp", "when": "!editorFocus" }, // Focus the pane above
+  { "key": "ctrl+alt+down", "command": "workbench.focusPaneDown", "when": "!editorFocus" } // Focus the pane below
 ]

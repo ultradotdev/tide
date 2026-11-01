@@ -297,7 +297,7 @@ pub fn validate_notary_log(
     wanted.sort_by(|left, right| locale_compare(&left.path, &right.path));
     ensure!(
         actual == wanted,
-        "Apple notary ticket contents do not match the Rust Tide executable"
+        "Apple notary ticket contents do not match the Tide executable"
     );
     Ok(actual)
 }
@@ -308,7 +308,7 @@ pub fn validate_release_entitlements(contents: &str) -> Result<()> {
         .count();
     ensure!(
         keys == 0,
-        "Rust Tide must not request JIT or other executable entitlements"
+        "Tide must not request JIT or other executable entitlements"
     );
     Ok(())
 }

@@ -28,4 +28,4 @@ XDG paths come from `tide-config`. Session snapshots are versioned, and a save r
 
 PostgreSQL client read-only checks and mutation confirmations complement server-side roles. Managed installation validates ownership, payload hashes and modes before activation. macOS distribution additionally verifies Developer ID and notarization provenance.
 
-The executable embeds configuration, grammars and themes. There is no JavaScript runtime or PTY sidecar in a Rust release payload.
+The executable embeds configuration, grammars and themes; a release payload needs no separate runtime.

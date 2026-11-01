@@ -2,8 +2,8 @@
   // ═══════════════════════════════════════════════════════════════════════════
   // Command Registry
   //
-  // Commands that work through the Editor Command Protocol.
-  // Clients fetch this via commands/list and merge with client-specific commands.
+  // Labels, categories and descriptions for the command palette and the generated
+  // command reference. Entries without a workbench route stay out of the palette.
   //
   // Format: { "command.id": { "label": "...", "category": "...", "description": "..." } }
   // ═══════════════════════════════════════════════════════════════════════════

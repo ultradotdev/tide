@@ -325,7 +325,7 @@ const HEADER: &str = "# Tide Attributions
 
 Tide 0.10.0 is a native Rust application. This standalone file includes notices from the locked dependency graph for the four macOS/Linux release targets, including build dependencies and platform alternatives. Presence here does not imply every crate is linked on every target. Tide itself is Copyright 2025-2026 Zorz LLC and licensed under the Apache License, Version 2.0.
 
-Native terminal integration uses portable-pty and alacritty_terminal. Ratatui/Crossterm render and route input; Ropey supplies text storage; Syntect and two-face supply syntax grammars. The TypeScript runtime and its PTY sidecar are not distributed in Rust archives.
+Native terminal integration uses portable-pty and alacritty_terminal. Ratatui/Crossterm render and route input; Ropey supplies text storage; Syntect and two-face supply syntax grammars.
 
 The thirteen Tide themes retain the upstream palette licenses and provenance recorded in config/theme-provenance.json and docs/THEME_ATTRIBUTION.md. Ultra Dusk is an original Zorz LLC design under Tide's license. Upstream projects do not endorse Tide.
 

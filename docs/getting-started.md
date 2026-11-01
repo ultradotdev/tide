@@ -43,7 +43,7 @@ cargo build --locked --release -p tide
 ./target/release/tide .
 ```
 
-The release profile is the recommended interactive build. Debug builds are useful during development and can be much slower. There is no Bun requirement or external PTY sidecar for running the Rust application.
+The release profile is the recommended interactive build. Debug builds are useful during development and can be much slower.
 
 ## Managed source or local install
 

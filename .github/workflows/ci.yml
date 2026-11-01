@@ -156,5 +156,5 @@ jobs:
           TIDE_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/tide_test?sslmode=disable
         run: |
           cargo test --locked -p tide-db --test live_postgres -- --include-ignored
-          cargo test --locked -p tide --test parity_smoke live_database_mouse_sort_edit_history_and_connection_form_use_real_targets -- --ignored
+          cargo test --locked -p tide --test workflow_smoke live_database_mouse_sort_edit_history_and_connection_form_use_real_targets -- --ignored
 

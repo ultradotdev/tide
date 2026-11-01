@@ -392,7 +392,7 @@
             "terminalCursor.foreground": {
               "type": "string",
               "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
-              "description": "Ultra block cursor over terminal content."
+              "description": "Block cursor over terminal content."
             },
             "terminal.ansiBlack": {
               "type": "string",

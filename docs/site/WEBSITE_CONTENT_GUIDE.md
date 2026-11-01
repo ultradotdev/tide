@@ -25,4 +25,4 @@ Treat product identity, release status, platform support, artifact filenames, co
 
 ## Verification
 
-Generated from source content hash `f6c1ef6b72578e894952fd0b00bfdb6d9730eb2d7579e81bc93862637a2bd63e` and last verified against Git `f8ac671cff3c976ab4acbcddd7258ffb9b8f40b6`.
+Generated from source content hash `09c0b996af4cb576ffde7d953c8695ec9dc0c7851bc32da71968275a9354cf15` and last verified against Git `d1ff7727933973e2a4f9a425002773718dc36c1e`.

@@ -1,9 +1,8 @@
 //! Terminal emulation and PTY plumbing for Tide.
 //!
-//! The TypeScript app wrapped `@xterm/headless` and shipped a separate PTY
-//! runtime. This crate uses `alacritty_terminal` for emulation and
-//! `portable-pty` for process spawning, keeping the product-facing snapshot API
-//! small and renderer-independent.
+//! This crate uses `alacritty_terminal` for emulation and `portable-pty` for
+//! process spawning, keeping the product-facing snapshot API small and
+//! renderer-independent.
 
 mod emulator;
 mod grapheme;

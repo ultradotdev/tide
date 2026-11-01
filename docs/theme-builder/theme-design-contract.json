@@ -1,6 +1,5 @@
 {
   "schemaVersion": 1,
-  "sourceOfTruth": "src/services/theme/roles.ts",
   "counts": {
     "requiredAuthored": 83,
     "workbench": 44,
@@ -273,7 +272,7 @@
       {
         "id": "terminalCursor.foreground",
         "owner": "terminal",
-        "purpose": "Ultra block cursor over terminal content.",
+        "purpose": "Block cursor over terminal content.",
         "contrastWith": "terminal.background"
       }
     ],

@@ -16,8 +16,7 @@ ignore = [
 ]
 
 [licenses]
-# The accepted set formerly enforced by scripts/check-rust-licenses.py. Tide's own
-# crates are Apache-2.0.
+# Accepted dependency licenses. Tide's own crates are Apache-2.0.
 allow = [
   "0BSD",
   "Apache-2.0",

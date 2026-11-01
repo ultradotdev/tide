@@ -113,11 +113,7 @@ pub fn verify_release_artifacts(root: &Path, list: bool, scenario: Option<&str>)
                 let sign = signing.find("runner.run_plain(&codesign_arguments(&identity,&binary");
                 ensure!(
                     remove.is_some() && sign > remove,
-                    "An existing signature must be removed before Rust Tide is signed"
-                );
-                ensure!(
-                    !signing.contains("tide.runtime"),
-                    "Rust signing must not expect a PTY sidecar"
+                    "An existing signature must be removed before Tide is signed"
                 );
                 ensure!(
                     signing.contains("validate_signed_entitlements("),
@@ -130,7 +126,7 @@ pub fn verify_release_artifacts(root: &Path, list: bool, scenario: Option<&str>)
                 );
                 ensure!(
                     !entitlements.contains("<key>"),
-                    "Rust release must have no JIT or other executable entitlements"
+                    "The release must have no JIT or other executable entitlements"
                 );
                 Ok(())
             }),

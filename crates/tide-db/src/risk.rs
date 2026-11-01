@@ -1,7 +1,8 @@
 //! Conservative PostgreSQL statement classification for confirmation UX.
 //!
-//! This is a direct port of the TypeScript tokenizer and classifier so the Rust
-//! build makes the same safety decision as the reference implementation.
+//! A small tokenizer splits a submission into statements, classifies each
+//! operation and risk level, and flags mutations, broad or destructive changes
+//! and read-only overrides that need confirmation.
 
 use serde::{Deserialize, Serialize};
 
