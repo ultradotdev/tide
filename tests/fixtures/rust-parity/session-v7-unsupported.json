@@ -1,0 +1,129 @@
+{
+  "version": 7,
+  "timestamp": "2026-10-27T22:00:00.000Z",
+  "instanceId": "11111111-2222-4333-8444-555555555555",
+  "workspaceRoot": "/workspace",
+  "sessionName": "parity",
+  "documents": [
+    {
+      "filePath": "/workspace/src/main.ts",
+      "scrollTop": 12,
+      "scrollLeft": 0,
+      "cursorLine": 12,
+      "cursorColumn": 4,
+      "foldedRegions": [],
+      "paneId": "pane-1",
+      "tabOrder": 0,
+      "isActiveInPane": true,
+      "unsavedContent": "const greeting = \"hello\";\n"
+    },
+    {
+      "filePath": "/workspace/README.md",
+      "scrollTop": 0,
+      "scrollLeft": 0,
+      "cursorLine": 0,
+      "cursorColumn": 0,
+      "foldedRegions": [
+        3
+      ],
+      "paneId": "pane-2",
+      "tabOrder": 0,
+      "isActiveInPane": true
+    }
+  ],
+  "terminals": [
+    {
+      "elementId": "term-1",
+      "paneId": "pane-1",
+      "tabOrder": 1,
+      "isActiveInPane": false,
+      "cwd": "/workspace",
+      "title": "shell",
+      "semanticKind": "shell",
+      "durability": "persistent"
+    }
+  ],
+  "bottomTerminals": [
+    {
+      "tabId": "dock-term-1",
+      "tabOrder": 0,
+      "isActive": true,
+      "cwd": "/workspace",
+      "title": "dock",
+      "semanticKind": "shell"
+    }
+  ],
+  "aiCliPanes": [
+    {
+      "elementId": "ai-1",
+      "paneId": "pane-1",
+      "tabOrder": 2,
+      "isActiveInPane": false,
+      "provider": "claude",
+      "sessionId": "s1",
+      "cwd": "/workspace",
+      "title": "Claude"
+    }
+  ],
+  "aiChatPanes": [],
+  "sqlEditors": [
+    {
+      "elementId": "sql-1",
+      "paneId": "pane-2",
+      "tabOrder": 1,
+      "isActiveInPane": false,
+      "filePath": null,
+      "content": "select 1",
+      "connectionId": "conn-1",
+      "cursorLine": 0,
+      "cursorColumn": 0,
+      "scrollTop": 0,
+      "title": "Query"
+    }
+  ],
+  "ensemblePanels": [],
+  "activeDocumentPath": "/workspace/src/main.ts",
+  "activePaneId": "pane-1",
+  "layout": {
+    "type": "horizontal",
+    "ratios": [
+      0.6,
+      0.4
+    ],
+    "children": [
+      {
+        "type": "leaf",
+        "paneId": "pane-1"
+      },
+      {
+        "type": "leaf",
+        "paneId": "pane-2"
+      }
+    ]
+  },
+  "ui": {
+    "sidebarVisible": true,
+    "sidebarWidth": 36,
+    "sidebarLocation": "left",
+    "agentsSidebarVisible": false,
+    "agentsSidebarWidth": 36,
+    "agentsSidebarLocation": "right",
+    "terminalVisible": true,
+    "terminalHeight": 10,
+    "gitPanelVisible": false,
+    "gitPanelWidth": 40,
+    "activeSidebarPanel": "files",
+    "minimapEnabled": true,
+    "aiPanelVisible": false,
+    "aiPanelWidth": 80,
+    "sidebarAccordionExpanded": [
+      "files",
+      "outline"
+    ],
+    "focusedRegion": "main",
+    "futureUi": "keep"
+  },
+  "futureField": {
+    "keep": true
+  }
+}

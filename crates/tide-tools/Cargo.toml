@@ -1,0 +1,27 @@
+[package]
+name = "tide-tools"
+description = "Workspace-bounded AI tool router, change sets, validation, and rollback for Tide"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+ignore.workspace = true
+nix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+similar = "2.7"
+thiserror.workspace = true
+tide-core = { path = "../tide-core" }
+tokio.workspace = true
+
+[dev-dependencies]
+temp-env.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

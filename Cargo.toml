@@ -1,0 +1,97 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/tide-core",
+    "crates/tide-config",
+    "crates/tide-terminal",
+    "crates/tide-lsp",
+    "crates/tide-ai",
+    "crates/tide-tools",
+    "crates/tide-db",
+    "crates/tide-services",
+    "crates/tide-ui",
+    "crates/tide",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.10.0"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/ultradotdev/tide"
+
+[workspace.dependencies]
+anyhow = "1.0"
+thiserror = "2.0"
+url = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+jsonc-parser = { version = "0.34", features = ["serde"] }
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "io-util", "process", "sync", "time", "signal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4.6", features = ["derive"] }
+ratatui = { version = "0.30", default-features = false, features = ["crossterm", "underline-color", "layout-cache"] }
+crossterm = { version = "0.29", features = ["event-stream"] }
+ropey = { version = "1.6", default-features = false, features = ["cr_lines", "simd"] }
+unicode-segmentation = "1.12"
+unicode-width = "0.2"
+portable-pty = "0.9"
+alacritty_terminal = "0.26"
+syntect = { version = "5.3", default-features = false, features = ["default-fancy"] }
+two-face = { version = "0.5", default-features = false, features = ["syntect-fancy"] }
+gix = { version = "0.90", default-features = false, features = ["basic", "status", "blame", "worktree-mutation", "sha1", "parallel", "auto-chain-error"] }
+nucleo = "0.5"
+sha2 = "0.10"
+ignore = "0.4"
+notify = "8.2"
+regex = "1"
+futures-util = "0.3"
+async-trait = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+aes-gcm = "0.10"
+scrypt = "0.11"
+rand = "0.8"
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+temp-env = "0.3"
+zeroize = "1.8"
+similar = "2.7"
+wait-timeout = "0.2"
+num-traits = "0.2"
+rustix = { version = "1.1", features = ["process"] }
+nix = { version = "0.31", features = ["signal", "process", "fs", "poll"] }
+insta = { version = "1.49", features = ["yaml"] }
+tempfile = "3.27"
+assert_cmd = "2.2"
+predicates = "3.1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+# Lossy numeric casts. Use `try_from`, the `tide_core::num` saturating helpers,
+# or a lossless `From` instead of `as`.
+cast_possible_truncation = "deny"
+cast_sign_loss = "deny"
+cast_possible_wrap = "deny"
+
+# Installation verifies full executables, including large symbol-rich debug builds.
+[profile.dev.package.sha2]
+opt-level = 3
+
+# The secrets store derives keys with scrypt at N=2^17, which is unusably slow unoptimized.
+[profile.dev.package.scrypt]
+opt-level = 3
+
+[profile.dev.package.salsa20]
+opt-level = 3
+
+[profile.dev.package.pbkdf2]
+opt-level = 3

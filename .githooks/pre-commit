@@ -1,0 +1,4 @@
+#!/bin/sh
+# Formatting gate. Enable once per clone: git config core.hooksPath .githooks
+set -eu
+exec cargo fmt --all -- --check

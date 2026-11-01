@@ -1,0 +1,54 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: "snapshot_app(160, 50)"
+---
+ ▼ Explorer  [2]               ▾ × │ ←  main.ts ×                                                                      ▾  → │Agents                       +  ▾
+▸  src                            │▎1   const answer = 42;                                                      ▒░         │ / Search sessions
+   README.md                      │ 2                                                                                      │ ▾ Claude Code (0)
+                                   │                                                                                        │   Not installed
+                                   │                                                                                        │ ▾ Codex (0)
+                                   │                                                                                        │   Not installed
+                                   │                                                                                        │ ▾ Gemini CLI (0)
+                                   │                                                                                        │   Not installed
+                                   │                                                                                        │ ▾ Antigravity (0)
+                                   │                                                                                        │   Not installed
+                                   │                                                                                        │ ▾ OpenCode (0)
+                                   │                                                                                        │   Not installed
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+Enter open · ←/→ folders · . hidden│                                                                                        │
+ ▼ Source Control                × │                                                                                        │
+ no repository                     │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+                                   │                                                                                        │
+ ▶ Outline  [1]                  × │                                                                                        │
+ ▶ Timeline                      × │                                                                                      ↑ │ / search · n new · r refresh · w w
+ >_ │ main.ts │                                                                                               Ln 1, Col 1 │ TypeScript │ Spaces: 2 │ UTF-8 │ LF

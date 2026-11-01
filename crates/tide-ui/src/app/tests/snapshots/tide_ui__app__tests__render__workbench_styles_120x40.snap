@@ -1,0 +1,9 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: summary
+---
+explorer header: "E" fg=Rgb(230, 219, 209) bg=Rgb(77, 75, 97) BOLD
+sidebar body: " " fg=Reset bg=Rgb(48, 49, 61) NONE
+active tab: "m" fg=Rgb(192, 171, 245) bg=Rgb(57, 58, 71) BOLD
+line number: "1" fg=Rgb(176, 161, 166) bg=Rgb(65, 66, 82) NONE
+status bar: ">" fg=Rgb(202, 186, 183) bg=Rgb(70, 70, 83) NONE

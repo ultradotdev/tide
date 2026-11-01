@@ -1,0 +1,160 @@
+name: CI
+on:
+  push:
+    branches: [main, release, 'release/**']
+  pull_request:
+    branches: [main, release, 'release/**']
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUST_BACKTRACE: 1
+  # Native PTYs and parser workers need room alongside the other fixtures.
+  RUST_TEST_THREADS: "2"
+
+jobs:
+  lint:
+    name: CI / Format, lint and tooling
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with: {toolchain: 1.97.1, components: 'rustfmt, clippy'}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo fetch --locked
+      - run: cargo xtask generate-rust-notices --check
+      - run: cargo xtask verify-tide-docs
+      - run: cargo xtask validate-doc-links
+      - run: cargo xtask verify-release-artifacts
+      - run: cargo xtask verify-github-governance
+      - run: cargo xtask verify-portable-paths
+      - name: Install pinned Gitleaks CLI
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --fail --silent --show-error --location "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}" --output "/tmp/${archive}"
+          echo "${GITLEAKS_SHA256}  /tmp/${archive}" | sha256sum --check --strict
+          tar -xzf "/tmp/${archive}" -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Scan repository for secrets
+        run: gitleaks git . --redact --no-banner
+
+  dependencies:
+    name: CI / Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      # Advisories, duplicate-version bans, the license allowlist and allowed sources.
+      - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902
+        with:
+          command: check advisories bans licenses sources
+
+  test:
+    name: ${{ matrix.check }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, check: CI / Linux}
+          - {os: macos-latest, check: CI / macOS}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with: {toolchain: 1.97.1, components: 'rust-analyzer, rust-src'}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      - run: cargo test --locked --workspace
+      # Tests that need real language servers or vim are #[ignore] locally and
+      # run here with --ignored. Node is used only to install the TypeScript server.
+      - name: Real language servers and full-screen terminal
+        run: |
+          npm i -g typescript-language-server@5.1.3 typescript@5.9.3
+          cargo test --locked -p tide-lsp --test client starts_real_ -- --ignored
+          cargo test --locked -p tide-terminal --test fullscreen -- --ignored
+      - run: cargo run --locked -q -p tide -- --check-catalogs
+      - run: cargo run --locked -q -p tide -- --check-terminal
+      - run: cargo build --locked --workspace --release
+      # Shared runners have noisy neighbours, so these are reports with generous
+      # ceilings that only catch order-of-magnitude regressions. The strict budgets
+      # (p95 33 ms, p99 50 ms, startup 250 ms, idle CPU 0.25) apply on dedicated
+      # hardware through `cargo xtask verify-rust-test-readiness`.
+      - name: Editor input latency and idle CPU (report)
+        timeout-minutes: 5
+        run: cargo xtask measure-rust-performance --max-p95-ms 250 --max-p99-ms 500 --max-startup-ms 2500 --max-idle-cpu 0.75
+      - name: Render, terminal, search and memory budgets (report)
+        timeout-minutes: 5
+        # The example asserts fixed budgets with no override, so it reports
+        # without failing the job on a slow shared runner.
+        continue-on-error: true
+        run: cargo run --locked --release -p tide --example acceptance_performance -- --defer-search-throughput
+      - name: Disposable local install, upgrade and rollback
+        run: cargo xtask verify-rust-local-install
+      - run: cargo xtask verify-deterministic-build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tide-rust-${{ matrix.os }}
+          path: target/release/tide
+          if-no-files-found: error
+
+  postgres:
+    name: CI / PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tide_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with: {toolchain: 1.97.1}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      # Ephemeral CI certificates only. No production credentials or private keys are stored.
+      - name: Enable PostgreSQL TLS
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          tls="$(mktemp -d "$RUNNER_TEMP/tide-pg-tls.XXXXXX")"
+          trap 'rm -rf "$tls"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -keyout "$tls/ca.key" -out "$tls/ca.crt" -subj /CN=Tide-Test-CA -addext basicConstraints=critical,CA:TRUE
+          openssl req -new -newkey rsa:2048 -nodes -keyout "$tls/server.key" -out "$tls/server.csr" -subj /CN=localhost
+          printf '%s\n' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature,keyEncipherment' 'extendedKeyUsage=serverAuth' 'subjectAltName=DNS:localhost,IP:127.0.0.1' > "$tls/extensions"
+          openssl x509 -req -days 2 -in "$tls/server.csr" -CA "$tls/ca.crt" -CAkey "$tls/ca.key" -CAcreateserial -out "$tls/server.crt" -extfile "$tls/extensions"
+          docker cp "$tls/server.crt" "$POSTGRES_CONTAINER:/var/lib/postgresql/server.crt"
+          docker cp "$tls/server.key" "$POSTGRES_CONTAINER:/var/lib/postgresql/server.key"
+          docker exec -u root "$POSTGRES_CONTAINER" chown postgres:postgres /var/lib/postgresql/server.crt /var/lib/postgresql/server.key
+          docker exec -u root "$POSTGRES_CONTAINER" chmod 600 /var/lib/postgresql/server.key
+          docker exec "$POSTGRES_CONTAINER" psql -U postgres -d tide_test -v ON_ERROR_STOP=1 -c "ALTER SYSTEM SET ssl_cert_file = '/var/lib/postgresql/server.crt'" -c "ALTER SYSTEM SET ssl_key_file = '/var/lib/postgresql/server.key'" -c "ALTER SYSTEM SET ssl = 'on'" -c 'SELECT pg_reload_conf()'
+          cp "$tls/ca.crt" "$RUNNER_TEMP/tide-postgres-ca.crt"
+      - name: Live database tests
+        env:
+          TIDE_TEST_DATABASE_CA: ${{ runner.temp }}/tide-postgres-ca.crt
+          TIDE_TEST_DATABASE_TLS_URL: postgres://postgres:postgres@localhost:5432/tide_test?sslmode=require
+          TIDE_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/tide_test?sslmode=disable
+        run: |
+          cargo test --locked -p tide-db --test live_postgres -- --include-ignored
+          cargo test --locked -p tide --test parity_smoke live_database_mouse_sort_edit_history_and_connection_form_use_real_targets -- --ignored
+

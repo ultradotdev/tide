@@ -1,0 +1,112 @@
+[
+  {
+    "themeIds": ["catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha"],
+    "upstreamProject": "Catppuccin for VS Code",
+    "upstreamUrl": "https://github.com/catppuccin/vscode",
+    "revision": "befc9e6fc41980f4241408f7049755d47c06ff45",
+    "sourceFormat": "typescript",
+    "sourceFiles": [{ "path": "packages/catppuccin-vsc/src/theme/tokens/index.ts", "sha256": "999bf187ba043f84712147ed77b1bc9a0cf8955619e1422e6e62aca95343c396" }],
+    "license": "MIT",
+    "translationPolicy": "audit-existing-source-backed-mapping"
+  },
+  {
+    "themeIds": ["one-dark"],
+    "upstreamProject": "Atom One Dark Syntax",
+    "upstreamUrl": "https://github.com/atom/one-dark-syntax",
+    "revision": "9c96f4454362267ac45322063e193ccf9d2debb1",
+    "sourceFormat": "atom-less",
+    "sourceFiles": [
+      { "path": "styles/syntax/_base.less", "sha256": "a3df9ae2a5af8239a45db4ec59e447a728ecdf9d76f273df3f25678d99263b63" },
+      { "path": "styles/colors.less", "sha256": "3f060ae1d0f2ebb27ccb60cf5088bd68ddaa8f38288569bf4ac47015b4595438" }
+    ],
+    "license": "MIT",
+    "translationPolicy": "atom-selectors-to-textmate-audit",
+    "translatedFile": "config/syntax-themes/one-dark.json",
+    "translatedSha256": "4d21088eed2136d8bab6cd2426068e5c4012a4862fef0e76a5ecfb1a3b1094c0"
+  },
+  {
+    "themeIds": ["dracula"],
+    "upstreamProject": "Dracula for Visual Studio Code",
+    "upstreamUrl": "https://github.com/dracula/visual-studio-code",
+    "revision": "4e8cc60a7393782bc02576eccecfcbe6015d7069",
+    "sourceFormat": "yaml-textmate",
+    "sourceFiles": [{ "path": "src/dracula.yml", "sha256": "c0b212b19bdaab789d56322783dd0ac32b43ee9a30ed5bd4d1e4b8a45dbe2c63" }],
+    "license": "MIT",
+    "translationPolicy": "normalize-textmate-rules",
+    "translatedFile": "config/syntax-themes/dracula.json",
+    "translatedSha256": "5c0d108f7a5d369808ad18f5c408ace0afec1a54447699de0a8fb03f8ccd0de7"
+  },
+  {
+    "themeIds": ["nord"],
+    "upstreamProject": "Nord Visual Studio Code",
+    "upstreamUrl": "https://github.com/nordtheme/visual-studio-code",
+    "revision": "8ead09822c02d0d49d0f764104505e5a34d3689f",
+    "sourceFormat": "jsonc-textmate",
+    "sourceFiles": [{ "path": "themes/nord-color-theme.json", "sha256": "cd15e5a0c2edb2e373196ed2ab0f0d90c0eccc61f82c37131a4efc3be2ca8061" }],
+    "license": "MIT",
+    "translationPolicy": "normalize-textmate-rules",
+    "translatedFile": "config/syntax-themes/nord.json",
+    "translatedSha256": "145ba099efeea2695a9374b79289d44052477f37b304e32c16032c8b888e38f3"
+  },
+  {
+    "themeIds": ["tokyo-night"],
+    "upstreamProject": "Tokyo Night VS Code Theme",
+    "upstreamUrl": "https://github.com/enkia/tokyo-night-vscode-theme",
+    "revision": "7c0f11eaef322f293621ca7befe462214b7ea468",
+    "sourceFormat": "jsonc-textmate",
+    "sourceFiles": [{ "path": "themes/tokyo-night-color-theme.json", "sha256": "e08d77c898ead9ed129dc18ff4f841e2353477e69ccd6fa7d0610561c31da4d8" }],
+    "license": "MIT",
+    "translationPolicy": "normalize-textmate-rules",
+    "translatedFile": "config/syntax-themes/tokyo-night.json",
+    "translatedSha256": "22698efdb66cc4797fd98098996546a0d1fb1776d46335d2ce588517049e255b"
+  },
+  {
+    "themeIds": ["gruvbox-dark"],
+    "upstreamProject": "Gruvbox",
+    "upstreamUrl": "https://github.com/morhetz/gruvbox",
+    "revision": "5d15b2765f59754d7ac263c88a0f6e3e58124951",
+    "sourceFormat": "vim-highlight-groups",
+    "sourceFiles": [{ "path": "colors/gruvbox.vim", "sha256": "55116926ba2b625837d9ae89349a5688d60d0b32acdbd8887e1c0d225f079c3d" }],
+    "license": "MIT/X11",
+    "translationPolicy": "canonical-vim-groups-to-textmate",
+    "translatedFile": "config/syntax-themes/gruvbox-dark.json",
+    "translatedSha256": "355a1bfccd88f11401448928b423c7353893f92b6fc68b496853dc2fe731f071"
+  },
+  {
+    "themeIds": ["solarized-dark", "solarized-light"],
+    "upstreamProject": "Solarized Vim",
+    "upstreamUrl": "https://github.com/altercation/vim-colors-solarized",
+    "revision": "528a59f26d12278698bb946f8fb82a63711eec21",
+    "sourceFormat": "vim-highlight-groups",
+    "sourceFiles": [{ "path": "colors/solarized.vim", "sha256": "8b6360751f48206bf4b0a44dd2feb9c48af656f2662e5bf62b47ebb87c277004" }],
+    "license": "MIT",
+    "translationPolicy": "canonical-vim-groups-to-textmate",
+    "translatedFiles": [
+      { "themeId": "solarized-dark", "path": "config/syntax-themes/solarized-dark.json", "sha256": "3bc34ae6aa1563d065df85e736e9cba7f4cd57d35c91eae846f6bb98b02f850f" },
+      { "themeId": "solarized-light", "path": "config/syntax-themes/solarized-light.json", "sha256": "39e1f9f4efdd39a7353c46bf35f18e2d147335632cc8a4f0c4a828dc922eb38f" }
+    ]
+  },
+  {
+    "themeIds": ["rose-pine"],
+    "upstreamProject": "Rosé Pine for Visual Studio Code",
+    "upstreamUrl": "https://github.com/rose-pine/vscode",
+    "revision": "d8f5ebe8e096fa833e997c07eb7685ee1677a4ba",
+    "sourceFormat": "json-textmate",
+    "sourceFiles": [{ "path": "themes/rose-pine-color-theme.json", "sha256": "2c9270ee0a307739257d6331b6314f4b862c5f5bac32b798211ba9ffc50d6b02" }],
+    "license": "MIT",
+    "translationPolicy": "normalize-textmate-rules",
+    "translatedFile": "config/syntax-themes/rose-pine.json",
+    "translatedSha256": "c7174df807a664cc94d43dfc40edb9cf2ca5fa813df5a3659b8e451214343cc7"
+  },
+  {
+    "themeIds": ["ultra-dusk"],
+    "sourceKind": "original",
+    "sourceProject": "Ultra",
+    "sourceFormat": "ultra-theme-design-response-v1",
+    "sourceFiles": [{ "path": "docs/theme-builder/ultra-dusk-design-response.json", "sha256": "b34d8200785c23678241c5a74373fc6ea67220bb323ee336378a5a90b8ea4883" }],
+    "license": "Apache-2.0",
+    "translationPolicy": "direct-ultra-native-token-mapping",
+    "translatedFile": "config/syntax-themes/ultra-dusk.json",
+    "translatedSha256": "10273e863cb3cf4bdb6d472f9dce5059c42fc301775a70ee015801dfab623f70"
+  }
+]

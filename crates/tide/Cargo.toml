@@ -1,0 +1,41 @@
+[package]
+name = "tide"
+description = "Tide terminal-native code editor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "tide"
+path = "src/main.rs"
+
+[dependencies]
+tide-core = { path = "../tide-core" }
+anyhow.workspace = true
+clap.workspace = true
+crossterm.workspace = true
+ratatui.workspace = true
+rustix.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tide-config = { path = "../tide-config" }
+tide-ai = { path = "../tide-ai" }
+tide-lsp = { path = "../tide-lsp" }
+tide-services = { path = "../tide-services" }
+tide-terminal = { path = "../tide-terminal" }
+tide-ui = { path = "../tide-ui" }
+
+[dev-dependencies]
+tide-db = { path = "../tide-db" }
+assert_cmd.workspace = true
+predicates.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,238 @@
+name: Release Artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tide-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Release / Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      macos-matrix: ${{ steps.contract.outputs.macos-matrix }}
+      linux-matrix: ${{ steps.contract.outputs.linux-matrix }}
+      publish: ${{ steps.contract.outputs.publish }}
+      tag: ${{ steps.contract.outputs.tag }}
+      title: ${{ steps.contract.outputs.title }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - name: Validate release context and matrices
+        id: contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          context="$(cargo xtask release-workflow-contract preflight)"
+          echo "publish=$(jq -r .publish <<<"$context")" >> "$GITHUB_OUTPUT"
+          echo "tag=$(jq -r .tag <<<"$context")" >> "$GITHUB_OUTPUT"
+          echo "title=$(jq -r .title <<<"$context")" >> "$GITHUB_OUTPUT"
+          echo "macos-matrix=$(cargo xtask release-workflow-contract matrix --platform=macos)" >> "$GITHUB_OUTPUT"
+          echo "linux-matrix=$(cargo xtask release-workflow-contract matrix --platform=linux)" >> "$GITHUB_OUTPUT"
+      - name: Run release preflight
+        run: |
+          cargo xtask validate
+          cargo xtask validate-doc-links
+          cargo xtask verify-release-artifacts
+          cargo test --locked --workspace
+
+  macos:
+    name: Release / ${{ matrix.artifactId }}
+    needs: preflight
+    runs-on: ${{ matrix.runner }}
+    environment: release-signing
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.preflight.outputs.macos-matrix) }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - name: Build native Rust payload
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "14.0"
+        run: cargo build --locked --release --target=${{ matrix.rustTarget }} -p tide
+      - name: Prepare deterministic unsigned payload
+        run: >-
+          cargo xtask package-release-artifact prepare
+          --artifact-id=${{ matrix.artifactId }}
+          --repository-root=${{ github.workspace }}
+          --binary=${{ github.workspace }}/target/${{ matrix.rustTarget }}/release/tide
+          --output-directory=${{ runner.temp }}/tide-release
+          --source-commit=${{ github.sha }}
+      - name: Sign, notarize, and validate
+        env:
+          APPLE_DEVELOPER_ID_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_P12_BASE64 }}
+          APPLE_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_NOTARY_API_KEY_P8_BASE64: ${{ secrets.APPLE_NOTARY_API_KEY_P8_BASE64 }}
+          APPLE_NOTARY_API_KEY_ID: ${{ secrets.APPLE_NOTARY_API_KEY_ID }}
+          APPLE_NOTARY_API_ISSUER_ID: ${{ secrets.APPLE_NOTARY_API_ISSUER_ID }}
+        run: >-
+          cargo xtask sign-notarize-macos
+          --artifact-id=${{ matrix.artifactId }}
+          --repository-root=${{ github.workspace }}
+          --payload-root=${{ runner.temp }}/tide-release/payloads/${{ matrix.stem }}
+          --output-directory=${{ runner.temp }}/tide-release/final
+          --source-commit=${{ github.sha }}
+      - name: Upload verified workflow artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-${{ matrix.artifactId }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/tide-release/final/${{ matrix.filename }}
+            ${{ runner.temp }}/tide-release/final/${{ matrix.stem }}.notarization.json
+          if-no-files-found: error
+          retention-days: 7
+
+  linux:
+    name: Release / ${{ matrix.artifactId }}
+    needs: preflight
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.preflight.outputs.linux-matrix) }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - name: Build and package deterministic archive
+        run: |
+          cargo xtask build-rust-linux-release "${{ matrix.rustTarget }}" "${{ runner.temp }}/tide-build" --repeat
+          cargo xtask package-release-artifact package \
+            --artifact-id=${{ matrix.artifactId }} \
+            --repository-root=${{ github.workspace }} \
+            --binary=${{ runner.temp }}/tide-build/tide \
+            --output-directory=${{ runner.temp }}/tide-release \
+            --source-commit=${{ github.sha }}
+      - name: Upload verified workflow artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-${{ matrix.artifactId }}-${{ github.sha }}
+          path: ${{ runner.temp }}/tide-release/${{ matrix.filename }}
+          if-no-files-found: error
+          retention-days: 7
+
+  assemble:
+    name: Release / Assemble
+    needs: [preflight, macos, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.97.1
+      - name: Download verified platform artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: verified-*-${{ github.sha }}
+          path: ${{ runner.temp }}/verified
+          merge-multiple: true
+      - name: Assemble exact public assets and checksums
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/release"
+          find "${{ runner.temp }}/verified" -maxdepth 1 -type f \( -name '*.zip' -o -name '*.tar.gz' -o -name '*.notarization.json' \) -exec cp {} "${{ runner.temp }}/release/" \;
+          cargo xtask generate-release-checksums \
+            --repository-root=${{ github.workspace }} \
+            --assets-directory=${{ runner.temp }}/release
+      - name: Upload assembled release assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: tide-v0.10.0-assets-${{ github.sha }}
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+          retention-days: 14
+  attest:
+    name: Release / Attest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [preflight, assemble]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download assembled release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: tide-v0.10.0-assets-${{ github.sha }}
+          path: release
+      - name: Attest final archives from checksums
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-checksums: release/SHA256SUMS
+
+  publish:
+    name: Release / Publish
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [preflight, assemble, attest]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Download assembled release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: tide-v0.10.0-assets-${{ github.sha }}
+          path: release
+      - name: Refuse non-owner or existing publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_ACTOR: thekeith
+          EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_ACTOR}" = "$EXPECTED_ACTOR"
+          test "${GITHUB_TRIGGERING_ACTOR}" = "$EXPECTED_ACTOR"
+          test "${GITHUB_REF}" = "refs/tags/${EXPECTED_TAG}"
+          if gh release view "$EXPECTED_TAG" >/dev/null 2>&1; then
+            echo "Release $EXPECTED_TAG already exists; refusing to replace it." >&2
+            exit 1
+          fi
+      - name: Publish immutable prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
+          EXPECTED_TITLE: ${{ needs.preflight.outputs.title }}
+        run: >-
+          gh release create "$EXPECTED_TAG"
+          --verify-tag
+          --title "$EXPECTED_TITLE"
+          --notes-file docs/v0.10.0-prerelease.md
+          --prerelease
+          release/tide-v0.10.0-darwin-arm64.zip
+          release/tide-v0.10.0-darwin-arm64.notarization.json
+          release/tide-v0.10.0-darwin-x64.zip
+          release/tide-v0.10.0-darwin-x64.notarization.json
+          release/tide-v0.10.0-linux-arm64.tar.gz
+          release/tide-v0.10.0-linux-x64.tar.gz
+          release/SHA256SUMS

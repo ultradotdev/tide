@@ -1,0 +1,133 @@
+{
+  // Editor
+  "editor.fontSize": 14, // Font size in pixels
+  "editor.tabSize": 2, // Number of spaces per tab
+  "editor.insertSpaces": true, // Use spaces instead of tabs
+  "editor.autoIndent": "full", // Auto-indent mode: "none", "keep", or "full"
+  "editor.autoClosingBrackets": "always", // Auto-close brackets: "always", "languageDefined", "beforeWhitespace", "never"
+  "editor.wordWrap": "on", // Word wrap: "off", "on", "wordWrapColumn", "bounded"
+  "editor.lineNumbers": "on", // Line numbers: "on", "off", "relative"
+  "editor.folding": true, // Enable code folding
+  "editor.renderWhitespace": "selection", // Show whitespace: "none", "boundary", "selection", "trailing", "all"
+  "editor.mouseWheelScrollSensitivity": 3, // Scroll speed multiplier (1-10)
+  "editor.cursorBlinkRate": 500, // Cursor blink interval in milliseconds
+  "editor.scrollBeyondLastLine": true, // Allow scrolling past the last line
+  "editor.diagnostics.curlyUnderline": true, // Use squiggly underlines for errors (requires modern terminal)
+  "editor.undoHistoryLimit": 1000, // Maximum undo actions per document
+
+  // Minimap
+  "editor.minimap.enabled": true, // Show the minimap
+  "editor.minimap.width": 10, // Minimap width in characters
+  "editor.minimap.showSlider": "always", // Slider visibility: "always", "mouseover"
+  "editor.minimap.maxColumn": 120, // Maximum column to render
+  "editor.minimap.side": "right", // Minimap position: "left", "right"
+
+  // Files
+  "files.autoSave": "off", // Auto-save: "off", "afterDelay", "onFocusChange", "onWindowChange"
+  "files.watchFiles": "onFocus", // Watch for external changes: "onFocus", "always", "off"
+  "files.exclude": { // Patterns to exclude from file tree
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/.DS_Store": true
+  },
+
+  // Workbench
+  "workbench.colorTheme": "ultra-dusk", // Color theme name
+  "workbench.startupEditor": "", // File to open on startup (empty for none)
+
+  // TUI Sidebar
+  "tui.sidebar.width": 36, // Sidebar width in characters
+  "tui.sidebar.visible": true, // Sidebar visibility
+  "tui.sidebar.location": "left", // Sidebar position: "left", "right"
+  "tui.sidebar.focusedBackground": "#2d3139", // Sidebar focused item background color
+  "tui.agentsSidebar.visible": true, // Agents sidebar visibility
+  "tui.agentsSidebar.width": 36, // Agents sidebar width in characters (24-80)
+  "tui.mainRegion.minimumWidth": 56, // Minimum main-region width retained before the sidebar responsively collapses (24-200 columns)
+  "tui.terminal.height": 10, // Bottom terminal dock height in rows
+  "tui.terminal.scrollback": 1000, // Terminal scrollback buffer size in lines
+
+  // TUI File Tree
+  "tui.fileTree.showGitStatus": true, // Show git status colors on files in file tree
+  "tui.iconStyle": "nerd", // Icon style: "nerd" (Nerd Font glyphs, width-1, default) or "ascii" (no icons, for terminals without a Nerd Font)
+
+  // TUI Tab Bar
+  "tui.tabBar.scrollAmount": 1, // Number of tabs to scroll when using scroll buttons
+
+  // TUI File Picker
+  "tui.filePicker.maxFiles": 10000, // Maximum number of files to show in file picker
+
+  // TUI Diff Viewer
+  "tui.diffViewer.autoRefresh": true, // Auto-refresh diff when file changes
+  "tui.diffViewer.showDiagnostics": true, // Show diagnostics in diff viewer
+  "tui.diffViewer.editMode": "stage-modified", // Edit save mode: "stage-modified", "save-only", "auto-stage"
+
+  // TUI Outline Panel
+  "tui.outline.collapsedOnStartup": true, // Collapse outline panel on startup
+  "tui.outline.autoFollow": true, // Auto-follow cursor position in outline
+
+  // TUI Timeline Panel
+  "tui.timeline.collapsedOnStartup": true, // Collapse timeline panel on startup
+  "tui.timeline.mode": "file", // Timeline mode: "file" (current file) or "repo" (all commits)
+  "tui.timeline.commitCount": 50, // Number of commits to show in timeline
+
+  // Git
+  "git.statusInterval": 500, // Git status refresh interval in milliseconds
+  "git.panel.location": "sidebar-bottom", // Git panel location: "sidebar-bottom", "sidebar-top", "panel"
+  "git.panel.openOnStartup": true, // Show git panel on startup
+  "git.diffContextLines": 3, // Context lines in diffs
+  "git.inlineDiff.maxHeight": 15, // Max height of inline diff expander in lines
+  "git.inlineDiff.contextLines": 3, // Context lines in inline diffs
+
+  // AI
+  "ai.cli.defaultProvider": "claude-code", // Default registered external AI CLI provider
+  "ai.builtInConversations.enabled": false, // Experimental: enable built-in AI Chat and Ensemble Chat; requires restart
+  "ai.chat.defaultProvider": "claude", // Default AI Chat provider: "claude", "openai", "gemini", "ollama"
+  "ai.chat.defaultModel": "", // Optional catalog model ID for new AI Chat sessions; empty uses provider default
+  "ai.chat.temperature": 0, // Deterministic by default for coding and tool-use workflows (0-1)
+  "ai.panel.defaultWidth": 80, // AI panel width in characters
+  "ai.panel.maxWidthPercent": 50, // Maximum AI panel width as percentage of screen
+  "ai.panel.openOnStartup": false, // Open AI panel on startup
+  "ai.autoStartCli": true, // Start the external AI CLI automatically when its pane receives focus
+  "ai.panel.initialPrompt": "You are a helpful software engineer working with another software engineer on a coding project using Tide", // System prompt for AI
+  "ai.streaming.enabled": true, // Stream provider responses and exposed thinking when supported
+  "ai.thinking.enabled": true, // Show provider-exposed thinking summaries or traces
+  "ai.thinking.completedDisplay": "truncate", // Completed thinking: "truncate", "collapse", or "expanded"
+  "ai.thinking.previewLines": 8, // Wrapped content lines in a truncated preview (2-50)
+  "ai.reasoning.defaults": { "chat": "provider-default", "ensembleCoder": "provider-default", "ensembleCritic": "provider-default" }, // Native provider reasoning defaults by surface
+  "ai.reasoning.modelOverrides": {}, // Provider/model-scoped native reasoning selections
+
+  // Ensemble
+  "ensemble.asciiIcons": false, // Use ASCII icons instead of emoji in ensemble panel
+  "ensemble.agents": {
+    "coder": { "id": "coder", "role": "coder", "provider": "auto", "displayName": "Coder", "mention": "coder" },
+    "critics": [
+      { "id": "critic-1", "role": "critic", "provider": "auto", "displayName": "Correctness", "mention": "correctness", "specialty": { "name": "Correctness", "instructions": "Prioritize behavioral correctness, edge cases, error handling, and regressions." } },
+      { "id": "critic-2", "role": "critic", "provider": "auto", "displayName": "Security", "mention": "security", "specialty": { "name": "Security", "instructions": "Prioritize trust boundaries, secrets, injection, permissions, data loss, and unsafe operations." } }
+    ]
+  }, // Non-secret provider/model preferences; roles may reuse the same provider and model
+  "ensemble.reviewPolicy": { "preset": "consensus", "categoryActions": {}, "pathRules": [], "maxAutoFiles": 10, "maxAutoChangedLines": 500, "maxCycles": 5, "maxValidationRepairs": 3, "p0Detection": "safety-or-any-critic", "p0Behavior": "pause", "applyOnPass": "auto", "validationMode": "when-available" },
+
+  // Session
+  "session.restoreOnStartup": true, // Restore previous session on startup
+  "session.autoSave": true, // Auto-save session state
+  "session.autoSaveInterval": 30000, // Auto-save interval in milliseconds
+  "session.databaseQueryHistory": true, // Record database queries and failures in local history
+  "session.save.openFiles": true, // Save open files in session
+  "session.save.cursorPositions": true, // Save cursor positions in session
+  "session.save.scrollPositions": true, // Save scroll positions in session
+  "session.save.foldState": true, // Save fold state in session
+  "session.save.uiLayout": true, // Save UI layout in session
+  "session.save.unsavedContent": true, // Save unsaved content in session
+
+  // LSP
+  "lsp.enabled": true, // Enable language server features
+  "lsp.completionDebounceMs": 250, // Delay before triggering completion (ms)
+  "lsp.triggerCharacters": ".:/<@(", // Characters that trigger completion
+  "lsp.hover.enabled": true, // Show hover information
+  "lsp.signatureHelp.enabled": true, // Show function signature help
+  "lsp.signatureHelp.display": "popup", // Signature display: "popup", "inline", "statusBar"
+  "lsp.diagnostics.enabled": true, // Show diagnostics (errors, warnings)
+  "lsp.diagnostics.showInGutter": true, // Show diagnostic icons in gutter
+  "lsp.diagnostics.underlineErrors": true, // Underline errors in editor
+  "lsp.diagnostics.delay": 500 // Delay before showing diagnostics (ms)
+}

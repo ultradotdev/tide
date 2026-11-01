@@ -1,0 +1,44 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: "snapshot_modal(120, 40, |app| app.open_goto_prompt())"
+---
+ ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+No files · . hidden · Enter expand/│Tide
+                                   │
+                                   │A terminal-native code editor.
+                                   │
+                                   │Ctrl+P  quick open    Ctrl+K  commands
+                                   │Ctrl┌ Go to Line ──────────────────────────┐
+                                   │    │> 1                                   │
+                                   │    │                                      │
+                                   │    │                                      │
+                                   │    │        Submit   Cancel [Esc]         │
+                                   │    │Tab focus · Enter · Esc               │
+                                   │    └──────────────────────────────────────┘
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+Enter open · ←/→ folders · . hidden│
+ ▼ Source Control                × │
+ no repository                     │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+ ▶ Outline                       × │
+ ▶ Timeline                      × │                                                                                  ↑
+ >_ │Tide 0.1 — Phase 1

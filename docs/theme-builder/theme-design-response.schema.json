@@ -1,0 +1,1223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultra.dev/schemas/theme-design-response-v1.json",
+  "title": "Ultra theme design response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "design",
+    "theme",
+    "derivationReview"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "design": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "concept",
+        "paletteCharacter",
+        "surfaceHierarchy",
+        "accentStrategy",
+        "syntaxStrategy"
+      ],
+      "properties": {
+        "concept": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paletteCharacter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "surfaceHierarchy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accentStrategy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "syntaxStrategy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "type",
+        "colors",
+        "tokenColors"
+      ],
+      "properties": {
+        "name": {
+          "const": "Ultra Dusk"
+        },
+        "type": {
+          "enum": [
+            "dark",
+            "light",
+            "high-contrast"
+          ]
+        },
+        "colors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor.background",
+            "editor.foreground",
+            "editor.selectionBackground",
+            "editorCursor.foreground",
+            "editorLineNumber.foreground",
+            "editorLineNumber.activeForeground",
+            "editorGroup.border",
+            "editorGroupHeader.tabsBackground",
+            "editorWidget.background",
+            "editorWidget.foreground",
+            "editorWidget.border",
+            "sideBar.background",
+            "sideBar.foreground",
+            "sideBar.border",
+            "sideBarTitle.foreground",
+            "panel.background",
+            "panel.foreground",
+            "panel.border",
+            "tab.activeBackground",
+            "tab.activeForeground",
+            "tab.inactiveBackground",
+            "tab.inactiveForeground",
+            "tab.border",
+            "tab.activeBorderTop",
+            "statusBar.background",
+            "statusBar.foreground",
+            "input.background",
+            "input.foreground",
+            "input.border",
+            "button.background",
+            "button.foreground",
+            "list.activeSelectionBackground",
+            "list.activeSelectionForeground",
+            "focusBorder",
+            "descriptionForeground",
+            "editorError.foreground",
+            "editorWarning.foreground",
+            "editorInfo.foreground",
+            "editorHint.foreground",
+            "successForeground",
+            "gitDecoration.addedResourceForeground",
+            "gitDecoration.modifiedResourceForeground",
+            "gitDecoration.deletedResourceForeground",
+            "gitDecoration.untrackedResourceForeground",
+            "terminal.background",
+            "terminal.foreground",
+            "terminalCursor.foreground",
+            "terminal.ansiBlack",
+            "terminal.ansiRed",
+            "terminal.ansiGreen",
+            "terminal.ansiYellow",
+            "terminal.ansiBlue",
+            "terminal.ansiMagenta",
+            "terminal.ansiCyan",
+            "terminal.ansiWhite",
+            "terminal.ansiBrightBlack",
+            "terminal.ansiBrightRed",
+            "terminal.ansiBrightGreen",
+            "terminal.ansiBrightYellow",
+            "terminal.ansiBrightBlue",
+            "terminal.ansiBrightMagenta",
+            "terminal.ansiBrightCyan",
+            "terminal.ansiBrightWhite",
+            "comment.foreground",
+            "keyword.foreground",
+            "string.foreground",
+            "number.foreground",
+            "operator.foreground",
+            "function.foreground",
+            "type.foreground",
+            "variable.foreground",
+            "markup.heading",
+            "markup.bold",
+            "markup.italic",
+            "markup.list",
+            "symbolIcon.classForeground",
+            "symbolIcon.constantForeground",
+            "symbolIcon.functionForeground",
+            "symbolIcon.interfaceForeground",
+            "symbolIcon.keyForeground",
+            "symbolIcon.keywordForeground",
+            "symbolIcon.moduleForeground",
+            "symbolIcon.variableForeground"
+          ],
+          "properties": {
+            "editor.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary source editor canvas."
+            },
+            "editor.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Default source text and editor content."
+            },
+            "editor.selectionBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Selected source text background."
+            },
+            "editorCursor.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Application-painted editor and field caret."
+            },
+            "editorLineNumber.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Line Number foreground color."
+            },
+            "editorLineNumber.activeForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Line Number active Foreground color."
+            },
+            "editorGroup.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Neutral boundary between main editor groups."
+            },
+            "editorGroupHeader.tabsBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Main tab-strip surface behind tabs."
+            },
+            "editorWidget.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Modal, floating widget, and dialog surface."
+            },
+            "editorWidget.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary text on widget and dialog surfaces."
+            },
+            "editorWidget.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Boundary around widgets and dialogs."
+            },
+            "sideBar.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Workspace and Agents sidebar body surface."
+            },
+            "sideBar.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary sidebar content text."
+            },
+            "sideBar.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Neutral sidebar boundary."
+            },
+            "sideBarTitle.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Top-level sidebar and accordion title text."
+            },
+            "panel.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Bottom dock and panel body surface."
+            },
+            "panel.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary bottom dock and panel text."
+            },
+            "panel.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Neutral bottom dock and panel boundary."
+            },
+            "tab.activeBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Selected tab surface within any host."
+            },
+            "tab.activeForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Selected tab label within any host."
+            },
+            "tab.inactiveBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Unselected tab surface."
+            },
+            "tab.inactiveForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Unselected tab label."
+            },
+            "tab.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Separator between adjacent tabs."
+            },
+            "tab.activeBorderTop": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Accent line for the active tab."
+            },
+            "statusBar.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Workbench status-bar surface."
+            },
+            "statusBar.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary status-bar text."
+            },
+            "input.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editable field and search-input surface."
+            },
+            "input.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editable field and search-input text."
+            },
+            "input.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editable field boundary."
+            },
+            "button.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary action surface."
+            },
+            "button.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Primary action label."
+            },
+            "list.activeSelectionBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Selected row in the keyboard-owning list or tree."
+            },
+            "list.activeSelectionForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Text on the selected row."
+            },
+            "focusBorder": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Semantic keyboard-focus accent, not a structural border color."
+            },
+            "descriptionForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Secondary copy, hints, metadata, and subdued labels."
+            },
+            "editorError.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Error and destructive semantic color."
+            },
+            "editorWarning.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Warning semantic color."
+            },
+            "editorInfo.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Information semantic color."
+            },
+            "editorHint.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Hint and advisory semantic color."
+            },
+            "successForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Success and completed semantic color."
+            },
+            "gitDecoration.addedResourceForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Added Git resource."
+            },
+            "gitDecoration.modifiedResourceForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Modified Git resource."
+            },
+            "gitDecoration.deletedResourceForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Deleted Git resource."
+            },
+            "gitDecoration.untrackedResourceForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Untracked Git resource."
+            },
+            "terminal.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Default terminal cell background."
+            },
+            "terminal.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Default terminal cell foreground."
+            },
+            "terminalCursor.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ultra block cursor over terminal content."
+            },
+            "terminal.ansiBlack": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Black color."
+            },
+            "terminal.ansiRed": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Red color."
+            },
+            "terminal.ansiGreen": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Green color."
+            },
+            "terminal.ansiYellow": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Yellow color."
+            },
+            "terminal.ansiBlue": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Blue color."
+            },
+            "terminal.ansiMagenta": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Magenta color."
+            },
+            "terminal.ansiCyan": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Cyan color."
+            },
+            "terminal.ansiWhite": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI White color."
+            },
+            "terminal.ansiBrightBlack": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Black color."
+            },
+            "terminal.ansiBrightRed": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Red color."
+            },
+            "terminal.ansiBrightGreen": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Green color."
+            },
+            "terminal.ansiBrightYellow": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Yellow color."
+            },
+            "terminal.ansiBrightBlue": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Blue color."
+            },
+            "terminal.ansiBrightMagenta": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Magenta color."
+            },
+            "terminal.ansiBrightCyan": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright Cyan color."
+            },
+            "terminal.ansiBrightWhite": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Terminal ANSI Bright White color."
+            },
+            "comment.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Comment foreground color."
+            },
+            "keyword.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Keyword foreground color."
+            },
+            "string.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "String foreground color."
+            },
+            "number.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Number foreground color."
+            },
+            "operator.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Operator foreground color."
+            },
+            "function.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Function foreground color."
+            },
+            "type.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Type foreground color."
+            },
+            "variable.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Variable foreground color."
+            },
+            "markup.heading": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Markup heading color."
+            },
+            "markup.bold": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Markup bold color."
+            },
+            "markup.italic": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Markup italic color."
+            },
+            "markup.list": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Markup list color."
+            },
+            "symbolIcon.classForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon class Foreground color."
+            },
+            "symbolIcon.constantForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon constant Foreground color."
+            },
+            "symbolIcon.functionForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon function Foreground color."
+            },
+            "symbolIcon.interfaceForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon interface Foreground color."
+            },
+            "symbolIcon.keyForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon key Foreground color."
+            },
+            "symbolIcon.keywordForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon keyword Foreground color."
+            },
+            "symbolIcon.moduleForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon module Foreground color."
+            },
+            "symbolIcon.variableForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Symbol Icon variable Foreground color."
+            },
+            "workbench.focusedHostAccent": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Workbench focused Host Accent color."
+            },
+            "editor.lineHighlightBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor line Highlight Background color."
+            },
+            "editor.findMatchBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor find Match Background color."
+            },
+            "editor.findMatchHighlightBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor find Match Highlight Background color."
+            },
+            "editor.findMatchForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor find Match Foreground color."
+            },
+            "editor.selectionForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor selection Foreground color."
+            },
+            "editorBracketMatch.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Bracket Match background color."
+            },
+            "editorGutter.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Gutter background color."
+            },
+            "editorGutter.addedBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Gutter added Background color."
+            },
+            "editorGutter.modifiedBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Gutter modified Background color."
+            },
+            "editorGutter.deletedBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Gutter deleted Background color."
+            },
+            "editorGutter.foldingControlForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Gutter folding Control Foreground color."
+            },
+            "sideBarSectionHeader.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Side Bar Section Header background color."
+            },
+            "sideBarSectionHeader.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Side Bar Section Header foreground color."
+            },
+            "list.hoverBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "List hover Background color."
+            },
+            "list.inactiveSelectionBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "List inactive Selection Background color."
+            },
+            "disabledForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Disabled Foreground color."
+            },
+            "button.hoverBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Button hover Background color."
+            },
+            "scrollbar.shadow": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Scrollbar shadow color."
+            },
+            "scrollbarSlider.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Scrollbar Slider background color."
+            },
+            "scrollbarSlider.hoverBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Scrollbar Slider hover Background color."
+            },
+            "scrollbarSlider.activeBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Scrollbar Slider active Background color."
+            },
+            "dropdown.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Dropdown background color."
+            },
+            "dropdown.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Dropdown foreground color."
+            },
+            "dropdown.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Dropdown border color."
+            },
+            "editorSuggestWidget.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Suggest Widget background color."
+            },
+            "editorSuggestWidget.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Suggest Widget foreground color."
+            },
+            "editorSuggestWidget.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Suggest Widget border color."
+            },
+            "editorSuggestWidget.selectedBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Suggest Widget selected Background color."
+            },
+            "editorSuggestWidget.highlightForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Suggest Widget highlight Foreground color."
+            },
+            "editorHoverWidget.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Hover Widget background color."
+            },
+            "editorHoverWidget.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Hover Widget foreground color."
+            },
+            "editorHoverWidget.border": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Editor Hover Widget border color."
+            },
+            "notification.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Notification background color."
+            },
+            "notification.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Notification foreground color."
+            },
+            "diffEditor.insertedLineBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Diff Editor inserted Line Background color."
+            },
+            "diffEditor.modifiedLineBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Diff Editor modified Line Background color."
+            },
+            "diffEditor.removedLineBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Diff Editor removed Line Background color."
+            },
+            "diffEditor.diagonalFill": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Diff Editor diagonal Fill color."
+            },
+            "statusBarItem.errorBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Status Bar Item error Background color."
+            },
+            "statusBarItem.warningBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Status Bar Item warning Background color."
+            },
+            "statusBarItem.warningForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Status Bar Item warning Foreground color."
+            },
+            "titleBar.activeBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Title Bar active Background color."
+            },
+            "titleBar.activeForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Title Bar active Foreground color."
+            },
+            "textBlockQuote.background": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Text Block Quote background color."
+            },
+            "textLink.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Text Link foreground color."
+            },
+            "textPreformat.foreground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Text Preformat foreground color."
+            },
+            "testing.iconPassed": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Testing icon Passed color."
+            },
+            "aiChat.activeForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat active Foreground color."
+            },
+            "aiChat.assistantForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat assistant Foreground color."
+            },
+            "aiChat.contextAdvisoryForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat context Advisory Foreground color."
+            },
+            "aiChat.contextCriticalForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat context Critical Foreground color."
+            },
+            "aiChat.contextWarningForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat context Warning Foreground color."
+            },
+            "aiChat.errorForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat error Foreground color."
+            },
+            "aiChat.idleForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat idle Foreground color."
+            },
+            "aiChat.roleBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat role Background color."
+            },
+            "aiChat.systemForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat system Foreground color."
+            },
+            "aiChat.thinkingBorder": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat thinking Border color."
+            },
+            "aiChat.thinkingCollapsedForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat thinking Collapsed Foreground color."
+            },
+            "aiChat.thinkingForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat thinking Foreground color."
+            },
+            "aiChat.toolForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat tool Foreground color."
+            },
+            "aiChat.userForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat user Foreground color."
+            },
+            "aiChat.workingForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ai Chat working Foreground color."
+            },
+            "conversation.actionBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation action Background color."
+            },
+            "conversation.assistantForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation assistant Foreground color."
+            },
+            "conversation.cardBorder": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation card Border color."
+            },
+            "conversation.composerBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation composer Background color."
+            },
+            "conversation.composerForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation composer Foreground color."
+            },
+            "conversation.criticalForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation critical Foreground color."
+            },
+            "conversation.criticForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation critic Foreground color."
+            },
+            "conversation.experimentalBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation experimental Background color."
+            },
+            "conversation.experimentalForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation experimental Foreground color."
+            },
+            "conversation.headerBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation header Background color."
+            },
+            "conversation.headerForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation header Foreground color."
+            },
+            "conversation.proposalForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation proposal Foreground color."
+            },
+            "conversation.roleBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation role Background color."
+            },
+            "conversation.scrollbarThumbBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation scrollbar Thumb Background color."
+            },
+            "conversation.scrollbarTrackBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation scrollbar Track Background color."
+            },
+            "conversation.systemForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation system Foreground color."
+            },
+            "conversation.thinkingCollapsedForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation thinking Collapsed Foreground color."
+            },
+            "conversation.thinkingForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation thinking Foreground color."
+            },
+            "conversation.toolForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation tool Foreground color."
+            },
+            "conversation.userForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation user Foreground color."
+            },
+            "conversation.validationForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation validation Foreground color."
+            },
+            "conversation.warningForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation warning Foreground color."
+            },
+            "conversation.workingForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Conversation working Foreground color."
+            },
+            "ensemble.stageBackground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ensemble stage Background color."
+            },
+            "ensemble.stageForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ensemble stage Foreground color."
+            },
+            "ensemble.thinkingBorder": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ensemble thinking Border color."
+            },
+            "ensemble.thinkingCollapsedForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ensemble thinking Collapsed Foreground color."
+            },
+            "ensemble.thinkingForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ensemble thinking Foreground color."
+            },
+            "ensemble.workingForeground": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$",
+              "description": "Ensemble working Foreground color."
+            }
+          }
+        },
+        "tokenColors": {
+          "type": "array",
+          "minItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "scope",
+              "settings"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scope": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                ]
+              },
+              "settings": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "foreground": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  },
+                  "background": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  },
+                  "fontStyle": {
+                    "type": "string",
+                    "pattern": "^(|italic|bold|underline|strikethrough)( (italic|bold|underline|strikethrough))*$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "derivationReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "acceptedDefaults",
+        "overrides",
+        "rationale"
+      ],
+      "properties": {
+        "acceptedDefaults": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "workbench.focusedHostAccent",
+              "editor.lineHighlightBackground",
+              "editor.findMatchBackground",
+              "editor.findMatchHighlightBackground",
+              "editor.findMatchForeground",
+              "editor.selectionForeground",
+              "editorBracketMatch.background",
+              "editorGutter.background",
+              "editorGutter.addedBackground",
+              "editorGutter.modifiedBackground",
+              "editorGutter.deletedBackground",
+              "editorGutter.foldingControlForeground",
+              "sideBarSectionHeader.background",
+              "sideBarSectionHeader.foreground",
+              "list.hoverBackground",
+              "list.inactiveSelectionBackground",
+              "disabledForeground",
+              "button.hoverBackground",
+              "scrollbar.shadow",
+              "scrollbarSlider.background",
+              "scrollbarSlider.hoverBackground",
+              "scrollbarSlider.activeBackground",
+              "dropdown.background",
+              "dropdown.foreground",
+              "dropdown.border",
+              "editorSuggestWidget.background",
+              "editorSuggestWidget.foreground",
+              "editorSuggestWidget.border",
+              "editorSuggestWidget.selectedBackground",
+              "editorSuggestWidget.highlightForeground",
+              "editorHoverWidget.background",
+              "editorHoverWidget.foreground",
+              "editorHoverWidget.border",
+              "notification.background",
+              "notification.foreground",
+              "diffEditor.insertedLineBackground",
+              "diffEditor.modifiedLineBackground",
+              "diffEditor.removedLineBackground",
+              "diffEditor.diagonalFill",
+              "statusBarItem.errorBackground",
+              "statusBarItem.warningBackground",
+              "statusBarItem.warningForeground",
+              "titleBar.activeBackground",
+              "titleBar.activeForeground",
+              "textBlockQuote.background",
+              "textLink.foreground",
+              "textPreformat.foreground",
+              "testing.iconPassed"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "workbench.focusedHostAccent",
+              "editor.lineHighlightBackground",
+              "editor.findMatchBackground",
+              "editor.findMatchHighlightBackground",
+              "editor.findMatchForeground",
+              "editor.selectionForeground",
+              "editorBracketMatch.background",
+              "editorGutter.background",
+              "editorGutter.addedBackground",
+              "editorGutter.modifiedBackground",
+              "editorGutter.deletedBackground",
+              "editorGutter.foldingControlForeground",
+              "sideBarSectionHeader.background",
+              "sideBarSectionHeader.foreground",
+              "list.hoverBackground",
+              "list.inactiveSelectionBackground",
+              "disabledForeground",
+              "button.hoverBackground",
+              "scrollbar.shadow",
+              "scrollbarSlider.background",
+              "scrollbarSlider.hoverBackground",
+              "scrollbarSlider.activeBackground",
+              "dropdown.background",
+              "dropdown.foreground",
+              "dropdown.border",
+              "editorSuggestWidget.background",
+              "editorSuggestWidget.foreground",
+              "editorSuggestWidget.border",
+              "editorSuggestWidget.selectedBackground",
+              "editorSuggestWidget.highlightForeground",
+              "editorHoverWidget.background",
+              "editorHoverWidget.foreground",
+              "editorHoverWidget.border",
+              "notification.background",
+              "notification.foreground",
+              "diffEditor.insertedLineBackground",
+              "diffEditor.modifiedLineBackground",
+              "diffEditor.removedLineBackground",
+              "diffEditor.diagonalFill",
+              "statusBarItem.errorBackground",
+              "statusBarItem.warningBackground",
+              "statusBarItem.warningForeground",
+              "titleBar.activeBackground",
+              "titleBar.activeForeground",
+              "textBlockQuote.background",
+              "textLink.foreground",
+              "textPreformat.foreground",
+              "testing.iconPassed"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

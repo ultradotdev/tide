@@ -1,0 +1,35 @@
+# Build output
+/target/
+# A release binary copied to the checkout root.
+/tide
+
+# Environment and secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# Local AI-agent and editor state
+.agents/
+.claude/
+.codex/
+.cortex/
+.cursor/
+.eva/
+.opencode/
+.mcp.json
+AGENTS.md
+CLAUDE*.md
+.github/agents/
+.github/hooks/
+.github/instructions/
+
+# Local workspace metadata, delivery runs and working notes
+.tide/
+.ultra/
+.ui-delivery/
+.ultra-delegation/
+artifacts/
+context/
+cca-context/

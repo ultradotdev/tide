@@ -1,0 +1,244 @@
+{
+  "$schema": "./release.schema.json",
+  "schemaVersion": 2,
+  "status": {
+    "release": "planned",
+    "distribution": "in-validation",
+    "prerelease": true
+  },
+  "website": {
+    "headline": "Terminal-Native Agentic IDE",
+    "description": "Code, Git, databases, terminal, editing, agent CLIs and more, all in one terminal-native workspace."
+  },
+  "releasePolicy": {
+    "tag": "v0.10.0",
+    "tagPattern": "v*",
+    "title": "Tide v0.10.0",
+    "notesPath": "docs/v0.10.0-prerelease.md",
+    "manualRunsMayPublish": false,
+    "publicationActor": "thekeith",
+    "checksumsFilename": "SHA256SUMS",
+    "attestation": "github-artifact-attestation",
+    "replaceExistingAssets": false,
+    "archiveRoot": "artifact-stem",
+    "timestampSource": "source-commit"
+  },
+  "platforms": [
+    {
+      "id": "darwin",
+      "name": "macOS",
+      "architectures": [
+        "arm64",
+        "x64"
+      ],
+      "status": "planned-unpublished"
+    },
+    {
+      "id": "linux",
+      "name": "Linux",
+      "architectures": [
+        "arm64",
+        "x64"
+      ],
+      "status": "planned-unpublished"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "darwin-arm64",
+      "filename": "tide-v0.10.0-darwin-arm64.zip",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "status": "planned-unpublished",
+      "runner": "macos-15",
+      "archiveFormat": "zip",
+      "signing": "developer-id",
+      "notarization": "notarytool",
+      "smokeChecks": [
+        "version",
+        "terminal",
+        "catalogs",
+        "model-catalog"
+      ],
+      "rustTarget": "aarch64-apple-darwin",
+      "minimumOS": "14.0"
+    },
+    {
+      "id": "darwin-x64",
+      "filename": "tide-v0.10.0-darwin-x64.zip",
+      "platform": "darwin",
+      "architecture": "x64",
+      "status": "planned-unpublished",
+      "runner": "macos-15-intel",
+      "archiveFormat": "zip",
+      "signing": "developer-id",
+      "notarization": "notarytool",
+      "smokeChecks": [
+        "version",
+        "terminal",
+        "catalogs",
+        "model-catalog"
+      ],
+      "rustTarget": "x86_64-apple-darwin",
+      "minimumOS": "14.0"
+    },
+    {
+      "id": "linux-arm64",
+      "filename": "tide-v0.10.0-linux-arm64.tar.gz",
+      "platform": "linux",
+      "architecture": "arm64",
+      "status": "planned-unpublished",
+      "runner": "ubuntu-24.04-arm",
+      "archiveFormat": "tar.gz",
+      "signing": "none",
+      "notarization": "none",
+      "smokeChecks": [
+        "version",
+        "terminal",
+        "catalogs",
+        "model-catalog"
+      ],
+      "rustTarget": "aarch64-unknown-linux-gnu",
+      "buildImage": "ubuntu:22.04",
+      "minimumGlibc": "2.35"
+    },
+    {
+      "id": "linux-x64",
+      "filename": "tide-v0.10.0-linux-x64.tar.gz",
+      "platform": "linux",
+      "architecture": "x64",
+      "status": "planned-unpublished",
+      "runner": "ubuntu-24.04",
+      "archiveFormat": "tar.gz",
+      "signing": "none",
+      "notarization": "none",
+      "smokeChecks": [
+        "version",
+        "terminal",
+        "catalogs",
+        "model-catalog"
+      ],
+      "rustTarget": "x86_64-unknown-linux-gnu",
+      "buildImage": "ubuntu:22.04",
+      "minimumGlibc": "2.35"
+    },
+    {
+      "id": "checksums",
+      "filename": "SHA256SUMS",
+      "platform": "all",
+      "architecture": "all",
+      "status": "planned-unpublished"
+    }
+  ],
+  "commands": {
+    "binaryInstall": {
+      "status": "in-validation",
+      "commands": [
+        "curl -fsSL https://ultra.dev/tide/install.sh | sh"
+      ]
+    },
+    "binaryUninstall": {
+      "status": "in-validation",
+      "commands": [
+        "curl -fsSL https://ultra.dev/tide/uninstall.sh | sh"
+      ]
+    },
+    "sourceBuild": {
+      "status": "available-in-source-checkout",
+      "commands": [
+        "cargo build --locked --release -p tide",
+        "./target/release/tide .",
+        "./install-from-source.sh"
+      ]
+    }
+  },
+  "features": {
+    "releaseReady": [
+      {
+        "id": "editor",
+        "name": "Code editing",
+        "description": "Terminal-native editing with syntax highlighting, LSP integration, panes, and keyboard navigation."
+      },
+      {
+        "id": "git",
+        "name": "Git workflows",
+        "description": "Source control, diffs, history, staging, commits, and safety-aware destructive actions."
+      },
+      {
+        "id": "terminal",
+        "name": "Terminal and TUI applications",
+        "description": "Integrated terminal tabs and a bottom dock with standards-oriented TUI compatibility."
+      },
+      {
+        "id": "postgresql",
+        "name": "PostgreSQL workspace",
+        "description": "Connections, schema browsing, SQL editing, query history, results, and row details."
+      },
+      {
+        "id": "external-ai-cli",
+        "name": "External AI CLI integrations",
+        "description": "Detected provider tabs and workspace session discovery for five supported AI CLIs."
+      },
+      {
+        "id": "themes",
+        "name": "Themes",
+        "description": "Thirteen built-in semantic themes with source-backed syntax palettes and Ultra Dusk as the default."
+      }
+    ],
+    "experimental": [],
+    "deferred": [
+      {
+        "id": "wsl",
+        "name": "Windows Subsystem for Linux",
+        "description": "WSL packaging and support verification are deferred until after v0.10.0."
+      },
+      {
+        "id": "binary-distribution",
+        "name": "Published binary distribution",
+        "description": "Rust 0.10.0 archives and installation are being validated privately. Public downloads are unavailable."
+      }
+    ]
+  },
+  "externalAiClis": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "executable": "claude",
+      "status": "release-ready"
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "executable": "codex",
+      "status": "release-ready"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini CLI",
+      "executable": "gemini",
+      "status": "release-ready"
+    },
+    {
+      "id": "antigravity",
+      "name": "Antigravity CLI",
+      "executable": "agy",
+      "status": "release-ready"
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "executable": "opencode",
+      "status": "release-ready"
+    }
+  ],
+  "urls": {
+    "documentation": "https://github.com/ultradotdev/tide/tree/main/docs",
+    "security": "https://github.com/ultradotdev/tide/security/policy",
+    "license": "https://github.com/ultradotdev/tide/blob/main/LICENSE",
+    "contributing": "https://github.com/ultradotdev/tide/blob/main/CONTRIBUTING.md",
+    "support": "https://github.com/ultradotdev/tide/issues",
+    "repository": "https://github.com/ultradotdev/tide",
+    "issues": "https://github.com/ultradotdev/tide/issues",
+    "homepage": "https://ultra.dev/tide"
+  }
+}

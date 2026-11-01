@@ -1,0 +1,44 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: "snapshot_modal(120, 40, |app|\n{\n    app.overlay =\n    Some(modal::confirm(ConfirmAction::CloseDirty, \"Unsaved Changes\",\n    \"Discard changes in this tab?\",));\n})"
+---
+ ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+No files · . hidden · Enter expand/│Tide
+                                   │
+                                   │A terminal-native code editor.
+                                   │
+                                   │Ctrl+P  quick open    Ctrl+K  commands
+                                   ┌ Unsaved Changes ───────────────────────────────┐
+                                   │Discard changes in this tab?                    │
+                                   │                                                │
+                                   │                                                │
+                                   │                                                │
+                                   │                                                │
+                                   │     Save [Y]   Discard [N]   Cancel [Esc]      │
+                                   │Tab/Arrows · Enter · Esc · PgDn scroll          │
+                                   └────────────────────────────────────────────────┘
+                                   │
+                                   │
+                                   │
+Enter open · ←/→ folders · . hidden│
+ ▼ Source Control                × │
+ no repository                     │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+ ▶ Outline                       × │
+ ▶ Timeline                      × │                                                                                  ↑
+ >_ │Tide 0.1 — Phase 1

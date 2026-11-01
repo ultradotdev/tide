@@ -1,0 +1,120 @@
+[
+  {
+    "themeId": "catppuccin-frappe",
+    "upstreamProject": "Catppuccin",
+    "upstreamUrl": "https://github.com/catppuccin/catppuccin",
+    "revision": "d09787dd98ca6fba08af5ef2ae94a7e09f17daca",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2021 Catppuccin",
+    "variant": "Frappé"
+  },
+  {
+    "themeId": "catppuccin-latte",
+    "upstreamProject": "Catppuccin",
+    "upstreamUrl": "https://github.com/catppuccin/catppuccin",
+    "revision": "d09787dd98ca6fba08af5ef2ae94a7e09f17daca",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2021 Catppuccin",
+    "variant": "Latte"
+  },
+  {
+    "themeId": "catppuccin-macchiato",
+    "upstreamProject": "Catppuccin",
+    "upstreamUrl": "https://github.com/catppuccin/catppuccin",
+    "revision": "d09787dd98ca6fba08af5ef2ae94a7e09f17daca",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2021 Catppuccin",
+    "variant": "Macchiato"
+  },
+  {
+    "themeId": "catppuccin-mocha",
+    "upstreamProject": "Catppuccin",
+    "upstreamUrl": "https://github.com/catppuccin/catppuccin",
+    "revision": "d09787dd98ca6fba08af5ef2ae94a7e09f17daca",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2021 Catppuccin",
+    "variant": "Mocha"
+  },
+  {
+    "themeId": "one-dark",
+    "upstreamProject": "Atom One Dark Syntax",
+    "upstreamUrl": "https://github.com/atom/one-dark-syntax",
+    "revision": "9c96f4454362267ac45322063e193ccf9d2debb1",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2014 GitHub Inc.",
+    "variant": "Standard dark"
+  },
+  {
+    "themeId": "dracula",
+    "upstreamProject": "Dracula Theme",
+    "upstreamUrl": "https://github.com/dracula/dracula-theme",
+    "revision": "8c91e9e0a89cd97dd2fd6da7fec054dd6d920daa",
+    "license": "MIT",
+    "attribution": "Copyright (c) Dracula Theme",
+    "variant": "Standard dark"
+  },
+  {
+    "themeId": "nord",
+    "upstreamProject": "Nord",
+    "upstreamUrl": "https://github.com/nordtheme/nord",
+    "revision": "1cef71605416a222e57225b544540ce0fcec18d4",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2016-present Sven Greb",
+    "variant": "Standard dark"
+  },
+  {
+    "themeId": "tokyo-night",
+    "upstreamProject": "Tokyo Night",
+    "upstreamUrl": "https://github.com/tokyo-night/tokyo-night-vscode-theme",
+    "revision": "7c0f11eaef322f293621ca7befe462214b7ea468",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2021 enkia",
+    "variant": "Night"
+  },
+  {
+    "themeId": "gruvbox-dark",
+    "upstreamProject": "Gruvbox",
+    "upstreamUrl": "https://github.com/morhetz/gruvbox",
+    "revision": "5d15b2765f59754d7ac263c88a0f6e3e58124951",
+    "license": "MIT/X11",
+    "attribution": "Copyright (c) 2012 Pavel Pertsev",
+    "variant": "Dark, medium contrast"
+  },
+  {
+    "themeId": "solarized-dark",
+    "upstreamProject": "Solarized",
+    "upstreamUrl": "https://github.com/altercation/solarized",
+    "revision": "62f656a02f93c5190a8753159e34b385588d5ff3",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2011 Ethan Schoonover",
+    "variant": "Dark"
+  },
+  {
+    "themeId": "solarized-light",
+    "upstreamProject": "Solarized",
+    "upstreamUrl": "https://github.com/altercation/solarized",
+    "revision": "62f656a02f93c5190a8753159e34b385588d5ff3",
+    "license": "MIT",
+    "attribution": "Copyright (c) 2011 Ethan Schoonover",
+    "variant": "Light"
+  },
+  {
+    "themeId": "rose-pine",
+    "upstreamProject": "Rosé Pine Palette",
+    "upstreamUrl": "https://github.com/rose-pine/rose-pine-palette",
+    "revision": "92af52b465ab6e47437aca223c9b8d3009a2023b",
+    "license": "MIT",
+    "attribution": "Copyright (c) Rosé Pine",
+    "variant": "Main"
+  },
+  {
+    "themeId": "ultra-dusk",
+    "sourceKind": "original",
+    "sourceProject": "Ultra",
+    "sourcePath": "docs/theme-builder/ultra-dusk-design-response.json",
+    "sourceSha256": "b34d8200785c23678241c5a74373fc6ea67220bb323ee336378a5a90b8ea4883",
+    "license": "Apache-2.0",
+    "attribution": "Original Ultra theme by Zorz LLC",
+    "variant": "Dusk"
+  }
+]

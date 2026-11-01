@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultra.dev/tide/schemas/release-metadata-v1.json",
+  "title": "Tide release metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "website",
+    "releasePolicy",
+    "platforms",
+    "artifacts",
+    "commands",
+    "features",
+    "externalAiClis",
+    "urls"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release",
+        "distribution",
+        "prerelease"
+      ],
+      "properties": {
+        "release": {
+          "const": "planned"
+        },
+        "distribution": {
+          "enum": [
+            "in-validation",
+            "implemented-unpublished"
+          ]
+        },
+        "prerelease": {
+          "const": true
+        }
+      }
+    },
+    "website": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headline",
+        "description"
+      ],
+      "properties": {
+        "headline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "releasePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "tagPattern",
+        "title",
+        "notesPath",
+        "manualRunsMayPublish",
+        "publicationActor",
+        "checksumsFilename",
+        "attestation",
+        "replaceExistingAssets",
+        "archiveRoot",
+        "timestampSource"
+      ],
+      "properties": {
+        "tag": {
+          "const": "v0.10.0"
+        },
+        "tagPattern": {
+          "const": "v*"
+        },
+        "title": {
+          "const": "Tide v0.10.0"
+        },
+        "notesPath": {
+          "const": "docs/v0.10.0-prerelease.md"
+        },
+        "manualRunsMayPublish": {
+          "const": false
+        },
+        "publicationActor": {
+          "const": "thekeith"
+        },
+        "checksumsFilename": {
+          "const": "SHA256SUMS"
+        },
+        "attestation": {
+          "const": "github-artifact-attestation"
+        },
+        "replaceExistingAssets": {
+          "const": false
+        },
+        "archiveRoot": {
+          "const": "artifact-stem"
+        },
+        "timestampSource": {
+          "const": "source-commit"
+        }
+      }
+    },
+    "platforms": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "architectures",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "darwin",
+              "linux"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "architectures": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "arm64",
+                "x64"
+              ]
+            },
+            "minItems": 2,
+            "uniqueItems": true
+          },
+          "status": {
+            "const": "planned-unpublished"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/releaseArtifact"
+          },
+          {
+            "$ref": "#/$defs/checksumArtifact"
+          }
+        ]
+      }
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binaryInstall",
+        "binaryUninstall",
+        "sourceBuild"
+      ],
+      "properties": {
+        "binaryInstall": {
+          "$ref": "#/$defs/commandSet"
+        },
+        "binaryUninstall": {
+          "$ref": "#/$defs/commandSet"
+        },
+        "sourceBuild": {
+          "$ref": "#/$defs/commandSet"
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "releaseReady",
+        "experimental",
+        "deferred"
+      ],
+      "properties": {
+        "releaseReady": {
+          "$ref": "#/$defs/features"
+        },
+        "experimental": {
+          "$ref": "#/$defs/features"
+        },
+        "deferred": {
+          "$ref": "#/$defs/features"
+        }
+      }
+    },
+    "externalAiClis": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "executable",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "executable": {
+            "type": "string"
+          },
+          "status": {
+            "const": "release-ready"
+          }
+        }
+      }
+    },
+    "urls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documentation",
+        "security",
+        "license",
+        "contributing",
+        "support",
+        "repository",
+        "issues",
+        "homepage"
+      ],
+      "properties": {
+        "documentation": {
+          "type": "string",
+          "format": "uri"
+        },
+        "security": {
+          "type": "string",
+          "format": "uri"
+        },
+        "license": {
+          "type": "string",
+          "format": "uri"
+        },
+        "contributing": {
+          "type": "string",
+          "format": "uri"
+        },
+        "support": {
+          "type": "string",
+          "format": "uri"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "issues": {
+          "type": "string",
+          "format": "uri"
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "releaseArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "filename",
+        "platform",
+        "architecture",
+        "status",
+        "runner",
+        "archiveFormat",
+        "signing",
+        "notarization",
+        "smokeChecks",
+        "rustTarget"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "darwin-arm64",
+            "darwin-x64",
+            "linux-arm64",
+            "linux-x64"
+          ]
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^tide-v0\\.10\\.0-(darwin|linux)-(arm64|x64)\\.(zip|tar\\.gz)$"
+        },
+        "platform": {
+          "enum": [
+            "darwin",
+            "linux"
+          ]
+        },
+        "architecture": {
+          "enum": [
+            "arm64",
+            "x64"
+          ]
+        },
+        "status": {
+          "const": "planned-unpublished"
+        },
+        "runner": {
+          "enum": [
+            "macos-15",
+            "macos-15-intel",
+            "ubuntu-24.04",
+            "ubuntu-24.04-arm"
+          ]
+        },
+        "archiveFormat": {
+          "enum": [
+            "zip",
+            "tar.gz"
+          ]
+        },
+        "signing": {
+          "enum": [
+            "developer-id",
+            "none"
+          ]
+        },
+        "notarization": {
+          "enum": [
+            "notarytool",
+            "none"
+          ]
+        },
+        "smokeChecks": {
+          "type": "array",
+          "const": [
+            "version",
+            "terminal",
+            "catalogs",
+            "model-catalog"
+          ]
+        },
+        "rustTarget": {
+          "enum": [
+            "aarch64-apple-darwin",
+            "x86_64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu"
+          ]
+        },
+        "buildImage": {
+          "const": "ubuntu:22.04"
+        },
+        "minimumGlibc": {
+          "const": "2.35"
+        },
+        "minimumOS": {
+          "const": "14.0"
+        }
+      }
+    },
+    "checksumArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "filename",
+        "platform",
+        "architecture",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "const": "checksums"
+        },
+        "filename": {
+          "const": "SHA256SUMS"
+        },
+        "platform": {
+          "const": "all"
+        },
+        "architecture": {
+          "const": "all"
+        },
+        "status": {
+          "const": "planned-unpublished"
+        }
+      }
+    },
+    "commandSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "commands"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "in-validation",
+            "implemented-unpublished",
+            "available-in-source-checkout"
+          ]
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "defaultEnabled": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

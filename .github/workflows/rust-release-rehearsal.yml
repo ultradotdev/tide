@@ -1,0 +1,95 @@
+name: Rust release rehearsal
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "Cargo*"
+      - "rust-toolchain.toml"
+      - "crates/**"
+      - "config/**"
+      - "scripts/rust-release-linux.Dockerfile"
+      - "xtask/**"
+      - "install*.sh"
+      - "uninstall.sh"
+      - "docs/ATTRIBUTIONS.md"
+      - ".github/workflows/rust-release-rehearsal.yml"
+permissions:
+  contents: read
+jobs:
+  reference:
+    name: Compiled Rust reference candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with: {toolchain: 1.97.1}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      - run: cargo test --locked -p tide-ui reference::tests
+      - run: cargo fetch --locked
+      - run: cargo xtask generate-rust-notices --write
+      - run: cargo xtask generate-rust-notices --check
+      - run: cargo xtask generate-rust-reference --write
+      - run: cargo xtask generate-rust-reference --check
+      - run: cargo xtask generate-tide-site-package --write
+      - run: cargo xtask generate-tide-site-package --check
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rust-reference-${{ github.sha }}
+          path: |
+            docs/ATTRIBUTIONS.md
+            docs/reference/
+            docs/site/
+          if-no-files-found: error
+          retention-days: 14
+  build:
+    name: Rehearsal artifact / ${{ matrix.id }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {id: darwin-arm64, runner: macos-15, target: aarch64-apple-darwin}
+          - {id: darwin-x64, runner: macos-15-intel, target: x86_64-apple-darwin}
+          - {id: linux-arm64, runner: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu}
+          - {id: linux-x64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with: {toolchain: 1.97.1}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      - name: Build macOS Rust executable
+        if: startsWith(matrix.id, 'darwin')
+        env: {MACOSX_DEPLOYMENT_TARGET: "14.0"}
+        run: |
+          cargo build --locked --release --target=${{ matrix.target }} -p tide
+          mkdir -p "$RUNNER_TEMP/rust-payload"
+          cp target/${{ matrix.target }}/release/tide "$RUNNER_TEMP/rust-payload/tide"
+      - name: Build Linux against Ubuntu 22.04
+        if: startsWith(matrix.id, 'linux')
+        run: cargo xtask build-rust-linux-release "${{ matrix.target }}" "$RUNNER_TEMP/rust-payload" --repeat
+      - name: Package and smoke-test actual Rust binary
+        run: |
+          cargo xtask package-release-artifact package \
+            --artifact-id=${{ matrix.id }} --repository-root="$GITHUB_WORKSPACE" \
+            --binary="$RUNNER_TEMP/rust-payload/tide" --output-directory="$RUNNER_TEMP/rust-artifacts" \
+            --source-commit="$GITHUB_SHA"
+          cargo xtask verify-rust-release-install --binary "$RUNNER_TEMP/rust-payload/tide"
+      - name: Record size, hash and dependency evidence
+        run: cargo xtask record-rust-artifact --binary "$RUNNER_TEMP/rust-payload/tide" --artifact-directory "$RUNNER_TEMP/rust-artifacts" --target "${{ matrix.target }}" --source-commit "$GITHUB_SHA"
+      - name: Upload rehearsal candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rust-010-${{ matrix.id }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-artifacts/*.zip
+            ${{ runner.temp }}/rust-artifacts/*.tar.gz
+            ${{ runner.temp }}/rust-artifacts/build-evidence.json
+            ${{ runner.temp }}/rust-payload/dependencies.txt
+            ${{ runner.temp }}/rust-payload/elf-versions.txt
+            ${{ runner.temp }}/rust-payload/reproducibility.json
+          if-no-files-found: error
+          retention-days: 14

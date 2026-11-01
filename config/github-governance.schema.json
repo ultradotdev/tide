@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tide GitHub Governance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "repository", "owner", "requiredChecks", "expectedAccess", "repositorySettings", "rulesets", "environments", "cutoverOrder"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "repository": { "const": "ultradotdev/tide" },
+    "owner": { "const": "thekeith" },
+    "requiredChecks": { "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": { "type": "string" } },
+    "expectedAccess": { "$ref": "#/$defs/access" },
+    "repositorySettings": { "$ref": "#/$defs/settings" },
+    "rulesets": { "type": "array", "minItems": 5, "items": { "$ref": "#/$defs/ruleset" } },
+    "environments": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/environment" } },
+    "cutoverOrder": { "type": "array", "minItems": 7, "items": { "type": "string" } }
+  },
+  "$defs": {
+    "stringArray": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "access": { "type": "object", "additionalProperties": false, "required": ["organizationOwners", "repositoryAdmins", "repositoryWriters", "writeTeams", "writeApps", "writeDeployKeys"], "properties": { "organizationOwners": { "$ref": "#/$defs/stringArray" }, "repositoryAdmins": { "$ref": "#/$defs/stringArray" }, "repositoryWriters": { "$ref": "#/$defs/stringArray" }, "writeTeams": { "$ref": "#/$defs/stringArray" }, "writeApps": { "$ref": "#/$defs/stringArray" }, "writeDeployKeys": { "$ref": "#/$defs/stringArray" } } },
+    "settings": { "type": "object", "additionalProperties": false, "required": ["allowSquashMerge", "allowMergeCommit", "allowRebaseMerge", "allowAutoMerge", "deleteBranchOnMerge", "defaultWorkflowPermissions", "workflowsMayApprovePullRequests"], "properties": { "allowSquashMerge": { "const": true }, "allowMergeCommit": { "const": false }, "allowRebaseMerge": { "const": false }, "allowAutoMerge": { "const": false }, "deleteBranchOnMerge": { "const": true }, "defaultWorkflowPermissions": { "const": "read" }, "workflowsMayApprovePullRequests": { "const": false } } },
+    "ruleset": { "type": "object", "additionalProperties": false, "required": ["name", "target", "enforcement", "include", "bypassActors", "rules"], "properties": { "name": { "type": "string" }, "target": { "enum": ["branch", "tag"] }, "enforcement": { "const": "active" }, "include": { "$ref": "#/$defs/stringArray" }, "bypassActors": { "type": "array", "items": { "type": "object" } }, "rules": { "type": "array", "minItems": 1, "items": { "type": "object" } } } },
+    "environment": { "type": "object", "additionalProperties": false, "required": ["name", "reviewers", "preventSelfReview", "requiredSecrets", "deploymentTagPatterns"], "properties": { "name": { "type": "string" }, "reviewers": { "type": "array", "minItems": 1, "items": { "type": "object" } }, "preventSelfReview": { "const": false }, "requiredSecrets": { "$ref": "#/$defs/stringArray" }, "deploymentTagPatterns": { "$ref": "#/$defs/stringArray" } } }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultra.dev/tide/schemas/site-release-v1.json",
+  "title": "Tide site-agent release handoff",
+  "type": "object",
+  "required": ["schemaVersion", "product", "release", "website", "platforms", "artifacts", "commands", "paths", "features", "externalAiClis", "urls", "source"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "product": { "type": "object" },
+    "release": { "type": "object" },
+    "website": { "type": "object" },
+    "platforms": { "type": "array" },
+    "artifacts": { "type": "array" },
+    "commands": { "type": "object" },
+    "paths": { "type": "object" },
+    "features": { "type": "object" },
+    "externalAiClis": { "type": "array", "minItems": 5, "maxItems": 5 },
+    "urls": { "type": "object" },
+    "source": {
+      "type": "object",
+      "required": ["contentHash", "lastVerifiedGitFingerprint"],
+      "properties": {
+        "contentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "lastVerifiedGitFingerprint": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+      }
+    }
+  }
+}

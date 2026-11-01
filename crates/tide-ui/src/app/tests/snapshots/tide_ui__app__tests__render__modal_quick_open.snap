@@ -1,0 +1,44 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: "snapshot_modal(120, 40, |app| { app.open_quick_open(); app.settle(); })"
+---
+ ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+No files · . hidden · Enter expand/│Tide
+                                   │
+                                   │A terminal-native code editor.
+                                   │
+                                   │Ctrl+P  quick open    Ctrl+K  commands
+                         ┌ Quick Open ────────────────────────────────────────────────────────┐
+                         │>                                                                   │
+                         │────────────────────────────────────────────────────────────────────│
+                         │ No items available                                                 │
+                         │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+Enter open · ←/→ folders │                                                                    │
+ ▼ Source Control        │                                                                    │
+ no repository           │                                                                    │
+                         │                                                                    │
+                         │                                                                    │
+                         │                        Open   Cancel [Esc]                         │
+                         │Enter open   Esc cancel                                      0 items│
+                         └────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+ ▶ Outline                       × │
+ ▶ Timeline                      × │                                                                                  ↑
+ >_ │0 files

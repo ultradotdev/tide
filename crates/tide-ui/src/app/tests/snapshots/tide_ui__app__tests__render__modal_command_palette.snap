@@ -1,0 +1,44 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: "snapshot_modal(120, 40, |app| app.open_command_palette())"
+---
+ ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+No files · . hidden · Enter expand/│Tide
+                                   │
+                                   │A terminal-native code editor.
+                                   │
+                                   │Ctrl+P  quick open    Ctrl+K  commands
+                              ┌ Command Palette ─────────────────────────────────────────┐
+                              │>                                                         │
+                              │──────────────────────────────────────────────────────────│
+                              │ Agents: Archive Selected Session...                    AI│
+                              │ Agents: Associate Previous Workspace...            AI CLI│
+                              │ Agents: Delete Selected Session...                     AI│
+                              │ Agents: New Session...                                 AI│
+                              │ Agents: Open Session...                                AI│
+                              │ Agents: Refresh Sessions                               AI│
+                              │ Agents: Rename Selected Session...                     AI│
+                              │ Agents: Toggle Sidebar                                 AI│
+                              │ AI CLI: New...                                         AI│
+Enter open · ←/→ folders · . h│ AI CLI: Open Session...                                AI│
+ ▼ Source Control             │ AI CLI: Refresh Sessions                               AI│
+ no repository                │ AI CLI: Toggle                                         AI│
+                              │ Database: Add Row                               Workbench│
+                              │ Browse Schema                                    Database│
+                              │                   Open   Cancel [Esc]                    │
+                              │Enter open   Esc cancel                          175 items│
+                              └──────────────────────────────────────────────────────────┘
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+ ▶ Outline                       × │
+ ▶ Timeline                      × │                                                                                  ↑
+ >_ │Tide 0.1 — Phase 1

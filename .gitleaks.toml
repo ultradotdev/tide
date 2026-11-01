@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public AES-GCM authentication tag in the synthetic Rust interoperability fixture"
+condition = "AND"
+paths = ['''^crates/tide-ai/tests/fixtures/secrets-v2\.json$''']
+regexTarget = "match"
+regexes = ['''authTag":"tJkTZZ89V0IBTDa0lRxkxA=="''']

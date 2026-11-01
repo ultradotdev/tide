@@ -1,0 +1,1380 @@
+{
+  "schemaVersion": 1,
+  "sourceOfTruth": "src/services/theme/roles.ts",
+  "counts": {
+    "requiredAuthored": 83,
+    "workbench": 44,
+    "terminalSurface": 3,
+    "terminalAnsi": 16,
+    "syntaxAndSymbols": 20,
+    "derived": 48,
+    "optionalDomain": 44,
+    "compatibilityAliases": 5,
+    "totalResolved": 175
+  },
+  "authoredNamespaces": {
+    "workbench": [
+      {
+        "id": "editor.background",
+        "owner": "editor",
+        "purpose": "Primary source editor canvas."
+      },
+      {
+        "id": "editor.foreground",
+        "owner": "editor",
+        "purpose": "Default source text and editor content.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editor.selectionBackground",
+        "owner": "editor",
+        "purpose": "Selected source text background."
+      },
+      {
+        "id": "editorCursor.foreground",
+        "owner": "editor",
+        "purpose": "Application-painted editor and field caret.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorLineNumber.foreground",
+        "owner": "editor",
+        "purpose": "Editor Line Number foreground color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorLineNumber.activeForeground",
+        "owner": "editor",
+        "purpose": "Editor Line Number active Foreground color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorGroup.border",
+        "owner": "chrome",
+        "purpose": "Neutral boundary between main editor groups."
+      },
+      {
+        "id": "editorGroupHeader.tabsBackground",
+        "owner": "chrome",
+        "purpose": "Main tab-strip surface behind tabs."
+      },
+      {
+        "id": "editorWidget.background",
+        "owner": "dialog",
+        "purpose": "Modal, floating widget, and dialog surface."
+      },
+      {
+        "id": "editorWidget.foreground",
+        "owner": "dialog",
+        "purpose": "Primary text on widget and dialog surfaces.",
+        "contrastWith": "editorWidget.background"
+      },
+      {
+        "id": "editorWidget.border",
+        "owner": "dialog",
+        "purpose": "Boundary around widgets and dialogs."
+      },
+      {
+        "id": "sideBar.background",
+        "owner": "chrome",
+        "purpose": "Workspace and Agents sidebar body surface."
+      },
+      {
+        "id": "sideBar.foreground",
+        "owner": "chrome",
+        "purpose": "Primary sidebar content text.",
+        "contrastWith": "sideBar.background"
+      },
+      {
+        "id": "sideBar.border",
+        "owner": "chrome",
+        "purpose": "Neutral sidebar boundary."
+      },
+      {
+        "id": "sideBarTitle.foreground",
+        "owner": "chrome",
+        "purpose": "Top-level sidebar and accordion title text.",
+        "contrastWith": "sideBar.background"
+      },
+      {
+        "id": "panel.background",
+        "owner": "chrome",
+        "purpose": "Bottom dock and panel body surface."
+      },
+      {
+        "id": "panel.foreground",
+        "owner": "chrome",
+        "purpose": "Primary bottom dock and panel text.",
+        "contrastWith": "panel.background"
+      },
+      {
+        "id": "panel.border",
+        "owner": "chrome",
+        "purpose": "Neutral bottom dock and panel boundary."
+      },
+      {
+        "id": "tab.activeBackground",
+        "owner": "chrome",
+        "purpose": "Selected tab surface within any host."
+      },
+      {
+        "id": "tab.activeForeground",
+        "owner": "chrome",
+        "purpose": "Selected tab label within any host.",
+        "contrastWith": "tab.activeBackground"
+      },
+      {
+        "id": "tab.inactiveBackground",
+        "owner": "chrome",
+        "purpose": "Unselected tab surface."
+      },
+      {
+        "id": "tab.inactiveForeground",
+        "owner": "chrome",
+        "purpose": "Unselected tab label.",
+        "contrastWith": "tab.inactiveBackground"
+      },
+      {
+        "id": "tab.border",
+        "owner": "chrome",
+        "purpose": "Separator between adjacent tabs."
+      },
+      {
+        "id": "tab.activeBorderTop",
+        "owner": "chrome",
+        "purpose": "Accent line for the active tab."
+      },
+      {
+        "id": "statusBar.background",
+        "owner": "chrome",
+        "purpose": "Workbench status-bar surface."
+      },
+      {
+        "id": "statusBar.foreground",
+        "owner": "chrome",
+        "purpose": "Primary status-bar text.",
+        "contrastWith": "statusBar.background"
+      },
+      {
+        "id": "input.background",
+        "owner": "dialog",
+        "purpose": "Editable field and search-input surface."
+      },
+      {
+        "id": "input.foreground",
+        "owner": "dialog",
+        "purpose": "Editable field and search-input text.",
+        "contrastWith": "input.background"
+      },
+      {
+        "id": "input.border",
+        "owner": "dialog",
+        "purpose": "Editable field boundary."
+      },
+      {
+        "id": "button.background",
+        "owner": "dialog",
+        "purpose": "Primary action surface."
+      },
+      {
+        "id": "button.foreground",
+        "owner": "dialog",
+        "purpose": "Primary action label.",
+        "contrastWith": "button.background"
+      },
+      {
+        "id": "list.activeSelectionBackground",
+        "owner": "content",
+        "purpose": "Selected row in the keyboard-owning list or tree."
+      },
+      {
+        "id": "list.activeSelectionForeground",
+        "owner": "content",
+        "purpose": "Text on the selected row.",
+        "contrastWith": "list.activeSelectionBackground"
+      },
+      {
+        "id": "focusBorder",
+        "owner": "workbench",
+        "purpose": "Semantic keyboard-focus accent, not a structural border color."
+      },
+      {
+        "id": "descriptionForeground",
+        "owner": "workbench",
+        "purpose": "Secondary copy, hints, metadata, and subdued labels.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorError.foreground",
+        "owner": "workbench",
+        "purpose": "Error and destructive semantic color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorWarning.foreground",
+        "owner": "workbench",
+        "purpose": "Warning semantic color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorInfo.foreground",
+        "owner": "workbench",
+        "purpose": "Information semantic color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "editorHint.foreground",
+        "owner": "workbench",
+        "purpose": "Hint and advisory semantic color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "successForeground",
+        "owner": "workbench",
+        "purpose": "Success and completed semantic color.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "gitDecoration.addedResourceForeground",
+        "owner": "git",
+        "purpose": "Added Git resource.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "gitDecoration.modifiedResourceForeground",
+        "owner": "git",
+        "purpose": "Modified Git resource.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "gitDecoration.deletedResourceForeground",
+        "owner": "git",
+        "purpose": "Deleted Git resource.",
+        "contrastWith": "editor.background"
+      },
+      {
+        "id": "gitDecoration.untrackedResourceForeground",
+        "owner": "git",
+        "purpose": "Untracked Git resource.",
+        "contrastWith": "editor.background"
+      }
+    ],
+    "terminalSurface": [
+      {
+        "id": "terminal.background",
+        "owner": "terminal",
+        "purpose": "Default terminal cell background."
+      },
+      {
+        "id": "terminal.foreground",
+        "owner": "terminal",
+        "purpose": "Default terminal cell foreground.",
+        "contrastWith": "terminal.background"
+      },
+      {
+        "id": "terminalCursor.foreground",
+        "owner": "terminal",
+        "purpose": "Ultra block cursor over terminal content.",
+        "contrastWith": "terminal.background"
+      }
+    ],
+    "terminalAnsi": [
+      {
+        "id": "terminal.ansiBlack",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Black color."
+      },
+      {
+        "id": "terminal.ansiRed",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Red color."
+      },
+      {
+        "id": "terminal.ansiGreen",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Green color."
+      },
+      {
+        "id": "terminal.ansiYellow",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Yellow color."
+      },
+      {
+        "id": "terminal.ansiBlue",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Blue color."
+      },
+      {
+        "id": "terminal.ansiMagenta",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Magenta color."
+      },
+      {
+        "id": "terminal.ansiCyan",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Cyan color."
+      },
+      {
+        "id": "terminal.ansiWhite",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI White color."
+      },
+      {
+        "id": "terminal.ansiBrightBlack",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Black color."
+      },
+      {
+        "id": "terminal.ansiBrightRed",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Red color."
+      },
+      {
+        "id": "terminal.ansiBrightGreen",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Green color."
+      },
+      {
+        "id": "terminal.ansiBrightYellow",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Yellow color."
+      },
+      {
+        "id": "terminal.ansiBrightBlue",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Blue color."
+      },
+      {
+        "id": "terminal.ansiBrightMagenta",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Magenta color."
+      },
+      {
+        "id": "terminal.ansiBrightCyan",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright Cyan color."
+      },
+      {
+        "id": "terminal.ansiBrightWhite",
+        "owner": "terminal",
+        "purpose": "Terminal ANSI Bright White color."
+      }
+    ],
+    "syntaxAndSymbols": [
+      {
+        "id": "comment.foreground",
+        "owner": "syntax",
+        "purpose": "Comment foreground color."
+      },
+      {
+        "id": "keyword.foreground",
+        "owner": "syntax",
+        "purpose": "Keyword foreground color."
+      },
+      {
+        "id": "string.foreground",
+        "owner": "syntax",
+        "purpose": "String foreground color."
+      },
+      {
+        "id": "number.foreground",
+        "owner": "syntax",
+        "purpose": "Number foreground color."
+      },
+      {
+        "id": "operator.foreground",
+        "owner": "syntax",
+        "purpose": "Operator foreground color."
+      },
+      {
+        "id": "function.foreground",
+        "owner": "syntax",
+        "purpose": "Function foreground color."
+      },
+      {
+        "id": "type.foreground",
+        "owner": "syntax",
+        "purpose": "Type foreground color."
+      },
+      {
+        "id": "variable.foreground",
+        "owner": "syntax",
+        "purpose": "Variable foreground color."
+      },
+      {
+        "id": "markup.heading",
+        "owner": "syntax",
+        "purpose": "Markup heading color."
+      },
+      {
+        "id": "markup.bold",
+        "owner": "syntax",
+        "purpose": "Markup bold color."
+      },
+      {
+        "id": "markup.italic",
+        "owner": "syntax",
+        "purpose": "Markup italic color."
+      },
+      {
+        "id": "markup.list",
+        "owner": "syntax",
+        "purpose": "Markup list color."
+      },
+      {
+        "id": "symbolIcon.classForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon class Foreground color."
+      },
+      {
+        "id": "symbolIcon.constantForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon constant Foreground color."
+      },
+      {
+        "id": "symbolIcon.functionForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon function Foreground color."
+      },
+      {
+        "id": "symbolIcon.interfaceForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon interface Foreground color."
+      },
+      {
+        "id": "symbolIcon.keyForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon key Foreground color."
+      },
+      {
+        "id": "symbolIcon.keywordForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon keyword Foreground color."
+      },
+      {
+        "id": "symbolIcon.moduleForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon module Foreground color."
+      },
+      {
+        "id": "symbolIcon.variableForeground",
+        "owner": "syntax",
+        "purpose": "Symbol Icon variable Foreground color."
+      }
+    ]
+  },
+  "derivedRoles": [
+    {
+      "id": "workbench.focusedHostAccent",
+      "owner": "chrome",
+      "purpose": "Workbench focused Host Accent color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "focusBorder"
+      }
+    },
+    {
+      "id": "editor.lineHighlightBackground",
+      "owner": "editor",
+      "purpose": "Editor line Highlight Background color.",
+      "derivation": {
+        "kind": "mix",
+        "role": "editor.background",
+        "toward": "editor.foreground",
+        "amount": 0.08
+      }
+    },
+    {
+      "id": "editor.findMatchBackground",
+      "owner": "editor",
+      "purpose": "Editor find Match Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "editorWarning.foreground",
+        "alpha": 0.45
+      }
+    },
+    {
+      "id": "editor.findMatchHighlightBackground",
+      "owner": "editor",
+      "purpose": "Editor find Match Highlight Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "editorInfo.foreground",
+        "alpha": 0.25
+      }
+    },
+    {
+      "id": "editor.findMatchForeground",
+      "owner": "editor",
+      "purpose": "Editor find Match Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "editor.selectionForeground",
+      "owner": "editor",
+      "purpose": "Editor selection Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "editorBracketMatch.background",
+      "owner": "editor",
+      "purpose": "Editor Bracket Match background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "focusBorder",
+        "alpha": 0.25
+      }
+    },
+    {
+      "id": "editorGutter.background",
+      "owner": "editor",
+      "purpose": "Editor Gutter background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.background"
+      }
+    },
+    {
+      "id": "editorGutter.addedBackground",
+      "owner": "git",
+      "purpose": "Editor Gutter added Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "gitDecoration.addedResourceForeground"
+      }
+    },
+    {
+      "id": "editorGutter.modifiedBackground",
+      "owner": "git",
+      "purpose": "Editor Gutter modified Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "gitDecoration.modifiedResourceForeground"
+      }
+    },
+    {
+      "id": "editorGutter.deletedBackground",
+      "owner": "git",
+      "purpose": "Editor Gutter deleted Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "gitDecoration.deletedResourceForeground"
+      }
+    },
+    {
+      "id": "editorGutter.foldingControlForeground",
+      "owner": "editor",
+      "purpose": "Editor Gutter folding Control Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "descriptionForeground"
+      }
+    },
+    {
+      "id": "sideBarSectionHeader.background",
+      "owner": "chrome",
+      "purpose": "Side Bar Section Header background color.",
+      "derivation": {
+        "kind": "mix",
+        "role": "sideBar.background",
+        "toward": "sideBar.foreground",
+        "amount": 0.1
+      }
+    },
+    {
+      "id": "sideBarSectionHeader.foreground",
+      "owner": "chrome",
+      "purpose": "Side Bar Section Header foreground color.",
+      "contrastWith": "sideBarSectionHeader.background",
+      "derivation": {
+        "kind": "fallback",
+        "role": "sideBar.foreground"
+      }
+    },
+    {
+      "id": "list.hoverBackground",
+      "owner": "content",
+      "purpose": "List hover Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "list.activeSelectionBackground",
+        "alpha": 0.45
+      }
+    },
+    {
+      "id": "list.inactiveSelectionBackground",
+      "owner": "content",
+      "purpose": "List inactive Selection Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "list.activeSelectionBackground",
+        "alpha": 0.6
+      }
+    },
+    {
+      "id": "disabledForeground",
+      "owner": "workbench",
+      "purpose": "Disabled Foreground color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "descriptionForeground",
+        "alpha": 0.65
+      }
+    },
+    {
+      "id": "button.hoverBackground",
+      "owner": "dialog",
+      "purpose": "Button hover Background color.",
+      "derivation": {
+        "kind": "mix",
+        "role": "button.background",
+        "toward": "button.foreground",
+        "amount": 0.12
+      }
+    },
+    {
+      "id": "scrollbar.shadow",
+      "owner": "chrome",
+      "purpose": "Scrollbar shadow color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "editor.background",
+        "alpha": 0.6
+      }
+    },
+    {
+      "id": "scrollbarSlider.background",
+      "owner": "chrome",
+      "purpose": "Scrollbar Slider background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "descriptionForeground",
+        "alpha": 0.35
+      }
+    },
+    {
+      "id": "scrollbarSlider.hoverBackground",
+      "owner": "chrome",
+      "purpose": "Scrollbar Slider hover Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "descriptionForeground",
+        "alpha": 0.55
+      }
+    },
+    {
+      "id": "scrollbarSlider.activeBackground",
+      "owner": "chrome",
+      "purpose": "Scrollbar Slider active Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "descriptionForeground",
+        "alpha": 0.75
+      }
+    },
+    {
+      "id": "dropdown.background",
+      "owner": "dialog",
+      "purpose": "Dropdown background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "dropdown.foreground",
+      "owner": "dialog",
+      "purpose": "Dropdown foreground color.",
+      "contrastWith": "dropdown.background",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.foreground"
+      }
+    },
+    {
+      "id": "dropdown.border",
+      "owner": "dialog",
+      "purpose": "Dropdown border color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.border"
+      }
+    },
+    {
+      "id": "editorSuggestWidget.background",
+      "owner": "dialog",
+      "purpose": "Editor Suggest Widget background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "editorSuggestWidget.foreground",
+      "owner": "dialog",
+      "purpose": "Editor Suggest Widget foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.foreground"
+      }
+    },
+    {
+      "id": "editorSuggestWidget.border",
+      "owner": "dialog",
+      "purpose": "Editor Suggest Widget border color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.border"
+      }
+    },
+    {
+      "id": "editorSuggestWidget.selectedBackground",
+      "owner": "dialog",
+      "purpose": "Editor Suggest Widget selected Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "list.activeSelectionBackground"
+      }
+    },
+    {
+      "id": "editorSuggestWidget.highlightForeground",
+      "owner": "dialog",
+      "purpose": "Editor Suggest Widget highlight Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "focusBorder"
+      }
+    },
+    {
+      "id": "editorHoverWidget.background",
+      "owner": "dialog",
+      "purpose": "Editor Hover Widget background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "editorHoverWidget.foreground",
+      "owner": "dialog",
+      "purpose": "Editor Hover Widget foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.foreground"
+      }
+    },
+    {
+      "id": "editorHoverWidget.border",
+      "owner": "dialog",
+      "purpose": "Editor Hover Widget border color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.border"
+      }
+    },
+    {
+      "id": "notification.background",
+      "owner": "dialog",
+      "purpose": "Notification background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "notification.foreground",
+      "owner": "dialog",
+      "purpose": "Notification foreground color.",
+      "contrastWith": "notification.background",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.foreground"
+      }
+    },
+    {
+      "id": "diffEditor.insertedLineBackground",
+      "owner": "git",
+      "purpose": "Diff Editor inserted Line Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "gitDecoration.addedResourceForeground",
+        "alpha": 0.2
+      }
+    },
+    {
+      "id": "diffEditor.modifiedLineBackground",
+      "owner": "git",
+      "purpose": "Diff Editor modified Line Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "gitDecoration.modifiedResourceForeground",
+        "alpha": 0.2
+      }
+    },
+    {
+      "id": "diffEditor.removedLineBackground",
+      "owner": "git",
+      "purpose": "Diff Editor removed Line Background color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "gitDecoration.deletedResourceForeground",
+        "alpha": 0.2
+      }
+    },
+    {
+      "id": "diffEditor.diagonalFill",
+      "owner": "git",
+      "purpose": "Diff Editor diagonal Fill color.",
+      "derivation": {
+        "kind": "alpha",
+        "role": "descriptionForeground",
+        "alpha": 0.25
+      }
+    },
+    {
+      "id": "statusBarItem.errorBackground",
+      "owner": "chrome",
+      "purpose": "Status Bar Item error Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorError.foreground"
+      }
+    },
+    {
+      "id": "statusBarItem.warningBackground",
+      "owner": "chrome",
+      "purpose": "Status Bar Item warning Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWarning.foreground"
+      }
+    },
+    {
+      "id": "statusBarItem.warningForeground",
+      "owner": "chrome",
+      "purpose": "Status Bar Item warning Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "button.foreground"
+      }
+    },
+    {
+      "id": "titleBar.activeBackground",
+      "owner": "chrome",
+      "purpose": "Title Bar active Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorGroupHeader.tabsBackground"
+      }
+    },
+    {
+      "id": "titleBar.activeForeground",
+      "owner": "chrome",
+      "purpose": "Title Bar active Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "textBlockQuote.background",
+      "owner": "content",
+      "purpose": "Text Block Quote background color.",
+      "derivation": {
+        "kind": "mix",
+        "role": "editor.background",
+        "toward": "editor.foreground",
+        "amount": 0.08
+      }
+    },
+    {
+      "id": "textLink.foreground",
+      "owner": "content",
+      "purpose": "Text Link foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    },
+    {
+      "id": "textPreformat.foreground",
+      "owner": "content",
+      "purpose": "Text Preformat foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWarning.foreground"
+      }
+    },
+    {
+      "id": "testing.iconPassed",
+      "owner": "content",
+      "purpose": "Testing icon Passed color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "successForeground"
+      }
+    }
+  ],
+  "optionalDomainRoles": [
+    {
+      "id": "aiChat.activeForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat active Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    },
+    {
+      "id": "aiChat.assistantForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat assistant Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.contextAdvisoryForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat context Advisory Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.contextCriticalForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat context Critical Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorError.foreground"
+      }
+    },
+    {
+      "id": "aiChat.contextWarningForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat context Warning Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWarning.foreground"
+      }
+    },
+    {
+      "id": "aiChat.errorForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat error Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorError.foreground"
+      }
+    },
+    {
+      "id": "aiChat.idleForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat idle Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.roleBackground",
+      "owner": "conversation",
+      "purpose": "Ai Chat role Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "aiChat.systemForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat system Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.thinkingBorder",
+      "owner": "conversation",
+      "purpose": "Ai Chat thinking Border color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.border"
+      }
+    },
+    {
+      "id": "aiChat.thinkingCollapsedForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat thinking Collapsed Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.thinkingForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat thinking Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.toolForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat tool Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "aiChat.userForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat user Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    },
+    {
+      "id": "aiChat.workingForeground",
+      "owner": "conversation",
+      "purpose": "Ai Chat working Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    },
+    {
+      "id": "conversation.actionBackground",
+      "owner": "conversation",
+      "purpose": "Conversation action Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.assistantForeground",
+      "owner": "conversation",
+      "purpose": "Conversation assistant Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.cardBorder",
+      "owner": "conversation",
+      "purpose": "Conversation card Border color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.border"
+      }
+    },
+    {
+      "id": "conversation.composerBackground",
+      "owner": "conversation",
+      "purpose": "Conversation composer Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.composerForeground",
+      "owner": "conversation",
+      "purpose": "Conversation composer Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.criticalForeground",
+      "owner": "conversation",
+      "purpose": "Conversation critical Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorError.foreground"
+      }
+    },
+    {
+      "id": "conversation.criticForeground",
+      "owner": "conversation",
+      "purpose": "Conversation critic Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.experimentalBackground",
+      "owner": "conversation",
+      "purpose": "Conversation experimental Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.experimentalForeground",
+      "owner": "conversation",
+      "purpose": "Conversation experimental Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.headerBackground",
+      "owner": "conversation",
+      "purpose": "Conversation header Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.headerForeground",
+      "owner": "conversation",
+      "purpose": "Conversation header Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.proposalForeground",
+      "owner": "conversation",
+      "purpose": "Conversation proposal Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.roleBackground",
+      "owner": "conversation",
+      "purpose": "Conversation role Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.scrollbarThumbBackground",
+      "owner": "conversation",
+      "purpose": "Conversation scrollbar Thumb Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.scrollbarTrackBackground",
+      "owner": "conversation",
+      "purpose": "Conversation scrollbar Track Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "conversation.systemForeground",
+      "owner": "conversation",
+      "purpose": "Conversation system Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.thinkingCollapsedForeground",
+      "owner": "conversation",
+      "purpose": "Conversation thinking Collapsed Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.thinkingForeground",
+      "owner": "conversation",
+      "purpose": "Conversation thinking Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.toolForeground",
+      "owner": "conversation",
+      "purpose": "Conversation tool Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "conversation.userForeground",
+      "owner": "conversation",
+      "purpose": "Conversation user Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    },
+    {
+      "id": "conversation.validationForeground",
+      "owner": "conversation",
+      "purpose": "Conversation validation Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "successForeground"
+      }
+    },
+    {
+      "id": "conversation.warningForeground",
+      "owner": "conversation",
+      "purpose": "Conversation warning Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWarning.foreground"
+      }
+    },
+    {
+      "id": "conversation.workingForeground",
+      "owner": "conversation",
+      "purpose": "Conversation working Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    },
+    {
+      "id": "ensemble.stageBackground",
+      "owner": "conversation",
+      "purpose": "Ensemble stage Background color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.background"
+      }
+    },
+    {
+      "id": "ensemble.stageForeground",
+      "owner": "conversation",
+      "purpose": "Ensemble stage Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "ensemble.thinkingBorder",
+      "owner": "conversation",
+      "purpose": "Ensemble thinking Border color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorWidget.border"
+      }
+    },
+    {
+      "id": "ensemble.thinkingCollapsedForeground",
+      "owner": "conversation",
+      "purpose": "Ensemble thinking Collapsed Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "ensemble.thinkingForeground",
+      "owner": "conversation",
+      "purpose": "Ensemble thinking Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editor.foreground"
+      }
+    },
+    {
+      "id": "ensemble.workingForeground",
+      "owner": "conversation",
+      "purpose": "Ensemble working Foreground color.",
+      "derivation": {
+        "kind": "fallback",
+        "role": "editorInfo.foreground"
+      }
+    }
+  ],
+  "compatibilityAliases": [
+    {
+      "id": "errorForeground",
+      "owner": "workbench",
+      "purpose": "Error Foreground color.",
+      "replacement": "editorError.foreground"
+    },
+    {
+      "id": "warningForeground",
+      "owner": "workbench",
+      "purpose": "Warning Foreground color.",
+      "replacement": "editorWarning.foreground"
+    },
+    {
+      "id": "string",
+      "owner": "workbench",
+      "purpose": "String color.",
+      "replacement": "string.foreground"
+    },
+    {
+      "id": "number",
+      "owner": "workbench",
+      "purpose": "Number color.",
+      "replacement": "number.foreground"
+    },
+    {
+      "id": "variable",
+      "owner": "workbench",
+      "purpose": "Variable color.",
+      "replacement": "variable.foreground"
+    }
+  ],
+  "syntaxTokenCoverage": [
+    "comments and documentation",
+    "strings and escapes",
+    "numbers, booleans, null, and constants",
+    "keywords, modifiers, and storage",
+    "operators and punctuation",
+    "functions, methods, and calls",
+    "parameters and variables",
+    "properties, keys, and fields",
+    "types, classes, interfaces, and namespaces",
+    "tags and attributes",
+    "markup headings, bold, italic, lists, links, and inline code",
+    "invalid and deprecated tokens"
+  ],
+  "qualityThresholds": {
+    "normalTextContrast": 4.5,
+    "focusedLabelContrast": 4.5,
+    "focusedHostContrast": 1.2,
+    "focusedHostOklabDistance": 0.035,
+    "contentOwnerHeaderContrast": 1.2,
+    "contentOwnerHeaderOklabDistance": 0.05,
+    "contentOwnerAccentChromaRetention": 0.65,
+    "directHeaderContrastOverOwner": 1.15,
+    "directHeaderOklabDistanceOverOwner": 0.04
+  }
+}

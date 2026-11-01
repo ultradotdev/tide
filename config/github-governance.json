@@ -1,0 +1,89 @@
+{
+  "$schema": "./github-governance.schema.json",
+  "schemaVersion": 1,
+  "repository": "ultradotdev/tide",
+  "owner": "thekeith",
+  "requiredChecks": ["CI / macOS", "CI / Linux", "CI / PostgreSQL"],
+  "expectedAccess": {
+    "organizationOwners": ["thekeith"],
+    "repositoryAdmins": ["thekeith"],
+    "repositoryWriters": ["thekeith"],
+    "writeTeams": [],
+    "writeApps": [],
+    "writeDeployKeys": []
+  },
+  "repositorySettings": {
+    "allowSquashMerge": true,
+    "allowMergeCommit": false,
+    "allowRebaseMerge": false,
+    "allowAutoMerge": false,
+    "deleteBranchOnMerge": true,
+    "defaultWorkflowPermissions": "read",
+    "workflowsMayApprovePullRequests": false
+  },
+  "rulesets": [
+    {
+      "name": "Tide protected branch integrity",
+      "target": "branch",
+      "enforcement": "active",
+      "include": ["refs/heads/main", "refs/heads/release", "refs/heads/release/**"],
+      "bypassActors": [],
+      "rules": [
+        { "type": "deletion" },
+        { "type": "non_fast_forward" },
+        { "type": "required_linear_history" },
+        { "type": "pull_request", "parameters": { "requiredApprovingReviewCount": 0, "dismissStaleReviewsOnPush": false, "requireCodeOwnerReview": false, "requireLastPushApproval": false, "requiredReviewThreadResolution": true } },
+        { "type": "required_status_checks", "parameters": { "strictRequiredStatusChecksPolicy": true, "doNotEnforceOnCreate": false, "requiredStatusChecks": [{ "context": "CI / macOS" }, { "context": "CI / Linux" }, { "context": "CI / PostgreSQL" }] } }
+      ]
+    },
+    {
+      "name": "Tide owner-only protected branch updates",
+      "target": "branch",
+      "enforcement": "active",
+      "include": ["refs/heads/main", "refs/heads/release", "refs/heads/release/**"],
+      "bypassActors": [{ "actorType": "User", "login": "thekeith", "bypassMode": "pull_request" }],
+      "rules": [{ "type": "update" }]
+    },
+    {
+      "name": "Tide owner-only release branch creation",
+      "target": "branch",
+      "enforcement": "active",
+      "include": ["refs/heads/release", "refs/heads/release/**"],
+      "bypassActors": [{ "actorType": "User", "login": "thekeith", "bypassMode": "always" }],
+      "rules": [{ "type": "creation" }]
+    },
+    {
+      "name": "Tide owner-only version tag creation",
+      "target": "tag",
+      "enforcement": "active",
+      "include": ["refs/tags/v*"],
+      "bypassActors": [{ "actorType": "User", "login": "thekeith", "bypassMode": "always" }],
+      "rules": [{ "type": "creation" }]
+    },
+    {
+      "name": "Tide immutable version tags",
+      "target": "tag",
+      "enforcement": "active",
+      "include": ["refs/tags/v*"],
+      "bypassActors": [],
+      "rules": [{ "type": "deletion" }, { "type": "update" }, { "type": "non_fast_forward" }]
+    }
+  ],
+  "environments": [
+    {
+      "name": "release-signing",
+      "reviewers": [{ "type": "User", "login": "thekeith" }],
+      "preventSelfReview": false,
+      "requiredSecrets": ["APPLE_DEVELOPER_ID_P12_BASE64", "APPLE_DEVELOPER_ID_P12_PASSWORD", "APPLE_TEAM_ID", "APPLE_NOTARY_API_KEY_P8_BASE64", "APPLE_NOTARY_API_KEY_ID", "APPLE_NOTARY_API_ISSUER_ID"],
+      "deploymentTagPatterns": []
+    },
+    {
+      "name": "release",
+      "reviewers": [{ "type": "User", "login": "thekeith" }],
+      "preventSelfReview": false,
+      "requiredSecrets": [],
+      "deploymentTagPatterns": ["v*"]
+    }
+  ],
+  "cutoverOrder": ["confirm-empty-and-sole-admin", "enable-ruleset-capable-plan-or-public-empty-repository", "apply-governance", "audit-governance", "add-public-remote-and-push-source", "rehearse-signed-artifacts-and-hosted-ci", "create-release-tag"]
+}

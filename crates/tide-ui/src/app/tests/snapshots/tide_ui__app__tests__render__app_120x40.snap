@@ -1,0 +1,44 @@
+---
+source: crates/tide-ui/src/app/tests/render.rs
+expression: "snapshot_app(120, 40)"
+---
+ ▼ Explorer  [2]               ▾ × │ ←  main.ts ×                                                                  ▾  ←
+▸  src                            │▎1   const answer = 42;                                                  ▒░
+   README.md                      │ 2
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+Enter open · ←/→ folders · . hidden│
+ ▼ Source Control                × │
+ no repository                     │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+                                   │
+ ▶ Outline  [1]                  × │
+ ▶ Timeline                      × │                                                                                  ↑
+ >_ │ main.ts │                                                       Ln 1, Col 1 │ TypeScript │ Spaces: 2 │ UTF-8 │ LF
