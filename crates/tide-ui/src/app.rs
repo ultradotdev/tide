@@ -14,19 +14,18 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
 
-use tide_ai::chat::ChatSession;
 use tide_ai::cli::{self as ai_cli, CliProvider, CliSession};
 use tide_ai::secrets::SecretService;
 use tide_config::{
-    CommandInfo, Keybinding, Paths, SessionAICLIPaneState, SessionAIChatPaneState,
-    SessionBottomTerminalState, SessionDocumentState, SessionLayoutNode, SessionSQLEditorState,
-    SessionState, SessionTerminalState, SessionUIState, Settings, ThemeCatalog,
+    CommandInfo, Keybinding, Paths, SessionAICLIPaneState, SessionBottomTerminalState,
+    SessionDocumentState, SessionLayoutNode, SessionSQLEditorState, SessionState,
+    SessionTerminalState, SessionUIState, Settings, ThemeCatalog,
 };
+use tide_core::Workspace;
 use tide_core::num::{saturating_u16, saturating_u32, saturating_usize};
 use tide_core::{Document, Position, display_width, truncate_to_width};
 use tide_lsp::{language_id_for_path, path_to_uri};
 use tide_services::SyntaxHighlighter;
-use tide_tools::Workspace as ToolWorkspace;
 
 use crate::accordion::{AccordionAction, AccordionState, SectionId};
 use crate::command::Command;
@@ -491,21 +490,13 @@ impl App {
         let git = GitController::new(&config.jobs, events_tx.clone());
         let lsp = LspController::new(&config.jobs, events_tx.clone());
         let instance_id = format!("{}-{}", std::process::id(), timestamp_millis());
-        let chat_enabled = false;
         let secrets = Arc::new(SecretService::local(paths.secrets_file.clone()));
-        let ai = AiController::load(
-            &paths,
-            secrets.clone(),
-            chat_enabled,
-            config.agent_discovery,
-            &config.jobs,
-            events_tx.clone(),
-        );
+        let ai = AiController::load(config.agent_discovery, &config.jobs, events_tx.clone());
         let db = DbController::load(
             &paths,
             &config.workspace,
             &settings,
-            secrets.clone(),
+            secrets,
             &config.jobs,
             events_tx.clone(),
         );
@@ -849,7 +840,6 @@ impl App {
         self.db.stop_requests().await;
         self.workbench.kill_terminals();
         self.dock.tabs.clear();
-        self.ai.abort_chat_tasks();
         let _ = tokio::time::timeout(Duration::from_secs(2), async {
             self.lsp.shutdown_servers().await;
             self.db.close_sessions().await;

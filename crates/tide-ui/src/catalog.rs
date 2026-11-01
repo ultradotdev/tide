@@ -131,9 +131,7 @@ pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
         ("ctrl+alt+t", "terminal.new"),
         ("ctrl+alt+m", "terminal.newInPane"),
         ("ctrl+alt+g", "git.focusPanel"),
-        ("ctrl+alt+i", "aiChat.toggle"),
         ("ctrl+space", "database.complete"),
-        ("ctrl+alt+c", "aiChat.cancelTurn"),
         ("ctrl+alt+a", "agents.openSession"),
         ("ctrl+alt+e", "workbench.focusExplorer"),
         ("ctrl+alt+u", "workbench.focusOutline"),
@@ -178,14 +176,4 @@ pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
             args: None,
         });
     }
-}
-
-pub fn palette_supported(id: &str) -> bool {
-    crate::app::command_supported(id)
-        && !id.starts_with("aiChat.")
-        && !id.starts_with("ensemble.")
-        && !matches!(
-            id,
-            "secrets.setAnthropicApiKey" | "secrets.setOpenAIApiKey" | "secrets.setGeminiApiKey"
-        )
 }

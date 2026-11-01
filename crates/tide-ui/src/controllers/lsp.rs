@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use crossterm::event::KeyCode;
 use tide_config::Settings;
+use tide_core::Workspace;
 use tide_core::num::{saturating_i64, utf16_units};
 use tide_core::{Document, Position};
 use tide_lsp::{
@@ -15,7 +16,6 @@ use tide_lsp::{
     ServerConfig, SymbolItem, TextEdit, command_available, language_id_for_path,
     parse_document_symbols, parse_workspace_symbols, path_to_uri, server_for_language, uri_to_path,
 };
-use tide_tools::Workspace as ToolWorkspace;
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 
@@ -1274,7 +1274,7 @@ pub(crate) fn apply_edits(files: Vec<LspFileEdits>, ui: &mut Ui<'_>) -> bool {
     if files.is_empty() {
         return true;
     }
-    let Ok(workspace) = ToolWorkspace::new(ui.workspace) else {
+    let Ok(workspace) = Workspace::new(ui.workspace) else {
         ui.status("LSP: workspace is unavailable");
         return false;
     };

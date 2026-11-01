@@ -313,29 +313,10 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
                 > 40,
         "Runtime reference is incomplete",
     );
-    let omitted = |id: &str| id.starts_with("aiChat.") || id.starts_with("ensemble.");
-    let commands = runtime
-        .get("commands")
-        .map(Json::as_array)
-        .unwrap_or_default();
-    require(
-        commands.iter().all(|command| {
-            !omitted(command.str_at(&["id"]))
-                || (command.get("supported").and_then(Json::as_bool) != Some(true)
-                    && command.get("paletteVisible").and_then(Json::as_bool) != Some(true))
-        }),
-        "Omitted command is promoted as supported",
-    );
     let bindings = runtime
         .get("keybindings")
         .map(Json::as_array)
         .unwrap_or_default();
-    require(
-        bindings
-            .iter()
-            .all(|binding| !omitted(binding.str_at(&["command"]))),
-        "Omitted workflow has a documented binding",
-    );
     require(
         bindings.iter().any(|binding| {
             binding.str_at(&["key"]) == "ctrl+k"
@@ -375,16 +356,10 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
                 .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)),
         "Site must fingerprint compiled runtime references",
     );
-    let omitted_feature = Regex::new(r"\bAI Chat\b|\bEnsemble(?: Chat)?\b")?;
     let stale =
         Regex::new(r"\bv0\.9\.0\b|Tide 0\.9\.0|src/clients/tui|headless xterm core|bun run build")?;
     for file in DOCUMENTED_FILES {
         let text = read(file)?;
-        if omitted_feature.is_match(&text) {
-            failures.push(format!(
-                "{file}: omitted feature in supported documentation"
-            ));
-        }
         if stale.is_match(&text) {
             failures.push(format!("{file}: stale TypeScript implementation guidance"));
         }

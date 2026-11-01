@@ -7,7 +7,7 @@
     "publisher": "Ultra.dev",
     "binary": "tide",
     "version": "0.10.0",
-    "prerelease": false,
+    "prerelease": true,
     "repository": "https://github.com/ultradotdev/tide",
     "homepage": "https://ultra.dev/tide",
     "issues": "https://github.com/ultradotdev/tide/issues",
@@ -16,7 +16,7 @@
   "release": {
     "release": "planned",
     "distribution": "in-validation",
-    "prerelease": false
+    "prerelease": true
   },
   "website": {
     "headline": "Terminal-Native Agentic IDE",
@@ -56,8 +56,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "aarch64-apple-darwin",
       "minimumOS": "14.0",
@@ -76,8 +75,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "x86_64-apple-darwin",
       "minimumOS": "14.0",
@@ -96,8 +94,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "aarch64-unknown-linux-gnu",
       "buildImage": "ubuntu:22.04",
@@ -117,8 +114,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "x86_64-unknown-linux-gnu",
       "buildImage": "ubuntu:22.04",
@@ -276,7 +272,7 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "21e92361c5eebfb248dcb8ecb045bf5083df6a141237228786c0a131760ba0aa",
+    "contentHash": "5a60c8398e0a7e477fde5e912e57f7e6bbd005d7354baed1552c62f6d46ea693",
     "lastVerifiedGitFingerprint": "fb6065375a791859ba3e3500a81078fb9aa2f717",
     "inputFiles": [
       "config/product.json",
@@ -299,7 +295,7 @@
       "Cargo.toml",
       "Cargo.lock",
       "docs/troubleshooting.md",
-      "docs/v0.10.0.md",
+      "docs/v0.10.0-prerelease.md",
       "install.sh",
       "uninstall.sh"
     ]

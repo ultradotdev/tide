@@ -298,7 +298,6 @@ fn database_password_unlock_preserves_draft_and_never_renders_or_persists_plaint
     let secrets = Arc::new(SecretService::encrypted_only(
         home.path().join("fixture-secrets.json"),
     ));
-    app.ai.secrets = secrets.clone();
     app.db.secrets = secrets;
     let config = ConnectionConfig {
         name: "Private fixture".into(),
@@ -355,7 +354,7 @@ fn database_password_unlock_preserves_draft_and_never_renders_or_persists_plaint
     assert_eq!(app.db.store.connections().len(), 1);
     let config = &app.db.store.connections()[0];
     assert_eq!(
-        app.ai
+        app.db
             .secrets
             .get(config.password_secret.as_ref().unwrap())
             .as_deref(),

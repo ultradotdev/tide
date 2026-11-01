@@ -298,9 +298,7 @@ fn command_palette_lists_only_implemented_commands() {
             .base()
             .items
             .iter()
-            .all(|item| !item.value.starts_with("aiChat.")
-                && !item.value.starts_with("ensemble.")
-                && !item.label.contains("experimental"))
+            .all(|item| command_supported(&item.value))
     );
     assert!(
         overlay
@@ -314,7 +312,7 @@ fn command_palette_lists_only_implemented_commands() {
             .base()
             .items
             .iter()
-            .any(|item| item.value == "ensemble.toggle")
+            .any(|item| item.value == "workbench.toggleMinimap")
     );
 }
 

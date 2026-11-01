@@ -25,7 +25,6 @@
   { "key": "ctrl+shift+z", "command": "edit.redo" }, // Redo
   { "key": "shift+meta+z", "command": "edit.redo" }, // Redo (macOS)
   { "key": "ctrl+y", "command": "edit.redo" }, // Redo (alternative)
-  { "key": "ctrl+c", "command": "aiChat.cancelTurn", "when": "aiChatFocus && aiChatActive" }, // Cancel an active direct-provider turn
   { "key": "ctrl+c", "command": "edit.copy" }, // Copy selection
   { "key": "meta+c", "command": "edit.copy" }, // Copy selection (macOS)
   { "key": "ctrl+x", "command": "edit.cut" }, // Cut selection
@@ -106,26 +105,11 @@
   // Git
   { "key": "ctrl+shift+g", "command": "git.focusPanel" }, // Focus git panel
 
-  // AI Chat (PTY-based - spawns CLI tools)
+  // AI CLI sessions
   { "key": "ctrl+shift+i", "command": "aiCli.toggle" }, // Toggle AI CLI pane
   { "key": "shift+meta+i", "command": "aiCli.toggle" }, // Toggle AI CLI pane (macOS)
   { "key": "ctrl+shift+j", "command": "agents.openSession" }, // Open any agent session
   { "key": "shift+meta+j", "command": "agents.openSession" }, // Open any agent session (macOS)
-
-  // AI Chat (direct provider with workspace tools)
-  { "key": "ctrl+alt+i", "command": "aiChat.toggle" }, // Toggle AI Chat
-  { "key": "alt+meta+i", "command": "aiChat.toggle" }, // Toggle AI Chat (macOS)
-  { "key": "ctrl+shift+;", "command": "aiChat.showPendingApprovals", "when": "aiChatFocus" }, // Show pending approvals
-  { "key": "shift+meta+;", "command": "aiChat.showPendingApprovals", "when": "aiChatFocus" }, // Show pending approvals (macOS)
-
-  // AI Chat internal keybindings (handled by AIChatElement):
-  // Ctrl+C - Cancel current AI response
-  // Y/N/S/F/A - Permission approval keys (when permission prompt is shown)
-  // Tab - Cycle through multiple pending permissions
-  // Shift+Enter - Insert newline in input
-  // PageUp/PageDown - Scroll chat history
-  // Ctrl+Home/End - Scroll to top/bottom
-  // ArrowUp/Down - Navigate input history
 
   // Git Panel (context: gitPanelFocus)
   { "key": "s", "command": "gitPanel.stage", "when": "gitPanelFocus" }, // Stage file
@@ -241,9 +225,5 @@
   { "key": "ctrl+shift+k", "command": "lsp.goToDefinition" }, // Go to definition
   { "key": "ctrl+i", "command": "lsp.showHover" }, // Show hover info (type info, docs)
   { "key": "ctrl+space", "command": "lsp.triggerCompletion" }, // Trigger autocomplete
-  { "key": "ctrl+shift+space", "command": "lsp.triggerSignatureHelp" }, // Show signature help
-
-  // Ensemble
-  { "key": "ctrl+shift+e", "command": "ensemble.toggle" }, // Toggle ensemble panel
-  { "key": "shift+meta+e", "command": "ensemble.toggle" } // Toggle ensemble panel (macOS)
+  { "key": "ctrl+shift+space", "command": "lsp.triggerSignatureHelp" } // Show signature help
 ]

@@ -10,9 +10,8 @@ mod theme;
 pub use catalog::{CommandInfo, Keybinding, ThemeCatalog, load_commands, load_keybindings};
 pub use paths::Paths;
 pub use session::{
-    SessionAICLIPaneState, SessionAIChatPaneState, SessionBottomTerminalState,
-    SessionDocumentState, SessionLayoutNode, SessionSQLEditorState, SessionState,
-    SessionTerminalState, SessionUIState,
+    SessionAICLIPaneState, SessionBottomTerminalState, SessionDocumentState, SessionLayoutNode,
+    SessionSQLEditorState, SessionState, SessionTerminalState, SessionUIState,
 };
 pub use settings::Settings;
 pub use theme::{Scope, Theme, ThemeSource, TokenColor, TokenSettings};

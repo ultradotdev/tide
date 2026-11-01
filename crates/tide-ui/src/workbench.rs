@@ -67,7 +67,6 @@ pub enum Tab {
     Editor(EditorState),
     Terminal(TerminalTab),
     Diff(DiffTab),
-    AiChat,
     Sql(SqlTab),
     Welcome,
 }
@@ -79,7 +78,6 @@ impl Tab {
             Self::Editor(editor) => editor.title(),
             Self::Terminal(terminal) => terminal.title.clone(),
             Self::Diff(diff) => diff.title.clone(),
-            Self::AiChat => "AI Chat".to_owned(),
             Self::Sql(sql) => sql.title.clone(),
             Self::Welcome => "Welcome".to_owned(),
         }
@@ -517,13 +515,6 @@ impl Workbench {
         }
     }
 
-    #[must_use]
-    pub fn has_ai_chat(&self) -> bool {
-        self.panes
-            .values()
-            .any(|pane| pane.tabs.iter().any(|tab| matches!(tab, Tab::AiChat)))
-    }
-
     pub fn focus_ai_cli(&mut self, provider: &str, session: &str) -> bool {
         let found = self.panes.iter().find_map(|(id, pane)| {
             pane.tabs
@@ -561,24 +552,6 @@ impl Workbench {
             }
         }
         false
-    }
-
-    pub fn focus_ai_chat(&mut self) -> bool {
-        let found = self.panes.iter().find_map(|(id, pane)| {
-            pane.tabs
-                .iter()
-                .position(|tab| matches!(tab, Tab::AiChat))
-                .map(|index| (*id, index))
-        });
-        if let Some((id, index)) = found {
-            self.focused = id;
-            if let Some(pane) = self.panes.get_mut(&id) {
-                pane.active = index;
-            }
-            true
-        } else {
-            false
-        }
     }
 
     #[must_use]

@@ -172,9 +172,6 @@ impl App {
             ModalKind::Confirm(ConfirmAction::QuitDirty) => self.restart = None,
             ModalKind::MoveTab => self.pending_move = None,
             ModalKind::Confirm(ConfirmAction::CloseTab { .. }) => self.pending_close = None,
-            ModalKind::Confirm(ConfirmAction::ApplyAiChanges) => {
-                self.with_ai(|ai, ui| ai.resolve_pending_changes(false, ui))
-            }
             _ => {}
         }
     }
@@ -206,19 +203,10 @@ impl App {
             }
             Submitted::Theme(theme) => self.select_theme(&theme),
             // The domain controllers have already taken these.
-            Submitted::Model(_)
-            | Submitted::ChatSession(_)
-            | Submitted::AgentSession { .. }
+            Submitted::AgentSession { .. }
             | Submitted::AiCli(_)
-            | Submitted::Prompt(
-                PromptAction::RenameAgent(..)
-                | PromptAction::AiApiKey(_)
-                | PromptAction::UnlockSecrets,
-                _,
-            )
-            | Submitted::Confirm(
-                ConfirmAction::ApplyAiChanges | ConfirmAction::DeleteAiSession { .. },
-            )
+            | Submitted::Prompt(PromptAction::RenameAgent(..), _)
+            | Submitted::Confirm(ConfirmAction::DeleteAiSession { .. })
             | Submitted::RowInsert(_)
             | Submitted::Connection(_)
             | Submitted::DatabaseConnection(_)
@@ -230,6 +218,7 @@ impl App {
                 PromptAction::NewConnection
                 | PromptAction::EditConnection(_)
                 | PromptAction::ExportResults
+                | PromptAction::UnlockSecrets
                 | PromptAction::UnlockConnectionSecrets,
                 _,
             )
@@ -425,7 +414,7 @@ impl App {
         let implemented = self
             .commands
             .iter()
-            .filter(|(id, _)| crate::catalog::palette_supported(id))
+            .filter(|(id, _)| command_supported(id))
             .map(|(id, info)| (id.clone(), info.clone()))
             .collect::<Vec<_>>();
         self.overlay = Some(modal::command_palette(command_items(&implemented)));

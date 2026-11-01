@@ -11,11 +11,13 @@ pub mod num;
 pub mod process;
 mod undo;
 mod width;
+pub mod workspace;
 
 pub use cursor::{Cursor, Position, Selection, compare_positions, get_selection_range, min_max};
 pub use document::{Document, OverlappingEdits, TextSnapshot};
 pub use undo::{Edit, UndoManager};
 pub use width::{display_width, grapheme_boundaries, grapheme_width, graphemes, truncate_to_width};
+pub use workspace::{Workspace, WorkspaceError};
 
 /// A half-open character range.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

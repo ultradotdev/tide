@@ -127,7 +127,7 @@ pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, Str
 
 Open the command palette with `ctrl+k`. Enhanced terminal key reporting also enables the bindings listed in the [keyboard reference](keyboard-shortcuts.md).
 
-The table includes supported command IDs and compatibility aliases. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected. Built-in conversation workflows are outside the supported product.
+The table includes supported command IDs and compatibility aliases. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
 
 | Command ID | Label | Category | Palette |
 | --- | --- | --- | --- |
@@ -292,8 +292,8 @@ mod tests {
     const SAMPLE: &str = r#"{"schemaVersion":1,"version":"0.10.0","implementation":"rust",
       "commands":[{"id":"a.run","label":"Run | all","category":"Run","supported":true,"paletteVisible":true},
                   {"id":"a.hidden","label":"Hidden","category":"Run","supported":true,"paletteVisible":false},
-                  {"id":"aiChat.open","label":"Chat","category":"AI","supported":false,"paletteVisible":false}],
-      "aliases":{"a.run":"a.run2","aiChat.open":"x"},
+                  {"id":"a.unsupported","label":"Unsupported","category":"Run","supported":false,"paletteVisible":false}],
+      "aliases":{"a.run":"a.run2","a.unsupported":"x"},
       "keybindings":[{"key":"ctrl+k","command":"a.run"},{"key":"f1","command":"unknown","when":"editorFocus"}],
       "settings":{"editor.tabSize":{"default":4,"rule":{"type":"integer","minimum":1,"maximum":16}},
                   "theme":{"default":"Ultra Dusk","rule":{"type":"string","enum":["a","b"],"maxLength":64}}},
@@ -313,7 +313,7 @@ mod tests {
         let commands = file("commands.md");
         assert!(commands.contains("| `a.run` | Run \\| all | Run | Yes |"));
         assert!(commands.contains("| `a.hidden` | Hidden | Run | Keybinding action |"));
-        assert!(!commands.contains("aiChat.open"));
+        assert!(!commands.contains("a.unsupported"));
         assert!(commands.contains("| `a.run` | `a.run2` |"));
         let bindings = file("keyboard-shortcuts.md");
         assert!(bindings.contains("| `ctrl+k` | Run \\| all | `a.run` | Any |"));

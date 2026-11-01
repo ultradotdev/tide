@@ -120,35 +120,6 @@ pub struct SessionAICLIPaneState {
     pub extra: BTreeMap<String, Value>,
 }
 
-/// Persisted built-in AI Chat pane state.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SessionAIChatPaneState {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub conversation_id: Option<String>,
-    pub element_id: String,
-    pub pane_id: String,
-    #[serde(default)]
-    pub tab_order: u32,
-    #[serde(default)]
-    pub is_active_in_pane: bool,
-    pub provider: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
-    #[serde(default)]
-    pub messages: Vec<Value>,
-    #[serde(default)]
-    pub title: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub composer_draft: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scroll_top: Option<u32>,
-    #[serde(default)]
-    pub interrupted_turn: bool,
-    #[serde(flatten)]
-    pub extra: BTreeMap<String, Value>,
-}
-
 /// Persisted SQL editor state.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -210,10 +181,6 @@ pub struct SessionUIState {
     #[serde(default)]
     pub minimap_enabled: bool,
     #[serde(default)]
-    pub ai_panel_visible: bool,
-    #[serde(default)]
-    pub ai_panel_width: u16,
-    #[serde(default)]
     pub sidebar_accordion_expanded: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub focused_region: Option<String>,
@@ -239,8 +206,6 @@ pub struct SessionState {
     pub bottom_terminals: Vec<SessionBottomTerminalState>,
     #[serde(default)]
     pub ai_cli_panes: Vec<SessionAICLIPaneState>,
-    #[serde(default)]
-    pub ai_chat_panes: Vec<SessionAIChatPaneState>,
     #[serde(default)]
     pub sql_editors: Vec<SessionSQLEditorState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -276,9 +241,6 @@ impl SessionState {
     pub fn preserve_unsupported_from(&mut self, previous: &Self) {
         if self.ai_cli_panes.is_empty() {
             self.ai_cli_panes = previous.ai_cli_panes.clone();
-        }
-        if self.ai_chat_panes.is_empty() {
-            self.ai_chat_panes = previous.ai_chat_panes.clone();
         }
         if self.sql_editors.is_empty() {
             self.sql_editors = previous.sql_editors.clone();

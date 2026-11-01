@@ -80,7 +80,7 @@ fn repeated_keys_are_handled_and_idle_events_do_not_request_paint() {
 #[test]
 fn implemented_command_guard_is_small() {
     assert!(command_supported("file.save"));
-    assert!(!command_supported("ensemble.toggle"));
+    assert!(!command_supported("workbench.toggleMinimap"));
 }
 
 #[test]

@@ -80,32 +80,7 @@
 
   // AI
   "ai.cli.defaultProvider": "claude-code", // Default registered external AI CLI provider
-  "ai.builtInConversations.enabled": false, // Experimental: enable built-in AI Chat and Ensemble Chat; requires restart
-  "ai.chat.defaultProvider": "claude", // Default AI Chat provider: "claude", "openai", "gemini", "ollama"
-  "ai.chat.defaultModel": "", // Optional catalog model ID for new AI Chat sessions; empty uses provider default
-  "ai.chat.temperature": 0, // Deterministic by default for coding and tool-use workflows (0-1)
-  "ai.panel.defaultWidth": 80, // AI panel width in characters
-  "ai.panel.maxWidthPercent": 50, // Maximum AI panel width as percentage of screen
-  "ai.panel.openOnStartup": false, // Open AI panel on startup
   "ai.autoStartCli": true, // Start the external AI CLI automatically when its pane receives focus
-  "ai.panel.initialPrompt": "You are a helpful software engineer working with another software engineer on a coding project using Tide", // System prompt for AI
-  "ai.streaming.enabled": true, // Stream provider responses and exposed thinking when supported
-  "ai.thinking.enabled": true, // Show provider-exposed thinking summaries or traces
-  "ai.thinking.completedDisplay": "truncate", // Completed thinking: "truncate", "collapse", or "expanded"
-  "ai.thinking.previewLines": 8, // Wrapped content lines in a truncated preview (2-50)
-  "ai.reasoning.defaults": { "chat": "provider-default", "ensembleCoder": "provider-default", "ensembleCritic": "provider-default" }, // Native provider reasoning defaults by surface
-  "ai.reasoning.modelOverrides": {}, // Provider/model-scoped native reasoning selections
-
-  // Ensemble
-  "ensemble.asciiIcons": false, // Use ASCII icons instead of emoji in ensemble panel
-  "ensemble.agents": {
-    "coder": { "id": "coder", "role": "coder", "provider": "auto", "displayName": "Coder", "mention": "coder" },
-    "critics": [
-      { "id": "critic-1", "role": "critic", "provider": "auto", "displayName": "Correctness", "mention": "correctness", "specialty": { "name": "Correctness", "instructions": "Prioritize behavioral correctness, edge cases, error handling, and regressions." } },
-      { "id": "critic-2", "role": "critic", "provider": "auto", "displayName": "Security", "mention": "security", "specialty": { "name": "Security", "instructions": "Prioritize trust boundaries, secrets, injection, permissions, data loss, and unsafe operations." } }
-    ]
-  }, // Non-secret provider/model preferences; roles may reuse the same provider and model
-  "ensemble.reviewPolicy": { "preset": "consensus", "categoryActions": {}, "pathRules": [], "maxAutoFiles": 10, "maxAutoChangedLines": 500, "maxCycles": 5, "maxValidationRepairs": 3, "p0Detection": "safety-or-any-critic", "p0Behavior": "pause", "applyOnPass": "auto", "validationMode": "when-available" },
 
   // Session
   "session.restoreOnStartup": true, // Restore previous session on startup

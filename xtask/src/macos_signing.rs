@@ -5,12 +5,9 @@
 //! without touching a keychain, Apple's notary service or the network.
 use crate::argv;
 use crate::release::{
-    archive_prepared_payload, commit_timestamp, isolated_smoke_env, load_contract,
-    refresh_prepared_manifest,
+    archive_prepared_payload, commit_timestamp, load_contract, refresh_prepared_manifest,
 };
-use crate::util::{
-    CommandRunner, RunOptions, locale_compare, pretty_json, sha256_file, write_private,
-};
+use crate::util::{CommandRunner, locale_compare, pretty_json, sha256_file, write_private};
 use anyhow::{Context, Result, ensure};
 use base64::Engine as _;
 use regex::Regex;
@@ -411,7 +408,6 @@ fn smoke_extracted_application(
     binary: &Path,
     version: &str,
     runner: &mut dyn CommandRunner,
-    isolated_root: &Path,
 ) -> Result<()> {
     let output = runner.run_plain(&argv![binary, "--version"])?;
     ensure!(
@@ -420,10 +416,6 @@ fn smoke_extracted_application(
     );
     runner.run_plain(&argv![binary, "--check-terminal"])?;
     runner.run_plain(&argv![binary, "--check-catalogs"])?;
-    runner.run(
-        &argv![binary, "--check-models"],
-        &RunOptions::env(isolated_smoke_env(&isolated_root.join("home"))),
-    )?;
     Ok(())
 }
 
@@ -643,12 +635,7 @@ fn sign_in_scratch(
         binary
     ])?;
     validate_signed_entitlements(&format!("{}\n{}", signed.stdout, signed.stderr), "tide")?;
-    smoke_extracted_application(
-        &binary,
-        context.version,
-        runner,
-        &scratch.join("pre-notary-smoke"),
-    )?;
+    smoke_extracted_application(&binary, context.version, runner)?;
     runner.run_plain(&argv![
         "/usr/bin/codesign",
         "--verify",
@@ -755,7 +742,7 @@ fn sign_in_scratch(
             expected_tickets: &expected,
         },
     )?;
-    smoke_extracted_application(&extracted_binary, context.version, runner, scratch)?;
+    smoke_extracted_application(&extracted_binary, context.version, runner)?;
 
     let receipt = NotarizationReceipt {
         schema_version: 3,
@@ -823,8 +810,8 @@ mod tests {
     use super::*;
     use crate::release::tests::{fake_release_runner, fixture_binary, head_commit};
     use crate::release::{PrepareOptions, prepare_payload};
-    use crate::util::repo_root;
     use crate::util::testing::{RecordingRunner, stdout};
+    use crate::util::{RunOptions, repo_root};
     use std::collections::HashMap;
 
     const ISSUER: &str = "11111111-2222-3333-4444-555555555555";

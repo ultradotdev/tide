@@ -1,6 +1,6 @@
 [package]
 name = "tide-ai"
-description = "AI foundation for Tide: secrets, model registry, providers, chat state, and CLI adapters"
+description = "AI CLI integration and the secrets store for Tide"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,11 +9,8 @@ repository.workspace = true
 
 [dependencies]
 aes-gcm = "0.10"
-anyhow.workspace = true
-async-trait = "0.1"
 base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-futures-util.workspace = true
 rand.workspace = true
 reqwest.workspace = true
 rusqlite = { version = "0.41", features = ["bundled"] }
@@ -22,10 +19,8 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
-tide-config = { path = "../tide-config" }
 tide-core = { path = "../tide-core" }
 tokio.workspace = true
-tracing.workspace = true
 zeroize = "1.8"
 wait-timeout = "0.2"
 nix.workspace = true

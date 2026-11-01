@@ -1191,11 +1191,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc"
 dependencies = [
  "futures-core",
- "futures-io",
  "futures-macro",
  "futures-sink",
  "futures-task",
- "memchr",
  "pin-project-lite",
  "slab",
 ]
@@ -3850,7 +3848,6 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "futures-core",
- "futures-util",
  "http",
  "http-body",
  "http-body-util",
@@ -3870,14 +3867,12 @@ dependencies = [
  "sync_wrapper",
  "tokio",
  "tokio-rustls",
- "tokio-util",
  "tower",
  "tower-http",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-streams",
  "web-sys",
  "webpki-roots",
 ]
@@ -4679,11 +4674,8 @@ name = "tide-ai"
 version = "0.10.0"
 dependencies = [
  "aes-gcm",
- "anyhow",
- "async-trait",
  "base64 0.22.1",
  "chrono",
- "futures-util",
  "nix 0.31.3",
  "rand 0.8.8",
  "reqwest",
@@ -4696,10 +4688,8 @@ dependencies = [
  "temp-env",
  "tempfile",
  "thiserror 2.0.21",
- "tide-config",
  "tide-core",
  "tokio",
- "tracing",
  "wait-timeout",
  "zeroize",
 ]
@@ -4803,24 +4793,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tide-tools"
-version = "0.10.0"
-dependencies = [
- "anyhow",
- "ignore",
- "nix 0.31.3",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "similar",
- "temp-env",
- "tempfile",
- "thiserror 2.0.21",
- "tide-core",
- "tokio",
-]
-
-[[package]]
 name = "tide-ui"
 version = "0.10.0"
 dependencies = [
@@ -4848,7 +4820,6 @@ dependencies = [
  "tide-lsp",
  "tide-services",
  "tide-terminal",
- "tide-tools",
  "tokio",
  "tracing",
  "url",
@@ -5414,19 +5385,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "wasm-streams"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15053d8d85c7eccdbefef60f06769760a563c7f0a9d6902a13d35c7800b0ad65"
-dependencies = [
- "futures-util",
- "js-sys",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]

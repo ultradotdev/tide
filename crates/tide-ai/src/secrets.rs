@@ -22,10 +22,6 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
-pub const SECRET_KEY_CLAUDE: &str = "ai.claude.api-key";
-pub const SECRET_KEY_OPENAI: &str = "ai.openai.api-key";
-pub const SECRET_KEY_GEMINI: &str = "ai.gemini.api-key";
-
 const MASTER_PASSWORD_ENV: &str = "TIDE_MASTER_PASSWORD";
 const ENV_PREFIX: &str = "TIDE_SECRET_";
 const KEYCHAIN_SERVICE: &str = "tide";
@@ -256,30 +252,6 @@ impl SecretService {
                 && info.is_some()
             {
                 return info;
-            }
-        }
-        None
-    }
-
-    /// Resolve an AI provider API key, including legacy environment names.
-    pub fn provider_api_key(&self, provider: &str) -> Option<String> {
-        let (canonical, legacy): (&str, &[&str]) = match provider {
-            "claude" | "anthropic" => (SECRET_KEY_CLAUDE, &["ANTHROPIC_API_KEY"]),
-            "openai" => (SECRET_KEY_OPENAI, &["OPENAI_API_KEY"]),
-            "gemini" | "google" => (SECRET_KEY_GEMINI, &["GEMINI_API_KEY", "GOOGLE_API_KEY"]),
-            _ => return None,
-        };
-        if let Some(value) = self.get(canonical) {
-            return Some(value);
-        }
-        for key in legacy {
-            if let Ok(value) = std::env::var(key)
-                && !value.trim().is_empty()
-            {
-                return Some(value);
-            }
-            if let Some(value) = self.get(key) {
-                return Some(value);
             }
         }
         None
@@ -1079,7 +1051,7 @@ mod tests {
     fn stores_and_lists_secrets_round_trip() {
         let (dir, store) = store();
         store
-            .set(SECRET_KEY_CLAUDE, "sk-ant-test", &SecretOptions::default())
+            .set("api.token", "token-test", &SecretOptions::default())
             .unwrap();
         store
             .set(
@@ -1092,8 +1064,8 @@ mod tests {
             )
             .unwrap();
         assert_eq!(
-            store.get(SECRET_KEY_CLAUDE).unwrap().as_deref(),
-            Some("sk-ant-test")
+            store.get("api.token").unwrap().as_deref(),
+            Some("token-test")
         );
         assert_eq!(store.list().unwrap().len(), 2);
         assert_eq!(
@@ -1161,7 +1133,7 @@ mod tests {
         let store = EncryptedFileStore::new(&path);
         store.unlock("tide-test-password").unwrap();
         assert_eq!(
-            store.get(SECRET_KEY_OPENAI).unwrap().as_deref(),
+            store.get("ai.openai.api-key").unwrap().as_deref(),
             Some("sk-test")
         );
         let untouched: serde_json::Value =
@@ -1176,7 +1148,7 @@ mod tests {
         let reopened = EncryptedFileStore::new(&path);
         reopened.unlock("tide-test-password").unwrap();
         assert_eq!(
-            reopened.get(SECRET_KEY_OPENAI).unwrap().as_deref(),
+            reopened.get("ai.openai.api-key").unwrap().as_deref(),
             Some("sk-test")
         );
         assert_eq!(reopened.get("k").unwrap().as_deref(), Some("v"));
@@ -1257,7 +1229,7 @@ mod tests {
             (SecretToolAction::Lookup, None),
             (SecretToolAction::Clear, None),
         ] {
-            let (command, stdin) = secret_tool_command(tool, "tide", "ai.openai.api-key", &action);
+            let (command, stdin) = secret_tool_command(tool, "tide", "db.local.password", &action);
             assert_eq!(stdin, expected_stdin);
             assert!(Path::new(command.get_program()).is_absolute());
             let args = command
@@ -1265,7 +1237,7 @@ mod tests {
                 .map(|arg| arg.to_string_lossy().into_owned())
                 .collect::<Vec<_>>();
             assert!(args.iter().all(|arg| !arg.contains("sk-argv-leak")));
-            assert!(args.contains(&"ai.openai.api-key".to_owned()));
+            assert!(args.contains(&"db.local.password".to_owned()));
         }
     }
 
@@ -1334,26 +1306,33 @@ mod tests {
 
     #[test]
     fn env_provider_maps_dotted_keys() {
-        temp_env::with_var("TIDE_SECRET_AI_OPENAI_API_KEY", Some("env-key"), || {
+        temp_env::with_var("TIDE_SECRET_DB_LOCAL_PASSWORD", Some("env-secret"), || {
             let store = EnvStore::default();
             assert_eq!(
-                store.get(SECRET_KEY_OPENAI).unwrap().as_deref(),
-                Some("env-key")
+                store.get("db.local.password").unwrap().as_deref(),
+                Some("env-secret")
             );
         });
     }
 
     #[test]
     fn service_prefers_environment_over_encrypted_file() {
-        temp_env::with_var("TIDE_SECRET_AI_OPENAI_API_KEY", Some("env-key"), || {
+        temp_env::with_var("TIDE_SECRET_DB_LOCAL_PASSWORD", Some("env-secret"), || {
             let dir = tempfile::tempdir().unwrap();
-            let service = SecretService::new(vec![
-                Box::new(EnvStore::default()),
-                Box::new(EncryptedFileStore::new(dir.path().join("s.enc"))),
-            ]);
+            let encrypted = EncryptedFileStore::new(dir.path().join("s.enc"));
+            encrypted.unlock("pw").unwrap();
+            encrypted
+                .set(
+                    "db.local.password",
+                    "file-secret",
+                    &SecretOptions::default(),
+                )
+                .unwrap();
+            let service =
+                SecretService::new(vec![Box::new(EnvStore::default()), Box::new(encrypted)]);
             assert_eq!(
-                service.provider_api_key("openai").as_deref(),
-                Some("env-key")
+                service.get("db.local.password").as_deref(),
+                Some("env-secret")
             );
         });
     }

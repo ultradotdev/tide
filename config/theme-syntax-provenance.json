@@ -103,7 +103,7 @@
     "sourceKind": "original",
     "sourceProject": "Ultra",
     "sourceFormat": "ultra-theme-design-response-v1",
-    "sourceFiles": [{ "path": "docs/theme-builder/ultra-dusk-design-response.json", "sha256": "b34d8200785c23678241c5a74373fc6ea67220bb323ee336378a5a90b8ea4883" }],
+    "sourceFiles": [{ "path": "docs/theme-builder/ultra-dusk-design-response.json", "sha256": "3619844d23c9d0615f3797f0c10a1e1b878bb6b6572f9f3d8429ebb81833819a" }],
     "license": "Apache-2.0",
     "translationPolicy": "direct-ultra-native-token-mapping",
     "translatedFile": "config/syntax-themes/ultra-dusk.json",

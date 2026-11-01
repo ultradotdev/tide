@@ -28,7 +28,6 @@ pub enum PromptAction {
     RenameBranch(String),
     StashMessage,
     Rename,
-    AiApiKey(String),
     UnlockSecrets,
     UnlockConnectionSecrets,
     NewConnection,
@@ -58,7 +57,6 @@ pub enum ConfirmAction {
     RenamePath(std::path::PathBuf, std::path::PathBuf),
     SwitchSession(String),
     QuitDirty,
-    ApplyAiChanges,
     RunSql(String),
     DeleteRow(Box<tide_db::RowMutation>),
     ClearQueryHistory(Option<String>),
@@ -106,8 +104,6 @@ pub enum ModalKind {
     Settings,
     Keybindings,
     Completion,
-    ModelPicker,
-    ChatSessions,
     AgentSessions,
     AgentWorkspaces,
     AiCliPicker,
@@ -420,8 +416,6 @@ impl ModalBase {
                 | ModalKind::Settings
                 | ModalKind::Keybindings
                 | ModalKind::Completion
-                | ModalKind::ModelPicker
-                | ModalKind::ChatSessions
                 | ModalKind::AgentSessions
                 | ModalKind::AgentWorkspaces
                 | ModalKind::AiCliPicker
@@ -501,8 +495,6 @@ impl ModalBase {
                 ),
                 saturating_u16(self.filtered.len().clamp(1, 10)) + 2,
             ),
-            ModalKind::ModelPicker => (60, 20),
-            ModalKind::ChatSessions => (60, 20),
             ModalKind::AgentSessions | ModalKind::AgentWorkspaces => (70, 20),
             ModalKind::AiCliPicker => (60, 15),
             ModalKind::ConnectionPicker => (60, 20),
@@ -652,7 +644,6 @@ impl ModalBase {
                 ModalKind::Confirm(ConfirmAction::RunSql(_)) => "Run [Y]",
                 ModalKind::Confirm(ConfirmAction::ClearQueryHistory(_)) => "Clear [Y]",
                 ModalKind::Confirm(ConfirmAction::SwitchSession(_)) => "Switch [Y]",
-                ModalKind::Confirm(ConfirmAction::ApplyAiChanges) => "Apply [Y]",
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
                 ModalKind::Settings | ModalKind::Keybindings => "Edit",
@@ -815,9 +806,7 @@ impl ModalBase {
                 ActionRole::Confirmation
             }
             ModalKind::Confirm(
-                ConfirmAction::RunSql(_)
-                | ConfirmAction::ApplyAiChanges
-                | ConfirmAction::DeleteAiSession { archive: true, .. },
+                ConfirmAction::RunSql(_) | ConfirmAction::DeleteAiSession { archive: true, .. },
             ) => ActionRole::Primary,
             ModalKind::Confirm(_) => ActionRole::Destructive,
             _ => ActionRole::Primary,
@@ -851,11 +840,7 @@ impl ModalBase {
     fn secret_input(&self) -> bool {
         matches!(
             self.kind,
-            ModalKind::Prompt(
-                PromptAction::UnlockSecrets
-                    | PromptAction::UnlockConnectionSecrets
-                    | PromptAction::AiApiKey(_)
-            )
+            ModalKind::Prompt(PromptAction::UnlockSecrets | PromptAction::UnlockConnectionSecrets)
         )
     }
     fn input_view(&self, width: usize) -> (String, usize, usize) {
@@ -1336,8 +1321,6 @@ pub enum Submitted {
         value: String,
     },
     Branch(String),
-    Model(String),
-    ChatSession(String),
     AgentWorkspace(String),
     AgentSession {
         provider: CliProvider,
@@ -1410,8 +1393,6 @@ impl Submitted {
                 value,
             }),
             ModalKind::BranchPicker => owned().map(Self::Branch),
-            ModalKind::ModelPicker => owned().map(Self::Model),
-            ModalKind::ChatSessions => owned().map(Self::ChatSession),
             ModalKind::AgentWorkspaces => owned().map(Self::AgentWorkspace),
             ModalKind::AgentSessions => value.and_then(|value| {
                 let (provider, session) = value.split_once('\t')?;
@@ -1868,8 +1849,6 @@ impl Modal for CompletionModal {
         }
     }
 }
-list_modal!(ModelPickerModal, ModalKind::ModelPicker, "Select Model");
-list_modal!(ChatSessionsModal, ModalKind::ChatSessions, "Conversations");
 list_modal!(
     AgentSessionsModal,
     ModalKind::AgentSessions,
@@ -2586,15 +2565,6 @@ pub fn search_results(items: Vec<ModalItem>) -> Box<dyn Modal> {
     Box::new(SearchResultsModal::new(items))
 }
 
-#[must_use]
-pub fn model_picker(items: Vec<ModalItem>) -> Box<dyn Modal> {
-    Box::new(ModelPickerModal::new(items))
-}
-
-pub fn chat_sessions(items: Vec<ModalItem>) -> Box<dyn Modal> {
-    Box::new(ChatSessionsModal::new(items))
-}
-
 pub fn agent_sessions(items: Vec<ModalItem>) -> Box<dyn Modal> {
     Box::new(AgentSessionsModal::new(items))
 }
@@ -2795,7 +2765,7 @@ mod tests {
             .into_iter()
             .collect::<Vec<_>>();
         let items = command_items(&commands);
-        for query in ["New Query", "Agents: Toggle Sidebar", "Database", "AI Chat"] {
+        for query in ["New Query", "Agents: Toggle Sidebar", "Database", "AI CLI"] {
             for length in 0..=query.chars().count() {
                 let prefix = query.chars().take(length).collect::<String>();
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

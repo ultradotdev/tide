@@ -1,4 +1,4 @@
-//! Crash-safe file writes shared by the editor and the AI change sets.
+//! Crash-safe file writes.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};

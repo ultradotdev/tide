@@ -1,19 +1,18 @@
 # Architecture Overview
 
-Tide is a native Rust terminal application in a ten-crate Cargo workspace.
+Tide is a native Rust terminal application in a nine-crate Cargo workspace.
 
 | Crate | Responsibility |
 | --- | --- |
 | `tide` | CLI entry point, terminal lifecycle, managed installation |
 | `tide-ui` | App state, pane tree, dialogs, rendering, mouse routing, session restoration |
-| `tide-core` | Text buffer, edits, selections, undo, search and folds |
+| `tide-core` | Text buffer, edits, selections, undo, search, folds and the workspace path boundary |
 | `tide-config` | Embedded defaults, JSONC loading, themes, XDG paths and session structures |
 | `tide-services` | Files, Git, background syntax highlighting and service operations |
 | `tide-terminal` | `portable-pty` processes and `alacritty_terminal` emulation |
 | `tide-lsp` | Language-server discovery, JSON-RPC transport and typed requests |
 | `tide-db` | PostgreSQL, schema metadata, query safety, result and mutation operations |
 | `tide-ai` | External CLI adapters, native session discovery and secret providers |
-| `tide-tools` | Typed tool operations and shared contracts |
 
 `App` coordinates input and asynchronous events. Pane and overlay state belongs to the UI; service crates remain independent of it. The main region is a recursive split tree. A shared document can have multiple views while retaining one text revision and save state.
 

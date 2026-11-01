@@ -1,14 +1,9 @@
-//! AI foundation for Tide.
+//! AI CLI integration and the secrets store for Tide.
 //!
-//! - `secrets`: keychain/env/encrypted-file secret storage.
-//! - `models`: embedded model catalog and preferences.
-//! - `provider`: streaming adapters for Claude, OpenAI, Gemini, and Ollama.
-//! - `chat`: provider-neutral durable chat sessions.
 //! - `cli`: external AI CLI detection, launch arguments, and session discovery.
+//! - `native_cli`: native session creation, renaming, and removal through each CLI.
+//! - `secrets`: keychain/env/encrypted-file secret storage.
 
-pub mod chat;
 pub mod cli;
-pub mod models;
 pub mod native_cli;
-pub mod provider;
 pub mod secrets;

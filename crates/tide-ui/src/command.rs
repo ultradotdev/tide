@@ -168,15 +168,6 @@ commands! {
     Quit = "quit",
     SessionSave = "session.save",
     WorkbenchSaveSession = "workbench.saveSession",
-    AiChatNew = "aiChat.new",
-    AiChatToggle = "aiChat.toggle",
-    AiChatChangeProviderModel = "aiChat.changeProviderModel",
-    AiChatSetDefaultProviderModel = "aiChat.setDefaultProviderModel",
-    AiChatCancelTurn = "aiChat.cancelTurn",
-    AiChatRetryTurn = "aiChat.retryTurn",
-    AiChatShowContextUsage = "aiChat.showContextUsage",
-    AiChatHistory = "aiChat.history",
-    AiChatOpenCli = "aiChat.openCli",
     AgentsOpenSession = "agents.openSession",
     AgentsAssociateWorkspace = "agents.associateWorkspace",
     AgentsNewSession = "agents.newSession",
@@ -185,9 +176,6 @@ commands! {
     AgentsArchiveSession = "agents.archiveSession",
     AgentsRefreshSessions = "agents.refreshSessions",
     AgentsTogglePanel = "agents.togglePanel",
-    SecretsSetAnthropicApiKey = "secrets.setAnthropicApiKey",
-    SecretsSetOpenAIApiKey = "secrets.setOpenAIApiKey",
-    SecretsSetGeminiApiKey = "secrets.setGeminiApiKey",
     SecretsManage = "secrets.manage",
     DatabaseNewQuery = "database.newQuery",
     DatabaseExecuteQuery = "database.executeQuery",
@@ -262,7 +250,6 @@ commands! {
     TimelinePanelCopyHash = "timelinePanel.copyHash",
     TimelinePanelToggleMode = "timelinePanel.toggleMode",
     GitPanelDiscard = "gitPanel.discard",
-    AiChatShowPendingApprovals = "aiChat.showPendingApprovals",
     AiCliToggle = "aiCli.toggle",
     EditorToggleComment = "editor.toggleComment",
     EditorFold = "editor.fold",
@@ -331,12 +318,7 @@ mod tests {
 
     #[test]
     fn unknown_ids_are_rejected() {
-        for id in [
-            "",
-            "__unbound__",
-            "ensemble.toggle",
-            "workbench.toggleMinimap",
-        ] {
+        for id in ["", "__unbound__", "workbench.toggleMinimap"] {
             assert_eq!(id.parse::<Command>(), Err(UnknownCommand(id.to_owned())));
         }
     }
