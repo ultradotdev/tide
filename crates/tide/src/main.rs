@@ -31,18 +31,9 @@ struct Cli {
     #[arg(long)]
     no_session: bool,
 
-    /// Unsupported: shared TypeScript/Rust session writes are disabled until
-    /// bidirectional compatibility and concurrent-writer tests pass
-    #[arg(long)]
-    shared_sessions: bool,
-
     /// Verify the packaged terminal runtime
     #[arg(long)]
     check_terminal: bool,
-
-    /// Verify the packaged AI model catalog
-    #[arg(long)]
-    check_models: bool,
 
     /// Report available and missing language servers
     #[arg(long)]
@@ -62,8 +53,6 @@ struct Cli {
 
     #[arg(long, hide = true)]
     install_local: bool,
-    #[arg(long, hide = true, requires = "install_local")]
-    migrate_legacy: bool,
     #[arg(long, hide = true)]
     install_release: Option<PathBuf>,
     #[arg(long, hide = true)]
@@ -101,8 +90,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
     if cli.install_local {
-        install::Installation::discover()?
-            .install_local(&std::env::current_exe()?, cli.migrate_legacy)?;
+        install::Installation::discover()?.install_local(&std::env::current_exe()?)?;
         return Ok(());
     }
     if let Some(path) = &cli.install_release {
@@ -116,16 +104,9 @@ async fn main() -> Result<()> {
         let commands = tide_config::builtin::commands();
         let themes = tide_config::builtin::themes();
         let mut missing = std::collections::BTreeSet::new();
-        let mut experimental = std::collections::BTreeSet::new();
-        let mut excluded = std::collections::BTreeSet::new();
         let mut supported = std::collections::BTreeSet::new();
         for binding in &keybindings {
-            if binding.command.starts_with("ensemble.") {
-                excluded.insert(binding.command.clone());
-            } else if binding.command.starts_with("aiChat.") && binding.command != "aiChat.openCli"
-            {
-                experimental.insert(binding.command.clone());
-            } else if tide_ui::command_supported(&binding.command) {
+            if tide_ui::command_supported(&binding.command) {
                 supported.insert(binding.command.clone());
             } else {
                 missing.insert(binding.command.clone());
@@ -139,18 +120,10 @@ async fn main() -> Result<()> {
             themes.len()
         );
         println!(
-            "keybinding commands: {} supported, {} experimental/AI-Chat-deferred, {} excluded, {} unresolved",
+            "keybinding commands: {} supported, {} unresolved",
             supported.len(),
-            experimental.len(),
-            excluded.len(),
             missing.len()
         );
-        for command in &experimental {
-            println!("  experimental (disabled by default): {command}");
-        }
-        for command in &excluded {
-            println!("  excluded from scope: {command}");
-        }
         if !missing.is_empty() {
             for command in missing.iter().take(20) {
                 eprintln!("keybinding references an unsupported command: {command}");
@@ -166,30 +139,6 @@ async fn main() -> Result<()> {
     if cli.check_terminal {
         let output = tide_terminal::check_terminal()?;
         println!("Terminal runtime OK: {}", output.trim());
-        return Ok(());
-    }
-
-    if cli.check_models {
-        let paths = tide_config::Paths::discover();
-        let registry = tide_ai::models::ModelRegistry::load_or_bundled(&paths.models_file)?;
-        let problems = registry.validate();
-        if !problems.is_empty() {
-            for problem in &problems {
-                eprintln!("model catalog: {problem}");
-            }
-            anyhow::bail!("AI model catalog has {} problem(s)", problems.len());
-        }
-        println!(
-            "AI model catalog OK: {} models, {} providers, defaults={}",
-            registry.models().len(),
-            registry
-                .config()
-                .provider_defaults
-                .iter()
-                .filter(|(_, model)| !model.is_empty())
-                .count(),
-            registry.config().provider_defaults.len()
-        );
         return Ok(());
     }
 
@@ -232,12 +181,6 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    if cli.shared_sessions {
-        anyhow::bail!(
-            "shared TypeScript session writes are disabled: compatibility and concurrent-writer tests have not passed; Rust-owned sessions remain the default"
-        );
-    }
-
     let (workspace, initial_file) = resolve_workspace(cli.path.as_deref());
     tracing::info!(?workspace, ?initial_file, "starting Tide");
     if !std::io::stdout().is_terminal() {
@@ -251,7 +194,6 @@ async fn main() -> Result<()> {
         initial_file,
         session_name: cli.session,
         restore_session: !cli.no_session,
-        shared_sessions: cli.shared_sessions,
         paths: None,
         jobs: tide_ui::Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: tide_ui::discover_agent_sessions,

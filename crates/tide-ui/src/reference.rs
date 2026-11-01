@@ -20,7 +20,7 @@ pub fn reference_catalog() -> Value {
         .map(|id| {
             let info = metadata.get(id);
             let canonical = command_aliases::canonical(id);
-            let supported = catalog::palette_supported(id);
+            let supported = app::command_supported(id);
             json!({"id":id, "canonical":canonical, "supported":supported,
             "paletteVisible":supported && info.is_some(),
             "label":info.map_or(id, |info| info.label.as_str()),
@@ -28,7 +28,7 @@ pub fn reference_catalog() -> Value {
             "description":info.and_then(|info| info.description.as_deref())})
         })
         .collect::<Vec<_>>();
-    // Match the resolver's last entry for each key/context before removing excluded features.
+    // Match the resolver's last entry for each key/context.
     let mut effective = BTreeMap::new();
     for binding in bindings {
         if app::command_supported(&binding.command) {
@@ -38,10 +38,7 @@ pub fn reference_catalog() -> Value {
             );
         }
     }
-    let bindings = effective
-        .into_values()
-        .filter(|b| catalog::palette_supported(&b.command))
-        .collect::<Vec<_>>();
+    let bindings = effective.into_values().collect::<Vec<_>>();
     let settings = catalog::settings();
     let supported_settings = preferences::SUPPORTED
         .iter()
@@ -74,12 +71,12 @@ pub fn reference_catalog() -> Value {
 mod tests {
     use super::*;
     #[test]
-    fn references_exclude_chat_controls_and_keep_runtime_alternates_and_defaults() {
+    fn references_keep_runtime_alternates_and_defaults() {
         let reference = reference_catalog();
         assert_eq!(reference, reference_catalog());
         for binding in reference["keybindings"].as_array().unwrap() {
             let id = binding["command"].as_str().unwrap();
-            assert!(catalog::palette_supported(id));
+            assert!(app::command_supported(id), "unsupported binding {id}");
         }
         assert!(
             reference["keybindings"]
@@ -88,31 +85,11 @@ mod tests {
                 .iter()
                 .any(|b| b["key"] == "ctrl+k" && b["command"] == "workbench.commandPalette")
         );
-        assert_eq!(reference["aliases"]["file.nextTab"], "editor.nextTab");
-        for id in [
-            "secrets.setAnthropicApiKey",
-            "secrets.setOpenAIApiKey",
-            "secrets.setGeminiApiKey",
-        ] {
-            assert!(
-                reference["commands"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .filter(|command| command["id"] == id)
-                    .all(|command| command["supported"] == false
-                        && command["paletteVisible"] == false)
-            );
-        }
+        assert_eq!(reference["aliases"]["terminal.nextTab"], "terminal.next");
         for (key, entry) in reference["settings"].as_object().unwrap() {
             preferences::validate(key, &entry["default"])
                 .unwrap_or_else(|error| panic!("Invalid exported default for {key}: {error}"));
         }
-        assert!(
-            reference["settings"]
-                .get("ai.builtInConversations.enabled")
-                .is_none()
-        );
         assert_eq!(
             reference["externalCliProviders"].as_array().unwrap().len(),
             5

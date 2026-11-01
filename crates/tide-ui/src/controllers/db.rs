@@ -539,6 +539,12 @@ impl DbController {
                 let path = input;
                 self.export_results(&path, ui);
             }
+            Submitted::Prompt(PromptAction::UnlockSecrets, input) => {
+                match self.secrets.unlock(&input) {
+                    Ok(()) => ui.status("Secrets: encrypted store unlocked"),
+                    Err(error) => ui.status(format!("Secrets: {error}")),
+                }
+            }
             Submitted::Prompt(PromptAction::UnlockConnectionSecrets, input) => {
                 match self.secrets.unlock(&input) {
                     Ok(()) => {
@@ -580,6 +586,22 @@ impl DbController {
             other => return Some((other, overlay)),
         }
         None
+    }
+
+    /// Reports the unlocked secrets store, or asks for its master password.
+    pub fn manage_secrets(&mut self, ui: &mut Ui<'_>) {
+        if self.secrets.is_unlocked() {
+            ui.status(format!(
+                "Secrets: unlocked with {} stored keys",
+                self.secrets.list(None).len()
+            ));
+        } else {
+            *ui.overlay = Some(modal::prompt(
+                PromptAction::UnlockSecrets,
+                "Unlock Secrets",
+                "",
+            ));
+        }
     }
 
     pub fn open_tab(&mut self, content: Option<&str>, ui: &mut Ui<'_>) {

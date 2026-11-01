@@ -147,33 +147,6 @@ pub fn validate_doc_links(root: &Path) -> Result<()> {
     bail!("{}", failures.join("\n"))
 }
 
-/// Living documentation that must not promote omitted features or stale guidance.
-pub const DOCUMENTED_FILES: [&str; 23] = [
-    "README.md",
-    "CONTRIBUTING.md",
-    "SECURITY.md",
-    "docs/README.md",
-    "docs/getting-started.md",
-    "docs/features/workbench.md",
-    "docs/features/editor.md",
-    "docs/features/git.md",
-    "docs/features/terminal.md",
-    "docs/features/postgresql.md",
-    "docs/features/ai.md",
-    "docs/features/themes.md",
-    "docs/reference/commands.md",
-    "docs/reference/keyboard-shortcuts.md",
-    "docs/reference/configuration.md",
-    "docs/architecture/overview.md",
-    "docs/architecture/keybindings.md",
-    "docs/architecture/rendering.md",
-    "docs/modules/ui-components.md",
-    "docs/troubleshooting.md",
-    "docs/v0.10.0.md",
-    "docs/site/README.md",
-    "docs/site/WEBSITE_CONTENT_GUIDE.md",
-];
-
 /// `verify-tide-docs [root]`.
 pub fn verify_tide_docs(root: &Path) -> Result<()> {
     let root = std::path::absolute(root)?;
@@ -196,10 +169,6 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
             && product.str_at(&["binary"]) == "tide"
             && version == "0.10.0",
         "Product identity drifted",
-    );
-    require(
-        !root.join("package.json").exists(),
-        "The retired Node maintainer package must not return",
     );
     require(
         runtime.get("schemaVersion").and_then(Json::as_f64) == Some(1.0)
@@ -313,29 +282,10 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
                 > 40,
         "Runtime reference is incomplete",
     );
-    let omitted = |id: &str| id.starts_with("aiChat.") || id.starts_with("ensemble.");
-    let commands = runtime
-        .get("commands")
-        .map(Json::as_array)
-        .unwrap_or_default();
-    require(
-        commands.iter().all(|command| {
-            !omitted(command.str_at(&["id"]))
-                || (command.get("supported").and_then(Json::as_bool) != Some(true)
-                    && command.get("paletteVisible").and_then(Json::as_bool) != Some(true))
-        }),
-        "Omitted command is promoted as supported",
-    );
     let bindings = runtime
         .get("keybindings")
         .map(Json::as_array)
         .unwrap_or_default();
-    require(
-        bindings
-            .iter()
-            .all(|binding| !omitted(binding.str_at(&["command"]))),
-        "Omitted workflow has a documented binding",
-    );
     require(
         bindings.iter().any(|binding| {
             binding.str_at(&["key"]) == "ctrl+k"
@@ -375,20 +325,6 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
                 .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)),
         "Site must fingerprint compiled runtime references",
     );
-    let omitted_feature = Regex::new(r"\bAI Chat\b|\bEnsemble(?: Chat)?\b")?;
-    let stale =
-        Regex::new(r"\bv0\.9\.0\b|Tide 0\.9\.0|src/clients/tui|headless xterm core|bun run build")?;
-    for file in DOCUMENTED_FILES {
-        let text = read(file)?;
-        if omitted_feature.is_match(&text) {
-            failures.push(format!(
-                "{file}: omitted feature in supported documentation"
-            ));
-        }
-        if stale.is_match(&text) {
-            failures.push(format!("{file}: stale TypeScript implementation guidance"));
-        }
-    }
     if let Err(error) = crate::reference::generate(&root, false) {
         failures.push(format!("Compiled Rust reference is stale: {error}"));
     }
@@ -411,14 +347,13 @@ pub fn verify_tide_identity(root: &Path) -> Result<()> {
         || version != "0.10.0"
         || reference.str_at(&["version"]) != version
         || reference.str_at(&["implementation"]) != "rust"
-        || root.join("package.json").exists()
     {
-        bail!("Rust product identity mismatch");
+        bail!("Product identity mismatch");
     }
     if !read_text(&root.join("Cargo.toml"))?.contains(&format!("version = \"{version}\"")) {
         bail!("Cargo version mismatch");
     }
-    println!("Tide Rust identity verified; no Node maintainer package is present.");
+    println!("Tide identity verified.");
     Ok(())
 }
 

@@ -33,7 +33,7 @@ async fn a_panicking_event_loop_writes_the_recovery_snapshot_before_unwinding() 
     assert_eq!(panic.downcast_ref::<&str>(), Some(&"event loop failed"));
     let restored = app.session_store.load_last().unwrap().unwrap();
     assert_eq!(
-        restored.state.documents[0].unsaved_content.as_deref(),
+        restored.documents[0].unsaved_content.as_deref(),
         Some("recover me")
     );
 }
@@ -82,7 +82,7 @@ async fn recovery_autosave_writes_off_the_ui_thread_and_never_regresses() {
     .unwrap();
     app.handle_background(event);
     assert!(!app.autosave_running);
-    let saved = app.session_store.load_last().unwrap().unwrap().state;
+    let saved = app.session_store.load_last().unwrap().unwrap();
     assert!(
         serde_json::to_string(&saved)
             .unwrap()
@@ -110,7 +110,6 @@ fn session_restore_reopens_dirty_documents() {
         initial_file: None,
         session_name: None,
         restore_session: true,
-        shared_sessions: false,
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
@@ -121,80 +120,11 @@ fn session_restore_reopens_dirty_documents() {
 }
 
 #[test]
-fn build_session_preserves_unsupported_baseline_state() {
-    let (_home, mut app) = test_app();
-    let mut baseline = SessionState {
-        version: 7,
-        timestamp: "0".to_owned(),
-        instance_id: "baseline".to_owned(),
-        workspace_root: app.workspace.display().to_string(),
-        session_name: None,
-        documents: Vec::new(),
-        terminals: Vec::new(),
-        bottom_terminals: Vec::new(),
-        ai_cli_panes: vec![SessionAICLIPaneState {
-            element_id: "ai-cli".to_owned(),
-            pane_id: "pane-9".to_owned(),
-            tab_order: 0,
-            is_active_in_pane: true,
-            provider: "claude".to_owned(),
-            session_id: Some("session".to_owned()),
-            session_key: None,
-            model: None,
-            cwd: app.workspace.display().to_string(),
-            title: "Claude".to_owned(),
-            input_history: None,
-            extra: BTreeMap::new(),
-        }],
-        ai_chat_panes: Vec::new(),
-        sql_editors: Vec::new(),
-        active_document_path: None,
-        active_pane_id: "pane-0".to_owned(),
-        layout: SessionLayoutNode {
-            node_type: "leaf".to_owned(),
-            pane_id: Some("pane-0".to_owned()),
-            children: None,
-            ratios: None,
-            extra: BTreeMap::new(),
-        },
-        ui: SessionUIState {
-            sidebar_visible: true,
-            sidebar_width: 36,
-            sidebar_location: None,
-            agents_sidebar_visible: false,
-            agents_sidebar_width: 36,
-            agents_sidebar_location: None,
-            agents_sidebar_expanded_providers: Vec::new(),
-            agents_sidebar_expanded_sections: Vec::new(),
-            terminal_visible: false,
-            terminal_height: 10,
-            git_panel_visible: false,
-            git_panel_width: 40,
-            active_sidebar_panel: "files".to_owned(),
-            minimap_enabled: true,
-            ai_panel_visible: false,
-            ai_panel_width: 80,
-            sidebar_accordion_expanded: vec!["explorer".to_owned()],
-            focused_region: Some("main".to_owned()),
-            extra: BTreeMap::new(),
-        },
-        extra: BTreeMap::new(),
-    };
-    baseline
-        .extra
-        .insert("unsupported".to_owned(), serde_json::json!({"keep": true}));
-    app.session_baseline = Some(baseline);
-    let session = app.build_session();
-    assert!(session.ai_cli_panes.is_empty());
-    assert!(session.extra.contains_key("unsupported"));
-}
-
-#[test]
 fn blocked_session_writes_do_not_touch_disk() {
     let (_home, mut app) = test_app();
     app.session_write_blocked = true;
     assert!(app.save_session().is_err());
-    assert!(!app.session_store.rust_workspace_path().exists());
+    assert!(!app.session_store.workspace_session_path().exists());
 }
 
 #[test]

@@ -1,25 +1,13 @@
-//! AI: the built-in chat and its tool calls and change sets, and the Agents sidebar over
-//! native AI CLI sessions.
+//! AI: the Agents sidebar over native AI CLI sessions and their terminal tabs.
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use tide_ai::chat::{
-    ChatMessage, ChatSession, ChatStore, ContentBlock, InterruptedTurn, TurnAccumulator,
-};
 use tide_ai::cli::{
     self as ai_cli, CliProvider, CliSession, CliStatus, DiscoveryReport, DiscoveryState,
     ProviderDiscovery,
 };
-use tide_ai::models::{ModelInfo, ModelPreferences, ModelRegistry};
-use tide_ai::provider::{
-    ChatRequest, Provider, ProviderConfig, ProviderKind, Role, StopReason, StreamEvent,
-};
-use tide_ai::secrets::{SecretOptions, SecretService};
-use tide_config::Paths;
-use tide_tools::{ChangeSet, MapBuffers, ToolCall, Workspace as ToolWorkspace, execute_tool};
 use tokio::sync::mpsc::Sender;
 
 use super::Ui;
@@ -31,22 +19,6 @@ use crate::workbench::Tab;
 
 #[derive(Debug)]
 pub enum AiEvent {
-    Stream {
-        generation: u64,
-        event: StreamEvent,
-    },
-    Finished {
-        generation: u64,
-    },
-    Failed {
-        generation: u64,
-        message: String,
-    },
-    ToolResults {
-        generation: u64,
-        results: Vec<ChatToolResult>,
-        change_set: Option<ChangeSet>,
-    },
     Sessions(DiscoveryReport),
     Provider(ProviderDiscovery),
     CliPrepared {
@@ -68,8 +40,6 @@ pub enum AiEvent {
     },
 }
 
-const DEFAULT_AI_SYSTEM_PROMPT: &str = "You are Tide, a terminal-based coding assistant. Be concise, reference workspace paths, and never invent files or command output.";
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AgentRow {
     Provider(CliProvider),
@@ -78,21 +48,6 @@ pub(crate) enum AgentRow {
 }
 
 pub(crate) struct AiController {
-    pub secrets: Arc<SecretService>,
-    models: ModelRegistry,
-    preferences: ModelPreferences,
-    pub chat: ChatSession,
-    pub chat_store: ChatStore,
-    pub chat_draft: String,
-    pub chat_scroll: usize,
-    pub chat_turn: Option<TurnAccumulator>,
-    pub chat_streaming: bool,
-    pub chat_tasks: Vec<tokio::task::AbortHandle>,
-    pub chat_generation: u64,
-    pub chat_enabled: bool,
-    tool_rounds: usize,
-    pub pending_change_set: Option<ChangeSet>,
-    pub pending_tool_results: Vec<ChatToolResult>,
     pub cli_status: Vec<CliStatus>,
     pub agent_sessions: Vec<CliSession>,
     pub agent_candidates: Vec<CliSession>,
@@ -110,70 +65,15 @@ pub(crate) struct AiController {
     pub agents_width: u16,
     pub agents_loading: bool,
     pub agents_error: Option<String>,
-    preferences_file: PathBuf,
     discovery: AgentDiscovery,
     jobs: Jobs,
     events: Sender<AppEvent>,
 }
 
 impl AiController {
-    pub fn model_info(&self) -> Option<&ModelInfo> {
-        self.models.model(&self.chat.model)
-    }
-
-    pub fn load(
-        paths: &Paths,
-        secrets: Arc<SecretService>,
-        chat_enabled: bool,
-        discovery: AgentDiscovery,
-        jobs: &Jobs,
-        events: Sender<AppEvent>,
-    ) -> Self {
-        let models = ModelRegistry::load_or_bundled(&paths.models_file).unwrap_or_default();
-        let preferences = ModelPreferences::load(&paths.model_preferences_file);
-        let (provider, model) = preferences
-            .chat
-            .as_deref()
-            .and_then(|id| models.model(id))
-            .map_or_else(
-                || {
-                    let model = models
-                        .default_model("balanced")
-                        .or_else(|| models.models().first().map(|model| model.id.as_str()))
-                        .unwrap_or("claude-sonnet-4-5-20250929")
-                        .to_owned();
-                    let provider = models
-                        .model(&model)
-                        .map(|model| model.provider.clone())
-                        .unwrap_or_else(|| "anthropic".to_owned());
-                    (provider, model)
-                },
-                |model| (model.provider.clone(), model.id.clone()),
-            );
-        let mut chat = ChatSession::new(provider, model);
-        let store = ChatStore::new(paths.conversations_dir.clone());
-        if let Some(summary) = store.list().into_iter().next()
-            && let Ok(loaded) = store.load(&summary.id)
-        {
-            chat = loaded;
-        }
+    pub fn load(discovery: AgentDiscovery, jobs: &Jobs, events: Sender<AppEvent>) -> Self {
         let cli_status = ai_cli::detect_all();
         Self {
-            secrets,
-            models,
-            preferences,
-            chat,
-            chat_store: ChatStore::new(paths.conversations_dir.clone()),
-            chat_draft: String::new(),
-            chat_scroll: 0,
-            chat_turn: None,
-            chat_streaming: false,
-            chat_tasks: Vec::new(),
-            chat_generation: 0,
-            chat_enabled,
-            tool_rounds: 0,
-            pending_change_set: None,
-            pending_tool_results: Vec::new(),
             cli_status,
             agent_sessions: Vec::new(),
             agent_candidates: Vec::new(),
@@ -191,7 +91,6 @@ impl AiController {
             agents_width: 34,
             agents_loading: false,
             agents_error: None,
-            preferences_file: paths.model_preferences_file.clone(),
             discovery,
             jobs: jobs.clone(),
             events,
@@ -224,60 +123,8 @@ impl AiController {
         .await;
     }
 
-    pub fn abort_chat_tasks(&mut self) {
-        for task in self.chat_tasks.drain(..) {
-            task.abort();
-        }
-    }
-
     pub fn handle_event(&mut self, event: AiEvent, ui: &mut Ui<'_>) {
         match event {
-            AiEvent::Stream { generation, event } => {
-                if generation == self.chat_generation
-                    && let Some(turn) = self.chat_turn.as_mut()
-                {
-                    turn.apply(event);
-                    self.chat_scroll = 0;
-                }
-            }
-            AiEvent::Finished { generation } => {
-                if generation == self.chat_generation {
-                    self.finish_chat_turn(ui);
-                }
-            }
-            AiEvent::Failed {
-                generation,
-                message,
-            } => {
-                if generation == self.chat_generation {
-                    if let Some(turn) = self.chat_turn.as_mut() {
-                        turn.mark_error(message.clone());
-                    }
-                    self.finish_chat_turn(ui);
-                    ui.status(format!("AI: {message}"));
-                }
-            }
-            AiEvent::ToolResults {
-                generation,
-                results,
-                change_set,
-            } => {
-                if generation == self.chat_generation {
-                    self.chat_tasks.clear();
-                    if let Some(set) = change_set {
-                        let preview = set.preview();
-                        self.pending_change_set = Some(set);
-                        self.pending_tool_results = results;
-                        *ui.overlay = Some(modal::confirm(
-                            ConfirmAction::ApplyAiChanges,
-                            "Approve AI Changes",
-                            &preview.chars().take(900).collect::<String>(),
-                        ));
-                    } else {
-                        self.apply_tool_results(results, ui);
-                    }
-                }
-            }
             AiEvent::CliPrepared {
                 provider,
                 executable,
@@ -347,8 +194,6 @@ impl AiController {
     /// Handles the AI parts of a modal submission and hands back anything else.
     pub fn submit(&mut self, submitted: Submitted, ui: &mut Ui<'_>) -> Option<Submitted> {
         match submitted {
-            Submitted::Model(model) => self.select_model(&model, ui),
-            Submitted::ChatSession(session) => self.load_chat_session(&session, ui),
             Submitted::Prompt(PromptAction::RenameAgent(provider, id), input) => {
                 self.rename_session(&provider, &id, &input, ui)
             }
@@ -356,17 +201,6 @@ impl AiController {
                 self.launch_cli(provider, Some(&session), ui);
             }
             Submitted::AiCli(provider) => self.launch_cli(provider, None, ui),
-            Submitted::Prompt(PromptAction::AiApiKey(provider), input) => {
-                let key = input;
-                self.save_api_key(&provider, &key, ui);
-            }
-            Submitted::Prompt(PromptAction::UnlockSecrets, input) => {
-                let password = input;
-                self.unlock_secrets(&password, ui);
-            }
-            Submitted::Confirm(ConfirmAction::ApplyAiChanges) => {
-                self.resolve_pending_changes(true, ui);
-            }
             Submitted::Confirm(ConfirmAction::DeleteAiSession {
                 provider,
                 session,
@@ -377,544 +211,6 @@ impl AiController {
             other => return Some(other),
         }
         None
-    }
-
-    pub fn chat_available(&mut self, ui: &mut Ui<'_>) -> bool {
-        if self.chat_enabled {
-            return true;
-        }
-        ui.status(
-            "Built-in AI Chat is not included in this build; use Agents for external CLI sessions",
-        );
-        false
-    }
-
-    pub fn open_chat_tab(&mut self, fresh: bool, ui: &mut Ui<'_>) {
-        if !self.chat_available(ui) {
-            return;
-        }
-        if fresh {
-            self.start_new_chat(ui);
-        }
-        if !ui.workbench.focus_ai_chat() {
-            ui.workbench.insert_tab_focused(Tab::AiChat);
-        }
-        *ui.focus = Focus::Main;
-        ui.mark_session_dirty();
-    }
-
-    pub fn start_new_chat(&mut self, ui: &mut Ui<'_>) {
-        if self.chat_streaming {
-            self.cancel_chat(ui);
-        }
-        let provider = self.chat.provider.clone();
-        let model = self.chat.model.clone();
-        self.chat = ChatSession::new(provider, model);
-        self.chat_draft.clear();
-        self.chat_scroll = 0;
-        let _ = self.chat_store.save(&self.chat);
-        ui.mark_session_dirty();
-    }
-
-    pub fn send_chat_message(&mut self, ui: &mut Ui<'_>) {
-        if !self.chat_available(ui) {
-            return;
-        }
-        if self.chat_streaming {
-            ui.status("AI: a turn is already streaming; Ctrl+Alt+C cancels it");
-            return;
-        }
-        let prompt = self.chat_draft.trim().to_owned();
-        if prompt.is_empty() {
-            return;
-        }
-        if self.provider_config(ui).is_none() {
-            return;
-        }
-        self.chat.push_user_text(&prompt);
-        self.chat.interrupted = Some(InterruptedTurn {
-            message_id: self
-                .chat
-                .messages
-                .last()
-                .map(|message| message.id.clone())
-                .unwrap_or_default(),
-            text: prompt.clone(),
-            started_at: crate::app::timestamp_millis().to_string(),
-        });
-        self.chat_draft.clear();
-        let _ = self.chat_store.save(&self.chat);
-        self.tool_rounds = 0;
-        self.start_chat_turn(ui);
-    }
-
-    pub fn provider_config(&mut self, ui: &mut Ui<'_>) -> Option<ProviderConfig> {
-        let kind = ProviderKind::parse(&self.chat.provider).unwrap_or(ProviderKind::Anthropic);
-        let mut config = ProviderConfig::new(kind, self.chat.model.clone()).with_max_tokens(4096);
-        if kind.requires_api_key() {
-            let Some(api_key) = self.secrets.provider_api_key(kind.as_str()) else {
-                let canonical = match kind {
-                    ProviderKind::Anthropic => "ai.claude.api-key",
-                    ProviderKind::OpenAi => "ai.openai.api-key",
-                    ProviderKind::Gemini => "ai.gemini.api-key",
-                    ProviderKind::Ollama => "",
-                };
-                ui.status(format!(
-                    "AI: no API key for {}. Use Secrets: Set ... API Key (stored as {canonical})",
-                    kind.as_str()
-                ));
-                return None;
-            };
-            config = config.with_api_key(api_key);
-        }
-        if let Some(temperature) = ui
-            .settings
-            .get("ai.chat.temperature")
-            .and_then(serde_json::Value::as_f64)
-            // A temperature outside the f32 range is invalid; keep the provider default.
-            .and_then(|temperature| num_traits::ToPrimitive::to_f32(&temperature))
-        {
-            config = config.with_temperature(temperature);
-        }
-        Some(config)
-    }
-
-    pub fn start_chat_turn(&mut self, ui: &mut Ui<'_>) {
-        let Some(config) = self.provider_config(ui) else {
-            return;
-        };
-        let provider = match Provider::new(config) {
-            Ok(provider) => provider,
-            Err(error) => {
-                ui.status(format!("AI: {error:#}"));
-                return;
-            }
-        };
-        let system = ui
-            .settings
-            .get("ai.panel.initialPrompt")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or(DEFAULT_AI_SYSTEM_PROMPT)
-            .to_owned();
-        let request = ChatRequest {
-            system: Some(system),
-            messages: self.chat.provider_turns(),
-            max_tokens: Some(4096),
-            temperature: None,
-            tools: tide_tools::canonical_tools()
-                .iter()
-                .map(|tool| tide_ai::provider::ToolSchema {
-                    name: tool.name.clone(),
-                    description: tool.description.clone(),
-                    input_schema: tool.input_schema.clone(),
-                })
-                .collect(),
-        };
-        self.chat_generation = self.chat_generation.wrapping_add(1);
-        let generation = self.chat_generation;
-        self.chat_turn = Some(TurnAccumulator::new());
-        self.chat_streaming = true;
-        self.chat_scroll = 0;
-        for task in self.chat_tasks.drain(..) {
-            task.abort();
-        }
-        let sender = self.events.clone();
-        let (stream_tx, mut stream_rx) = tokio::sync::mpsc::unbounded_channel();
-        let provider_task = self.jobs.spawn(async move {
-            provider
-                .stream(&request, |event| {
-                    let _ = stream_tx.send(event);
-                })
-                .await
-        });
-        self.chat_tasks.push(provider_task.abort_handle());
-        let forward = self.jobs.spawn(async move {
-            let mut provider_task = provider_task;
-            loop {
-                tokio::select! {
-                    event = stream_rx.recv() => {
-                        match event {
-                            Some(event) => {
-                                if sender
-                                    .send(AppEvent::Ai(AiEvent::Stream { generation, event }))
-                                    .await
-                                    .is_err()
-                                {
-                                    return;
-                                }
-                            }
-                            None => break,
-                        }
-                    }
-                    result = &mut provider_task => {
-                        while let Ok(event) = stream_rx.try_recv() {
-                            let _ = sender
-                                .send(AppEvent::Ai(AiEvent::Stream { generation, event }))
-                                .await;
-                        }
-                        match result {
-                            Ok(Ok(_)) => {
-                                let _ = sender
-                                    .send(AppEvent::Ai(AiEvent::Finished { generation }))
-                                    .await;
-                            }
-                            Ok(Err(error)) => {
-                                let _ = sender
-                                    .send(AppEvent::Ai(AiEvent::Failed {
-                                        generation,
-                                        message: format!("{error:#}"),
-                                    }))
-                                    .await;
-                            }
-                            Err(error) => {
-                                let _ = sender
-                                    .send(AppEvent::Ai(AiEvent::Failed {
-                                        generation,
-                                        message: error.to_string(),
-                                    }))
-                                    .await;
-                            }
-                        }
-                        return;
-                    }
-                }
-            }
-        });
-        self.chat_tasks.push(forward.abort_handle());
-        ui.status(format!("AI: waiting for {}", self.chat.model));
-    }
-
-    pub fn finish_chat_turn(&mut self, ui: &mut Ui<'_>) {
-        self.chat_streaming = false;
-        self.chat_tasks.clear();
-        if let Some(turn) = self.chat_turn.take() {
-            let (message, stop, _usage) = turn.finish();
-            let wants_tools = message
-                .blocks
-                .iter()
-                .any(|block| matches!(block, ContentBlock::ToolUse { .. }));
-            self.chat.messages.push(message);
-            self.chat.interrupted = None;
-            self.chat.touch();
-            let _ = self.chat_store.save(&self.chat);
-            ui.mark_session_dirty();
-            self.chat_scroll = 0;
-            if wants_tools && stop == StopReason::ToolUse {
-                self.handle_tool_calls(ui);
-            } else {
-                self.tool_rounds = 0;
-            }
-        }
-    }
-
-    pub fn cancel_chat(&mut self, ui: &mut Ui<'_>) {
-        if !self.chat_streaming && self.chat_tasks.is_empty() {
-            return;
-        }
-        for task in self.chat_tasks.drain(..) {
-            task.abort();
-        }
-        self.chat_generation = self.chat_generation.wrapping_add(1);
-        if let Some(mut turn) = self.chat_turn.take() {
-            turn.mark_error("cancelled");
-            let (message, _stop, _usage) = turn.finish();
-            self.chat.messages.push(message);
-            self.chat.touch();
-            let _ = self.chat_store.save(&self.chat);
-        }
-        self.chat_streaming = false;
-        self.pending_change_set = None;
-        self.pending_tool_results.clear();
-        ui.status("AI: turn cancelled");
-        ui.mark_session_dirty();
-    }
-
-    pub fn buffer_snapshot(&self, ui: &Ui<'_>) -> MapBuffers {
-        let mut buffers = MapBuffers::new();
-        for tab in ui.workbench.tabs() {
-            if let Some(editor) = tab.editor()
-                && let Some(path) = editor.path()
-            {
-                let key = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
-                buffers.insert(key, editor.document.text());
-            }
-        }
-        buffers
-    }
-
-    pub fn handle_tool_calls(&mut self, ui: &mut Ui<'_>) {
-        let Some(message) = self.chat.last_assistant() else {
-            return;
-        };
-        let calls = message
-            .blocks
-            .iter()
-            .filter_map(|block| match block {
-                ContentBlock::ToolUse {
-                    id,
-                    name,
-                    input_json,
-                } => Some(ToolCall {
-                    id: id.clone(),
-                    name: name.clone(),
-                    input: if input_json.trim().is_empty() {
-                        serde_json::json!({})
-                    } else {
-                        serde_json::from_str(input_json).unwrap_or_else(|_| serde_json::json!({}))
-                    },
-                }),
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        if calls.is_empty() {
-            self.tool_rounds = 0;
-            return;
-        }
-        let Ok(workspace) = ToolWorkspace::new(ui.workspace) else {
-            ui.status("AI: workspace is unavailable for tools");
-            return;
-        };
-        let buffers = self.buffer_snapshot(ui);
-        let allow_commands = ui
-            .settings
-            .get("ai.allowValidationCommands")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false);
-        let sender = self.events.clone();
-        let generation = self.chat_generation;
-        ui.status(format!("AI: running {} tool call(s)", calls.len()));
-        let task = self.jobs.spawn(async move {
-            let mut results = Vec::new();
-            let mut change_set: Option<ChangeSet> = None;
-            for call in calls {
-                match execute_tool(&workspace, &call, &buffers, allow_commands).await {
-                    Ok(outcome) => {
-                        if let Some(set) = outcome.change_set {
-                            if let Some(existing) = change_set.as_mut() {
-                                existing.merge(set);
-                            } else {
-                                change_set = Some(set);
-                            }
-                        }
-                        results.push(ChatToolResult {
-                            tool_use_id: call.id,
-                            content: outcome.content,
-                            is_error: outcome.is_error,
-                        });
-                    }
-                    Err(error) => results.push(ChatToolResult {
-                        tool_use_id: call.id,
-                        content: error.to_string(),
-                        is_error: true,
-                    }),
-                }
-            }
-            let _ = sender
-                .send(AppEvent::Ai(AiEvent::ToolResults {
-                    generation,
-                    results,
-                    change_set,
-                }))
-                .await;
-        });
-        self.chat_tasks.push(task.abort_handle());
-    }
-
-    pub fn apply_tool_results(&mut self, results: Vec<ChatToolResult>, ui: &mut Ui<'_>) {
-        if results.is_empty() {
-            return;
-        }
-        let blocks = results
-            .into_iter()
-            .map(|result| ContentBlock::ToolResult {
-                tool_use_id: result.tool_use_id,
-                content: result.content,
-                is_error: result.is_error,
-            })
-            .collect::<Vec<_>>();
-        self.chat
-            .messages
-            .push(ChatMessage::new(Role::User, blocks));
-        self.chat.touch();
-        let _ = self.chat_store.save(&self.chat);
-        self.tool_rounds += 1;
-        if self.tool_rounds > 4 {
-            self.tool_rounds = 0;
-            ui.status("AI: stopped after 4 tool rounds");
-            return;
-        }
-        self.start_chat_turn(ui);
-    }
-
-    pub fn resolve_pending_changes(&mut self, approve: bool, ui: &mut Ui<'_>) {
-        let Some(mut set) = self.pending_change_set.take() else {
-            return;
-        };
-        let mut results = std::mem::take(&mut self.pending_tool_results);
-        if approve {
-            match ToolWorkspace::new(ui.workspace).and_then(|workspace| set.apply(&workspace)) {
-                Ok(report) => {
-                    for result in &mut results {
-                        if result.content.starts_with("Pending approval") {
-                            (result.content, result.is_error) =
-                                report.resolve_pending(&result.content);
-                        }
-                    }
-                    let reads = match report.reads.len() {
-                        0 => String::new(),
-                        1 => "1 approved read".to_owned(),
-                        count => format!("{count} approved reads"),
-                    };
-                    ui.status(match (report.applied.len(), reads.is_empty()) {
-                        (0, false) => format!("AI: shared {reads}"),
-                        (applied, false) => {
-                            format!("AI: applied {applied} file change(s) and shared {reads}")
-                        }
-                        (applied, true) => format!("AI: applied {applied} file change(s)"),
-                    });
-                    ui.mark_session_dirty();
-                }
-                Err(error) => {
-                    for result in &mut results {
-                        if result.content.starts_with("Pending approval") {
-                            result.content = format!("Change set failed to apply: {error}");
-                            result.is_error = true;
-                        }
-                    }
-                    ui.status(format!("AI: change set failed: {error}"));
-                }
-            }
-        } else {
-            for result in &mut results {
-                if result.content.starts_with("Pending approval") {
-                    result.content = "The user rejected the change set".to_owned();
-                    result.is_error = true;
-                }
-            }
-            ui.status("AI: changes rejected");
-        }
-        self.apply_tool_results(results, ui);
-    }
-
-    pub fn open_model_picker(&mut self, ui: &mut Ui<'_>) {
-        if !self.chat_available(ui) {
-            return;
-        }
-        let items = self
-            .models
-            .models()
-            .iter()
-            .filter(|model| model.available)
-            .map(|model| {
-                modal::ModalItem::new(
-                    model.name.clone(),
-                    format!("{} · {}", model.provider, model.id),
-                    model.id.clone(),
-                )
-            })
-            .collect();
-        *ui.overlay = Some(modal::model_picker(items));
-    }
-
-    pub fn select_model(&mut self, model_id: &str, ui: &mut Ui<'_>) {
-        let Some((provider, id, name)) = self
-            .models
-            .model(model_id)
-            .map(|model| (model.provider.clone(), model.id.clone(), model.name.clone()))
-        else {
-            return;
-        };
-        self.chat.provider = provider.clone();
-        self.chat.model = id.clone();
-        self.chat.touch();
-        self.preferences.chat = Some(id.clone());
-        if let Err(error) = self.preferences.save(&self.preferences_file) {
-            ui.status(format!("AI: could not save model preference: {error}"));
-        }
-        let _ = self.chat_store.save(&self.chat);
-        ui.status(format!("AI model: {name} ({provider})"));
-        ui.mark_session_dirty();
-    }
-
-    pub fn open_chat_sessions(&mut self, ui: &mut Ui<'_>) {
-        if !self.chat_available(ui) {
-            return;
-        }
-        let items = self
-            .chat_store
-            .list()
-            .into_iter()
-            .map(|session| {
-                modal::ModalItem::new(
-                    session.title.clone(),
-                    format!(
-                        "{} · {} · {} messages",
-                        session.provider, session.model, session.message_count
-                    ),
-                    session.id,
-                )
-            })
-            .collect::<Vec<_>>();
-        if items.is_empty() {
-            ui.status("AI: no saved conversations");
-            return;
-        }
-        *ui.overlay = Some(modal::chat_sessions(items));
-    }
-
-    pub fn load_chat_session(&mut self, id: &str, ui: &mut Ui<'_>) {
-        match self.chat_store.load(id) {
-            Ok(session) => {
-                if self.chat_streaming {
-                    self.cancel_chat(ui);
-                }
-                self.chat = session;
-                self.chat_draft.clear();
-                self.chat_scroll = 0;
-                self.open_chat_tab(false, ui);
-                ui.status(format!("AI: opened {}", self.chat.title));
-            }
-            Err(error) => ui.status(format!("AI: could not load conversation: {error}")),
-        }
-    }
-
-    pub fn save_api_key(&mut self, provider: &str, key: &str, ui: &mut Ui<'_>) {
-        let key = key.trim();
-        if key.is_empty() {
-            return;
-        }
-        let name = match provider {
-            "anthropic" => tide_ai::secrets::SECRET_KEY_CLAUDE,
-            "openai" => tide_ai::secrets::SECRET_KEY_OPENAI,
-            "gemini" => tide_ai::secrets::SECRET_KEY_GEMINI,
-            _ => return,
-        };
-        match self.secrets.set(name, key, &SecretOptions::default()) {
-            Ok(store) => ui.status(format!("Stored {provider} API key in {store}")),
-            Err(error) => ui.status(format!("Secrets: {error}")),
-        }
-    }
-
-    pub fn unlock_secrets(&mut self, password: &str, ui: &mut Ui<'_>) {
-        match self.secrets.unlock(password) {
-            Ok(()) => ui.status("Secrets: encrypted store unlocked"),
-            Err(error) => ui.status(format!("Secrets: {error}")),
-        }
-    }
-
-    pub fn manage_secrets(&mut self, ui: &mut Ui<'_>) {
-        if self.secrets.is_unlocked() {
-            ui.status(format!(
-                "Secrets: unlocked with {} stored keys",
-                self.secrets.list(None).len()
-            ));
-        } else {
-            *ui.overlay = Some(modal::prompt(
-                PromptAction::UnlockSecrets,
-                "Unlock Secrets",
-                "",
-            ));
-        }
     }
 
     pub fn open_cli_picker(&mut self, ui: &mut Ui<'_>) {
@@ -1568,79 +864,6 @@ impl AiController {
             ),
         ));
     }
-
-    pub fn handle_chat_key(&mut self, key: KeyEvent, ui: &mut Ui<'_>) {
-        match key.code {
-            KeyCode::Enter => self.send_chat_message(ui),
-            KeyCode::Backspace => {
-                self.chat_draft.pop();
-            }
-            KeyCode::Esc => *ui.focus = Focus::Main,
-            KeyCode::PageUp => self.chat_scroll = self.chat_scroll.saturating_add(10),
-            KeyCode::PageDown => self.chat_scroll = self.chat_scroll.saturating_sub(10),
-            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.cancel_chat(ui);
-            }
-            KeyCode::Char(ch)
-                if !key
-                    .modifiers
-                    .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
-            {
-                self.chat_draft.push(ch);
-            }
-            _ => {}
-        }
-    }
-
-    pub fn show_pending_changes(&mut self, ui: &mut Ui<'_>) {
-        if let Some(set) = self.pending_change_set.as_ref() {
-            let preview = set.preview();
-            *ui.overlay = Some(modal::info(
-                "Pending AI Changes",
-                &preview.chars().take(4000).collect::<String>(),
-            ));
-        } else {
-            ui.status("AI: no pending changes");
-        }
-    }
-
-    pub fn retry_chat_turn(&mut self, ui: &mut Ui<'_>) {
-        if let Some(message) = self
-            .chat
-            .messages
-            .iter()
-            .rev()
-            .find(|message| message.role == tide_ai::provider::Role::User)
-            .map(tide_ai::chat::ChatMessage::text)
-        {
-            self.chat_draft = message;
-            self.send_chat_message(ui);
-        } else {
-            ui.status("AI: nothing to retry");
-        }
-    }
-
-    pub fn show_context_usage(&mut self, ui: &mut Ui<'_>) {
-        if !self.chat_available(ui) {
-            return;
-        }
-        let messages = self.chat.messages.len();
-        let context = self
-            .model_info()
-            .and_then(|model| model.context_window)
-            .map_or_else(|| "unknown".to_owned(), |window| window.to_string());
-        let usage = self
-            .chat_turn
-            .as_ref()
-            .and_then(TurnAccumulator::usage)
-            .map_or_else(
-                || "0".to_owned(),
-                |(input, output)| format!("{input} in / {output} out"),
-            );
-        ui.status(format!(
-            "AI context: {messages} messages · window {context} · last turn {usage}"
-        ));
-    }
 }
 
 fn sort_agent_sessions(sessions: &mut [CliSession]) {
@@ -1704,11 +927,4 @@ pub fn discover_agent_sessions(
         };
     };
     ai_cli::discover_all_with_updates(&home, workspace, update)
-}
-
-#[derive(Debug, Clone)]
-pub struct ChatToolResult {
-    pub tool_use_id: String,
-    pub content: String,
-    pub is_error: bool,
 }

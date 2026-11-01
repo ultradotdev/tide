@@ -1,8 +1,6 @@
-//! Core text-editing primitives for Tide.
-//!
-//! The TypeScript implementation used a custom piece table, cursor manager,
-//! and undo stack. The Rust implementation starts from a rope and keeps the
-//! same externally observable editing semantics.
+//! Core text-editing primitives for Tide: a rope-backed document with cursors,
+//! selections and undo, display-width helpers, crash-safe writes, process hygiene
+//! and the workspace path boundary.
 
 mod cursor;
 mod document;
@@ -11,11 +9,13 @@ pub mod num;
 pub mod process;
 mod undo;
 mod width;
+pub mod workspace;
 
 pub use cursor::{Cursor, Position, Selection, compare_positions, get_selection_range, min_max};
 pub use document::{Document, OverlappingEdits, TextSnapshot};
 pub use undo::{Edit, UndoManager};
 pub use width::{display_width, grapheme_boundaries, grapheme_width, graphemes, truncate_to_width};
+pub use workspace::{Workspace, WorkspaceError};
 
 /// A half-open character range.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,8 +1,7 @@
 //! `cargo xtask`: Tide's maintainer tooling.
 //!
-//! Each subcommand replaces a former `scripts/*.ts`, `*.py` or `*.sh` tool and
-//! keeps its name. Signing, notarization, Docker and GitHub API commands run
-//! through injectable runners and are never exercised by the test suite.
+//! Signing, notarization, Docker and GitHub API commands run through injectable
+//! runners and are never exercised by the test suite.
 mod docs;
 mod gates;
 mod governance;
@@ -188,8 +187,6 @@ enum Task {
     InstallRustLocal {
         #[arg(long)]
         prefix: Option<PathBuf>,
-        #[arg(long)]
-        migrate_legacy: bool,
         #[arg(long, group = "action")]
         binary: Option<PathBuf>,
         #[arg(long, group = "action")]
@@ -423,7 +420,6 @@ fn run(task: Task) -> Result<ExitCode> {
         )?,
         Task::InstallRustLocal {
             prefix,
-            migrate_legacy,
             binary,
             rollback,
             uninstall,
@@ -437,7 +433,7 @@ fn run(task: Task) -> Result<ExitCode> {
             let prefix = prefix.unwrap_or_else(|| {
                 PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local")
             });
-            let code = install_checks::install_local(&prefix, &action, migrate_legacy)?;
+            let code = install_checks::install_local(&prefix, &action)?;
             return Ok(ExitCode::from(u8::try_from(code).unwrap_or(1)));
         }
         Task::VerifyRustLocalInstall { debug, release } => {
@@ -493,13 +489,13 @@ mod tests {
     use clap::CommandFactory;
 
     #[test]
-    fn the_cli_is_well_formed_and_lists_every_former_script() {
+    fn the_cli_is_well_formed_and_lists_every_maintainer_task() {
         Cli::command().debug_assert();
         let names: Vec<String> = Cli::command()
             .get_subcommands()
             .map(|command| command.get_name().to_owned())
             .collect();
-        for former in [
+        for task in [
             "package-release-artifact",
             "generate-release-checksums",
             "homebrew-formula",
@@ -528,7 +524,7 @@ mod tests {
             "verify-rust-test-readiness",
             "build-rust-linux-release",
         ] {
-            assert!(names.contains(&former.to_owned()), "missing {former}");
+            assert!(names.contains(&task.to_owned()), "missing {task}");
         }
     }
 

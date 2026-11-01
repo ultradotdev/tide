@@ -3,8 +3,6 @@
     "aiCli.new": "agents.newSession",
     "aiCli.openSession": "agents.openSession",
     "aiCli.refreshSessions": "agents.refreshSessions",
-    "file.nextTab": "editor.nextTab",
-    "file.previousTab": "editor.previousTab",
     "terminal.focus": "workbench.focusTerminal",
     "terminal.nextTab": "terminal.next",
     "terminal.previousTab": "terminal.previous",
@@ -86,231 +84,6 @@
       "label": "Agents: Toggle Sidebar",
       "paletteVisible": true,
       "supported": true
-    },
-    {
-      "canonical": "aiChat.cancelTurn",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.cancelTurn",
-      "label": "AI Chat: Cancel Active Turn",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.changeProviderModel",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.changeProviderModel",
-      "label": "AI Chat: Change Provider and Model...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.changeThinkingControls",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.changeThinkingControls",
-      "label": "AI Chat: Change Thinking Controls...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.compactContext",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.compactContext",
-      "label": "AI Chat: Compact Context...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.continueOnce",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.continueOnce",
-      "label": "AI Chat: Continue Once at Context Limit",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.discardPendingTurn",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.discardPendingTurn",
-      "label": "AI Chat: Discard Pending Turn",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.enableAutonomy",
-      "category": "AI",
-      "description": "Allow this AI Chat session to apply workspace-contained create/edit changes; Bash and delete still prompt",
-      "id": "aiChat.enableAutonomy",
-      "label": "AI Chat: Enable Autonomy for This Session",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.guardedRollback",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.guardedRollback",
-      "label": "AI Chat: Guarded Rollback",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.history",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.history",
-      "label": "AI Chat: Open Conversation...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.new",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.new",
-      "label": "AI Chat: New",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.newWithProviderModel",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.newWithProviderModel",
-      "label": "AI Chat: New with Provider and Model...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.openCli",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.openCli",
-      "label": "AI Chat: Open AI CLI...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.refreshModels",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.refreshModels",
-      "label": "AI Chat: Refresh Models",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.retryTurn",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.retryTurn",
-      "label": "AI Chat: Resume Pending Turn",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.retryValidation",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.retryValidation",
-      "label": "AI Chat: Retry Validation",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.reviewDiff",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.reviewDiff",
-      "label": "AI Chat: Review Diff",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.setDefaultProviderModel",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.setDefaultProviderModel",
-      "label": "AI Chat: Set Default Provider and Model...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.setDefaultThinkingControls",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.setDefaultThinkingControls",
-      "label": "AI Chat: Set Default Thinking Controls...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.showContextUsage",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.showContextUsage",
-      "label": "AI Chat: Show Context Usage",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.showPendingApprovals",
-      "category": "AI",
-      "description": "Show workspace tool and change approvals pending in AI Chat",
-      "id": "aiChat.showPendingApprovals",
-      "label": "AI Chat: Show Pending Approvals",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.startFromSummary",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.startFromSummary",
-      "label": "AI Chat: Start New Chat from Summary",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.toggle",
-      "category": "AI",
-      "description": "Toggle the direct-provider AI Chat panel",
-      "id": "aiChat.toggle",
-      "label": "AI Chat: Toggle",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.toggleLatestThinking",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.toggleLatestThinking",
-      "label": "AI Chat: Toggle Latest Thinking Block",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.toggleThinking",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.toggleThinking",
-      "label": "AI Chat: Toggle Thinking Blocks",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "aiChat.undoCompaction",
-      "category": "AI",
-      "description": null,
-      "id": "aiChat.undoCompaction",
-      "label": "AI Chat: Undo Last Compaction",
-      "paletteVisible": false,
-      "supported": false
     },
     {
       "canonical": "agents.newSession",
@@ -997,114 +770,6 @@
       "supported": true
     },
     {
-      "canonical": "ensemble.abort",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.abort",
-      "label": "Ensemble: Stop Current Work",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.configureAgents",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.configureAgents",
-      "label": "Ensemble: Configure Agents...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.enableAutonomy",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.enableAutonomy",
-      "label": "Ensemble: Enable Autonomy for This Session",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.focusComposer",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.focusComposer",
-      "label": "Ensemble: Focus Composer",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.new",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.new",
-      "label": "Ensemble: New Conversation",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.open",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.open",
-      "label": "Ensemble: Open",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.resetThinkingControls",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.resetThinkingControls",
-      "label": "Ensemble: Set All Thinking to Provider Default",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.showReviewPolicy",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.showReviewPolicy",
-      "label": "Ensemble: Show Review Policy...",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.toggle",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.toggle",
-      "label": "Ensemble: Toggle",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.toggleLatestThinking",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.toggleLatestThinking",
-      "label": "Ensemble: Toggle Latest Thinking Block",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.toggleThinking",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.toggleThinking",
-      "label": "Ensemble: Toggle Thinking Blocks",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "ensemble.useReviewMode",
-      "category": "AI",
-      "description": null,
-      "id": "ensemble.useReviewMode",
-      "label": "Ensemble: Use Review Mode",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
       "canonical": "file.close",
       "category": "File",
       "description": "Close the active tab",
@@ -1177,15 +842,6 @@
       "supported": false
     },
     {
-      "canonical": "editor.nextTab",
-      "category": "Keybinding actions",
-      "description": null,
-      "id": "file.nextTab",
-      "label": "file.nextTab",
-      "paletteVisible": false,
-      "supported": true
-    },
-    {
       "canonical": "file.open",
       "category": "File",
       "description": "Open a file",
@@ -1210,15 +866,6 @@
       "id": "file.overwrite",
       "label": "Overwrite File on Disk",
       "paletteVisible": true,
-      "supported": true
-    },
-    {
-      "canonical": "editor.previousTab",
-      "category": "Keybinding actions",
-      "description": null,
-      "id": "file.previousTab",
-      "label": "file.previousTab",
-      "paletteVisible": false,
       "supported": true
     },
     {
@@ -1987,15 +1634,6 @@
       "supported": false
     },
     {
-      "canonical": "layout.codeReview",
-      "category": "Layout",
-      "description": "Side-by-side editor with chat",
-      "id": "layout.codeReview",
-      "label": "Code Review",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
       "canonical": "layout.debug",
       "category": "Layout",
       "description": "Terminal and activity prominent",
@@ -2046,15 +1684,6 @@
       "description": "Switch to previous layout preset",
       "id": "layout.previous",
       "label": "Previous Layout",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "layout.zenChat",
-      "category": "Layout",
-      "description": "Full-screen AI chat",
-      "id": "layout.zenChat",
-      "label": "Zen Mode (Chat)",
       "paletteVisible": false,
       "supported": false
     },
@@ -2491,33 +2120,6 @@
       "supported": true
     },
     {
-      "canonical": "secrets.setAnthropicApiKey",
-      "category": "Secrets",
-      "description": null,
-      "id": "secrets.setAnthropicApiKey",
-      "label": "Set Anthropic API Key",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "secrets.setGeminiApiKey",
-      "category": "Secrets",
-      "description": null,
-      "id": "secrets.setGeminiApiKey",
-      "label": "Set Gemini API Key",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
-      "canonical": "secrets.setOpenAIApiKey",
-      "category": "Secrets",
-      "description": null,
-      "id": "secrets.setOpenAIApiKey",
-      "label": "Set OpenAI API Key",
-      "paletteVisible": false,
-      "supported": false
-    },
-    {
       "canonical": "session.delete",
       "category": "Session",
       "description": null,
@@ -2858,15 +2460,6 @@
       "label": "Close Main Pane",
       "paletteVisible": true,
       "supported": true
-    },
-    {
-      "canonical": "view.focusChat",
-      "category": "View",
-      "description": null,
-      "id": "view.focusChat",
-      "label": "Focus AI Chat",
-      "paletteVisible": false,
-      "supported": false
     },
     {
       "canonical": "workbench.focusMainRegion",
@@ -4398,20 +3991,6 @@
     }
   ],
   "preservedSettings": [
-    "ai.builtInConversations.enabled",
-    "ai.chat.defaultModel",
-    "ai.chat.defaultProvider",
-    "ai.chat.temperature",
-    "ai.panel.defaultWidth",
-    "ai.panel.initialPrompt",
-    "ai.panel.maxWidthPercent",
-    "ai.panel.openOnStartup",
-    "ai.reasoning.defaults",
-    "ai.reasoning.modelOverrides",
-    "ai.streaming.enabled",
-    "ai.thinking.completedDisplay",
-    "ai.thinking.enabled",
-    "ai.thinking.previewLines",
     "editor.autoClosingBrackets",
     "editor.cursorBlinkRate",
     "editor.folding",
@@ -4423,9 +4002,6 @@
     "editor.mouseWheelScrollSensitivity",
     "editor.renderWhitespace",
     "editor.scrollBeyondLastLine",
-    "ensemble.agents",
-    "ensemble.asciiIcons",
-    "ensemble.reviewPolicy",
     "files.autoSave",
     "git.diffContextLines",
     "git.panel.location",

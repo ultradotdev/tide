@@ -12,19 +12,6 @@ fn version_reports_the_crate_version() {
 }
 
 #[test]
-fn shared_session_writes_are_refused_until_compatibility_is_proven() {
-    Command::cargo_bin("tide")
-        .unwrap()
-        .arg("--shared-sessions")
-        .arg(".")
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "shared TypeScript session writes are disabled",
-        ));
-}
-
-#[test]
 fn help_mentions_the_terminal_editor() {
     Command::cargo_bin("tide")
         .unwrap()

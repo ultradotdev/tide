@@ -56,8 +56,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "aarch64-apple-darwin",
       "minimumOS": "14.0",
@@ -76,8 +75,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "x86_64-apple-darwin",
       "minimumOS": "14.0",
@@ -96,8 +94,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "aarch64-unknown-linux-gnu",
       "buildImage": "ubuntu:22.04",
@@ -117,8 +114,7 @@
       "smokeChecks": [
         "version",
         "terminal",
-        "catalogs",
-        "model-catalog"
+        "catalogs"
       ],
       "rustTarget": "x86_64-unknown-linux-gnu",
       "buildImage": "ubuntu:22.04",
@@ -276,8 +272,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "21e92361c5eebfb248dcb8ecb045bf5083df6a141237228786c0a131760ba0aa",
-    "lastVerifiedGitFingerprint": "fb6065375a791859ba3e3500a81078fb9aa2f717",
+    "contentHash": "4907a2d9ce50d2358335b8f75ea7b5d1922b26f1f07dc09cf1ce7cc4ae610797",
+    "lastVerifiedGitFingerprint": "a83c550fb3870fdfcff59e2374cba9ad1bcc3e3a",
     "inputFiles": [
       "config/product.json",
       "config/release.json",

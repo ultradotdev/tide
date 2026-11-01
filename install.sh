@@ -18,13 +18,12 @@ Install or manage Tide binary releases.
 
 Usage:
   install.sh [--version VERSION] [--add-to-path]
-  install.sh --binary PATH [--prefix PATH] [--migrate-legacy]
+  install.sh --binary PATH [--prefix PATH]
   install.sh --rollback [VERSION]
 
 Options:
-  --binary PATH      Install a trusted local Rust binary (no download/signing claim).
+  --binary PATH      Install a trusted locally built binary (no download/signing claim).
   --prefix PATH      Local install prefix, default ~/.local.
-  --migrate-legacy   Adopt a verified older local Rust installation.
   --version VERSION  Install an exact Tide version.
   --rollback         Activate the retained previous release.
   --rollback VERSION Activate an already installed version.
@@ -47,7 +46,6 @@ rollback_version=""
 add_to_path=0
 binary=""
 prefix=""
-migrate_legacy=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -56,7 +54,6 @@ while [ "$#" -gt 0 ]; do
       if [ "$1" = --binary ]; then binary=$2; else prefix=$2; fi
       shift 2
       ;;
-    --migrate-legacy) migrate_legacy=1; shift ;;
     --version)
       [ "$#" -ge 2 ] || die "--version requires a value"
       version=$2
@@ -93,10 +90,9 @@ if [ -n "$binary" ]; then
     TIDE_BIN_DIR="$prefix/bin"
     export TIDE_INSTALL_ROOT TIDE_BIN_DIR
   fi
-  if [ "$migrate_legacy" -eq 1 ]; then exec "$binary" --install-local --migrate-legacy; fi
   exec "$binary" --install-local
 fi
-[ -z "$prefix" ] && [ "$migrate_legacy" -eq 0 ] || die '--prefix and --migrate-legacy require --binary'
+[ -z "$prefix" ] || die '--prefix requires --binary'
 
 case "${HOME:-}" in
   /*) ;;
@@ -174,8 +170,7 @@ validate_installed_release() {
   for entry in tide uninstall.sh LICENSE ATTRIBUTIONS.md VERSION.json; do
     [ ! -L "$release_dir/$entry" ] || die "symlinked installed payload: $entry"
   done
-  grep -Eq '"implementation"[[:space:]]*:[[:space:]]*"rust"' "$release_dir/VERSION.json" || die 'installed release predates the Rust build and cannot be activated'
-  "$release_dir/tide" --verify-install-manifest "$release_dir" || die 'installed Rust payload is invalid'
+  "$release_dir/tide" --verify-install-manifest "$release_dir" || die 'installed payload is invalid'
   case "$expected_version" in local-*) "$release_dir/tide" --version >/dev/null ;; *) "$release_dir/tide" --version | grep -F "v$expected_version" >/dev/null || die "installed Tide binary version mismatch" ;; esac
 }
 
@@ -312,7 +307,6 @@ payload="$temporary/extracted/$stem"
 [ "$(find "$temporary/extracted" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')" = 1 ] || die "archive contains unexpected top-level directories"
 
 grep -Eq '"product"[[:space:]]*:[[:space:]]*"Tide"' "$payload/VERSION.json" || die "VERSION.json product mismatch"
-grep -Eq '"implementation"[[:space:]]*:[[:space:]]*"rust"' "$payload/VERSION.json" || die 'archive is not a Rust Tide release'
 grep -Eq '"version"[[:space:]]*:[[:space:]]*"'"$version"'"' "$payload/VERSION.json" || die "VERSION.json version mismatch"
 grep -Eq '"platform"[[:space:]]*:[[:space:]]*"'"$platform"'"' "$payload/VERSION.json" || die "VERSION.json platform mismatch"
 grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"'"$architecture"'"' "$payload/VERSION.json" || die "VERSION.json architecture mismatch"
@@ -331,7 +325,7 @@ fi
 "$payload/tide" --version | grep -F "v$version" >/dev/null || die "Tide binary version mismatch"
 "$payload/tide" --check-terminal >/dev/null || die "Tide terminal runtime check failed"
 
-"$payload/tide" --verify-install-manifest "$payload" || die 'Rust payload verification failed'
+"$payload/tide" --verify-install-manifest "$payload" || die 'payload verification failed'
 "$payload/tide" --check-catalogs >/dev/null || die 'Tide catalog check failed'
 "$payload/tide" --install-release "$payload"
 

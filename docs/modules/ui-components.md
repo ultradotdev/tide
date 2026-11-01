@@ -1,6 +1,6 @@
 # UI Components
 
-The Rust UI is implemented in `crates/tide-ui/src`.
+The UI is implemented in `crates/tide-ui/src`.
 
 | Surface | State and behavior |
 | --- | --- |

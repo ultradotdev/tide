@@ -1,8 +1,0 @@
-[
-  { "key": "ctrl+.", "command": "lsp.codeActions", "when": "editorFocus" },
-  { "key": "ctrl+alt+a", "command": "agents.openSession" },
-  { "key": "ctrl+space", "command": "database.complete", "when": "sqlEditorFocus" },
-  { "key": "ctrl+alt+up", "command": "workbench.focusPaneUp", "when": "!editorFocus" },
-  { "key": "ctrl+alt+down", "command": "workbench.focusPaneDown", "when": "!editorFocus" },
-  { "key": "ctrl+r", "command": "aiChat.changeProviderModel", "when": "aiChatFocus" }
-]

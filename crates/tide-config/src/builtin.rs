@@ -67,13 +67,7 @@ pub fn settings() -> Settings {
 
 /// Built-in keybindings, parsed from the checked-in JSONC authority.
 pub fn keybindings() -> Vec<Keybinding> {
-    let mut bindings: Vec<Keybinding> =
-        crate::parse_jsonc(KEYBINDINGS_JSONC).expect("built-in keybindings must parse");
-    let overlay: Vec<Keybinding> =
-        crate::parse_jsonc(include_str!("../../../config/rust-keybindings.jsonc"))
-            .expect("Rust keybindings must parse");
-    bindings.extend(overlay);
-    bindings
+    crate::parse_jsonc(KEYBINDINGS_JSONC).expect("built-in keybindings must parse")
 }
 
 /// Built-in command metadata, parsed from the checked-in JSONC authority.
@@ -114,9 +108,9 @@ mod tests {
 
     #[test]
     fn embedded_catalogs_have_their_expected_sizes() {
-        assert_eq!(settings().len(), 90);
-        assert_eq!(keybindings().len(), 197);
-        assert_eq!(commands().len(), 284);
+        assert_eq!(settings().len(), 73);
+        assert_eq!(keybindings().len(), 189);
+        assert_eq!(commands().len(), 241);
         assert_eq!(themes().len(), 13);
     }
 }

@@ -3,7 +3,7 @@
   "timestamp": "2026-10-27T22:00:00.000Z",
   "instanceId": "11111111-2222-4333-8444-555555555555",
   "workspaceRoot": "/workspace",
-  "sessionName": "parity",
+  "sessionName": "example",
   "documents": [
     {
       "filePath": "/workspace/src/main.ts",
@@ -54,9 +54,7 @@
     }
   ],
   "aiCliPanes": [],
-  "aiChatPanes": [],
   "sqlEditors": [],
-  "ensemblePanels": [],
   "activeDocumentPath": "/workspace/src/main.ts",
   "activePaneId": "pane-1",
   "layout": {
@@ -89,8 +87,6 @@
     "gitPanelWidth": 40,
     "activeSidebarPanel": "files",
     "minimapEnabled": true,
-    "aiPanelVisible": false,
-    "aiPanelWidth": 80,
     "sidebarAccordionExpanded": [
       "files",
       "outline"

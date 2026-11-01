@@ -36,7 +36,7 @@ Visit [GitHub](https://github.com) for more info.
 
 | Name   | Language   | Status |
 |--------|------------|--------|
-| Ultra  | TypeScript | Active |
+| Tide   | Rust       | Active |
 | Vim    | C          | Active |
 
 ## Task Lists

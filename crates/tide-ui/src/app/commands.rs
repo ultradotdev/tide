@@ -317,9 +317,6 @@ impl App {
                 with_ui!(self, |ui| self.git.toggle_timeline_mode(ui))
             }
             Command::GitPanelDiscard => with_ui!(self, |ui| self.git.discard_selected(ui)),
-            Command::AiChatShowPendingApprovals => {
-                self.with_ai(|ai, ui| ai.show_pending_changes(ui))
-            }
             Command::AiCliToggle => self.with_ai(|ai, ui| ai.open_cli_picker(ui)),
             Command::FileTreeMoveDown => self.with_file_tree(FileTreeState::move_down),
             Command::FileTreeMoveUp => self.with_file_tree(FileTreeState::move_up),
@@ -416,16 +413,6 @@ impl App {
                 "Export Results (CSV)",
                 "results.csv",
             ),
-            Command::AiChatNew => self.with_ai(|ai, ui| ai.open_chat_tab(true, ui)),
-            Command::AiChatToggle => self.with_ai(|ai, ui| ai.open_chat_tab(false, ui)),
-            Command::AiChatChangeProviderModel | Command::AiChatSetDefaultProviderModel => {
-                self.with_ai(|ai, ui| ai.open_model_picker(ui));
-            }
-            Command::AiChatCancelTurn => self.with_ai(|ai, ui| ai.cancel_chat(ui)),
-            Command::AiChatRetryTurn => self.with_ai(|ai, ui| ai.retry_chat_turn(ui)),
-            Command::AiChatShowContextUsage => self.with_ai(|ai, ui| ai.show_context_usage(ui)),
-            Command::AiChatHistory => self.with_ai(|ai, ui| ai.open_chat_sessions(ui)),
-            Command::AiChatOpenCli => self.with_ai(|ai, ui| ai.open_cli_picker(ui)),
             Command::AgentsOpenSession => self.with_ai(|ai, ui| ai.open_session_picker(ui)),
             Command::AgentsAssociateWorkspace => self.with_ai(|ai, ui| ai.open_workspaces(ui)),
             Command::AgentsNewSession => self.with_ai(|ai, ui| ai.open_cli_picker(ui)),
@@ -441,22 +428,7 @@ impl App {
                 self.set_status("Agents: sessions refreshed");
             }
             Command::AgentsTogglePanel => self.toggle_agents(),
-            Command::SecretsSetAnthropicApiKey => self.open_prompt(
-                PromptAction::AiApiKey("anthropic".to_owned()),
-                "Anthropic API Key",
-                "",
-            ),
-            Command::SecretsSetOpenAIApiKey => self.open_prompt(
-                PromptAction::AiApiKey("openai".to_owned()),
-                "OpenAI API Key",
-                "",
-            ),
-            Command::SecretsSetGeminiApiKey => self.open_prompt(
-                PromptAction::AiApiKey("gemini".to_owned()),
-                "Gemini API Key",
-                "",
-            ),
-            Command::SecretsManage => self.with_ai(|ai, ui| ai.manage_secrets(ui)),
+            Command::SecretsManage => self.with_db(|db, ui| db.manage_secrets(ui)),
             Command::WorkbenchQuit | Command::Quit => self.quit(),
             Command::WorkbenchSaveSession | Command::SessionSave => match self.save_session() {
                 Ok(()) => self.set_status("Session saved"),

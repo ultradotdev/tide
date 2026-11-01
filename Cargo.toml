@@ -6,7 +6,6 @@ members = [
     "crates/tide-terminal",
     "crates/tide-lsp",
     "crates/tide-ai",
-    "crates/tide-tools",
     "crates/tide-db",
     "crates/tide-services",
     "crates/tide-ui",
@@ -48,8 +47,7 @@ ignore = "0.4"
 notify = "8.2"
 regex = "1"
 futures-util = "0.3"
-async-trait = "0.1"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 aes-gcm = "0.10"
 scrypt = "0.11"
 rand = "0.8"

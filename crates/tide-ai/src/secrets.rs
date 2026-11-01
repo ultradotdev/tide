@@ -1,39 +1,28 @@
-//! Secret storage compatible with the TypeScript build.
+//! Secret storage.
 //!
 //! Providers are queried in priority order: system keychain, read-only
 //! environment variables, then the encrypted file fallback. The encrypted file
-//! format is the TypeScript V2 envelope (scrypt + AES-256-GCM) with the scrypt
-//! cost recorded in the header. Envelopes without a recorded cost (written by
-//! the TypeScript build) are read at N=2^14 and re-encrypted at N=2^17 on the
-//! next save. The legacy iterated-SHA-256 envelope is still readable.
+//! is a version 2 JSON envelope: scrypt (N=2^17, recorded in the header) and
+//! AES-256-GCM.
 
 use std::collections::BTreeMap;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use aes_gcm::aead::generic_array::typenum::U16;
 use aes_gcm::aead::{Aead, KeyInit};
-use aes_gcm::aes::Aes256;
-use aes_gcm::{Aes256Gcm, AesGcm, Key, Nonce};
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
-
-pub const SECRET_KEY_CLAUDE: &str = "ai.claude.api-key";
-pub const SECRET_KEY_OPENAI: &str = "ai.openai.api-key";
-pub const SECRET_KEY_GEMINI: &str = "ai.gemini.api-key";
 
 const MASTER_PASSWORD_ENV: &str = "TIDE_MASTER_PASSWORD";
 const ENV_PREFIX: &str = "TIDE_SECRET_";
 const KEYCHAIN_SERVICE: &str = "tide";
 
-/// scrypt cost (log2 N) used for new envelopes.
+/// scrypt cost (log2 N) of every envelope.
 const SCRYPT_LOG_N: u8 = 17;
-/// Cost of envelopes written before the header recorded it.
-const LEGACY_SCRYPT_LOG_N: u8 = 14;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SecretError {
@@ -129,9 +118,9 @@ struct KdfDescriptor {
     salt: String,
     #[serde(rename = "keyLength")]
     key_length: u32,
-    /// scrypt N. Absent in envelopes written by the TypeScript build.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    cost: Option<u64>,
+    /// scrypt N, always 2^17. Any other cost is rejected before deriving, so a
+    /// crafted header cannot demand unbounded memory.
+    cost: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -142,7 +131,7 @@ struct CipherDescriptor {
     auth_tag: String,
 }
 
-/// Provider abstraction mirroring the TypeScript `SecretProvider` contract.
+/// A secret backend.
 pub trait SecretProvider: Send + Sync {
     fn id(&self) -> &'static str;
     fn is_read_only(&self) -> bool;
@@ -256,30 +245,6 @@ impl SecretService {
                 && info.is_some()
             {
                 return info;
-            }
-        }
-        None
-    }
-
-    /// Resolve an AI provider API key, including legacy environment names.
-    pub fn provider_api_key(&self, provider: &str) -> Option<String> {
-        let (canonical, legacy): (&str, &[&str]) = match provider {
-            "claude" | "anthropic" => (SECRET_KEY_CLAUDE, &["ANTHROPIC_API_KEY"]),
-            "openai" => (SECRET_KEY_OPENAI, &["OPENAI_API_KEY"]),
-            "gemini" | "google" => (SECRET_KEY_GEMINI, &["GEMINI_API_KEY", "GOOGLE_API_KEY"]),
-            _ => return None,
-        };
-        if let Some(value) = self.get(canonical) {
-            return Some(value);
-        }
-        for key in legacy {
-            if let Ok(value) = std::env::var(key)
-                && !value.trim().is_empty()
-            {
-                return Some(value);
-            }
-            if let Some(value) = self.get(key) {
-                return Some(value);
             }
         }
         None
@@ -603,7 +568,7 @@ struct EncryptedInner {
     cache: Option<BTreeMap<String, StoredSecret>>,
 }
 
-/// AES-256-GCM encrypted file store with the TypeScript V2 envelope.
+/// AES-256-GCM encrypted file store.
 pub struct EncryptedFileStore {
     path: PathBuf,
     inner: Mutex<EncryptedInner>,
@@ -663,35 +628,7 @@ impl EncryptedFileStore {
         let bytes =
             std::fs::read(&self.path).map_err(|error| SecretError::Io(error.to_string()))?;
         let password = inner.password.as_ref().ok_or(SecretError::Locked)?;
-        let store = match decrypt_v2(&bytes, password) {
-            Ok(store) => store,
-            Err(primary) => match decrypt_legacy(&bytes, password) {
-                Ok(text) => {
-                    let legacy: serde_json::Value =
-                        serde_json::from_str(&text).map_err(|_| SecretError::InvalidPayload)?;
-                    let secrets = legacy
-                        .get("secrets")
-                        .and_then(|value| value.as_object())
-                        .map(|object| {
-                            object
-                                .iter()
-                                .filter_map(|(key, value)| {
-                                    serde_json::from_value::<StoredSecret>(value.clone())
-                                        .ok()
-                                        .map(|secret| (key.clone(), secret))
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_default();
-                    PlaintextStore {
-                        version: 2,
-                        secrets,
-                    }
-                }
-                Err(_) => return Err(primary),
-            },
-        };
-        inner.cache = Some(store.secrets);
+        inner.cache = Some(decrypt_v2(&bytes, password)?.secrets);
         Ok(())
     }
 
@@ -852,7 +789,7 @@ fn encrypt_v2(store: &PlaintextStore, password: &str) -> Result<EnvelopeV2, Secr
     let mut iv = [0_u8; 12];
     rand::thread_rng().fill_bytes(&mut salt);
     rand::thread_rng().fill_bytes(&mut iv);
-    let key = derive_key(password, &salt, SCRYPT_LOG_N)?;
+    let key = derive_key(password, &salt)?;
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_slice()));
     let plaintext = Zeroizing::new(
         serde_json::to_vec(store).map_err(|error| SecretError::Io(error.to_string()))?,
@@ -867,7 +804,7 @@ fn encrypt_v2(store: &PlaintextStore, password: &str) -> Result<EnvelopeV2, Secr
             name: "scrypt".to_owned(),
             salt: BASE64.encode(salt),
             key_length: 32,
-            cost: Some(1 << SCRYPT_LOG_N),
+            cost: 1 << SCRYPT_LOG_N,
         },
         cipher: CipherDescriptor {
             name: "aes-256-gcm".to_owned(),
@@ -884,11 +821,11 @@ fn decrypt_v2(bytes: &[u8], password: &str) -> Result<PlaintextStore, SecretErro
     if envelope.version != 2
         || envelope.kdf.name != "scrypt"
         || envelope.kdf.key_length != 32
+        || envelope.kdf.cost != 1 << SCRYPT_LOG_N
         || envelope.cipher.name != "aes-256-gcm"
     {
         return Err(SecretError::UnsupportedFormat);
     }
-    let log_n = scrypt_log_n(envelope.kdf.cost)?;
     let salt = BASE64
         .decode(&envelope.kdf.salt)
         .map_err(|_| SecretError::UnsupportedFormat)?;
@@ -901,7 +838,7 @@ fn decrypt_v2(bytes: &[u8], password: &str) -> Result<PlaintextStore, SecretErro
     let mut ciphertext = BASE64
         .decode(&envelope.ciphertext)
         .map_err(|_| SecretError::UnsupportedFormat)?;
-    let key = derive_key(password, &salt, log_n)?;
+    let key = derive_key(password, &salt)?;
     ciphertext.extend_from_slice(&auth_tag);
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_slice()));
     let plaintext = Zeroizing::new(
@@ -917,66 +854,13 @@ fn decrypt_v2(bytes: &[u8], password: &str) -> Result<PlaintextStore, SecretErro
     Ok(store)
 }
 
-fn decrypt_legacy(bytes: &[u8], password: &str) -> Result<Zeroizing<String>, SecretError> {
-    if bytes.len() < 48 {
-        return Err(SecretError::InvalidPayload);
-    }
-    let salt = &bytes[0..16];
-    let iv = &bytes[16..32];
-    let auth_tag = &bytes[32..48];
-    let ciphertext = &bytes[48..];
-    let key = legacy_derive_key(password, salt);
-    let mut payload = ciphertext.to_vec();
-    payload.extend_from_slice(auth_tag);
-    // Node's GCM accepts 16-byte IVs, so legacy stores may use U16.
-    let plaintext = if iv.len() == 12 {
-        Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_slice()))
-            .decrypt(Nonce::from_slice(iv), payload.as_slice())
-    } else if iv.len() == 16 {
-        AesGcm::<Aes256, U16>::new(Key::<AesGcm<Aes256, U16>>::from_slice(key.as_slice()))
-            .decrypt(Nonce::from_slice(iv), payload.as_slice())
-    } else {
-        return Err(SecretError::UnsupportedFormat);
-    }
-    .map_err(|_| SecretError::Unlock("legacy decryption failed".to_owned()))?;
-    String::from_utf8(plaintext)
-        .map(Zeroizing::new)
-        .map_err(|error| {
-            drop(Zeroizing::new(error.into_bytes()));
-            SecretError::InvalidPayload
-        })
-}
-
-/// Map a recorded scrypt N to its log2. Only the two costs Tide has ever
-/// written are accepted, so a crafted header cannot demand unbounded memory.
-fn scrypt_log_n(cost: Option<u64>) -> Result<u8, SecretError> {
-    match cost {
-        None => Ok(LEGACY_SCRYPT_LOG_N),
-        Some(n) if n == 1 << LEGACY_SCRYPT_LOG_N => Ok(LEGACY_SCRYPT_LOG_N),
-        Some(n) if n == 1 << SCRYPT_LOG_N => Ok(SCRYPT_LOG_N),
-        Some(_) => Err(SecretError::UnsupportedFormat),
-    }
-}
-
-fn derive_key(password: &str, salt: &[u8], log_n: u8) -> Result<Zeroizing<[u8; 32]>, SecretError> {
-    let params =
-        scrypt::Params::new(log_n, 8, 1, 32).map_err(|error| SecretError::Io(error.to_string()))?;
+fn derive_key(password: &str, salt: &[u8]) -> Result<Zeroizing<[u8; 32]>, SecretError> {
+    let params = scrypt::Params::new(SCRYPT_LOG_N, 8, 1, 32)
+        .map_err(|error| SecretError::Io(error.to_string()))?;
     let mut key = Zeroizing::new([0_u8; 32]);
     scrypt::scrypt(password.as_bytes(), salt, &params, key.as_mut_slice())
         .map_err(|error| SecretError::Io(error.to_string()))?;
     Ok(key)
-}
-
-fn legacy_derive_key(password: &str, salt: &[u8]) -> Zeroizing<[u8; 32]> {
-    let mut key = Zeroizing::new(Vec::with_capacity(password.len() + salt.len()));
-    key.extend_from_slice(password.as_bytes());
-    key.extend_from_slice(salt);
-    for _ in 0..100_000 {
-        key = Zeroizing::new(Sha256::digest(key.as_slice()).to_vec());
-    }
-    let mut out = Zeroizing::new([0_u8; 32]);
-    out.copy_from_slice(&key[..32]);
-    out
 }
 
 /// Atomically replace `path` with `bytes`. The temp file is created 0600 with
@@ -1079,7 +963,7 @@ mod tests {
     fn stores_and_lists_secrets_round_trip() {
         let (dir, store) = store();
         store
-            .set(SECRET_KEY_CLAUDE, "sk-ant-test", &SecretOptions::default())
+            .set("api.token", "token-test", &SecretOptions::default())
             .unwrap();
         store
             .set(
@@ -1092,8 +976,8 @@ mod tests {
             )
             .unwrap();
         assert_eq!(
-            store.get(SECRET_KEY_CLAUDE).unwrap().as_deref(),
-            Some("sk-ant-test")
+            store.get("api.token").unwrap().as_deref(),
+            Some("token-test")
         );
         assert_eq!(store.list().unwrap().len(), 2);
         assert_eq!(
@@ -1124,7 +1008,7 @@ mod tests {
     }
 
     #[test]
-    fn writes_the_typescript_v2_envelope_shape() {
+    fn writes_the_v2_envelope_shape() {
         let (dir, store) = store();
         store.set("k", "v", &SecretOptions::default()).unwrap();
         let bytes = std::fs::read(dir.path().join("secrets.enc")).unwrap();
@@ -1137,63 +1021,29 @@ mod tests {
         assert!(value["cipher"]["authTag"].is_string());
     }
 
-    fn fixture_copy(dir: &Path) -> PathBuf {
-        let path = dir.join("secrets.enc");
-        std::fs::copy(
-            concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/tests/fixtures/secrets-v2.json"
-            ),
-            &path,
-        )
-        .unwrap();
-        path
-    }
-
     #[test]
-    fn legacy_scrypt_cost_is_read_and_migrated_on_the_next_save() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = fixture_copy(dir.path());
-        let original: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-        assert!(original["kdf"].get("cost").is_none());
-
-        let store = EncryptedFileStore::new(&path);
-        store.unlock("tide-test-password").unwrap();
-        assert_eq!(
-            store.get(SECRET_KEY_OPENAI).unwrap().as_deref(),
-            Some("sk-test")
-        );
-        let untouched: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-        assert_eq!(untouched, original);
-
+    fn missing_or_unrecognised_scrypt_costs_are_rejected_without_deriving() {
+        let (dir, store) = store();
         store.set("k", "v", &SecretOptions::default()).unwrap();
-        let migrated: serde_json::Value =
+        let path = dir.path().join("secrets.enc");
+        let envelope: serde_json::Value =
             serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-        assert_eq!(migrated["kdf"]["cost"], 131_072);
-
-        let reopened = EncryptedFileStore::new(&path);
-        reopened.unlock("tide-test-password").unwrap();
-        assert_eq!(
-            reopened.get(SECRET_KEY_OPENAI).unwrap().as_deref(),
-            Some("sk-test")
-        );
-        assert_eq!(reopened.get("k").unwrap().as_deref(), Some("v"));
-    }
-
-    #[test]
-    fn unrecognised_scrypt_costs_are_rejected_without_deriving() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = fixture_copy(dir.path());
-        let mut envelope: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-        envelope["kdf"]["cost"] = serde_json::json!(1_u64 << 30);
-        std::fs::write(&path, serde_json::to_vec(&envelope).unwrap()).unwrap();
-        assert!(matches!(
-            decrypt_v2(&std::fs::read(&path).unwrap(), "tide-test-password"),
-            Err(SecretError::UnsupportedFormat)
-        ));
+        for cost in [Some(1_u64 << 14), Some(1_u64 << 30), None] {
+            let mut changed = envelope.clone();
+            match cost {
+                Some(cost) => changed["kdf"]["cost"] = serde_json::json!(cost),
+                None => {
+                    changed["kdf"].as_object_mut().unwrap().remove("cost");
+                }
+            }
+            assert!(matches!(
+                decrypt_v2(
+                    &serde_json::to_vec(&changed).unwrap(),
+                    "correct horse battery staple"
+                ),
+                Err(SecretError::UnsupportedFormat)
+            ));
+        }
     }
 
     #[cfg(unix)]
@@ -1257,7 +1107,7 @@ mod tests {
             (SecretToolAction::Lookup, None),
             (SecretToolAction::Clear, None),
         ] {
-            let (command, stdin) = secret_tool_command(tool, "tide", "ai.openai.api-key", &action);
+            let (command, stdin) = secret_tool_command(tool, "tide", "db.local.password", &action);
             assert_eq!(stdin, expected_stdin);
             assert!(Path::new(command.get_program()).is_absolute());
             let args = command
@@ -1265,7 +1115,7 @@ mod tests {
                 .map(|arg| arg.to_string_lossy().into_owned())
                 .collect::<Vec<_>>();
             assert!(args.iter().all(|arg| !arg.contains("sk-argv-leak")));
-            assert!(args.contains(&"ai.openai.api-key".to_owned()));
+            assert!(args.contains(&"db.local.password".to_owned()));
         }
     }
 
@@ -1334,26 +1184,33 @@ mod tests {
 
     #[test]
     fn env_provider_maps_dotted_keys() {
-        temp_env::with_var("TIDE_SECRET_AI_OPENAI_API_KEY", Some("env-key"), || {
+        temp_env::with_var("TIDE_SECRET_DB_LOCAL_PASSWORD", Some("env-secret"), || {
             let store = EnvStore::default();
             assert_eq!(
-                store.get(SECRET_KEY_OPENAI).unwrap().as_deref(),
-                Some("env-key")
+                store.get("db.local.password").unwrap().as_deref(),
+                Some("env-secret")
             );
         });
     }
 
     #[test]
     fn service_prefers_environment_over_encrypted_file() {
-        temp_env::with_var("TIDE_SECRET_AI_OPENAI_API_KEY", Some("env-key"), || {
+        temp_env::with_var("TIDE_SECRET_DB_LOCAL_PASSWORD", Some("env-secret"), || {
             let dir = tempfile::tempdir().unwrap();
-            let service = SecretService::new(vec![
-                Box::new(EnvStore::default()),
-                Box::new(EncryptedFileStore::new(dir.path().join("s.enc"))),
-            ]);
+            let encrypted = EncryptedFileStore::new(dir.path().join("s.enc"));
+            encrypted.unlock("pw").unwrap();
+            encrypted
+                .set(
+                    "db.local.password",
+                    "file-secret",
+                    &SecretOptions::default(),
+                )
+                .unwrap();
+            let service =
+                SecretService::new(vec![Box::new(EnvStore::default()), Box::new(encrypted)]);
             assert_eq!(
-                service.provider_api_key("openai").as_deref(),
-                Some("env-key")
+                service.get("db.local.password").as_deref(),
+                Some("env-secret")
             );
         });
     }

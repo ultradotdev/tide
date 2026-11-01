@@ -27,7 +27,6 @@ tide-core = { path = "../tide-core" }
 tide-config = { path = "../tide-config" }
 tide-lsp = { path = "../tide-lsp" }
 tide-ai = { path = "../tide-ai" }
-tide-tools = { path = "../tide-tools" }
 tide-db = { path = "../tide-db" }
 url.workspace = true
 tide-services = { path = "../tide-services" }

@@ -43,4 +43,4 @@ Region dividers support captured drag resizing. Directional controls on tab stri
 
 Dialogs wrap body text and align their action buttons consistently. Save/confirm actions and destructive discard/delete actions use semantic intent colors. Keyboard selection and mouse clicks invoke the same action. Ordinary dialogs dismiss when clicking outside; unresolved save/discard guards remain until an explicit choice.
 
-The global status area and pane-local hints use Rust's active bindings. The [generated keyboard reference](../reference/keyboard-shortcuts.md) lists effective defaults and terminal-safe alternatives.
+The global status area and pane-local hints use the active bindings. The [generated keyboard reference](../reference/keyboard-shortcuts.md) lists effective defaults and terminal-safe alternatives.

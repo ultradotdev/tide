@@ -33,12 +33,13 @@ fn settings_validate_apply_persist_and_hide_excluded_or_ignored_controls() {
     );
     app.open_settings();
     assert!(
-        app.overlay.as_ref().unwrap().base().items.iter().all(
-            |item| crate::preferences::supported(&item.value)
-                && !item.value.starts_with("ensemble.")
-                && !item.value.starts_with("ai.chat")
-                && !item.value.contains("builtIn")
-        )
+        app.overlay
+            .as_ref()
+            .unwrap()
+            .base()
+            .items
+            .iter()
+            .all(|item| crate::preferences::supported(&item.value))
     );
     app.overlay = None;
     let before = app.themes.selected_id().to_owned();
@@ -56,7 +57,6 @@ fn settings_validate_apply_persist_and_hide_excluded_or_ignored_controls() {
         initial_file: None,
         session_name: None,
         restore_session: false,
-        shared_sessions: false,
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
     })

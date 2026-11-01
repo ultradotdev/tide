@@ -63,8 +63,7 @@ impl App {
                 self.documents = DocumentRegistry::default();
                 self.dock = DockState::new();
                 self.session_name = Some(name.to_owned());
-                self.session_baseline = Some(loaded.state.clone());
-                match self.restore_session(loaded.state) {
+                match self.restore_session(loaded) {
                     Ok(()) => {
                         self.session_dirty = false;
                         self.set_status(format!("Session: opened {name}"));
@@ -156,7 +155,6 @@ impl App {
         let mut documents = Vec::new();
         let mut terminals = Vec::new();
         let mut ai_cli_panes = Vec::new();
-        let mut ai_chat_panes = Vec::new();
         let mut sql_editors = Vec::new();
         for pane_id in self.workbench.pane_ids() {
             let Some(pane) = self.workbench.pane(pane_id) else {
@@ -267,30 +265,6 @@ impl App {
                             ]),
                         });
                     }
-                    Tab::AiChat => {
-                        ai_chat_panes.push(SessionAIChatPaneState {
-                            conversation_id: Some(self.ai.chat.id.clone()),
-                            element_id: format!("ai-chat-{pane_id}-{order}"),
-                            pane_id: format!("pane-{pane_id}"),
-                            tab_order: saturating_u32(order),
-                            is_active_in_pane: pane.active == order,
-                            provider: self.ai.chat.provider.clone(),
-                            model: Some(self.ai.chat.model.clone()),
-                            messages: self
-                                .ai
-                                .chat
-                                .messages
-                                .iter()
-                                .filter_map(|message| serde_json::to_value(message).ok())
-                                .collect(),
-                            title: self.ai.chat.title.clone(),
-                            composer_draft: (!self.ai.chat_draft.is_empty())
-                                .then(|| self.ai.chat_draft.clone()),
-                            scroll_top: Some(saturating_u32(self.ai.chat_scroll)),
-                            interrupted_turn: self.ai.chat_streaming,
-                            extra: BTreeMap::new(),
-                        });
-                    }
                     _ => {}
                 }
             }
@@ -323,7 +297,7 @@ impl App {
             Focus::Dock => "bottom-terminal",
             Focus::Status => "status",
         };
-        let mut state = SessionState {
+        SessionState {
             version: 7,
             timestamp: timestamp_millis().to_string(),
             instance_id: self.instance_id.clone(),
@@ -333,7 +307,6 @@ impl App {
             terminals,
             bottom_terminals,
             ai_cli_panes,
-            ai_chat_panes,
             sql_editors,
             active_document_path,
             active_pane_id: format!("pane-{}", self.workbench.focused()),
@@ -365,8 +338,6 @@ impl App {
                     "files".to_owned()
                 },
                 minimap_enabled: self.setting_bool("editor.minimap.enabled", false),
-                ai_panel_visible: self.workbench.has_ai_chat(),
-                ai_panel_width: 80,
                 sidebar_accordion_expanded: self.accordion.expanded_ids(),
                 focused_region: Some(focused_region.to_owned()),
                 extra: BTreeMap::from([
@@ -391,19 +362,7 @@ impl App {
                 ]),
             },
             extra: BTreeMap::from([("rustFileTree".into(), self.file_tree.snapshot())]),
-        };
-        if let Some(previous) = &self.session_baseline {
-            let mut unsupported = previous.clone();
-            // These surfaces are managed by Rust, including an intentionally
-            // empty list after the last tab closes. Never resurrect closed tabs.
-            unsupported.ai_cli_panes.clear();
-            unsupported.sql_editors.clear();
-            if self.ai.chat_enabled {
-                unsupported.ai_chat_panes.clear();
-            }
-            state.preserve_unsupported_from(&unsupported);
         }
-        state
     }
 
     pub(super) fn restore_session(&mut self, session: SessionState) -> Result<()> {
@@ -575,55 +534,6 @@ impl App {
                         pane.active = pane.tabs.len();
                     }
                     pane.tabs.push(Tab::Terminal(tab));
-                }
-            }
-        }
-
-        if let Some(ai_chat) = session
-            .ai_chat_panes
-            .first()
-            .filter(|_| self.ai.chat_enabled)
-        {
-            let loaded = ai_chat
-                .conversation_id
-                .as_deref()
-                .and_then(|id| self.ai.chat_store.load(id).ok())
-                .or_else(|| {
-                    let messages = ai_chat
-                        .messages
-                        .iter()
-                        .filter_map(|message| {
-                            serde_json::from_value::<tide_ai::chat::ChatMessage>(message.clone())
-                                .ok()
-                        })
-                        .collect::<Vec<_>>();
-                    (!messages.is_empty()).then(|| {
-                        let mut chat = ChatSession::new(
-                            ai_chat.provider.clone(),
-                            ai_chat.model.clone().unwrap_or_default(),
-                        );
-                        chat.title = ai_chat.title.clone();
-                        chat.messages = messages;
-                        chat
-                    })
-                });
-            if let Some(mut chat) = loaded {
-                chat.provider = ai_chat.provider.clone();
-                if let Some(model) = &ai_chat.model {
-                    chat.model = model.clone();
-                }
-                self.ai.chat = chat;
-                self.ai.chat_draft = ai_chat.composer_draft.clone().unwrap_or_default();
-                self.ai.chat_scroll = ai_chat.scroll_top.unwrap_or(0) as usize;
-                let pane_id = pane_map
-                    .get(&ai_chat.pane_id)
-                    .copied()
-                    .unwrap_or_else(|| panes.keys().next().copied().unwrap_or(0));
-                if let Some(pane) = panes.get_mut(&pane_id) {
-                    if ai_chat.is_active_in_pane {
-                        pane.active = pane.tabs.len();
-                    }
-                    pane.tabs.push(Tab::AiChat);
                 }
             }
         }

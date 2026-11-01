@@ -230,35 +230,6 @@ impl ReleaseContract {
     }
 }
 
-/// An isolated XDG environment for the model-catalog smoke check.
-pub fn isolated_smoke_env(home: &Path) -> Vec<(String, String)> {
-    vec![
-        ("HOME".into(), home.display().to_string()),
-        (
-            "XDG_CONFIG_HOME".into(),
-            home.join(".config").display().to_string(),
-        ),
-        (
-            "XDG_DATA_HOME".into(),
-            home.join(".local/share").display().to_string(),
-        ),
-        (
-            "XDG_STATE_HOME".into(),
-            home.join(".local/state").display().to_string(),
-        ),
-        (
-            "XDG_CACHE_HOME".into(),
-            home.join(".cache").display().to_string(),
-        ),
-        (
-            "PATH".into(),
-            std::env::var("PATH").unwrap_or_else(|_| "/usr/bin:/bin".into()),
-        ),
-        ("TERM".into(), "xterm-256color".into()),
-        ("LANG".into(), "C.UTF-8".into()),
-    ]
-}
-
 fn run_release_smoke_checks(
     binary: &Path,
     version: &str,
@@ -271,13 +242,6 @@ fn run_release_smoke_checks(
     );
     runner.run_plain(&argv![binary, "--check-terminal"])?;
     runner.run_plain(&argv![binary, "--check-catalogs"])?;
-    let isolated = tempfile::Builder::new()
-        .prefix("tide-release-models-")
-        .tempdir()?;
-    runner.run(
-        &argv![binary, "--check-models"],
-        &RunOptions::env(isolated_smoke_env(isolated.path())),
-    )?;
     Ok(())
 }
 
@@ -1018,8 +982,6 @@ pub mod tests {
                 .unwrap()
                 .contains("--verify-install-manifest")
         );
-        let isolated = &runner.calls[3];
-        assert!(isolated.0[1] == "--check-models" && isolated.1.env.is_some());
     }
 
     #[test]

@@ -98,22 +98,12 @@ pub fn is_full_git_sha(value: &str) -> bool {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RunOptions {
     pub cwd: Option<PathBuf>,
-    /// When present, the child receives exactly this environment.
-    pub env: Option<Vec<(String, String)>>,
 }
 
 impl RunOptions {
     pub fn cwd(path: &Path) -> Self {
         Self {
             cwd: Some(path.to_path_buf()),
-            env: None,
-        }
-    }
-
-    pub fn env(env: Vec<(String, String)>) -> Self {
-        Self {
-            cwd: None,
-            env: Some(env),
         }
     }
 }
@@ -147,11 +137,6 @@ impl CommandRunner for SystemRunner {
         command.args(args).stdin(Stdio::null());
         if let Some(cwd) = &options.cwd {
             command.current_dir(cwd);
-        }
-        if let Some(env) = &options.env {
-            command
-                .env_clear()
-                .envs(env.iter().map(|(key, value)| (key, value)));
         }
         let output = command
             .output()

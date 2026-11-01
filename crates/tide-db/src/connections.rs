@@ -1,5 +1,5 @@
-//! Global and project connection records, compatible with the TypeScript
-//! `connections.json` shape. Passwords are stored only as secret references.
+//! Global and project `connections.json` records. Passwords are stored only as
+//! secret references.
 
 use std::path::{Path, PathBuf};
 
@@ -712,7 +712,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_unknown_fields_from_typescript_files() {
+    fn loads_and_saves_records_with_unknown_fields() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("connections.json");
         std::fs::write(

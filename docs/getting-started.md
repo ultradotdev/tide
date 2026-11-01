@@ -43,7 +43,7 @@ cargo build --locked --release -p tide
 ./target/release/tide .
 ```
 
-The release profile is the recommended interactive build. Debug builds are useful during development and can be much slower. There is no Bun requirement or external PTY sidecar for running the Rust application.
+The release profile is the recommended interactive build. Debug builds are useful during development and can be much slower.
 
 ## Managed source or local install
 
@@ -75,19 +75,9 @@ Repeat the same local install command with a newly built executable. Local paylo
 
 `current` and `previous` point inside the owned release store. Rollback verifies the saved payload before activating it. A foreign launcher or busy installation lock causes a clear refusal.
 
-## Earlier installations and TypeScript data
+## Your data
 
-An earlier Rust installer used `~/.local/lib/tide-rust`. Migration is explicit:
-
-```sh
-./install.sh --binary "$PWD/target/release/tide" --migrate-legacy
-```
-
-The installer validates the recognized earlier launcher and manifest, imports the old active executable as a rollback candidate, and preserves the old store. It refuses to guess ownership of an unrelated `tide` command.
-
-Before switching implementations, back up the Tide configuration, data and state roots listed in the [configuration reference](reference/configuration.md). Rust can read historical TypeScript sessions, but writes its own session files by default. Shared session writes are disabled. Settings and theme files are reused where supported; preserved unsupported settings do not enable a feature.
-
-The frozen TypeScript archive and the independently extracted comparison baseline remain historical references. The active Rust branch and managed launcher are the implementation to test.
+Settings, keybindings, themes, sessions, connections, query history and the encrypted secrets store live in the configuration, data and state roots listed in the [configuration reference](reference/configuration.md). Installation, updates, rollback and uninstall never modify them; only `tide --uninstall --purge` removes them.
 
 ## Uninstall
 

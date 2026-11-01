@@ -6,18 +6,6 @@ use sha2::{Digest, Sha256};
 
 use tide_config::{Paths, SessionState};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SessionOrigin {
-    Rust,
-    TypeScript,
-}
-
-#[derive(Debug, Clone)]
-pub struct LoadedSession {
-    pub state: SessionState,
-    pub origin: SessionOrigin,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct LastSession {
     #[serde(rename = "sessionId")]
@@ -27,16 +15,15 @@ struct LastSession {
     timestamp: String,
 }
 
-/// Session storage with a Rust-owned default and opt-in TypeScript writes.
+/// Workspace and named session snapshots under `$XDG_STATE_HOME/tide/sessions/rust`.
 ///
-/// Until bidirectional compatibility is proven, Rust writes its own session
-/// files. TypeScript sessions are read for migration but are never overwritten
-/// unless `shared_writes` is explicitly enabled.
+/// A save refuses to overwrite a file another instance changed since this store
+/// last read or wrote it, so concurrent instances cannot discard each other's
+/// recovery snapshots.
 #[derive(Debug, Clone)]
 pub struct SessionStore {
     paths: Paths,
     workspace: PathBuf,
-    shared_writes: bool,
     observed:
         std::sync::Arc<std::sync::Mutex<std::collections::BTreeMap<PathBuf, Option<Vec<u8>>>>>,
 }
@@ -47,20 +34,13 @@ impl SessionStore {
         let store = Self {
             paths,
             workspace,
-            shared_writes: false,
             observed: Default::default(),
         };
         crate::lock(&store.observed).insert(
-            store.rust_workspace_path(),
-            std::fs::read(store.rust_workspace_path()).ok(),
+            store.workspace_session_path(),
+            std::fs::read(store.workspace_session_path()).ok(),
         );
         store
-    }
-
-    #[must_use]
-    pub fn with_shared_writes(mut self, shared: bool) -> Self {
-        self.shared_writes = shared;
-        self
     }
 
     #[must_use]
@@ -68,23 +48,27 @@ impl SessionStore {
         &self.workspace
     }
 
-    pub fn load_last(&self) -> Result<Option<LoadedSession>> {
-        if let Some(session) = self.load_rust_last()? {
-            return Ok(Some(session));
-        }
-        self.load_typescript_last()
+    /// The session last saved for this workspace, named or not.
+    pub fn load_last(&self) -> Result<Option<SessionState>> {
+        let last = read_last_optional(&self.last_session_file())?;
+        let Some(last) = last.filter(|last| Path::new(&last.workspace_root) == self.workspace)
+        else {
+            return self.read_session(&self.workspace_session_path());
+        };
+        let session_path = if let Some(hash) = last.session_id.strip_prefix("workspace-") {
+            self.root().join("workspaces").join(format!("{hash}.json"))
+        } else if let Some(name) = last.session_id.strip_prefix("named-") {
+            self.named_session_path(name)
+        } else {
+            self.workspace_session_path()
+        };
+        self.read_session(&session_path)
     }
 
-    /// Names of saved sessions from both Rust-owned and read-only TypeScript stores.
+    /// Names of saved sessions.
     pub fn named_sessions(&self) -> Vec<String> {
         let mut names = std::collections::BTreeSet::new();
-        for directory in [
-            self.rust_root().join("named"),
-            self.paths.named_sessions_dir.clone(),
-        ] {
-            let Ok(entries) = std::fs::read_dir(directory) else {
-                continue;
-            };
+        if let Ok(entries) = std::fs::read_dir(self.root().join("named")) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.extension().is_none_or(|extension| extension != "json") {
@@ -98,32 +82,18 @@ impl SessionStore {
         names.into_iter().collect()
     }
 
-    pub fn load_named(&self, name: &str) -> Result<Option<LoadedSession>> {
-        let rust_path = self.rust_named_path(name);
-        if let Some(state) = self.read_rust(&rust_path)? {
-            return Ok(Some(LoadedSession {
-                state,
-                origin: SessionOrigin::Rust,
-            }));
-        }
-        let ts_path = self.named_session_path(name);
-        if let Some(state) = read_session_optional(&ts_path)? {
-            return Ok(Some(LoadedSession {
-                state,
-                origin: SessionOrigin::TypeScript,
-            }));
-        }
-        Ok(None)
+    pub fn load_named(&self, name: &str) -> Result<Option<SessionState>> {
+        self.read_session(&self.named_session_path(name))
     }
 
     pub fn save(&self, state: &SessionState, name: Option<&str>) -> Result<()> {
         let bytes = serde_json::to_vec_pretty(state)?;
-        let rust_path = if let Some(name) = name {
-            self.rust_named_path(name)
+        let path = if let Some(name) = name {
+            self.named_session_path(name)
         } else {
-            self.rust_workspace_path()
+            self.workspace_session_path()
         };
-        let parent = rust_path.parent().context("session parent")?;
+        let parent = path.parent().context("session parent")?;
         std::fs::create_dir_all(parent)?;
         set_mode(parent, 0o700)?;
         #[cfg(unix)]
@@ -134,7 +104,7 @@ impl SessionStore {
                 .truncate(false)
                 .read(true)
                 .write(true)
-                .open(rust_path.with_extension("lock"))?;
+                .open(path.with_extension("lock"))?;
             Flock::lock(file, FlockArg::LockExclusiveNonblock).map_err(|(_, error)| {
                 anyhow::anyhow!("session is being saved by another instance: {error}")
             })?
@@ -143,85 +113,49 @@ impl SessionStore {
             .observed
             .lock()
             .map_err(|_| anyhow::anyhow!("session state lock poisoned"))?;
-        let current = match std::fs::read(&rust_path) {
+        let current = match std::fs::read(&path) {
             Ok(bytes) => Some(bytes),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
             Err(error) => return Err(error.into()),
         };
         anyhow::ensure!(
-            observed.get(&rust_path).unwrap_or(&None) == &current,
+            observed.get(&path).unwrap_or(&None) == &current,
             "session changed in another instance; reopen it before saving (existing recovery was preserved)"
         );
-        write_private(&rust_path, &bytes)?;
-        observed.insert(rust_path, Some(bytes.clone()));
+        write_private(&path, &bytes)?;
+        observed.insert(path, Some(bytes.clone()));
         drop(observed);
-        let rust_id = if let Some(name) = name {
+        let session_id = if let Some(name) = name {
             format!("named-{name}")
         } else {
             format!("workspace-{}", self.workspace_hash())
         };
         write_private(
-            &self.rust_last_file(),
+            &self.last_session_file(),
             &serde_json::to_vec_pretty(&LastSession {
-                session_id: rust_id,
+                session_id,
                 workspace_root: self.workspace.display().to_string(),
                 timestamp: timestamp(),
             })?,
         )?;
-
-        if self.shared_writes {
-            let ts_path = if let Some(name) = name {
-                self.named_session_path(name)
-            } else {
-                self.workspace_session_path()
-            };
-            write_private(&ts_path, &bytes)?;
-            let ts_id = if let Some(name) = name {
-                format!("named-{name}")
-            } else {
-                format!("workspace-{}", self.workspace_hash())
-            };
-            write_private(
-                &self.paths.last_session_file,
-                &serde_json::to_vec_pretty(&LastSession {
-                    session_id: ts_id,
-                    workspace_root: self.workspace.display().to_string(),
-                    timestamp: timestamp(),
-                })?,
-            )?;
-        }
         Ok(())
     }
 
     #[must_use]
     pub fn workspace_session_path(&self) -> PathBuf {
-        self.paths
-            .workspace_sessions_dir
-            .join(format!("{}.json", self.workspace_hash()))
-    }
-
-    #[must_use]
-    pub fn named_session_path(&self, name: &str) -> PathBuf {
-        self.paths
-            .named_sessions_dir
-            .join(format!("{}.json", sanitize_name(name)))
-    }
-
-    #[must_use]
-    pub fn rust_workspace_path(&self) -> PathBuf {
-        self.rust_root()
+        self.root()
             .join("workspaces")
             .join(format!("{}.json", self.workspace_hash()))
     }
 
     #[must_use]
-    pub fn rust_named_path(&self, name: &str) -> PathBuf {
-        self.rust_root()
+    pub fn named_session_path(&self, name: &str) -> PathBuf {
+        self.root()
             .join("named")
             .join(format!("{}.json", sanitize_name(name)))
     }
 
-    fn read_rust(&self, path: &Path) -> Result<Option<SessionState>> {
+    fn read_session(&self, path: &Path) -> Result<Option<SessionState>> {
         let bytes = match std::fs::read(path) {
             Ok(bytes) => bytes,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -237,78 +171,12 @@ impl SessionStore {
         Ok(Some(state))
     }
 
-    fn rust_root(&self) -> PathBuf {
-        self.paths.state_dir.join("sessions").join("rust")
+    fn root(&self) -> PathBuf {
+        self.paths.sessions_dir.join("rust")
     }
 
-    fn rust_last_file(&self) -> PathBuf {
-        self.rust_root().join("last-session.json")
-    }
-
-    fn load_rust_last(&self) -> Result<Option<LoadedSession>> {
-        let path = self.rust_last_file();
-        let last = read_last_optional(&path)?;
-        if last
-            .as_ref()
-            .is_none_or(|last| Path::new(&last.workspace_root) != self.workspace)
-        {
-            return Ok(self
-                .read_rust(&self.rust_workspace_path())?
-                .map(|state| LoadedSession {
-                    state,
-                    origin: SessionOrigin::Rust,
-                }));
-        }
-        let last = last.expect("matched last session");
-        let session_path = if let Some(hash) = last.session_id.strip_prefix("workspace-") {
-            self.rust_root()
-                .join("workspaces")
-                .join(format!("{hash}.json"))
-        } else if let Some(name) = last.session_id.strip_prefix("named-") {
-            self.rust_named_path(name)
-        } else {
-            self.rust_workspace_path()
-        };
-        let Some(state) = self.read_rust(&session_path)? else {
-            return Ok(None);
-        };
-        Ok(Some(LoadedSession {
-            state,
-            origin: SessionOrigin::Rust,
-        }))
-    }
-
-    fn load_typescript_last(&self) -> Result<Option<LoadedSession>> {
-        if let Some(last) = read_last_optional(&self.paths.last_session_file)?
-            && Path::new(&last.workspace_root) == self.workspace
-        {
-            let path = self.typescript_session_path_for_id(&last.session_id);
-            if let Some(state) = read_session_optional(&path)? {
-                return Ok(Some(LoadedSession {
-                    state,
-                    origin: SessionOrigin::TypeScript,
-                }));
-            }
-        }
-        if let Some(state) = read_session_optional(&self.workspace_session_path())? {
-            return Ok(Some(LoadedSession {
-                state,
-                origin: SessionOrigin::TypeScript,
-            }));
-        }
-        Ok(None)
-    }
-
-    fn typescript_session_path_for_id(&self, session_id: &str) -> PathBuf {
-        if let Some(hash) = session_id.strip_prefix("workspace-") {
-            self.paths
-                .workspace_sessions_dir
-                .join(format!("{hash}.json"))
-        } else if let Some(name) = session_id.strip_prefix("named-") {
-            self.named_session_path(name)
-        } else {
-            self.workspace_session_path()
-        }
+    fn last_session_file(&self) -> PathBuf {
+        self.root().join("last-session.json")
     }
 
     fn workspace_hash(&self) -> String {
@@ -329,20 +197,6 @@ fn read_last_optional(path: &Path) -> Result<Option<LastSession>> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(error) => Err(error.into()),
     }
-}
-
-fn read_session_optional(path: &Path) -> Result<Option<SessionState>> {
-    let text = match std::fs::read_to_string(path) {
-        Ok(text) => text,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(error) => return Err(error.into()),
-    };
-    let session: SessionState =
-        serde_json::from_str(&text).with_context(|| format!("parse session {}", path.display()))?;
-    session
-        .validate_version()
-        .with_context(|| format!("validate session {}", path.display()))?;
-    Ok(Some(session))
 }
 
 fn write_private(path: &Path, bytes: &[u8]) -> Result<()> {
@@ -425,8 +279,7 @@ mod tests {
     fn fixture() -> SessionState {
         builtin::parse_session(
             &std::fs::read_to_string(
-                Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .join("../../tests/fixtures/rust-parity/session-v7.json"),
+                Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/session-v7.json"),
             )
             .unwrap(),
         )
@@ -441,12 +294,12 @@ mod tests {
         session.workspace_root = first.workspace.display().to_string();
         first.save(&session, None).unwrap();
         assert!(second.save(&session, None).is_err());
-        assert_eq!(second.load_last().unwrap().unwrap().state, session);
+        assert_eq!(second.load_last().unwrap().unwrap(), session);
         second.save(&session, None).unwrap();
     }
 
     #[test]
-    fn rust_workspace_recovery_is_found_after_visiting_another_workspace() {
+    fn workspace_recovery_is_found_after_visiting_another_workspace() {
         let (_home, first) = store();
         let other_root = first.workspace.with_file_name("other");
         std::fs::create_dir_all(&other_root).unwrap();
@@ -458,7 +311,7 @@ mod tests {
         other_session.workspace_root = other.workspace.display().to_string();
         other.save(&other_session, None).unwrap();
         assert_eq!(
-            first.load_last().unwrap().unwrap().state.workspace_root,
+            first.load_last().unwrap().unwrap().workspace_root,
             session.workspace_root
         );
     }
@@ -471,55 +324,28 @@ mod tests {
     }
 
     #[test]
-    fn saves_to_rust_storage_and_does_not_touch_typescript_state() {
+    fn saves_and_loads_workspace_and_named_sessions() {
         let (_home, store) = store();
         let mut session = fixture();
         session.workspace_root = store.workspace().display().to_string();
         store.save(&session, None).unwrap();
-        assert!(store.rust_workspace_path().exists());
-        assert!(!store.workspace_session_path().exists());
+        assert!(store.workspace_session_path().exists());
         let loaded = store.load_last().unwrap().expect("session should load");
-        assert_eq!(loaded.origin, SessionOrigin::Rust);
-        assert_eq!(loaded.state.workspace_root, session.workspace_root);
+        assert_eq!(loaded.workspace_root, session.workspace_root);
+
+        store.save(&session, Some("Review")).unwrap();
+        assert_eq!(store.named_sessions(), ["review"]);
+        assert_eq!(store.load_named("Review").unwrap(), Some(session.clone()));
+        assert_eq!(store.load_last().unwrap(), Some(session));
     }
 
     #[test]
-    fn reads_typescript_session_without_writing_it() {
-        let (_home, store) = store();
-        let mut session = fixture();
-        session.workspace_root = store.workspace().display().to_string();
-        write_private(
-            &store.workspace_session_path(),
-            &serde_json::to_vec_pretty(&session).unwrap(),
-        )
-        .unwrap();
-        let before = std::fs::read(store.workspace_session_path()).unwrap();
-        let loaded = store.load_last().unwrap().expect("session should load");
-        assert_eq!(loaded.origin, SessionOrigin::TypeScript);
-        let after = std::fs::read(store.workspace_session_path()).unwrap();
-        assert_eq!(before, after);
-    }
-
-    #[test]
-    fn malformed_typescript_session_is_reported_not_silently_ignored() {
+    fn malformed_session_is_reported_not_silently_ignored() {
         let (_home, store) = store();
         let path = store.workspace_session_path();
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, "{ broken").unwrap();
         assert!(store.load_last().is_err());
-    }
-
-    #[test]
-    fn shared_write_opt_in_writes_both_stores() {
-        let (_home, store) = store();
-        let shared = store.with_shared_writes(true);
-        let mut session = fixture();
-        session.workspace_root = shared.workspace().display().to_string();
-        shared.save(&session, None).unwrap();
-        assert!(shared.rust_workspace_path().exists());
-        assert!(shared.workspace_session_path().exists());
-        let loaded = shared.load_last().unwrap().expect("session");
-        assert_eq!(loaded.origin, SessionOrigin::Rust);
     }
 
     #[test]

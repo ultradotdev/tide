@@ -3,7 +3,7 @@ use super::*;
 
 impl App {
     pub(super) fn create_workspace_path(&mut self, value: &str, directory: bool) {
-        let Ok(workspace) = ToolWorkspace::new(&self.workspace) else {
+        let Ok(workspace) = Workspace::new(&self.workspace) else {
             self.set_status("File: workspace is unavailable");
             return;
         };
@@ -47,7 +47,7 @@ impl App {
     }
 
     pub(super) fn rename_selected_path(&mut self, from: &Path, value: &str) {
-        let Ok(workspace) = ToolWorkspace::new(&self.workspace) else {
+        let Ok(workspace) = Workspace::new(&self.workspace) else {
             return;
         };
         let Ok(to) = workspace.resolve(value) else {

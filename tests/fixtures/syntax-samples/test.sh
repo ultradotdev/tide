@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # Variables
-NAME="Ultra Editor"
+NAME="Tide Editor"
 VERSION=1.0
 DEBUG=${DEBUG:-false}
 

@@ -301,11 +301,6 @@ impl App {
                 self.focus == Focus::Main
                     && matches!(self.workbench.active_tab(),Some(Tab::Sql(sql)) if sql.results_focused && !sql.details_mode)
             }
-            "aiChatFocus" => {
-                self.focus == Focus::Main
-                    && matches!(self.workbench.active_tab(), Some(Tab::AiChat))
-            }
-            "aiChatActive" => self.ai.chat_streaming,
             "agentsFocus" => self.focus == Focus::Agents,
             "terminalFocus" => self.focus_in_terminal(),
             "modalFocus" => self.overlay.is_some(),
@@ -336,10 +331,6 @@ impl App {
             if let Some(action) = action {
                 with_ui!(self, |ui| self.git.diff_action(action, ui));
             }
-            return;
-        }
-        if matches!(self.workbench.active_tab(), Some(Tab::AiChat)) {
-            self.with_ai(|ai, ui| ai.handle_chat_key(key, ui));
             return;
         }
         if matches!(self.workbench.active_tab(), Some(Tab::Sql(_))) {
@@ -417,7 +408,7 @@ impl App {
                 KeyCode::PageDown => diff.scroll_top += 20,
                 _ => {}
             },
-            Some(Tab::AiChat) | Some(Tab::Sql(_)) => {}
+            Some(Tab::Sql(_)) => {}
             Some(Tab::Welcome) | None => {}
         }
     }

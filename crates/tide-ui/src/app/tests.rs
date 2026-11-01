@@ -2,22 +2,18 @@ use super::input::key_string;
 use super::session::{convert_session_layout, session_layout};
 use super::*;
 use crate::connection_form::ConnectionAction;
-use crate::controllers::ai::{ChatToolResult, normalize_workspace_sessions};
+use crate::controllers::ai::normalize_workspace_sessions;
 use crate::controllers::db::DbEvent;
 use crate::controllers::git::{GitState, run_git_checked, valid_branch_name};
 use crate::controllers::lsp::{LspEvent, LspFileEdits, active_document, apply_edits, server_for};
 use crate::modal::{CommandPaletteModal, InfoModal, SearchResultsModal};
-use tide_ai::chat::{ChatMessage, ContentBlock, TurnAccumulator};
 use tide_ai::cli::{CliStatus, DiscoveryReport, DiscoveryState, ProviderDiscovery};
-use tide_ai::models::ModelPreferences;
-use tide_ai::provider::{Role, StreamEvent};
 use tide_db::{ConnectionConfig, QueryResult, QueryStatus};
 use tide_lsp::{
     CodeActionItem, CompletionItem, DocumentLease, Position as LspPosition, Range as LspRange,
     SymbolItem, TextEdit,
 };
 use tide_services::GitSnapshot;
-use tide_tools::{ChangeSet, MapBuffers};
 
 mod ai;
 mod db;
@@ -107,7 +103,6 @@ pub(super) fn test_app_with(jobs: Jobs) -> (tempfile::TempDir, App) {
         initial_file: None,
         session_name: None,
         restore_session: false,
-        shared_sessions: false,
         paths: Some(paths),
         jobs,
         agent_discovery: no_agents,
@@ -155,7 +150,6 @@ pub(super) fn pinned_workbench(
         initial_file: Some(workspace.join("src/main.ts")),
         session_name: None,
         restore_session: false,
-        shared_sessions: false,
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,

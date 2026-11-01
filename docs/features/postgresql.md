@@ -1,6 +1,6 @@
 # PostgreSQL Workspace
 
-Tide's Rust SQL tabs combine an editor with results beneath it. Connections, schema discovery, history, favorites and eligible row changes are available through the database commands.
+Tide's SQL tabs combine an editor with results beneath it. Connections, schema discovery, history, favorites and eligible row changes are available through the database commands.
 
 ## Connections and safety
 

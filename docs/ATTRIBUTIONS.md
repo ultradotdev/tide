@@ -2,7 +2,7 @@
 
 Tide 0.10.0 is a native Rust application. This standalone file includes notices from the locked dependency graph for the four macOS/Linux release targets, including build dependencies and platform alternatives. Presence here does not imply every crate is linked on every target. Tide itself is Copyright 2025-2026 Zorz LLC and licensed under the Apache License, Version 2.0.
 
-Native terminal integration uses portable-pty and alacritty_terminal. Ratatui/Crossterm render and route input; Ropey supplies text storage; Syntect and two-face supply syntax grammars. The TypeScript runtime and its PTY sidecar are not distributed in Rust archives.
+Native terminal integration uses portable-pty and alacritty_terminal. Ratatui/Crossterm render and route input; Ropey supplies text storage; Syntect and two-face supply syntax grammars.
 
 The thirteen Tide themes retain the upstream palette licenses and provenance recorded in config/theme-provenance.json and docs/THEME_ATTRIBUTION.md. Ultra Dusk is an original Zorz LLC design under Tide's license. Upstream projects do not endorse Tide.
 
@@ -131,7 +131,6 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `form_urlencoded` 1.2.2 | MIT OR Apache-2.0 | [33ed9a8ecf55](#notice-33ed9a8ecf556f161ec5d7e8761712f404d082bf9eeb8f6085d43517b5938be4), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `futures-channel` 0.3.34 | MIT OR Apache-2.0 | [b420d8add23b](#notice-b420d8add23b5cf7663f17f012b06a4c16b722c5dd8fb049b285417214b5702e), [ca1991cda75e](#notice-ca1991cda75e24b3dc4ef438383c1e02566b82f2c92c59cdc2e17325cc6e3bc2) |
 | `futures-core` 0.3.34 | MIT OR Apache-2.0 | [b420d8add23b](#notice-b420d8add23b5cf7663f17f012b06a4c16b722c5dd8fb049b285417214b5702e), [ca1991cda75e](#notice-ca1991cda75e24b3dc4ef438383c1e02566b82f2c92c59cdc2e17325cc6e3bc2) |
-| `futures-io` 0.3.34 | MIT OR Apache-2.0 | [b420d8add23b](#notice-b420d8add23b5cf7663f17f012b06a4c16b722c5dd8fb049b285417214b5702e), [ca1991cda75e](#notice-ca1991cda75e24b3dc4ef438383c1e02566b82f2c92c59cdc2e17325cc6e3bc2) |
 | `futures-macro` 0.3.34 | MIT OR Apache-2.0 | [b420d8add23b](#notice-b420d8add23b5cf7663f17f012b06a4c16b722c5dd8fb049b285417214b5702e), [ca1991cda75e](#notice-ca1991cda75e24b3dc4ef438383c1e02566b82f2c92c59cdc2e17325cc6e3bc2) |
 | `futures-sink` 0.3.34 | MIT OR Apache-2.0 | [b420d8add23b](#notice-b420d8add23b5cf7663f17f012b06a4c16b722c5dd8fb049b285417214b5702e), [ca1991cda75e](#notice-ca1991cda75e24b3dc4ef438383c1e02566b82f2c92c59cdc2e17325cc6e3bc2) |
 | `futures-task` 0.3.34 | MIT OR Apache-2.0 | [b420d8add23b](#notice-b420d8add23b5cf7663f17f012b06a4c16b722c5dd8fb049b285417214b5702e), [ca1991cda75e](#notice-ca1991cda75e24b3dc4ef438383c1e02566b82f2c92c59cdc2e17325cc6e3bc2) |

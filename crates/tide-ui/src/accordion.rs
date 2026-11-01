@@ -341,7 +341,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_sections_match_typescript() {
+    fn default_sections_expand_explorer_and_source_control() {
         let accordion = AccordionState::new();
         assert_eq!(accordion.sections.len(), 4);
         assert_eq!(accordion.expanded_ids(), vec!["explorer", "source-control"]);

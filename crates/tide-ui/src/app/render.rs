@@ -775,7 +775,7 @@ impl App {
                 }
             }
             Tab::Sql(sql) => sql.layout(content_area, &view),
-            Tab::AiChat | Tab::Welcome => {}
+            Tab::Welcome => {}
         }
     }
 
@@ -856,7 +856,6 @@ impl App {
                     render_diff(frame, content_area, diff, self.palette, focused);
                 }
             }
-            Tab::AiChat => render_ai_chat(frame, content_area, focused, &self.ai, self.palette),
             Tab::Sql(sql) => {
                 out.hits
                     .push((content_area, HitTarget::SqlContent(id, content_area)));
@@ -1571,143 +1570,6 @@ pub(super) fn outline_items(editor: &EditorState) -> Vec<(usize, String)> {
         }
     }
     items
-}
-
-pub(super) fn render_ai_chat(
-    frame: &mut Frame,
-    area: Rect,
-    focused: bool,
-    ai: &AiController,
-    palette: Palette,
-) {
-    let title = format!(" AI · {} · {} ", ai.chat.provider, ai.chat.model);
-    let block = Block::default()
-        .title(Line::from(Span::styled(
-            title,
-            Style::default()
-                .fg(palette.section_focused_fg)
-                .bg(palette.section_focused_bg),
-        )))
-        .borders(Borders::ALL)
-        .border_style(if focused {
-            Style::default().fg(palette.border_focused)
-        } else {
-            Style::default().fg(palette.border)
-        });
-    let inner = block.inner(area);
-    frame.render_widget(block, area);
-    let [transcript, composer] =
-        Layout::vertical([Constraint::Min(3), Constraint::Length(3)]).areas(inner);
-    let width = transcript.width.saturating_sub(2) as usize;
-    let mut lines = Vec::new();
-    for message in &ai.chat.messages {
-        let (label, color) = match message.role {
-            tide_ai::provider::Role::User => ("You", palette.accent),
-            tide_ai::provider::Role::Assistant => ("Tide", palette.foreground),
-        };
-        lines.push(Line::from(Span::styled(
-            format!(" {label}"),
-            Style::default()
-                .fg(color)
-                .bg(palette.background)
-                .add_modifier(Modifier::BOLD),
-        )));
-        for content in &message.blocks {
-            match content {
-                tide_ai::chat::ContentBlock::Text { text } => {
-                    for line in wrap_text(text, width.saturating_sub(2)) {
-                        lines.push(Line::from(Span::styled(
-                            format!("  {line}"),
-                            Style::default().fg(palette.foreground),
-                        )));
-                    }
-                }
-                tide_ai::chat::ContentBlock::Reasoning { text } => {
-                    for line in wrap_text(text, width.saturating_sub(2)) {
-                        lines.push(Line::from(Span::styled(
-                            format!("  ⋯ {line}"),
-                            Style::default().fg(palette.description),
-                        )));
-                    }
-                }
-                tide_ai::chat::ContentBlock::ToolUse { name, .. } => {
-                    lines.push(Line::from(Span::styled(
-                        format!("  ⚙ {name}"),
-                        Style::default().fg(palette.accent),
-                    )));
-                }
-                tide_ai::chat::ContentBlock::ToolResult { content, .. } => {
-                    lines.push(Line::from(Span::styled(
-                        format!("  ↳ {}", truncate(content, width)),
-                        Style::default().fg(palette.muted),
-                    )));
-                }
-                tide_ai::chat::ContentBlock::Error { message } => {
-                    lines.push(Line::from(Span::styled(
-                        format!("  ! {message}"),
-                        Style::default().fg(palette.error),
-                    )));
-                }
-            }
-        }
-        lines.push(Line::from(""));
-    }
-    if ai.chat_turn.is_some() {
-        lines.push(Line::from(Span::styled(
-            "  …",
-            Style::default().fg(palette.accent),
-        )));
-    }
-    if lines.is_empty() {
-        lines.push(Line::from(Span::styled(
-            " Ask Tide about this workspace. Enter sends; Ctrl+C cancels.",
-            Style::default().fg(palette.description),
-        )));
-    }
-    let visible = transcript.height as usize;
-    let max_scroll = lines.len().saturating_sub(visible);
-    let scroll = saturating_u16(max_scroll.saturating_sub(ai.chat_scroll));
-    frame.render_widget(
-        Paragraph::new(lines)
-            .scroll((scroll, 0))
-            .style(Style::default().bg(palette.background)),
-        transcript,
-    );
-    let prompt = if ai.chat_draft.is_empty() {
-        "Ask a question…".to_owned()
-    } else {
-        ai.chat_draft.clone()
-    };
-    let style = if ai.chat_draft.is_empty() {
-        Style::default().fg(palette.description)
-    } else {
-        Style::default().fg(palette.foreground)
-    };
-    frame.render_widget(
-        Paragraph::new(format!(" > {prompt}")).style(style.bg(palette.input_bg)),
-        composer,
-    );
-}
-
-pub(super) fn truncate(text: &str, width: usize) -> String {
-    text.chars().take(width).collect()
-}
-
-pub(super) fn wrap_text(text: &str, width: usize) -> Vec<String> {
-    let width = width.max(8);
-    let mut lines = Vec::new();
-    for raw in text.lines() {
-        let mut current = String::new();
-        for word in raw.split_inclusive(' ') {
-            if display_width(&current) + display_width(word) > width && !current.is_empty() {
-                lines.push(current.trim_end().to_owned());
-                current.clear();
-            }
-            current.push_str(word);
-        }
-        lines.push(current.trim_end().to_owned());
-    }
-    lines
 }
 
 pub(super) fn render_welcome(frame: &mut Frame, area: Rect, palette: Palette) {

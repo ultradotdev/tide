@@ -2,8 +2,8 @@
   // ═══════════════════════════════════════════════════════════════════════════
   // Command Registry
   //
-  // Commands that work through the Editor Command Protocol.
-  // Clients fetch this via commands/list and merge with client-specific commands.
+  // Labels, categories and descriptions for the command palette and the generated
+  // command reference. Entries without a workbench route stay out of the palette.
   //
   // Format: { "command.id": { "label": "...", "category": "...", "description": "..." } }
   // ═══════════════════════════════════════════════════════════════════════════
@@ -136,7 +136,6 @@
   "view.splitVertical": { "label": "Split Main Pane Right", "category": "View" },
   "view.splitHorizontal": { "label": "Split Main Pane Down", "category": "View" },
   "view.closePane": { "label": "Close Main Pane", "category": "View" },
-  "view.focusChat": { "label": "Focus AI Chat", "category": "View" },
   "view.focusEditor": { "label": "Focus Main Pane", "category": "View" },
   "view.focusFileTree": { "label": "Focus File Explorer", "category": "View" },
   "view.focusTerminal": { "label": "Focus Bottom Terminal", "category": "View" },
@@ -149,10 +148,8 @@
   // ─────────────────────────────────────────────────────────────────────────────
   "layout.default": { "label": "Default Layout", "category": "Layout", "description": "Balanced layout with all panels" },
   "layout.detachedClaude": { "label": "Detached Claude", "category": "Layout", "description": "File tree, chat stack, and terminal for Claude Code" },
-  "layout.codeReview": { "label": "Code Review", "category": "Layout", "description": "Side-by-side editor with chat" },
   "layout.debug": { "label": "Debug", "category": "Layout", "description": "Terminal and activity prominent" },
   "layout.zenEditor": { "label": "Zen Mode (Editor)", "category": "Layout", "description": "Distraction-free editor" },
-  "layout.zenChat": { "label": "Zen Mode (Chat)", "category": "Layout", "description": "Full-screen AI chat" },
   "layout.presentation": { "label": "Presentation", "category": "Layout", "description": "Editor with minimal UI" },
   "layout.next": { "label": "Next Layout", "category": "Layout", "description": "Switch to next layout preset" },
   "layout.previous": { "label": "Previous Layout", "category": "Layout", "description": "Switch to previous layout preset" },
@@ -244,43 +241,6 @@
   "workbench.focusAgentsSidebar": { "label": "Focus Agents Sidebar", "category": "View" },
   "workbench.moveAgentsSidebarLeft": { "label": "View: Move Agents Sidebar Left", "category": "View" },
   "workbench.moveAgentsSidebarRight": { "label": "View: Move Agents Sidebar Right", "category": "View" },
-  "aiChat.new": { "label": "AI Chat: New", "category": "AI" },
-  "aiChat.history": { "label": "AI Chat: Open Conversation...", "category": "AI" },
-  "aiChat.openCli": { "label": "AI Chat: Open AI CLI...", "category": "AI" },
-  "aiChat.newWithProviderModel": { "label": "AI Chat: New with Provider and Model...", "category": "AI" },
-  "aiChat.toggle": {
-    "label": "AI Chat: Toggle",
-    "category": "AI",
-    "description": "Toggle the direct-provider AI Chat panel"
-  },
-  "aiChat.showPendingApprovals": {
-    "label": "AI Chat: Show Pending Approvals",
-    "category": "AI",
-    "description": "Show workspace tool and change approvals pending in AI Chat"
-  },
-  "aiChat.enableAutonomy": {
-    "label": "AI Chat: Enable Autonomy for This Session",
-    "category": "AI",
-    "description": "Allow this AI Chat session to apply workspace-contained create/edit changes; Bash and delete still prompt"
-  },
-  "aiChat.changeProviderModel": { "label": "AI Chat: Change Provider and Model...", "category": "AI" },
-  "aiChat.setDefaultProviderModel": { "label": "AI Chat: Set Default Provider and Model...", "category": "AI" },
-  "aiChat.changeThinkingControls": { "label": "AI Chat: Change Thinking Controls...", "category": "AI" },
-  "aiChat.setDefaultThinkingControls": { "label": "AI Chat: Set Default Thinking Controls...", "category": "AI" },
-  "aiChat.refreshModels": { "label": "AI Chat: Refresh Models", "category": "AI" },
-  "aiChat.showContextUsage": { "label": "AI Chat: Show Context Usage", "category": "AI" },
-  "aiChat.compactContext": { "label": "AI Chat: Compact Context...", "category": "AI" },
-  "aiChat.undoCompaction": { "label": "AI Chat: Undo Last Compaction", "category": "AI" },
-  "aiChat.startFromSummary": { "label": "AI Chat: Start New Chat from Summary", "category": "AI" },
-  "aiChat.cancelTurn": { "label": "AI Chat: Cancel Active Turn", "category": "AI" },
-  "aiChat.retryTurn": { "label": "AI Chat: Resume Pending Turn", "category": "AI" },
-  "aiChat.discardPendingTurn": { "label": "AI Chat: Discard Pending Turn", "category": "AI" },
-  "aiChat.continueOnce": { "label": "AI Chat: Continue Once at Context Limit", "category": "AI" },
-  "aiChat.reviewDiff": { "label": "AI Chat: Review Diff", "category": "AI" },
-  "aiChat.retryValidation": { "label": "AI Chat: Retry Validation", "category": "AI" },
-  "aiChat.guardedRollback": { "label": "AI Chat: Guarded Rollback", "category": "AI" },
-  "aiChat.toggleThinking": { "label": "AI Chat: Toggle Thinking Blocks", "category": "AI" },
-  "aiChat.toggleLatestThinking": { "label": "AI Chat: Toggle Latest Thinking Block", "category": "AI" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Session Commands
@@ -336,27 +296,8 @@
   "database.describeTable": { "label": "Describe Table", "category": "Database" },
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Ensemble Commands
-  // ─────────────────────────────────────────────────────────────────────────────
-  "ensemble.open": { "label": "Ensemble: Open", "category": "AI" },
-  "ensemble.toggle": { "label": "Ensemble: Toggle", "category": "AI" },
-  "ensemble.new": { "label": "Ensemble: New Conversation", "category": "AI" },
-  "ensemble.focusComposer": { "label": "Ensemble: Focus Composer", "category": "AI" },
-  "ensemble.showReviewPolicy": { "label": "Ensemble: Show Review Policy...", "category": "AI" },
-  "ensemble.enableAutonomy": { "label": "Ensemble: Enable Autonomy for This Session", "category": "AI" },
-  "ensemble.useReviewMode": { "label": "Ensemble: Use Review Mode", "category": "AI" },
-  "ensemble.configureAgents": { "label": "Ensemble: Configure Agents...", "category": "AI" },
-  "ensemble.resetThinkingControls": { "label": "Ensemble: Set All Thinking to Provider Default", "category": "AI" },
-  "ensemble.abort": { "label": "Ensemble: Stop Current Work", "category": "AI" },
-  "ensemble.toggleThinking": { "label": "Ensemble: Toggle Thinking Blocks", "category": "AI" },
-  "ensemble.toggleLatestThinking": { "label": "Ensemble: Toggle Latest Thinking Block", "category": "AI" },
-
-  // ─────────────────────────────────────────────────────────────────────────────
   // Secrets Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "secrets.setAnthropicApiKey": { "label": "Set Anthropic API Key", "category": "Secrets" },
-  "secrets.setOpenAIApiKey": { "label": "Set OpenAI API Key", "category": "Secrets" },
-  "secrets.setGeminiApiKey": { "label": "Set Gemini API Key", "category": "Secrets" },
   "secrets.manage": { "label": "Manage Secrets", "category": "Secrets" },
 
   // ─────────────────────────────────────────────────────────────────────────────
