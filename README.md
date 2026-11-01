@@ -92,7 +92,7 @@ See [getting started](docs/getting-started.md) for prefixes, migration from the 
 
 1. Open a repository with `tide .`.
 2. Use `Ctrl+P` to find a file and `Ctrl+S` to save it.
-3. Open the command palette with `Ctrl+K`. It is the reliable alternative when a terminal cannot transmit Ctrl+Shift combinations.
+3. Open the command palette with `Ctrl+K`. `Ctrl+Shift+P` and `F1` also work, and `Ctrl+T` reaches it while a terminal pane has focus (where `Ctrl+K` belongs to the shell).
 4. Use `F6` to cycle regions and `F7` / `F8` to cycle main panes. Split panes and move tabs through their menus or palette commands.
 5. Open a shell, a query, or an available agent from Add Tab. The Agents sidebar groups workspace sessions by provider and focuses sessions already open.
 

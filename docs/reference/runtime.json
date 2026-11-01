@@ -3750,36 +3750,8 @@
       "key": "ctrl+k"
     },
     {
-      "command": "editor.foldAll",
-      "key": "ctrl+k ctrl+0"
-    },
-    {
-      "command": "editor.commentLine",
-      "key": "ctrl+k ctrl+c"
-    },
-    {
-      "command": "editor.unfoldAll",
-      "key": "ctrl+k ctrl+j"
-    },
-    {
-      "command": "session.open",
-      "key": "ctrl+k ctrl+o"
-    },
-    {
-      "command": "session.saveAs",
-      "key": "ctrl+k ctrl+s"
-    },
-    {
-      "command": "editor.uncommentLine",
-      "key": "ctrl+k ctrl+u"
-    },
-    {
       "command": "editor.selectLine",
       "key": "ctrl+l"
-    },
-    {
-      "command": "editor.duplicateLine",
-      "key": "ctrl+l d"
     },
     {
       "command": "file.new",
@@ -4185,10 +4157,6 @@
     {
       "command": "edit.selectNextMatch",
       "key": "meta+d"
-    },
-    {
-      "command": "edit.selectAllOccurrences",
-      "key": "meta+d a"
     },
     {
       "command": "workbench.commandPalette",
