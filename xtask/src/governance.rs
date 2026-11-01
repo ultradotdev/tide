@@ -540,9 +540,16 @@ fn audit_environments(
         if !equal_members(&reviewers, &wanted) {
             findings.push(format!("environment {} reviewers drifted", expected.name));
         }
-        if environment.get("prevent_self_review")
-            != Some(&Value::Bool(expected.prevent_self_review))
-        {
+        // GitHub reports the setting on the required-reviewers protection rule.
+        let prevent_self_review = environment["protection_rules"]
+            .as_array()
+            .and_then(|rules| {
+                rules
+                    .iter()
+                    .find(|rule| rule["type"] == "required_reviewers")
+            })
+            .and_then(|rule| rule.get("prevent_self_review"));
+        if prevent_self_review != Some(&Value::Bool(expected.prevent_self_review)) {
             findings.push(format!(
                 "environment {} self-review policy drifted",
                 expected.name
@@ -869,8 +876,11 @@ mod tests {
                     json!({ "secrets": secrets })
                 }
                 _ if path.contains("/environments/") => json!({
-                    "protection_rules": [{ "type": "required_reviewers", "reviewers": [{ "type": "User", "reviewer": { "login": "thekeith" } }] }],
-                    "prevent_self_review": false,
+                    "protection_rules": [{
+                        "type": "required_reviewers",
+                        "prevent_self_review": false,
+                        "reviewers": [{ "type": "User", "reviewer": { "login": "thekeith" } }],
+                    }],
                 }),
                 _ => anyhow::bail!("Unexpected fake request: {method} {path}"),
             })
