@@ -21,7 +21,8 @@
     "attestation": "github-artifact-attestation",
     "replaceExistingAssets": false,
     "archiveRoot": "artifact-stem",
-    "timestampSource": "source-commit"
+    "timestampSource": "source-commit",
+    "homebrewTap": "ultradotdev/homebrew-tap"
   },
   "platforms": [
     {

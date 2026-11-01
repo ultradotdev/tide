@@ -2,7 +2,7 @@
 use crate::release::{archive_stem, load_contract};
 use crate::util::read_text;
 use crate::verify_governance::{Scenario, run_scenarios};
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 use regex::Regex;
 use std::path::Path;
 use std::process::Command;
@@ -298,6 +298,10 @@ pub fn verify_release_artifacts(root: &Path, list: bool, scenario: Option<&str>)
             }),
         ),
         (
+            "homebrew-tap-update",
+            Box::new(|| homebrew_job_contract(&workflow, &contract.policy.homebrew_tap)),
+        ),
+        (
             "immutable-action-pins",
             Box::new(|| {
                 ensure!(
@@ -309,6 +313,68 @@ pub fn verify_release_artifacts(root: &Path, list: bool, scenario: Option<&str>)
         ),
     ];
     run_scenarios("release artifact", &scenarios, list, scenario)
+}
+
+/// The lines of one top-level job, from `  <name>:` to the next job.
+fn job_block<'a>(workflow: &'a str, name: &str) -> Option<String> {
+    let header = format!("  {name}:");
+    let mut lines = workflow.lines().skip_while(|line| *line != header);
+    let first = lines.next()?;
+    let rest = lines
+        .take_while(|line| line.is_empty() || line.starts_with("   ") || line.starts_with("\t"));
+    Some(
+        std::iter::once(first)
+            .chain(rest)
+            .collect::<Vec<&'a str>>()
+            .join("\n"),
+    )
+}
+
+/// The tap update runs only after an owner-tag publication, holds the only
+/// reference to the tap token, regenerates the formula from the published
+/// checksums and pushes only a changed formula.
+pub fn homebrew_job_contract(workflow: &str, tap: &str) -> Result<()> {
+    ensure!(
+        tap == "ultradotdev/homebrew-tap",
+        "Unexpected Homebrew tap: {tap}"
+    );
+    let job = job_block(workflow, "homebrew").context("Homebrew tap update job is missing")?;
+    ensure!(
+        job.contains(
+            "if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.preflight.outputs.publish == 'true'"
+        ),
+        "Homebrew tap updates are not restricted to published owner tag runs"
+    );
+    ensure!(
+        job.contains("needs: [preflight, publish]"),
+        "Homebrew tap update must wait for publication"
+    );
+    ensure!(
+        job.contains("permissions:\n      contents: read") && job.contains("environment: release"),
+        "Homebrew tap update must use the release environment with a read-only token"
+    );
+    ensure!(
+        workflow.contains("echo \"homebrew-tap=$(jq -r .homebrewTap <<<\"$context\")\"")
+            && job.contains("repository: ${{ needs.preflight.outputs.homebrew-tap }}"),
+        "Homebrew tap repository does not come from the release contract"
+    );
+    ensure!(
+        workflow.matches("secrets.HOMEBREW_TAP_TOKEN").count() == 1
+            && job.contains("token: ${{ secrets.HOMEBREW_TAP_TOKEN }}"),
+        "HOMEBREW_TAP_TOKEN must be used only to check out the tap"
+    );
+    ensure!(
+        job.contains("gh release download \"$EXPECTED_TAG\" --pattern SHA256SUMS")
+            && job.contains("cmp ")
+            && job.contains("cargo xtask homebrew-formula")
+            && job.contains("--output homebrew-tap/Formula/tide.rb"),
+        "Formula must be generated from the published, assembled checksums"
+    );
+    ensure!(
+        job.contains("git diff --cached --quiet") && !job.contains("--force"),
+        "Tap update must skip unchanged formulae and never force-push"
+    );
+    Ok(())
 }
 
 /// True when the workflow uses actions and every `uses:` ref is a commit SHA.
@@ -383,6 +449,36 @@ mod tests {
     fn repository_release_contract_scenarios_pass() {
         verify_release_artifacts(&repo_root(), false, None).unwrap();
         assert!(verify_release_artifacts(&repo_root(), false, Some("missing")).is_err());
+    }
+
+    #[test]
+    fn homebrew_tap_updates_require_publication_and_an_isolated_token() {
+        let workflow = read_text(&repo_root().join(".github/workflows/release.yml")).unwrap();
+        let tap = "ultradotdev/homebrew-tap";
+        homebrew_job_contract(&workflow, tap).unwrap();
+        let broken = [
+            workflow.replace(" && needs.preflight.outputs.publish == 'true'", ""),
+            workflow.replace(
+                "needs: [preflight, publish]",
+                "needs: [preflight, assemble]",
+            ),
+            workflow.replace("  homebrew:", "  tap:"),
+            workflow.replace("git diff --cached --quiet", "true"),
+            workflow.replace("git push origin HEAD", "git push --force origin HEAD"),
+            workflow.replace(
+                "      GH_TOKEN: ${{ github.token }}",
+                "      GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}",
+            ),
+            workflow.replace("--pattern SHA256SUMS", "--pattern '*'"),
+        ];
+        for (index, text) in broken.iter().enumerate() {
+            assert_ne!(text, &workflow, "mutation {index} did not apply");
+            assert!(
+                homebrew_job_contract(text, tap).is_err(),
+                "mutation {index}"
+            );
+        }
+        assert!(homebrew_job_contract(&workflow, "someone/homebrew-tap").is_err());
     }
 
     #[test]

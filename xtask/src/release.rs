@@ -43,6 +43,8 @@ pub struct ReleasePolicy {
     pub checksums_filename: String,
     pub attestation: String,
     pub replace_existing_assets: bool,
+    /// The Homebrew tap that receives the generated formula after publication.
+    pub homebrew_tap: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -145,6 +147,10 @@ pub fn load_contract(repository_root: &Path) -> Result<ReleaseContract> {
     ensure!(
         !policy.replace_existing_assets,
         "Release assets must not be replaceable"
+    );
+    ensure!(
+        policy.homebrew_tap == "ultradotdev/homebrew-tap",
+        "Homebrew tap must be ultradotdev/homebrew-tap"
     );
     ensure!(
         artifacts.len() == 4,

@@ -75,7 +75,8 @@
         "attestation",
         "replaceExistingAssets",
         "archiveRoot",
-        "timestampSource"
+        "timestampSource",
+        "homebrewTap"
       ],
       "properties": {
         "tag": {
@@ -110,6 +111,9 @@
         },
         "timestampSource": {
           "const": "source-commit"
+        },
+        "homebrewTap": {
+          "const": "ultradotdev/homebrew-tap"
         }
       }
     },
