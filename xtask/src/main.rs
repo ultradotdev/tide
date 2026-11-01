@@ -6,6 +6,7 @@
 mod docs;
 mod gates;
 mod governance;
+mod homebrew;
 mod hygiene;
 mod install_checks;
 mod linux_build;
@@ -81,6 +82,21 @@ enum Task {
         repository_root: PathBuf,
         #[arg(long)]
         assets_directory: PathBuf,
+    },
+    /// Generate the Homebrew tap formula from a release's SHA256SUMS.
+    HomebrewFormula {
+        /// Release version without the leading `v`.
+        #[arg(long)]
+        version: String,
+        /// The release's SHA256SUMS file.
+        #[arg(long)]
+        checksums: PathBuf,
+        /// Write the formula here instead of standard output.
+        #[arg(long)]
+        output: Option<PathBuf>,
+        /// Archive base URL (default: the repository's GitHub release downloads).
+        #[arg(long)]
+        download_base_url: Option<String>,
     },
     /// Check the release contract, workflow and packaging/signing tooling.
     VerifyReleaseArtifacts(ScenarioArgs),
@@ -274,6 +290,18 @@ fn run(task: Task) -> Result<ExitCode> {
             repository_root,
             assets_directory,
         } => release::generate_release_checksums(&repository_root, &assets_directory)?,
+        Task::HomebrewFormula {
+            version,
+            checksums,
+            output,
+            download_base_url,
+        } => homebrew::generate(
+            &root,
+            &version,
+            &checksums,
+            output.as_deref(),
+            download_base_url.as_deref(),
+        )?,
         Task::VerifyReleaseArtifacts(args) => {
             verify_release::verify_release_artifacts(&root, args.list, args.scenario.as_deref())?;
         }
@@ -474,6 +502,7 @@ mod tests {
         for former in [
             "package-release-artifact",
             "generate-release-checksums",
+            "homebrew-formula",
             "verify-release-artifacts",
             "verify-release-matrix",
             "write-release-zip",
