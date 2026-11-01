@@ -174,11 +174,23 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "homebrewInstall",
+        "homebrewUpgrade",
+        "homebrewUninstall",
         "binaryInstall",
         "binaryUninstall",
         "sourceBuild"
       ],
       "properties": {
+        "homebrewInstall": {
+          "$ref": "#/$defs/commandSet"
+        },
+        "homebrewUpgrade": {
+          "$ref": "#/$defs/commandSet"
+        },
+        "homebrewUninstall": {
+          "$ref": "#/$defs/commandSet"
+        },
         "binaryInstall": {
           "$ref": "#/$defs/commandSet"
         },

@@ -57,6 +57,15 @@ Performance measurements (`cargo xtask measure-rust-performance` and the `accept
 
 Release archives contain `tide`, `uninstall.sh`, `LICENSE`, `ATTRIBUTIONS.md` and `VERSION.json`. macOS archives require Developer ID signing, hardened runtime and accepted Apple notarization using an App Store Connect API key. `cargo xtask package-release-artifact`, `sign-notarize-macos` and `generate-release-checksums` build and verify the resulting payload; their command construction is unit-tested without running signing tools. Manual rehearsal workflows do not publish. Publication happens only when the owner pushes the configured `v*` tag; `cargo xtask release-workflow-contract preflight` checks the tag, event and actor, and version tags are immutable.
 
+Each release also publishes the source's `install.sh` and `uninstall.sh`. `generate-release-checksums` refuses copies that differ from the tagged source and lists them in `SHA256SUMS`, so the checksum-driven attestation covers them and `https://github.com/ultradotdev/tide/releases/latest/download/install.sh` is the one-line installer. `verify-rust-release-install` exercises the installer's latest-release lookup against a loopback server that imitates GitHub's `/releases/latest` redirect (`TIDE_LATEST_VERSION_URL` and `TIDE_RELEASE_BASE_URL` override the GitHub URLs).
+
+After publication, the release workflow's `Release / Homebrew tap` job updates the `ultradotdev/homebrew-tap` tap (named by `releasePolicy.homebrewTap` in `config/release.json`). It runs only when the same owner tag run published, checks that the published `SHA256SUMS` matches the assembled one, regenerates `Formula/tide.rb` with `cargo xtask homebrew-formula --version <version> --checksums <SHA256SUMS> --output <path>`, and commits and pushes only a changed formula. Never edit the formula in the tap by hand. The job needs:
+
+- the `ultradotdev/homebrew-tap` repository with an initial commit on its default branch;
+- a `HOMEBREW_TAP_TOKEN` secret on the `release` environment: a fine-grained personal access token whose resource owner is `ultradotdev`, with repository access limited to `ultradotdev/homebrew-tap` and the **Contents: Read and write** permission (Metadata: read is implied). The job's own `GITHUB_TOKEN` stays read-only.
+
+Because the job uses the `release` environment, the owner approves it after approving publication. Check a generated formula locally with `cargo xtask homebrew-formula --version 0.10.0 --checksums SHA256SUMS --output tide.rb` and `brew style tide.rb` (a Homebrew developer command: it turns on Homebrew's developer mode); `--download-base-url file:///…` points it at locally packaged archives.
+
 Changes should include a concrete trigger, resulting behavior, relevant checks and any remaining limitation. Keep screenshots synthetic and free of personal files, session names and credentials. CI scans the history for secrets with Gitleaks and rejects tracked files that contain machine-specific absolute paths (`cargo xtask verify-portable-paths`). Read the [security policy](SECURITY.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License

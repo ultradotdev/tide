@@ -135,16 +135,35 @@
     }
   ],
   "commands": {
+    "homebrewInstall": {
+      "status": "in-validation",
+      "commands": [
+        "brew install ultradotdev/tap/tide"
+      ]
+    },
+    "homebrewUpgrade": {
+      "status": "in-validation",
+      "commands": [
+        "brew upgrade tide"
+      ]
+    },
+    "homebrewUninstall": {
+      "status": "in-validation",
+      "commands": [
+        "brew uninstall tide"
+      ]
+    },
     "binaryInstall": {
       "status": "in-validation",
       "commands": [
-        "curl -fsSL https://ultra.dev/tide/install.sh | sh"
+        "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh"
       ]
     },
     "binaryUninstall": {
       "status": "in-validation",
       "commands": [
-        "curl -fsSL https://ultra.dev/tide/uninstall.sh | sh"
+        "tide --uninstall",
+        "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh"
       ]
     },
     "sourceBuild": {
@@ -257,8 +276,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "b6f01bcc7ea7d6bb9d5011529489dada92f0bde1f8188592b7ad5cf03a95fd32",
-    "lastVerifiedGitFingerprint": "2e81227749fab802c869ea8db64f9300fc8b3439",
+    "contentHash": "842b6feb8088160f53f45c74ce7794892a1e343030a5d87036e65f0df6272924",
+    "lastVerifiedGitFingerprint": "032e3489ab77a661f6ccfcbd3e09b6278d42c490",
     "inputFiles": [
       "config/product.json",
       "config/release.json",

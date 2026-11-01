@@ -237,6 +237,32 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
         readme.contains("Public downloads are unavailable."),
         "Unpublished download boundary is missing",
     );
+    let getting_started = read("docs/getting-started.md")?;
+    let install_commands: Vec<String> = [
+        "homebrewInstall",
+        "homebrewUpgrade",
+        "homebrewUninstall",
+        "binaryInstall",
+        "binaryUninstall",
+    ]
+    .iter()
+    .flat_map(|set| {
+        release
+            .at(&["commands", set, "commands"])
+            .map(Json::as_array)
+            .unwrap_or_default()
+            .iter()
+            .map(Json::display)
+            .collect::<Vec<_>>()
+    })
+    .collect();
+    require(
+        install_commands.len() >= 6
+            && install_commands
+                .iter()
+                .all(|command| readme.contains(command) && getting_started.contains(command)),
+        "README or getting started install commands drifted from release metadata",
+    );
     let distribution = release.str_at(&["status", "distribution"]);
     require(
         ["in-validation", "implemented-unpublished"].contains(&distribution)

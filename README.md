@@ -8,11 +8,39 @@ _v0.10.0 prerelease, Rust implementation_
 
 Tide combines a code editor, Git tools, PostgreSQL, shells and external coding agents in a persistent terminal workspace. The application is a native Rust executable, and its maintainer tooling is a Rust `cargo xtask` crate.
 
-This repository is preparing its first public prerelease. The Rust 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable.
+This repository is preparing its first public prerelease. The Rust 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable. The commands below work once the release is published on GitHub.
 
-## Run from source
+## Install
 
-Requirements: Git, the pinned Rust toolchain in `rust-toolchain.toml`, a C compiler/linker, and macOS or Linux. On macOS install Xcode Command Line Tools. Linux source builds need the usual C development tools and headers. Prebuilt Linux targets use Ubuntu 22.04 / glibc 2.35 as their compatibility floor; macOS targets require macOS 14 or later.
+Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64). macOS executables are Developer ID signed and notarized.
+
+### Homebrew (macOS and Linux)
+
+```sh
+brew install ultradotdev/tap/tide
+brew upgrade tide      # Update
+brew uninstall tide    # Remove; settings, sessions and history are kept
+```
+
+Homebrew owns that copy: run from it, `tide --uninstall` refuses and names `brew uninstall tide` instead. Use one installation method at a time, so a single `tide` is on your PATH.
+
+### Install script
+
+```sh
+curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh
+```
+
+The script installs the latest GitHub release into `~/.local/lib/tide/releases/` with the launcher `~/.local/bin/tide`. It checks the archive against the release's `SHA256SUMS`, on macOS the Developer ID signature and Apple notarization, and, when an authenticated GitHub CLI (`gh`) is available, the GitHub build attestation. GitHub's latest release excludes prereleases; to install a specific release, prerelease included, run that release's script with its version:
+
+```sh
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.10.0/install.sh | sh -s -- --version 0.10.0
+```
+
+Re-run the script to update; the previous release is retained for `install.sh --rollback`. Remove a script installation with `tide --uninstall` (add `--purge` to also remove Tide user data after confirmation), or `curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh`.
+
+### Build from source
+
+Requirements: Git, the pinned Rust toolchain in `rust-toolchain.toml`, a C compiler/linker, and macOS or Linux. On macOS install Xcode Command Line Tools. Linux source builds need the usual C development tools and headers.
 
 From this checkout:
 
@@ -23,7 +51,7 @@ cargo build --locked --release -p tide
 
 Use the optimized release build for everyday use. `cargo run --locked -p tide -- .` runs a debug build, which has substantially more runtime overhead. The executable embeds its configuration catalogs, syntax grammars and themes; no PTY sidecar or Bun runtime is required.
 
-## Install, update and roll back
+To install a source build through the same managed installer:
 
 ```sh
 ./install-from-source.sh
@@ -40,7 +68,7 @@ tide --uninstall             # Keeps settings, sessions, history and credentials
 tide --uninstall --purge     # Requires confirmation before removing Tide user data
 ```
 
-See [getting started](docs/getting-started.md) for prefixes, migration from the earlier Rust installer and data compatibility. The planned website download command stays unavailable until signed release assets are published.
+See [getting started](docs/getting-started.md) for prefixes, migration from the earlier Rust installer and data compatibility.
 
 ## In the workspace
 
