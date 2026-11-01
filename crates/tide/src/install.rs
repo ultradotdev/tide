@@ -427,11 +427,8 @@ impl Installation {
         println!("{}", self.bin.join("tide").display());
         Ok(())
     }
-    pub fn install_local(&self, source: &Path, migrate: bool) -> Result<()> {
+    pub fn install_local(&self, source: &Path) -> Result<()> {
         let _lock = self.lock()?;
-        if migrate {
-            self.migrate_legacy()?;
-        }
         self.owned_launcher()?;
         // Existing marker syntax is validated before any replacement.
         self.marker("current")?;
@@ -513,76 +510,6 @@ impl Installation {
             let _ = std::fs::remove_dir_all(&staging);
         }
         result
-    }
-    fn migrate_legacy(&self) -> Result<()> {
-        let old = self.root.with_file_name("tide-rust");
-        let launcher = self.bin.join("tide");
-        let link = existing_link(&launcher)?;
-        if link.as_deref() != Some(old.join("current/tide").as_path()) {
-            return self.owned_launcher();
-        }
-        ensure!(
-            self.marker("current")?.is_none(),
-            "Cannot merge two existing installation stores"
-        );
-        safe_directory(&old)?;
-        let old_link =
-            existing_link(&old.join("current"))?.context("Legacy store has no current link")?;
-        let identity = release_id(&old_link)?;
-        ensure!(
-            identity.len() == 64 && identity.bytes().all(|c| c.is_ascii_hexdigit()),
-            "Malformed legacy release identity"
-        );
-        let binary = old.join(old_link).join("tide");
-        safe_directory(
-            binary
-                .parent()
-                .context("Missing legacy release directory")?,
-        )?;
-        ensure!(
-            hash(&binary)? == identity,
-            "Legacy binary failed its content hash"
-        );
-        #[derive(Deserialize)]
-        #[serde(deny_unknown_fields)]
-        struct LegacyManifest {
-            format: u8,
-            sha256: String,
-        }
-        let legacy_manifest = binary.with_file_name("manifest.json");
-        ensure!(
-            std::fs::symlink_metadata(&legacy_manifest)?.is_file()
-                && std::fs::metadata(&legacy_manifest)?.len() < 4096,
-            "Invalid legacy manifest"
-        );
-        let record: LegacyManifest = serde_json::from_slice(&std::fs::read(legacy_manifest)?)?;
-        ensure!(
-            record.format == 1 && record.sha256 == identity,
-            "Legacy ownership record does not match its binary"
-        );
-        let output =
-            tide_core::process::scrub_tide_secrets(&mut std::process::Command::new(&binary))
-                .arg("--version")
-                .output()?;
-        ensure!(
-            output.status.success(),
-            "Legacy binary version check failed"
-        );
-        let text = String::from_utf8(output.stdout)?;
-        let version = text
-            .split_whitespace()
-            .find_map(|word| {
-                let v = word.trim_start_matches('v');
-                (safe_id(v) && v.as_bytes()[0].is_ascii_digit()).then_some(v)
-            })
-            .context("Legacy binary version is unavailable")?;
-        let backup = self.stage_local(&binary, version)?;
-        replace_link(
-            &self.root.join("current"),
-            Some(&PathBuf::from("releases").join(backup)),
-        )?;
-        replace_link(&launcher, Some(&self.root.join("current/tide")))?;
-        Ok(())
     }
     pub fn activate_existing(&self, id: &str) -> Result<()> {
         ensure!(safe_id(id), "Invalid installed release identity");
@@ -673,16 +600,16 @@ mod tests {
         let store = fixture(dir.path());
         let first = binary(dir.path(), "first", "first build");
         let second = binary(dir.path(), "second", "second build");
-        store.install_local(&first, false).unwrap();
+        store.install_local(&first).unwrap();
         let old = store.marker("current").unwrap().unwrap();
-        store.install_local(&second, false).unwrap();
+        store.install_local(&second).unwrap();
         let current = store.marker("current").unwrap().unwrap();
         assert_ne!(old, current);
         assert_eq!(
             store.marker("previous").unwrap().as_deref(),
             Some(old.as_str())
         );
-        store.install_local(&second, false).unwrap();
+        store.install_local(&second).unwrap();
         assert_eq!(
             store.marker("previous").unwrap().as_deref(),
             Some(old.as_str())
@@ -700,7 +627,7 @@ mod tests {
         std::fs::create_dir_all(&store.bin).unwrap();
         let source = binary(dir.path(), "source", "new build");
         let launcher = binary(&store.bin, "tide", "foreign executable");
-        assert!(store.install_local(&source, false).is_err());
+        assert!(store.install_local(&source).is_err());
         assert_eq!(
             std::fs::read_to_string(&launcher).unwrap(),
             "foreign executable"
@@ -710,7 +637,7 @@ mod tests {
         std::fs::create_dir(&outside).unwrap();
         std::fs::remove_dir_all(&store.root).unwrap();
         symlink(&outside, &store.root).unwrap();
-        assert!(store.install_local(&source, false).is_err());
+        assert!(store.install_local(&source).is_err());
         assert_eq!(std::fs::read_dir(outside).unwrap().count(), 0);
     }
     #[test]
@@ -718,14 +645,14 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = fixture(dir.path());
         let source = binary(dir.path(), "source", "original build");
-        store.install_local(&source, false).unwrap();
+        store.install_local(&source).unwrap();
         let current = store.marker("current").unwrap().unwrap();
         std::fs::write(
             store.root.join("releases").join(&current).join("tide"),
             "changed",
         )
         .unwrap();
-        assert!(store.install_local(&source, false).is_err());
+        assert!(store.install_local(&source).is_err());
         assert_eq!(
             store.marker("current").unwrap().as_deref(),
             Some(current.as_str())
@@ -735,7 +662,7 @@ mod tests {
             Some(Path::new("releases/../../outside")),
         )
         .unwrap();
-        assert!(store.install_local(&source, false).is_err());
+        assert!(store.install_local(&source).is_err());
     }
     #[test]
     fn stale_locks_from_dead_installs_are_recovered_but_live_ones_block() {
@@ -748,13 +675,13 @@ mod tests {
         let dead = child.id();
         child.wait().unwrap();
         std::fs::write(lock.join("pid"), dead.to_string()).unwrap();
-        store.install_local(&source, false).unwrap();
+        store.install_local(&source).unwrap();
         assert!(!lock.exists());
         std::fs::create_dir(&lock).unwrap();
         std::fs::write(lock.join("pid"), std::process::id().to_string()).unwrap();
-        assert!(store.install_local(&source, false).is_err());
+        assert!(store.install_local(&source).is_err());
         std::fs::remove_file(lock.join("pid")).unwrap();
-        assert!(store.install_local(&source, false).is_err());
+        assert!(store.install_local(&source).is_err());
     }
     #[test]
     fn failed_activation_restores_links_and_the_bin_dir_record() {
@@ -762,12 +689,12 @@ mod tests {
         let store = fixture(dir.path());
         let first = binary(dir.path(), "first", "first build");
         let second = binary(dir.path(), "second", "second build");
-        store.install_local(&first, false).unwrap();
+        store.install_local(&first).unwrap();
         let current = store.marker("current").unwrap();
         let record = store.root.join("BIN_DIR");
         std::fs::write(&record, "/elsewhere/bin").unwrap();
         std::fs::set_permissions(&store.bin, std::fs::Permissions::from_mode(0o500)).unwrap();
-        let result = store.install_local(&second, false);
+        let result = store.install_local(&second);
         std::fs::set_permissions(&store.bin, std::fs::Permissions::from_mode(0o700)).unwrap();
         let error = result.unwrap_err().to_string();
         assert!(error.contains("activation link"), "{error}");
@@ -816,7 +743,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = fixture(dir.path());
         let source = binary(dir.path(), "source", "build");
-        store.install_local(&source, false).unwrap();
+        store.install_local(&source).unwrap();
         let release = store
             .root
             .join("releases")

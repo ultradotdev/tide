@@ -309,7 +309,6 @@ fn fake_cli_providers_launch_dedupe_restore_and_close_without_duplicate_tabs() {
         let session = app.build_session();
         assert_eq!(session.ai_cli_panes.len(), 1);
         app.force_close_active();
-        app.session_baseline = Some(session.clone());
         temp_env::with_var(
             provider.env_override(),
             Some(executable.as_os_str()),

@@ -218,46 +218,6 @@ pub struct SessionState {
 }
 
 impl SessionState {
-    /// True when the session contains state the Rust MVP does not render/manage.
-    #[must_use]
-    pub fn has_unsupported_content(&self) -> bool {
-        !self.extra.is_empty()
-            || !self.ui.extra.is_empty()
-            || self
-                .documents
-                .iter()
-                .any(|document| !document.extra.is_empty())
-            || self
-                .terminals
-                .iter()
-                .any(|terminal| !terminal.extra.is_empty())
-            || self
-                .bottom_terminals
-                .iter()
-                .any(|terminal| !terminal.extra.is_empty())
-    }
-
-    /// Preserve state the Rust app does not manage when refreshing a session.
-    pub fn preserve_unsupported_from(&mut self, previous: &Self) {
-        if self.ai_cli_panes.is_empty() {
-            self.ai_cli_panes = previous.ai_cli_panes.clone();
-        }
-        if self.sql_editors.is_empty() {
-            self.sql_editors = previous.sql_editors.clone();
-        }
-        for (key, value) in &previous.extra {
-            self.extra
-                .entry(key.clone())
-                .or_insert_with(|| value.clone());
-        }
-        for (key, value) in &previous.ui.extra {
-            self.ui
-                .extra
-                .entry(key.clone())
-                .or_insert_with(|| value.clone());
-        }
-    }
-
     /// Refuse unknown future versions rather than silently misinterpreting them.
     pub fn validate_version(&self) -> Result<(), crate::ConfigError> {
         if self.version == 7 {
@@ -275,7 +235,7 @@ mod tests {
     #[test]
     fn round_trips_v7_fixture() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/fixtures/rust-parity/session-v7.json");
+            .join("../../tests/fixtures/session-v7.json");
         let original: SessionState = crate::load_jsonc(path).unwrap();
         original.validate_version().unwrap();
         let text = serde_json::to_string(&original).unwrap();

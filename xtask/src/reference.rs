@@ -211,7 +211,7 @@ Rust Tide loads embedded defaults and then user `settings.jsonc`. Supported sett
 | Cache | `$XDG_CACHE_HOME/tide` or `~/.cache/tide` | Rebuildable application data |
 | Workspace | `<workspace>/.tide` | Project-scoped database connection records |
 
-XDG overrides must be absolute. Rust keeps its session snapshots separate from TypeScript writes. Back up configuration/state before switching implementations; see [migration and installation](../getting-started.md).
+XDG overrides must be absolute. See [getting started](../getting-started.md) for how installation, updates and uninstall treat these directories.
 
 ## Supported settings
 

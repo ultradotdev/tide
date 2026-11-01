@@ -330,10 +330,10 @@ mod tests {
     use super::*;
 
     fn ultra_dusk() -> TideTheme {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/fixtures/rust-parity/themes-defaults.json");
-        let catalog = tide_config::ThemeCatalog::from_path(path).unwrap();
-        catalog.get("ultra-dusk").unwrap().clone()
+        tide_config::builtin::themes()
+            .get("ultra-dusk")
+            .unwrap()
+            .clone()
     }
 
     #[test]

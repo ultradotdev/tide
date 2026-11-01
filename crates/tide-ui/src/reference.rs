@@ -85,7 +85,7 @@ mod tests {
                 .iter()
                 .any(|b| b["key"] == "ctrl+k" && b["command"] == "workbench.commandPalette")
         );
-        assert_eq!(reference["aliases"]["file.nextTab"], "editor.nextTab");
+        assert_eq!(reference["aliases"]["terminal.nextTab"], "terminal.next");
         for (key, entry) in reference["settings"].as_object().unwrap() {
             preferences::validate(key, &entry["default"])
                 .unwrap_or_else(|error| panic!("Invalid exported default for {key}: {error}"));

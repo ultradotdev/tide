@@ -188,8 +188,6 @@ enum Task {
     InstallRustLocal {
         #[arg(long)]
         prefix: Option<PathBuf>,
-        #[arg(long)]
-        migrate_legacy: bool,
         #[arg(long, group = "action")]
         binary: Option<PathBuf>,
         #[arg(long, group = "action")]
@@ -423,7 +421,6 @@ fn run(task: Task) -> Result<ExitCode> {
         )?,
         Task::InstallRustLocal {
             prefix,
-            migrate_legacy,
             binary,
             rollback,
             uninstall,
@@ -437,7 +434,7 @@ fn run(task: Task) -> Result<ExitCode> {
             let prefix = prefix.unwrap_or_else(|| {
                 PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local")
             });
-            let code = install_checks::install_local(&prefix, &action, migrate_legacy)?;
+            let code = install_checks::install_local(&prefix, &action)?;
             return Ok(ExitCode::from(u8::try_from(code).unwrap_or(1)));
         }
         Task::VerifyRustLocalInstall { debug, release } => {

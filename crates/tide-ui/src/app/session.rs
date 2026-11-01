@@ -63,8 +63,7 @@ impl App {
                 self.documents = DocumentRegistry::default();
                 self.dock = DockState::new();
                 self.session_name = Some(name.to_owned());
-                self.session_baseline = Some(loaded.state.clone());
-                match self.restore_session(loaded.state) {
+                match self.restore_session(loaded) {
                     Ok(()) => {
                         self.session_dirty = false;
                         self.set_status(format!("Session: opened {name}"));
@@ -298,7 +297,7 @@ impl App {
             Focus::Dock => "bottom-terminal",
             Focus::Status => "status",
         };
-        let mut state = SessionState {
+        SessionState {
             version: 7,
             timestamp: timestamp_millis().to_string(),
             instance_id: self.instance_id.clone(),
@@ -363,16 +362,7 @@ impl App {
                 ]),
             },
             extra: BTreeMap::from([("rustFileTree".into(), self.file_tree.snapshot())]),
-        };
-        if let Some(previous) = &self.session_baseline {
-            let mut unsupported = previous.clone();
-            // These surfaces are managed by Rust, including an intentionally
-            // empty list after the last tab closes. Never resurrect closed tabs.
-            unsupported.ai_cli_panes.clear();
-            unsupported.sql_editors.clear();
-            state.preserve_unsupported_from(&unsupported);
         }
-        state
     }
 
     pub(super) fn restore_session(&mut self, session: SessionState) -> Result<()> {

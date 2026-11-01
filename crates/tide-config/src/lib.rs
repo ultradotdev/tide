@@ -1,4 +1,4 @@
-//! Configuration, catalog, theme, and session compatibility for Tide.
+//! Configuration, catalogs, themes, paths, and session structures for Tide.
 
 pub mod builtin;
 mod catalog;
@@ -73,51 +73,14 @@ pub fn parse_jsonc<T: serde::de::DeserializeOwned>(text: &str) -> Result<T, Conf
 mod tests {
     use super::*;
 
-    fn fixture(name: &str) -> std::path::PathBuf {
+    fn session_fixture() -> std::path::PathBuf {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/fixtures/rust-parity")
-            .join(name)
-    }
-
-    #[test]
-    fn parses_all_default_settings() {
-        let settings: Settings = load_jsonc(fixture("settings-defaults.json")).unwrap();
-        assert_eq!(settings.len(), 90);
-        assert_eq!(
-            settings
-                .get("workbench.colorTheme")
-                .and_then(|v| v.as_str()),
-            Some("ultra-dusk")
-        );
-    }
-
-    #[test]
-    fn parses_all_default_keybindings() {
-        let bindings: Vec<Keybinding> = load_jsonc(fixture("keybindings-defaults.json")).unwrap();
-        assert_eq!(bindings.len(), 198);
-        assert_eq!(bindings[0].key, "ctrl+s");
-        assert_eq!(bindings[0].command, "file.save");
-    }
-
-    #[test]
-    fn parses_all_default_commands() {
-        let commands: std::collections::BTreeMap<String, CommandInfo> =
-            load_jsonc(fixture("commands-defaults.json")).unwrap();
-        assert_eq!(commands.len(), 274);
-        assert_eq!(commands["file.save"].category, "File");
-    }
-
-    #[test]
-    fn parses_all_builtin_themes() {
-        let catalog = ThemeCatalog::from_path(fixture("themes-defaults.json")).unwrap();
-        assert_eq!(catalog.len(), 13);
-        assert!(catalog.get("ultra-dusk").is_some());
-        assert_eq!(catalog.get("ultra-dusk").unwrap().name, "Ultra Dusk");
+            .join("../../tests/fixtures/session-v7.json")
     }
 
     #[test]
     fn parses_v7_session_fixture() {
-        let session = load_session(fixture("session-v7.json")).unwrap();
+        let session = load_session(session_fixture()).unwrap();
         assert_eq!(session.version, 7);
         assert_eq!(session.documents.len(), 2);
         assert_eq!(session.layout.node_type, "horizontal");
@@ -126,24 +89,8 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_state_survives_a_round_trip() {
-        let mut session = load_session(fixture("session-v7-unsupported.json")).unwrap();
-        assert!(session.has_unsupported_content());
-        let mut next = session.clone();
-        next.documents.clear();
-        next.preserve_unsupported_from(&session);
-        assert_eq!(next.ai_cli_panes.len(), 1);
-        assert_eq!(next.sql_editors.len(), 1);
-        assert!(next.extra.contains_key("futureField"));
-        assert!(next.ui.extra.contains_key("futureUi"));
-        let text = serde_json::to_string(&next).unwrap();
-        assert!(text.contains("futureField"));
-        session.documents.clear();
-    }
-
-    #[test]
     fn rejects_unknown_session_versions() {
-        let mut session = load_session(fixture("session-v7.json")).unwrap();
+        let mut session = load_session(session_fixture()).unwrap();
         session.version = 99;
         let error = session.validate_version().unwrap_err().to_string();
         assert!(error.contains("unsupported Tide session version 99"));

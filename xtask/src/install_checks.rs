@@ -16,12 +16,7 @@ pub enum LocalAction {
     Uninstall,
 }
 
-pub fn install_local_command(
-    root: &Path,
-    prefix: &Path,
-    action: &LocalAction,
-    migrate_legacy: bool,
-) -> Result<Command> {
+pub fn install_local_command(root: &Path, prefix: &Path, action: &LocalAction) -> Result<Command> {
     let prefix = std::path::absolute(prefix)?;
     let mut command = match action {
         LocalAction::Binary(binary) => {
@@ -30,9 +25,6 @@ pub fn install_local_command(
                 .arg(root.join("install.sh"))
                 .arg("--binary")
                 .arg(std::path::absolute(binary)?);
-            if migrate_legacy {
-                command.arg("--migrate-legacy");
-            }
             command
         }
         LocalAction::Rollback => {
@@ -52,8 +44,8 @@ pub fn install_local_command(
     Ok(command)
 }
 
-pub fn install_local(prefix: &Path, action: &LocalAction, migrate_legacy: bool) -> Result<i32> {
-    let status = install_local_command(&repo_root(), prefix, action, migrate_legacy)?.status()?;
+pub fn install_local(prefix: &Path, action: &LocalAction) -> Result<i32> {
+    let status = install_local_command(&repo_root(), prefix, action)?.status()?;
     Ok(status.code().unwrap_or(1))
 }
 
@@ -190,33 +182,7 @@ pub fn verify_local_install(debug: &Path, release: &Path) -> Result<()> {
     );
     std::fs::remove_file(&launcher)?;
 
-    let legacy = prefix.join("lib/tide-rust");
-    let old_hash = sha256_file(&debug)?;
-    let old_release = legacy.join("releases").join(&old_hash);
-    std::fs::create_dir_all(&old_release)?;
-    std::fs::copy(&debug, old_release.join("tide"))?;
-    std::fs::write(
-        old_release.join("manifest.json"),
-        serde_json::json!({ "format": 1, "sha256": old_hash }).to_string(),
-    )?;
-    std::os::unix::fs::symlink(format!("releases/{old_hash}"), legacy.join("current"))?;
-    std::os::unix::fs::symlink(legacy.join("current/tide"), &launcher)?;
-    manage(&["--binary", &release_text], false)?;
-    ensure!(
-        read_link(&launcher)? == legacy.join("current/tide").display().to_string(),
-        "Legacy launcher changed without --migrate-legacy"
-    );
-    manage(&["--binary", &release_text, "--migrate-legacy"], true)?;
-    check()?;
-    ensure!(
-        read_link(&prefix.join("lib/tide/previous"))? == format!("releases/local-{old_hash}"),
-        "Legacy build is not the rollback target"
-    );
-    ensure!(
-        old_release.join("tide").exists(),
-        "Legacy rollback build must remain untouched"
-    );
-    manage(&["--rollback"], true)?;
+    manage(&["--binary", &release_text], true)?;
     check()?;
     let piped = piped_uninstall()?;
     ensure!(piped.success, "{}", piped.stderr);
@@ -231,7 +197,7 @@ pub fn verify_local_install(debug: &Path, release: &Path) -> Result<()> {
         "The installer edited a shell profile"
     );
     println!(
-        "Rust install, binary checks, upgrade/rollback, safe CLI and piped uninstall/purge, legacy migration and foreign-executable refusal passed."
+        "Rust install, binary checks, upgrade/rollback, safe CLI and piped uninstall/purge and foreign-executable refusal passed."
     );
     Ok(())
 }
@@ -691,22 +657,13 @@ mod tests {
             Path::new("/repo"),
             Path::new("/prefix"),
             &LocalAction::Binary(PathBuf::from("/build/tide")),
-            true,
         )
         .unwrap();
         let args: Vec<_> = command
             .get_args()
             .map(|arg| arg.to_string_lossy().into_owned())
             .collect();
-        assert_eq!(
-            args,
-            [
-                "/repo/install.sh",
-                "--binary",
-                "/build/tide",
-                "--migrate-legacy"
-            ]
-        );
+        assert_eq!(args, ["/repo/install.sh", "--binary", "/build/tide"]);
         let envs: Vec<_> = command
             .get_envs()
             .map(|(key, value)| {
@@ -721,7 +678,6 @@ mod tests {
             Path::new("/repo"),
             Path::new("/prefix"),
             &LocalAction::Uninstall,
-            false,
         )
         .unwrap();
         assert_eq!(

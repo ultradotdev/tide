@@ -246,7 +246,6 @@ pub struct AppConfig {
     pub initial_file: Option<PathBuf>,
     pub session_name: Option<String>,
     pub restore_session: bool,
-    pub shared_sessions: bool,
     pub paths: Option<Paths>,
     pub jobs: Jobs,
     pub agent_discovery: AgentDiscovery,
@@ -381,7 +380,6 @@ pub struct App {
     pointer: PointerState,
     pub session_name: Option<String>,
     session_store: SessionStore,
-    session_baseline: Option<SessionState>,
     session_write_blocked: bool,
     events_tx: tokio::sync::mpsc::Sender<AppEvent>,
     events_rx: Option<tokio::sync::mpsc::Receiver<AppEvent>>,
@@ -483,8 +481,7 @@ impl App {
         let palette = Palette::from_theme(themes.selected());
         let syntax = SyntaxHighlighter::new(themes.selected());
         let file_tree = FileTreeState::new(&config.workspace);
-        let session_store = SessionStore::new(paths.clone(), config.workspace.clone())
-            .with_shared_writes(config.shared_sessions);
+        let session_store = SessionStore::new(paths.clone(), config.workspace.clone());
         let (events_tx, events_rx) = tokio::sync::mpsc::channel(64);
         let watch_filter = Arc::new(crate::watch::WatchFilter::new(&config.workspace));
         let git = GitController::new(&config.jobs, events_tx.clone());
@@ -540,7 +537,6 @@ impl App {
             pointer: PointerState::default(),
             session_name: config.session_name.clone(),
             session_store,
-            session_baseline: None,
             session_write_blocked: false,
             events_tx,
             events_rx: Some(events_rx),
@@ -609,18 +605,16 @@ impl App {
             Ok(None)
         };
         let restored = match loaded {
-            Ok(Some(loaded)) => Some(loaded.state),
-            Ok(None) => None,
+            Ok(session) => session,
             Err(error) => {
                 app.session_write_blocked = true;
                 app.set_status(format!(
-                    "Session load failed; shared writes disabled: {error:#}"
+                    "Session load failed; session writes disabled: {error:#}"
                 ));
                 None
             }
         };
         let had_session = if let Some(session) = restored {
-            app.session_baseline = Some(session.clone());
             match app.restore_session(session) {
                 Ok(()) => true,
                 Err(error) => {

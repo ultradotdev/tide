@@ -68,7 +68,7 @@ tide --uninstall             # Keeps settings, sessions, history and credentials
 tide --uninstall --purge     # Requires confirmation before removing Tide user data
 ```
 
-See [getting started](docs/getting-started.md) for prefixes, migration from the earlier Rust installer and data compatibility.
+See [getting started](docs/getting-started.md) for prefixes, rollback and where Tide keeps your data.
 
 ## In the workspace
 

@@ -4029,7 +4029,7 @@ mod tests {
     #[test]
     fn folding_below_the_initial_view_preserves_a_manually_scrolled_viewport() {
         use crossterm::event::KeyModifiers;
-        let content = include_str!("../../../tests/fixtures/rust-parity/folding-context.ts");
+        let content = include_str!("../../../tests/fixtures/folding-context.ts");
         for wrapped in [false, true] {
             for numbers in [false, true] {
                 for name in [

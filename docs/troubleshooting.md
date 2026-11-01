@@ -2,7 +2,7 @@
 
 ## Slow startup or input
 
-Use `cargo build --locked --release -p tide` and run `target/release/tide`. A debug build can be considerably slower, especially during syntax parsing and hashing. First compilation is separate from application startup. Avoid comparing a debug Rust process with an optimized TypeScript build.
+Use `cargo build --locked --release -p tide` and run `target/release/tide`. A debug build can be considerably slower, especially during syntax parsing and hashing. First compilation is separate from application startup. Compare release builds with release builds.
 
 If input stalls in a release build, record the terminal emulator, dimensions, file size/type, enabled language servers and a synthetic reproduction. Check whether a provider discovery, search, or language-server operation is active. Do not include provider histories or private files in reports.
 
@@ -26,7 +26,7 @@ Run `tide --check-lsp`. Install the corresponding server executable and put it o
 
 The installer refuses symlink directory components, unrelated launchers, changed release contents and a busy lock. Use an absolute canonical prefix. On macOS `/tmp` and `/var` are system symlinks; use `/private/tmp` or the resolved real directory for a temporary prefix. Do not delete a lock until you have confirmed there is no installer running.
 
-For a recognized earlier Rust installation use `--migrate-legacy`. For rollback use the same prefix as installation. See [installation](getting-started.md).
+For rollback use the same prefix as installation. See [installation](getting-started.md).
 
 ## PostgreSQL or credentials
 
@@ -34,7 +34,7 @@ Check the active connection, TLS mode and server permissions. Read-only database
 
 ## Session restoration
 
-Back up Tide's state root before changing implementations. Rust uses its own session snapshots and can read historical TypeScript sessions. Shared writes are disabled. To isolate a restoration issue, start with `--no-session`; do not erase the original snapshot to obtain a clean test.
+Session snapshots live under Tide's state root. To isolate a restoration issue, start with `--no-session`; do not erase the original snapshot to obtain a clean test.
 
 ## Diagnostic commands
 

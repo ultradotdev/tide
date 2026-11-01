@@ -24,7 +24,7 @@ Syntax grammars are shared immutable data. Bounded workers parse document snapsh
 
 ## Storage and safety
 
-XDG paths come from `tide-config`. Rust writes separate session snapshots and reads historical TypeScript sessions for migration. Shared writes are disabled. Secrets use the shared provider service; database connection records refer to them. Native provider session stores remain provider-owned.
+XDG paths come from `tide-config`. Session snapshots are versioned, and a save refuses to overwrite a snapshot another instance changed. Secrets use the shared provider service; database connection records refer to them. Native provider session stores remain provider-owned.
 
 PostgreSQL client read-only checks and mutation confirmations complement server-side roles. Managed installation validates ownership, payload hashes and modes before activation. macOS distribution additionally verifies Developer ID and notarization provenance.
 

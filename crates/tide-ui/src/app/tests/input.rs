@@ -84,13 +84,13 @@ fn implemented_command_guard_is_small() {
 }
 
 #[test]
-fn every_frozen_retained_command_has_a_dispatch_route_and_restart_is_dirty_safe() {
+fn every_guarded_command_has_a_dispatch_route_and_restart_is_dirty_safe() {
     let commands: Vec<String> = serde_json::from_str(include_str!(
-        "../../../../../tests/fixtures/rust-parity/retained-commands.json"
+        "../../../../../tests/fixtures/routed-commands.json"
     ))
     .unwrap();
     for id in &commands {
-        assert!(command_supported(id), "unsupported retained command {id}");
+        assert!(command_supported(id), "unrouted command {id}");
     }
     let (_home, mut app) = test_app();
     app.new_file();
@@ -110,7 +110,7 @@ fn every_frozen_retained_command_has_a_dispatch_route_and_restart_is_dirty_safe(
     assert_eq!(app.restart, Some(false));
     let restored = app.session_store.load_last().unwrap().unwrap();
     assert_eq!(
-        restored.state.documents[0].unsaved_content.as_deref(),
+        restored.documents[0].unsaved_content.as_deref(),
         Some("recover me")
     );
 }

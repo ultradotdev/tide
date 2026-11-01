@@ -3,8 +3,6 @@
     "aiCli.new": "agents.newSession",
     "aiCli.openSession": "agents.openSession",
     "aiCli.refreshSessions": "agents.refreshSessions",
-    "file.nextTab": "editor.nextTab",
-    "file.previousTab": "editor.previousTab",
     "terminal.focus": "workbench.focusTerminal",
     "terminal.nextTab": "terminal.next",
     "terminal.previousTab": "terminal.previous",
@@ -844,15 +842,6 @@
       "supported": false
     },
     {
-      "canonical": "editor.nextTab",
-      "category": "Keybinding actions",
-      "description": null,
-      "id": "file.nextTab",
-      "label": "file.nextTab",
-      "paletteVisible": false,
-      "supported": true
-    },
-    {
       "canonical": "file.open",
       "category": "File",
       "description": "Open a file",
@@ -877,15 +866,6 @@
       "id": "file.overwrite",
       "label": "Overwrite File on Disk",
       "paletteVisible": true,
-      "supported": true
-    },
-    {
-      "canonical": "editor.previousTab",
-      "category": "Keybinding actions",
-      "description": null,
-      "id": "file.previousTab",
-      "label": "file.previousTab",
-      "paletteVisible": false,
       "supported": true
     },
     {

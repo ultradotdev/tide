@@ -31,11 +31,6 @@ struct Cli {
     #[arg(long)]
     no_session: bool,
 
-    /// Unsupported: shared TypeScript/Rust session writes are disabled until
-    /// bidirectional compatibility and concurrent-writer tests pass
-    #[arg(long)]
-    shared_sessions: bool,
-
     /// Verify the packaged terminal runtime
     #[arg(long)]
     check_terminal: bool,
@@ -58,8 +53,6 @@ struct Cli {
 
     #[arg(long, hide = true)]
     install_local: bool,
-    #[arg(long, hide = true, requires = "install_local")]
-    migrate_legacy: bool,
     #[arg(long, hide = true)]
     install_release: Option<PathBuf>,
     #[arg(long, hide = true)]
@@ -97,8 +90,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
     if cli.install_local {
-        install::Installation::discover()?
-            .install_local(&std::env::current_exe()?, cli.migrate_legacy)?;
+        install::Installation::discover()?.install_local(&std::env::current_exe()?)?;
         return Ok(());
     }
     if let Some(path) = &cli.install_release {
@@ -189,12 +181,6 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    if cli.shared_sessions {
-        anyhow::bail!(
-            "shared TypeScript session writes are disabled: compatibility and concurrent-writer tests have not passed; Rust-owned sessions remain the default"
-        );
-    }
-
     let (workspace, initial_file) = resolve_workspace(cli.path.as_deref());
     tracing::info!(?workspace, ?initial_file, "starting Tide");
     if !std::io::stdout().is_terminal() {
@@ -208,7 +194,6 @@ async fn main() -> Result<()> {
         initial_file,
         session_name: cli.session,
         restore_session: !cli.no_session,
-        shared_sessions: cli.shared_sessions,
         paths: None,
         jobs: tide_ui::Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: tide_ui::discover_agent_sessions,

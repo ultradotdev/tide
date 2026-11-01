@@ -57,7 +57,6 @@ fn settings_validate_apply_persist_and_hide_excluded_or_ignored_controls() {
         initial_file: None,
         session_name: None,
         restore_session: false,
-        shared_sessions: false,
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
     })

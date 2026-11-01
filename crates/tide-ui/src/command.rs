@@ -317,6 +317,17 @@ mod tests {
     }
 
     #[test]
+    fn every_alias_is_a_catalog_command() {
+        let catalog = crate::catalog::commands();
+        for (alias, _) in crate::command_aliases::ALIASES {
+            assert!(
+                catalog.contains_key(*alias),
+                "{alias} is not in the catalog"
+            );
+        }
+    }
+
+    #[test]
     fn unknown_ids_are_rejected() {
         for id in ["", "__unbound__", "workbench.toggleMinimap"] {
             assert_eq!(id.parse::<Command>(), Err(UnknownCommand(id.to_owned())));

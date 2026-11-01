@@ -1,7 +1,6 @@
-//! Compatibility IDs used by command dispatch and generated references.
+//! Alternate command IDs from the embedded command catalog, routed to their canonical
+//! command by dispatch and listed in generated references.
 pub const ALIASES: &[(&str, &str)] = &[
-    ("file.nextTab", "editor.nextTab"),
-    ("file.previousTab", "editor.previousTab"),
     ("aiCli.new", "agents.newSession"),
     ("aiCli.openSession", "agents.openSession"),
     ("aiCli.refreshSessions", "agents.refreshSessions"),

@@ -63,7 +63,6 @@ async fn main() {
         initial_file: None,
         session_name: None,
         restore_session: false,
-        shared_sessions: false,
         paths: Some(paths),
         jobs: tide_ui::Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: tide_ui::discover_agent_sessions,

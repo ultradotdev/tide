@@ -68,10 +68,8 @@ The table includes supported command IDs and compatibility aliases. “Keybindin
 | `file.close` | Close Tab | File | Yes |
 | `file.closeAll` | Close All | File | Yes |
 | `file.new` | New File | File | Yes |
-| `file.nextTab` | file.nextTab | Keybinding actions | Keybinding action |
 | `file.open` | Open File... | File | Yes |
 | `file.overwrite` | Overwrite File on Disk | File | Yes |
-| `file.previousTab` | file.previousTab | Keybinding actions | Keybinding action |
 | `file.reload` | Revert File | File | Yes |
 | `file.save` | Save | File | Yes |
 | `file.saveAll` | Save All | File | Yes |
@@ -269,8 +267,6 @@ Aliases route to the same handler. Existing user bindings can retain these IDs.
 | `aiCli.new` | `agents.newSession` |
 | `aiCli.openSession` | `agents.openSession` |
 | `aiCli.refreshSessions` | `agents.refreshSessions` |
-| `file.nextTab` | `editor.nextTab` |
-| `file.previousTab` | `editor.previousTab` |
 | `terminal.focus` | `workbench.focusTerminal` |
 | `terminal.nextTab` | `terminal.next` |
 | `terminal.previousTab` | `terminal.previous` |
