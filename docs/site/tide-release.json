@@ -7,7 +7,7 @@
     "publisher": "Ultra.dev",
     "binary": "tide",
     "version": "0.10.0",
-    "prerelease": true,
+    "prerelease": false,
     "repository": "https://github.com/ultradotdev/tide",
     "homepage": "https://ultra.dev/tide",
     "issues": "https://github.com/ultradotdev/tide/issues",
@@ -16,7 +16,7 @@
   "release": {
     "release": "planned",
     "distribution": "in-validation",
-    "prerelease": true
+    "prerelease": false
   },
   "website": {
     "headline": "Terminal-Native Agentic IDE",
@@ -272,8 +272,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "09c0b996af4cb576ffde7d953c8695ec9dc0c7851bc32da71968275a9354cf15",
-    "lastVerifiedGitFingerprint": "1f45f4471fdce7cc50d63702bbc350a07c293e8a",
+    "contentHash": "4907a2d9ce50d2358335b8f75ea7b5d1922b26f1f07dc09cf1ce7cc4ae610797",
+    "lastVerifiedGitFingerprint": "a83c550fb3870fdfcff59e2374cba9ad1bcc3e3a",
     "inputFiles": [
       "config/product.json",
       "config/release.json",
@@ -295,7 +295,7 @@
       "Cargo.toml",
       "Cargo.lock",
       "docs/troubleshooting.md",
-      "docs/v0.10.0-prerelease.md",
+      "docs/v0.10.0.md",
       "install.sh",
       "uninstall.sh"
     ]
