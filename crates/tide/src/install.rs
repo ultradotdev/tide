@@ -269,6 +269,48 @@ impl Drop for Lock {
         let _ = std::fs::remove_dir(&self.0);
     }
 }
+/// The Homebrew formula that owns `executable` when it is a keg binary,
+/// `<prefix>/Cellar/<formula>/<version>/bin/<name>`. Callers pass the
+/// canonical path, so `<prefix>/bin` and `opt` symlinks resolve into the Cellar.
+fn homebrew_formula(executable: &Path) -> Option<String> {
+    let names: Vec<&str> = executable
+        .components()
+        .map(|part| part.as_os_str().to_str())
+        .collect::<Option<_>>()?;
+    match names.as_slice() {
+        [.., "Cellar", formula, _version, "bin", _name] => Some((*formula).to_owned()),
+        _ => None,
+    }
+}
+
+/// Managed-installation commands that a package manager's copy must not run.
+#[derive(Clone, Copy, Debug)]
+pub enum ManagedCommand {
+    Install,
+    Uninstall,
+}
+
+fn homebrew_refusal(executable: &Path, command: ManagedCommand) -> Result<()> {
+    let Some(formula) = homebrew_formula(executable) else {
+        return Ok(());
+    };
+    let shown = executable.display();
+    match command {
+        ManagedCommand::Uninstall => anyhow::bail!(
+            "Tide was installed with Homebrew ({shown}); remove it with `brew uninstall {formula}`"
+        ),
+        ManagedCommand::Install => anyhow::bail!(
+            "Tide was installed with Homebrew ({shown}); update it with `brew upgrade {formula}`, or run `brew uninstall {formula}` before using Tide's own installer"
+        ),
+    }
+}
+
+/// Refuses a managed-installation command from a Homebrew-installed executable:
+/// Homebrew owns that copy, its upgrades and its removal.
+pub fn refuse_package_managed(command: ManagedCommand) -> Result<()> {
+    homebrew_refusal(&std::fs::canonicalize(std::env::current_exe()?)?, command)
+}
+
 #[derive(Debug)]
 pub struct Installation {
     root: PathBuf,
@@ -596,6 +638,7 @@ impl Installation {
 
 pub fn uninstall(purge: bool, yes: bool) -> Result<()> {
     let executable = std::fs::canonicalize(std::env::current_exe()?)?;
+    homebrew_refusal(&executable, ManagedCommand::Uninstall)?;
     let release = executable.parent().context("Executable has no parent")?;
     verify(release).context("This executable is not a verified managed installation; use its package manager or remove the source build manually")?;
     let status = tide_core::process::scrub_tide_secrets(&mut std::process::Command::new("/bin/sh"))
@@ -731,6 +774,42 @@ mod tests {
         assert!(!error.contains("rollback also failed"), "{error}");
         assert_eq!(store.marker("current").unwrap(), current);
         assert_eq!(std::fs::read_to_string(&record).unwrap(), "/elsewhere/bin");
+    }
+    #[test]
+    fn homebrew_kegs_are_recognized_by_their_cellar_path() {
+        for (path, formula) in [
+            ("/opt/homebrew/Cellar/tide/0.10.0/bin/tide", Some("tide")),
+            ("/usr/local/Cellar/tide/0.10.0_1/bin/tide", Some("tide")),
+            (
+                "/home/linuxbrew/.linuxbrew/Cellar/tide/0.10.0/bin/tide",
+                Some("tide"),
+            ),
+            ("/home/dev/.local/lib/tide/releases/0.10.0/tide", None),
+            ("/opt/homebrew/bin/tide", None),
+            ("/opt/homebrew/Cellar/tide/0.10.0/libexec/tide", None),
+            ("/Cellar/bin/tide", None),
+        ] {
+            assert_eq!(
+                homebrew_formula(Path::new(path)).as_deref(),
+                formula,
+                "{path}"
+            );
+        }
+    }
+    #[test]
+    fn homebrew_installs_are_left_to_brew() {
+        let keg = Path::new("/opt/homebrew/Cellar/tide/0.10.0/bin/tide");
+        let removal = homebrew_refusal(keg, ManagedCommand::Uninstall)
+            .unwrap_err()
+            .to_string();
+        assert!(removal.contains("`brew uninstall tide`"), "{removal}");
+        let update = homebrew_refusal(keg, ManagedCommand::Install)
+            .unwrap_err()
+            .to_string();
+        assert!(update.contains("`brew upgrade tide`"), "{update}");
+        let managed = Path::new("/home/dev/.local/lib/tide/releases/0.10.0/tide");
+        homebrew_refusal(managed, ManagedCommand::Uninstall).unwrap();
+        homebrew_refusal(managed, ManagedCommand::Install).unwrap();
     }
     #[test]
     fn manifests_reject_duplicate_fields_symlinks_and_extra_payloads() {

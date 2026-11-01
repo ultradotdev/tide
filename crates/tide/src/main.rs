@@ -93,6 +93,9 @@ async fn main() -> Result<()> {
         install::verify_payload(path)?;
         return Ok(());
     }
+    if cli.install_local || cli.install_release.is_some() || cli.activate_existing.is_some() {
+        install::refuse_package_managed(install::ManagedCommand::Install)?;
+    }
     if let Some(id) = &cli.activate_existing {
         install::Installation::discover()?.activate_existing(id)?;
         return Ok(());
