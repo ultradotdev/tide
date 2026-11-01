@@ -190,6 +190,16 @@ pub fn codesign_arguments(
     command
 }
 
+/// Paths from `security list-keychains` output, one quoted path per line.
+fn keychain_search_list(output: &str) -> Vec<String> {
+    output
+        .lines()
+        .map(|line| line.trim().trim_matches('"'))
+        .filter(|path| !path.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
 pub fn remove_signature_arguments(target: &Path) -> Vec<String> {
     argv!["/usr/bin/codesign", "--remove-signature", target]
 }
@@ -574,6 +584,19 @@ fn sign_in_scratch(
             password,
             keychain,
         ])?;
+        // codesign reaches a keychain's private keys only through the user search list.
+        let listed =
+            runner.run_plain(&argv!["/usr/bin/security", "list-keychains", "-d", "user"])?;
+        let mut search = argv![
+            "/usr/bin/security",
+            "list-keychains",
+            "-d",
+            "user",
+            "-s",
+            keychain
+        ];
+        search.extend(keychain_search_list(&listed.stdout));
+        runner.run_plain(&search)?;
     }
     let release_keychain = matches!(options.credentials, CredentialSource::Release(_));
     let identity_command = if release_keychain {
@@ -1177,7 +1200,9 @@ mod tests {
         let commit = head.clone();
         let mut recorder = RecordingRunner::new(move |argv, _| {
             let joined = argv.join(" ");
-            Ok(if joined.contains("find-identity") {
+            Ok(if joined.ends_with("list-keychains -d user") {
+                stdout("    \"/opt/ci/keychains/login.keychain-db\"\n")
+            } else if joined.contains("find-identity") {
                 stdout("  1) ABCDEF0123 \"Developer ID Application: Ultra.dev (ABCDEFGHIJ)\"\n")
             } else if joined.contains("--display --verbose=2") {
                 anyhow::bail!("codesign failed with exit 1: code object is not signed at all")
@@ -1228,6 +1253,11 @@ mod tests {
                 .unwrap_or_else(|| panic!("missing {needle}: {commands:#?}"))
         };
         assert!(position("security create-keychain") < position("security import"));
+        let search = position("list-keychains -d user -s");
+        assert!(position("set-key-partition-list") < search);
+        assert!(search < position("codesign --force"));
+        assert!(commands[search].contains("release.keychain-db"));
+        assert!(commands[search].ends_with("/opt/ci/keychains/login.keychain-db"));
         assert!(position("codesign --force") < position("notarytool submit"));
         assert!(position("notarytool submit") < position("notarytool log"));
         assert!(position("notarytool log") < position("ditto -x -k"));
