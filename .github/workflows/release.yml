@@ -221,7 +221,7 @@ jobs:
             echo "Release $EXPECTED_TAG already exists; refusing to replace it." >&2
             exit 1
           fi
-      - name: Publish immutable prerelease
+      - name: Publish immutable release
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
@@ -230,8 +230,7 @@ jobs:
           gh release create "$EXPECTED_TAG"
           --verify-tag
           --title "$EXPECTED_TITLE"
-          --notes-file docs/v0.10.0-prerelease.md
-          --prerelease
+          --notes-file docs/v0.10.0.md
           release/tide-v0.10.0-darwin-arm64.zip
           release/tide-v0.10.0-darwin-arm64.notarization.json
           release/tide-v0.10.0-darwin-x64.zip

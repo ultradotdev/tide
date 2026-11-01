@@ -39,7 +39,7 @@
           ]
         },
         "prerelease": {
-          "const": true
+          "const": false
         }
       }
     },
@@ -89,7 +89,7 @@
           "const": "Tide v0.10.0"
         },
         "notesPath": {
-          "const": "docs/v0.10.0-prerelease.md"
+          "const": "docs/v0.10.0.md"
         },
         "manualRunsMayPublish": {
           "const": false

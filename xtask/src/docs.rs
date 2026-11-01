@@ -169,7 +169,7 @@ pub const DOCUMENTED_FILES: [&str; 23] = [
     "docs/architecture/rendering.md",
     "docs/modules/ui-components.md",
     "docs/troubleshooting.md",
-    "docs/v0.10.0-prerelease.md",
+    "docs/v0.10.0.md",
     "docs/site/README.md",
     "docs/site/WEBSITE_CONTENT_GUIDE.md",
 ];
@@ -269,7 +269,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
             && release
                 .at(&["status", "prerelease"])
                 .and_then(Json::as_bool)
-                == Some(true),
+                == Some(false),
         "Distribution claim boundary drifted",
     );
     let experimental = release

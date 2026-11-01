@@ -121,7 +121,7 @@ pub fn validate_context(
         head.status.success() && context.sha == String::from_utf8_lossy(&head.stdout).trim(),
         "Workflow SHA does not match checked out commit"
     );
-    let title = format!("# Tide v{} Prerelease Notes", contract.product.version);
+    let title = format!("# Tide v{} Release Notes", contract.product.version);
     ensure!(
         read_text(&repository_root.join(&policy.notes_path))?
             .split('\n')

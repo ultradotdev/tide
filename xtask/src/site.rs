@@ -26,7 +26,7 @@ pub const INPUTS: [&str; 23] = [
     "Cargo.toml",
     "Cargo.lock",
     "docs/troubleshooting.md",
-    "docs/v0.10.0-prerelease.md",
+    "docs/v0.10.0.md",
     "install.sh",
     "uninstall.sh",
 ];
@@ -149,7 +149,7 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
         .unwrap_or_default();
     let version = product.str_at(&["version"]);
     let guide = format!(
-        "# Tide Website Content Guide\n\n## Approved language\n\n**Headline:** {headline}\n\n**Description:** {description}\n\nUse **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version {version} as a prerelease.\n\n## Permitted claims\n\nThe site may claim only features listed in `features.releaseReady` in `tide-release.json`. It may describe the five external AI CLI integrations listed there.\n\n## Prohibited claims\n\n- Do not present downloads or binary install commands as available before distribution is published.\n- Do not add features that are absent from the release-ready inventory.\n- Do not claim the signed artifacts are publicly downloadable before the configured release tag workflow completes.\n- Do not claim WSL support.\n\n## Authoritative fields\n\nTreat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. Download buttons stay disabled until both the artifact and distribution statuses become published.\n\n## Verification\n\nGenerated from source content hash `{content_hash}` and last verified against Git `{fingerprint}`.\n"
+        "# Tide Website Content Guide\n\n## Approved language\n\n**Headline:** {headline}\n\n**Description:** {description}\n\nUse **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version {version} as the first public release.\n\n## Permitted claims\n\nThe site may claim only features listed in `features.releaseReady` in `tide-release.json`. It may describe the five external AI CLI integrations listed there.\n\n## Prohibited claims\n\n- Do not present downloads or binary install commands as available before distribution is published.\n- Do not add features that are absent from the release-ready inventory.\n- Do not claim the signed artifacts are publicly downloadable before the configured release tag workflow completes.\n- Do not claim WSL support.\n\n## Authoritative fields\n\nTreat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. Download buttons stay disabled until both the artifact and distribution statuses become published.\n\n## Verification\n\nGenerated from source content hash `{content_hash}` and last verified against Git `{fingerprint}`.\n"
     );
     let homepage = release
         .at(&["urls", "homepage"])

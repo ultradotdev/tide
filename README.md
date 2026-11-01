@@ -1,6 +1,6 @@
 # Tide by Ultra.dev
 
-_v0.10.0 prerelease, Rust implementation_
+_v0.10.0_
 
 ## Terminal-Native Agentic IDE
 
@@ -8,7 +8,7 @@ _v0.10.0 prerelease, Rust implementation_
 
 Tide combines a code editor, Git tools, PostgreSQL, shells and external coding agents in a persistent terminal workspace. The application is a native Rust executable, and its maintainer tooling is a Rust `cargo xtask` crate.
 
-This repository is preparing its first public prerelease. The Rust 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable. The commands below work once the release is published on GitHub.
+This repository is preparing its first public release. The Rust 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable. The commands below work once the release is published on GitHub.
 
 ## Install
 
@@ -30,7 +30,7 @@ Homebrew owns that copy: run from it, `tide --uninstall` refuses and names `brew
 curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh
 ```
 
-The script installs the latest GitHub release into `~/.local/lib/tide/releases/` with the launcher `~/.local/bin/tide`. It checks the archive against the release's `SHA256SUMS`, on macOS the Developer ID signature and Apple notarization, and, when an authenticated GitHub CLI (`gh`) is available, the GitHub build attestation. GitHub's latest release excludes prereleases; to install a specific release, prerelease included, run that release's script with its version:
+The script installs the latest GitHub release into `~/.local/lib/tide/releases/` with the launcher `~/.local/bin/tide`. It checks the archive against the release's `SHA256SUMS`, on macOS the Developer ID signature and Apple notarization, and, when an authenticated GitHub CLI (`gh`) is available, the GitHub build attestation. To install a specific version, run that release's script with its version:
 
 ```sh
 curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.10.0/install.sh | sh -s -- --version 0.10.0
@@ -123,7 +123,7 @@ These are synthetic fixture measurements on shared CI runners. They are not a co
 - [PostgreSQL](docs/features/postgresql.md), [external agents](docs/features/ai.md), [themes](docs/features/themes.md)
 - [Configuration and storage](docs/reference/configuration.md), [troubleshooting](docs/troubleshooting.md)
 - [Architecture](docs/architecture/overview.md), [contributing](CONTRIBUTING.md), [security policy](SECURITY.md)
-- [0.10.0 prerelease notes](docs/v0.10.0-prerelease.md)
+- [0.10.0 release notes](docs/v0.10.0.md)
 
 ## Development
 

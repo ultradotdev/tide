@@ -4,7 +4,7 @@
   "status": {
     "release": "planned",
     "distribution": "in-validation",
-    "prerelease": true
+    "prerelease": false
   },
   "website": {
     "headline": "Terminal-Native Agentic IDE",
@@ -14,7 +14,7 @@
     "tag": "v0.10.0",
     "tagPattern": "v*",
     "title": "Tide v0.10.0",
-    "notesPath": "docs/v0.10.0-prerelease.md",
+    "notesPath": "docs/v0.10.0.md",
     "manualRunsMayPublish": false,
     "publicationActor": "thekeith",
     "checksumsFilename": "SHA256SUMS",

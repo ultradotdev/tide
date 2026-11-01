@@ -18,7 +18,7 @@ The formula in the `ultradotdev/homebrew-tap` tap installs the prebuilt release 
 curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh
 ```
 
-`install.sh` is published with every release and covered by its `SHA256SUMS` and GitHub build attestation. Without `--version` it installs GitHub's latest release, found through the `https://github.com/ultradotdev/tide/releases/latest` redirect rather than the rate-limited API. GitHub's latest release excludes prereleases, so name a prerelease explicitly:
+`install.sh` is published with every release and covered by its `SHA256SUMS` and GitHub build attestation. Without `--version` it installs GitHub's latest release, found through the `https://github.com/ultradotdev/tide/releases/latest` redirect rather than the rate-limited API. To install a specific version, name it explicitly:
 
 ```sh
 curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.10.0/install.sh | sh -s -- --version 0.10.0

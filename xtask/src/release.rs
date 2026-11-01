@@ -394,7 +394,7 @@ fn build_manifest(
         target: artifact.rust_target.clone(),
         platform: artifact.platform.clone(),
         architecture: artifact.architecture.clone(),
-        prerelease: true,
+        prerelease: false,
         implementation: "rust".into(),
         local: false,
         payloads: payload_entries(payload_root)?,

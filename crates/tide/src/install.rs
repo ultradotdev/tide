@@ -496,7 +496,7 @@ impl Installation {
                 target: target(),
                 platform: platform().into(),
                 architecture: architecture().into(),
-                prerelease: true,
+                prerelease: false,
                 implementation: "rust".into(),
                 local: true,
                 payloads,
