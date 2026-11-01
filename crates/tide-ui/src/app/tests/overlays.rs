@@ -276,21 +276,16 @@ fn unified_replace_all_works_through_visible_controls_and_undo() {
 }
 
 #[test]
-fn ctrl_k_opens_immediately_and_timeout_preserves_the_query() {
+fn ctrl_k_opens_the_palette_immediately_without_waiting_for_a_chord() {
     let (_home, mut app) = test_app();
     app.handle_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL));
     assert!(matches!(
         app.overlay.as_ref().map(|modal| modal.kind()),
         Some(ModalKind::CommandPalette)
     ));
-    app.overlay.as_mut().unwrap().base_mut().push_str("save");
-    app.pending_chord.as_mut().unwrap().1 = Instant::now() - Duration::from_secs(1);
-    app.on_tick();
-    assert_eq!(app.overlay.as_ref().unwrap().input(), "save");
-    assert!(matches!(
-        app.overlay.as_ref().map(|modal| modal.kind()),
-        Some(ModalKind::CommandPalette)
-    ));
+    assert!(app.pending_chord.is_none());
+    app.handle_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE));
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "s");
 }
 
 #[test]

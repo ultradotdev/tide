@@ -76,14 +76,7 @@ Context-specific matches take precedence over unconditional bindings. Within the
 | `ctrl+h` | Find and Replace | `search.replace` | Any |
 | `ctrl+i` | Show Hover | `lsp.showHover` | Any |
 | `ctrl+k` | Command Palette | `workbench.commandPalette` | Any |
-| `ctrl+k ctrl+0` | Fold All | `editor.foldAll` | Any |
-| `ctrl+k ctrl+c` | Add Line Comment | `editor.commentLine` | Any |
-| `ctrl+k ctrl+j` | Unfold All | `editor.unfoldAll` | Any |
-| `ctrl+k ctrl+o` | Open Session... | `session.open` | Any |
-| `ctrl+k ctrl+s` | Save Session As... | `session.saveAs` | Any |
-| `ctrl+k ctrl+u` | Remove Line Comment | `editor.uncommentLine` | Any |
 | `ctrl+l` | Select Line | `editor.selectLine` | Any |
-| `ctrl+l d` | Duplicate Line | `editor.duplicateLine` | Any |
 | `ctrl+n` | New File | `file.new` | Any |
 | `ctrl+o` | Open File... | `file.open` | Any |
 | `ctrl+p` | Quick Open | `workbench.quickOpen` | Any |
@@ -175,7 +168,6 @@ Context-specific matches take precedence over unconditional bindings. Within the
 | `meta+a` | Select All | `edit.selectAll` | Any |
 | `meta+c` | Copy | `edit.copy` | Any |
 | `meta+d` | Add Selection to Next Match | `edit.selectNextMatch` | Any |
-| `meta+d a` | Select All Occurrences | `edit.selectAllOccurrences` | Any |
 | `meta+e` | Command Palette | `workbench.commandPalette` | Any |
 | `meta+f` | Find | `search.find` | Any |
 | `meta+h` | Find and Replace | `search.replace` | Any |

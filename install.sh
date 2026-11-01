@@ -3,7 +3,7 @@ set -eu
 
 PRODUCT="Tide"
 RELEASE_BASE_DEFAULT="https://github.com/ultradotdev/tide/releases/download"
-LATEST_VERSION_URL_DEFAULT="https://ultra.dev/tide/releases/latest-version"
+LATEST_RELEASE_URL_DEFAULT="https://github.com/ultradotdev/tide/releases/latest"
 DEVELOPER_TEAM_ID="WN53UUCY94"
 ATTESTATION_REPO="ultradotdev/tide"
 
@@ -31,9 +31,13 @@ Options:
   --add-to-path      Append the binary directory to the active shell startup file.
   -h, --help         Show this help.
 
+Without --version, the latest published GitHub release is installed. GitHub
+does not offer prereleases as the latest release; name one with --version.
+
 Environment:
-  TIDE_VERSION, TIDE_RELEASE_BASE_URL, TIDE_LATEST_VERSION_URL,
-  TIDE_INSTALL_ROOT, TIDE_BIN_DIR, TIDE_PLATFORM, and TIDE_ARCH.
+  TIDE_VERSION, TIDE_RELEASE_BASE_URL, TIDE_LATEST_VERSION_URL (a URL that
+  redirects to .../releases/tag/vVERSION), TIDE_INSTALL_ROOT, TIDE_BIN_DIR,
+  TIDE_PLATFORM, and TIDE_ARCH.
 EOF
 }
 
@@ -102,7 +106,7 @@ esac
 install_root="${TIDE_INSTALL_ROOT:-$HOME/.local/lib/tide}"
 bin_dir="${TIDE_BIN_DIR:-$HOME/.local/bin}"
 release_base="${TIDE_RELEASE_BASE_URL:-$RELEASE_BASE_DEFAULT}"
-latest_version_url="${TIDE_LATEST_VERSION_URL:-$LATEST_VERSION_URL_DEFAULT}"
+latest_release_url="${TIDE_LATEST_VERSION_URL:-$LATEST_RELEASE_URL_DEFAULT}"
 
 case "$install_root" in
   /*/tide) ;;
@@ -139,6 +143,22 @@ download() {
   case "$1" in
     https://*) curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-filesize 536870912 --output "$2" "$1" ;;
     *) curl --fail --silent --show-error --proto '=http' --max-redirs 0 --max-filesize 536870912 --output "$2" "$1" ;;
+  esac
+}
+
+# GitHub redirects /releases/latest to /releases/tag/vVERSION. Following the
+# redirect avoids the rate-limited REST API; only the final URL is read.
+latest_version() {
+  command -v curl >/dev/null 2>&1 || die "curl is required"
+  case "$1" in
+    https://*) resolved=$(curl --fail --silent --show-error --head --location --proto '=https' --proto-redir '=https' --max-redirs 10 --output /dev/null --write-out '%{url_effective}' "$1") || resolved="" ;;
+    http://127.0.0.1:*|http://localhost:*) resolved=$(curl --fail --silent --show-error --head --proto '=http' --output /dev/null --write-out '%{redirect_url}' "$1") || resolved="" ;;
+    *) die "downloads require HTTPS except for a loopback test server" ;;
+  esac
+  resolved=${resolved%%[?#]*}
+  case "$resolved" in
+    */releases/tag/v?*) printf '%s\n' "${resolved##*/releases/tag/v}" ;;
+    *) die "no published Tide release was found at $1 (GitHub's latest release excludes prereleases); pass --version VERSION" ;;
   esac
 }
 
@@ -197,12 +217,7 @@ if [ "$rollback" -eq 1 ]; then
 fi
 
 if [ -z "$version" ]; then
-  temporary_version=$(mktemp "${TMPDIR:-/tmp}/tide-version.XXXXXX")
-  trap 'rm -f "$temporary_version"' EXIT HUP INT TERM
-  download "$latest_version_url" "$temporary_version"
-  version=$(tr -d '[:space:]' < "$temporary_version")
-  rm -f "$temporary_version"
-  trap - EXIT HUP INT TERM
+  version=$(latest_version "$latest_release_url") || exit 1
 fi
 validate_version "$version"
 

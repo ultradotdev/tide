@@ -1,8 +1,40 @@
 # Getting Started
 
-Tide 0.10.0 runs as a native Rust executable on macOS and Linux. Public binary downloads are not published yet. Work from your existing source checkout.
+Tide 0.10.0 runs as a native Rust executable on macOS and Linux. Public binary downloads are not published yet; the Homebrew and install-script commands below work once the release is published on GitHub. Until then, build from your source checkout.
 
-## Build and run
+Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64).
+
+## Install with Homebrew
+
+```sh
+brew install ultradotdev/tap/tide
+```
+
+The formula in the `ultradotdev/homebrew-tap` tap installs the prebuilt release archive for your platform; on macOS that executable is Developer ID signed and notarized. Update with `brew upgrade tide` and remove with `brew uninstall tide`. Homebrew owns that copy: run from it, `tide --uninstall` and the managed-install commands refuse and name the `brew` command to use instead.
+
+## Install with the install script
+
+```sh
+curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh
+```
+
+`install.sh` is published with every release and covered by its `SHA256SUMS` and GitHub build attestation. Without `--version` it installs GitHub's latest release, found through the `https://github.com/ultradotdev/tide/releases/latest` redirect rather than the rate-limited API. To install a specific version, name it explicitly:
+
+```sh
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.10.0/install.sh | sh -s -- --version 0.10.0
+```
+
+The script downloads the archive and `SHA256SUMS`, verifies the checksum, and on macOS also verifies the notarization receipt and the executable's Developer ID signature, team and notarization ticket with `codesign`. When an authenticated GitHub CLI is present it verifies the archive's GitHub build attestation; `TIDE_REQUIRE_ATTESTATION=1` makes that check mandatory. It then smoke-tests the executable and activates it in the managed store described below. Add `--add-to-path` to append `~/.local/bin` to your zsh or bash startup file.
+
+Re-run the script to update. Remove the installation with `tide --uninstall`, or without a working launcher:
+
+```sh
+curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh
+```
+
+A piped `uninstall.sh` hands over to the uninstaller bundled with the active release, which verifies ownership before it removes anything. Pass options after `sh -s --`, for example `| sh -s -- --purge --yes`.
+
+## Build and run from source
 
 Install Rust with the toolchain selected by `rust-toolchain.toml`, Git, and a C compiler/linker. macOS needs Xcode Command Line Tools. On Debian/Ubuntu, install the normal build-essential development tools. The locked dependencies compile with Rust 1.97.1.
 
@@ -66,7 +98,7 @@ tide --uninstall --purge
 tide --uninstall --purge --yes
 ```
 
-Normal removal keeps user data. Purge asks before removal and deletes only Tide's configured user roots. Project `.tide` directories and external providers' native stores remain. Run uninstall through the managed launcher; an arbitrary source executable cannot remove an installation it does not own.
+Normal removal keeps user data. Purge asks before removal and deletes only Tide's configured user roots. Project `.tide` directories and external providers' native stores remain. Run uninstall through the managed launcher; an arbitrary source executable cannot remove an installation it does not own. For a Homebrew installation use `brew uninstall tide`; Homebrew does not remove Tide's user data roots.
 
 ## First use
 

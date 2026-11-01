@@ -7,7 +7,7 @@
     "publisher": "Ultra.dev",
     "binary": "tide",
     "version": "0.10.0",
-    "prerelease": true,
+    "prerelease": false,
     "repository": "https://github.com/ultradotdev/tide",
     "homepage": "https://ultra.dev/tide",
     "issues": "https://github.com/ultradotdev/tide/issues",
@@ -16,7 +16,7 @@
   "release": {
     "release": "planned",
     "distribution": "in-validation",
-    "prerelease": true
+    "prerelease": false
   },
   "website": {
     "headline": "Terminal-Native Agentic IDE",
@@ -135,16 +135,35 @@
     }
   ],
   "commands": {
+    "homebrewInstall": {
+      "status": "in-validation",
+      "commands": [
+        "brew install ultradotdev/tap/tide"
+      ]
+    },
+    "homebrewUpgrade": {
+      "status": "in-validation",
+      "commands": [
+        "brew upgrade tide"
+      ]
+    },
+    "homebrewUninstall": {
+      "status": "in-validation",
+      "commands": [
+        "brew uninstall tide"
+      ]
+    },
     "binaryInstall": {
       "status": "in-validation",
       "commands": [
-        "curl -fsSL https://ultra.dev/tide/install.sh | sh"
+        "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh"
       ]
     },
     "binaryUninstall": {
       "status": "in-validation",
       "commands": [
-        "curl -fsSL https://ultra.dev/tide/uninstall.sh | sh"
+        "tide --uninstall",
+        "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh"
       ]
     },
     "sourceBuild": {
@@ -257,8 +276,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "eb11190a7b8ee849897a41a31ca9aeaadf7b895069bbdca73a83344acd2b3df9",
-    "lastVerifiedGitFingerprint": "074e0bdfc68a0e6876a04e4928f153e72eaf59c0",
+    "contentHash": "21e92361c5eebfb248dcb8ecb045bf5083df6a141237228786c0a131760ba0aa",
+    "lastVerifiedGitFingerprint": "fb6065375a791859ba3e3500a81078fb9aa2f717",
     "inputFiles": [
       "config/product.json",
       "config/release.json",
@@ -280,7 +299,7 @@
       "Cargo.toml",
       "Cargo.lock",
       "docs/troubleshooting.md",
-      "docs/v0.10.0-prerelease.md",
+      "docs/v0.10.0.md",
       "install.sh",
       "uninstall.sh"
     ]

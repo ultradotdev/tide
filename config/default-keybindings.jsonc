@@ -39,7 +39,6 @@
   { "key": "ctrl+d", "command": "edit.selectNextMatch" }, // Select next occurrence
   { "key": "meta+d", "command": "edit.selectNextMatch" }, // Select next occurrence (macOS)
   { "key": "ctrl+shift+l", "command": "edit.selectAllOccurrences" }, // Select all occurrences
-  { "key": "meta+d a", "command": "edit.selectAllOccurrences" }, // Select all occurrences (macOS chord)
   { "key": "ctrl+alt+up", "command": "editor.addCursorAbove" }, // Add cursor above
   { "key": "ctrl+alt+down", "command": "editor.addCursorBelow" }, // Add cursor below
   { "key": "escape", "command": "editor.clearCursors", "when": "editorHasMultipleCursors" }, // Clear extra cursors
@@ -58,12 +57,13 @@
   { "key": "ctrl+g", "command": "editor.gotoLine" }, // Go to line number
   { "key": "ctrl+p", "command": "workbench.quickOpen" }, // Quick open file
   { "key": "meta+p", "command": "workbench.quickOpen" }, // Quick open file (macOS)
-  { "key": "ctrl+e", "command": "workbench.commandPalette" }, // Command palette (alt)
-  { "key": "meta+e", "command": "workbench.commandPalette" }, // Command palette (macOS alt)
-  { "key": "ctrl+shift+p", "command": "workbench.commandPalette" }, // Command palette
+  { "key": "ctrl+k", "command": "workbench.commandPalette" }, // Command palette (primary — plain control byte, works in every terminal)
+  { "key": "ctrl+shift+p", "command": "workbench.commandPalette" }, // Command palette (VS Code; needs a terminal that reports Ctrl+Shift)
   { "key": "shift+meta+p", "command": "workbench.commandPalette" }, // Command palette (macOS)
-  { "key": "f1", "command": "workbench.commandPalette" }, // Command palette (fallback — some terminals intercept Ctrl+Shift+P)
-  { "key": "ctrl+t", "command": "workbench.commandPalette" }, // Command palette (universal fallback — plain control byte, works in every terminal incl. macOS)
+  { "key": "f1", "command": "workbench.commandPalette" }, // Command palette (fallback in every terminal)
+  { "key": "ctrl+t", "command": "workbench.commandPalette" }, // Command palette (also reaches Tide while a terminal pane has focus)
+  { "key": "ctrl+e", "command": "workbench.commandPalette" }, // Command palette (passes through VS Code's and Zellij's terminals)
+  { "key": "meta+e", "command": "workbench.commandPalette" }, // Command palette (macOS alt)
   { "key": "ctrl+r", "command": "editor.gotoSymbol" },
   { "key": "meta+r", "command": "editor.gotoSymbol" }, // Go to symbol in file (macOS)
   { "key": "ctrl+shift+r", "command": "editor.gotoWorkspaceSymbol" }, // Go to symbol in workspace
@@ -97,7 +97,6 @@
   // Line operations
   { "key": "ctrl+l", "command": "editor.selectLine" }, // Select current line
   { "key": "meta+l", "command": "editor.selectLine" }, // Select current line (macOS)
-  { "key": "ctrl+l d", "command": "editor.duplicateLine" }, // Duplicate line (chord)
   { "key": "ctrl+shift+d", "command": "editor.duplicateSelection" }, // Duplicate selection
 
   // Terminal
@@ -230,19 +229,11 @@
   { "key": "meta+,", "command": "workbench.openSettings" }, // Open settings (macOS)
   { "key": "ctrl+shift+,", "command": "workbench.openKeybindings" }, // Open keybindings
 
-  // Session (chord keybindings)
-  { "key": "ctrl+k ctrl+s", "command": "session.saveAs" }, // Save session as
-  { "key": "ctrl+k ctrl+o", "command": "session.open" }, // Open session
-
   // Folding
   { "key": "ctrl+shift+[", "command": "editor.fold" }, // Fold region
   { "key": "ctrl+shift+]", "command": "editor.unfold" }, // Unfold region
-  { "key": "ctrl+k ctrl+0", "command": "editor.foldAll" }, // Fold all regions
-  { "key": "ctrl+k ctrl+j", "command": "editor.unfoldAll" }, // Unfold all regions
 
   // Comments
-  { "key": "ctrl+k ctrl+c", "command": "editor.commentLine" }, // Comment line
-  { "key": "ctrl+k ctrl+u", "command": "editor.uncommentLine" }, // Uncomment line
   { "key": "ctrl+/", "command": "editor.toggleComment" }, // Toggle comment
   { "key": "meta+/", "command": "editor.toggleComment" }, // Toggle comment (macOS)
 

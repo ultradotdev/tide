@@ -23,6 +23,7 @@ jobs:
       publish: ${{ steps.contract.outputs.publish }}
       tag: ${{ steps.contract.outputs.tag }}
       title: ${{ steps.contract.outputs.title }}
+      homebrew-tap: ${{ steps.contract.outputs.homebrew-tap }}
     steps:
       - name: Checkout exact source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -41,6 +42,7 @@ jobs:
           echo "publish=$(jq -r .publish <<<"$context")" >> "$GITHUB_OUTPUT"
           echo "tag=$(jq -r .tag <<<"$context")" >> "$GITHUB_OUTPUT"
           echo "title=$(jq -r .title <<<"$context")" >> "$GITHUB_OUTPUT"
+          echo "homebrew-tap=$(jq -r .homebrewTap <<<"$context")" >> "$GITHUB_OUTPUT"
           echo "macos-matrix=$(cargo xtask release-workflow-contract matrix --platform=macos)" >> "$GITHUB_OUTPUT"
           echo "linux-matrix=$(cargo xtask release-workflow-contract matrix --platform=linux)" >> "$GITHUB_OUTPUT"
       - name: Run release preflight
@@ -158,6 +160,7 @@ jobs:
           set -euo pipefail
           mkdir -p "${{ runner.temp }}/release"
           find "${{ runner.temp }}/verified" -maxdepth 1 -type f \( -name '*.zip' -o -name '*.tar.gz' -o -name '*.notarization.json' \) -exec cp {} "${{ runner.temp }}/release/" \;
+          cp install.sh uninstall.sh "${{ runner.temp }}/release/"
           cargo xtask generate-release-checksums \
             --repository-root=${{ github.workspace }} \
             --assets-directory=${{ runner.temp }}/release
@@ -183,7 +186,7 @@ jobs:
         with:
           name: tide-v0.10.0-assets-${{ github.sha }}
           path: release
-      - name: Attest final archives from checksums
+      - name: Attest final archives and installers from checksums
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-checksums: release/SHA256SUMS
@@ -218,7 +221,7 @@ jobs:
             echo "Release $EXPECTED_TAG already exists; refusing to replace it." >&2
             exit 1
           fi
-      - name: Publish immutable prerelease
+      - name: Publish immutable release
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
@@ -227,12 +230,73 @@ jobs:
           gh release create "$EXPECTED_TAG"
           --verify-tag
           --title "$EXPECTED_TITLE"
-          --notes-file docs/v0.10.0-prerelease.md
-          --prerelease
+          --notes-file docs/v0.10.0.md
           release/tide-v0.10.0-darwin-arm64.zip
           release/tide-v0.10.0-darwin-arm64.notarization.json
           release/tide-v0.10.0-darwin-x64.zip
           release/tide-v0.10.0-darwin-x64.notarization.json
           release/tide-v0.10.0-linux-arm64.tar.gz
           release/tide-v0.10.0-linux-x64.tar.gz
+          release/install.sh
+          release/uninstall.sh
           release/SHA256SUMS
+
+  homebrew:
+    name: Release / Homebrew tap
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.preflight.outputs.publish == 'true'
+    needs: [preflight, publish]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.97.1
+      - name: Download assembled release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: tide-v0.10.0-assets-${{ github.sha }}
+          path: ${{ runner.temp }}/assembled
+      - name: Download published checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release download "$EXPECTED_TAG" --pattern SHA256SUMS --dir "${{ runner.temp }}/published"
+          cmp "${{ runner.temp }}/published/SHA256SUMS" "${{ runner.temp }}/assembled/SHA256SUMS"
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ needs.preflight.outputs.homebrew-tap }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+      - name: Generate formula from published checksums
+        env:
+          EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
+        run: >-
+          cargo xtask homebrew-formula
+          --version "${EXPECTED_TAG#v}"
+          --checksums "${{ runner.temp }}/published/SHA256SUMS"
+          --output homebrew-tap/Formula/tide.rb
+      - name: Commit and push the formula when it changed
+        working-directory: homebrew-tap
+        env:
+          EXPECTED_TAG: ${{ needs.preflight.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git add Formula/tide.rb
+          if git diff --cached --quiet; then
+            echo "Formula/tide.rb is already current for $EXPECTED_TAG."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "tide ${EXPECTED_TAG#v}"
+          git push origin HEAD

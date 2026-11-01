@@ -39,7 +39,7 @@
           ]
         },
         "prerelease": {
-          "const": true
+          "const": false
         }
       }
     },
@@ -75,7 +75,8 @@
         "attestation",
         "replaceExistingAssets",
         "archiveRoot",
-        "timestampSource"
+        "timestampSource",
+        "homebrewTap"
       ],
       "properties": {
         "tag": {
@@ -88,7 +89,7 @@
           "const": "Tide v0.10.0"
         },
         "notesPath": {
-          "const": "docs/v0.10.0-prerelease.md"
+          "const": "docs/v0.10.0.md"
         },
         "manualRunsMayPublish": {
           "const": false
@@ -110,6 +111,9 @@
         },
         "timestampSource": {
           "const": "source-commit"
+        },
+        "homebrewTap": {
+          "const": "ultradotdev/homebrew-tap"
         }
       }
     },
@@ -170,11 +174,23 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "homebrewInstall",
+        "homebrewUpgrade",
+        "homebrewUninstall",
         "binaryInstall",
         "binaryUninstall",
         "sourceBuild"
       ],
       "properties": {
+        "homebrewInstall": {
+          "$ref": "#/$defs/commandSet"
+        },
+        "homebrewUpgrade": {
+          "$ref": "#/$defs/commandSet"
+        },
+        "homebrewUninstall": {
+          "$ref": "#/$defs/commandSet"
+        },
         "binaryInstall": {
           "$ref": "#/$defs/commandSet"
         },

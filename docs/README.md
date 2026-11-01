@@ -13,6 +13,6 @@ This documentation describes the Rust 0.10.0 implementation. Public archives are
 - [Generated commands](reference/commands.md), [keyboard shortcuts](reference/keyboard-shortcuts.md), [configuration](reference/configuration.md)
 - [Troubleshooting](troubleshooting.md)
 - [Architecture](architecture/overview.md), [keybindings](architecture/keybindings.md), [rendering](architecture/rendering.md)
-- [0.10.0 prerelease notes](v0.10.0-prerelease.md)
+- [0.10.0 release notes](v0.10.0.md)
 
 Maintainers regenerate references from the compiled Rust catalog.

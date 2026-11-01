@@ -261,6 +261,43 @@ fn keybinding_executes_save_and_split() {
 }
 
 #[test]
+fn no_single_key_binding_is_also_the_first_key_of_a_chord() {
+    let (_home, app) = test_app();
+    let singles = app
+        .keybindings
+        .iter()
+        .map(|binding| canonical_key(&binding.key))
+        .filter(|key| !key.contains(' '))
+        .collect::<std::collections::HashSet<_>>();
+    let shadowing = app
+        .keybindings
+        .iter()
+        .map(|binding| canonical_key(&binding.key))
+        .filter(|key| {
+            key.split_once(' ')
+                .is_some_and(|(first, _)| singles.contains(first))
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        shadowing.is_empty(),
+        "these chords make their first key wait: {shadowing:?}"
+    );
+}
+
+#[test]
+fn shell_editing_keys_stay_with_a_focused_terminal_while_ctrl_t_reaches_the_palette() {
+    let (_home, app) = test_app();
+    let ctrl = |ch| KeyEvent::new(KeyCode::Char(ch), KeyModifiers::CONTROL);
+    assert!(app.is_terminal_control_key(ctrl('k')));
+    assert!(app.is_terminal_control_key(ctrl('e')));
+    assert!(!app.is_terminal_control_key(ctrl('t')));
+    assert_eq!(
+        app.keymap.get("ctrl+t").copied(),
+        Some(Command::WorkbenchCommandPalette)
+    );
+}
+
+#[test]
 fn terminal_safe_alternate_shortcuts_resolve() {
     let (_home, app) = test_app();
     assert_eq!(

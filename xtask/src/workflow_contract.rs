@@ -48,10 +48,13 @@ pub struct Matrix {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PublicationDecision {
     pub publish: bool,
     pub tag: String,
     pub title: String,
+    /// Updated with the generated formula only when `publish` is true.
+    pub homebrew_tap: String,
 }
 
 pub fn release_matrix(repository_root: &Path, platform: &str) -> Result<Matrix> {
@@ -118,7 +121,7 @@ pub fn validate_context(
         head.status.success() && context.sha == String::from_utf8_lossy(&head.stdout).trim(),
         "Workflow SHA does not match checked out commit"
     );
-    let title = format!("# Tide v{} Prerelease Notes", contract.product.version);
+    let title = format!("# Tide v{} Release Notes", contract.product.version);
     ensure!(
         read_text(&repository_root.join(&policy.notes_path))?
             .split('\n')
@@ -130,6 +133,7 @@ pub fn validate_context(
         publish,
         tag: policy.tag.clone(),
         title: policy.title.clone(),
+        homebrew_tap: policy.homebrew_tap.clone(),
     };
     if context.event_name == "workflow_dispatch" {
         return Ok(decision(false));
@@ -205,6 +209,9 @@ mod tests {
         .unwrap();
         assert!(!decision.publish);
         assert_eq!(decision.tag, "v0.10.0");
+        let json = serde_json::to_value(&decision).unwrap();
+        assert_eq!(json["publish"], false);
+        assert_eq!(json["homebrewTap"], "ultradotdev/homebrew-tap");
     }
 
     #[test]
@@ -231,6 +238,7 @@ mod tests {
                 publish: true,
                 tag: "v0.10.0".into(),
                 title: "Tide v0.10.0".into(),
+                homebrew_tap: "ultradotdev/homebrew-tap".into(),
             }
         );
     }

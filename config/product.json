@@ -4,7 +4,7 @@
   "publisher": "Ultra.dev",
   "binary": "tide",
   "version": "0.10.0",
-  "prerelease": true,
+  "prerelease": false,
   "repository": "https://github.com/ultradotdev/tide",
   "homepage": "https://ultra.dev/tide",
   "issues": "https://github.com/ultradotdev/tide/issues",
