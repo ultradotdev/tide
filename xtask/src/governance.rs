@@ -690,6 +690,12 @@ pub fn apply_governance(
             reviewers
                 .push(json!({ "type": reviewer.r#type, "id": user_id(client, &reviewer.login)? }));
         }
+        // GitHub rejects a policy whose two flags are equal; no restriction is `null`.
+        let deployment_policy = if environment.deployment_tag_patterns.is_empty() {
+            Value::Null
+        } else {
+            json!({ "protected_branches": false, "custom_branch_policies": true })
+        };
         client.request(
             "PUT",
             &format!(
@@ -699,13 +705,32 @@ pub fn apply_governance(
             Some(&json!({
                 "reviewers": reviewers,
                 "prevent_self_review": environment.prevent_self_review,
-                "deployment_branch_policy": {
-                    "protected_branches": false,
-                    "custom_branch_policies": !environment.deployment_tag_patterns.is_empty(),
-                },
+                "deployment_branch_policy": deployment_policy,
             })),
         )?;
+        let policies = if environment.deployment_tag_patterns.is_empty() {
+            Value::Null
+        } else {
+            client.request(
+                "GET",
+                &format!(
+                    "/repos/{}/environments/{}/deployment-branch-policies",
+                    config.repository, environment.name
+                ),
+                None,
+            )?
+        };
+        let existing = policies["branch_policies"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default();
         for pattern in &environment.deployment_tag_patterns {
+            if existing
+                .iter()
+                .any(|policy| policy["name"] == *pattern && policy["type"] == "tag")
+            {
+                continue;
+            }
             client.request(
                 "POST",
                 &format!(
@@ -762,6 +787,7 @@ mod tests {
     struct FakeClient {
         writes: Vec<(String, String, Value)>,
         unexpected_writer: bool,
+        existing_tag_policy: bool,
     }
 
     impl GitHubClient for FakeClient {
@@ -821,6 +847,13 @@ mod tests {
                     })
                     .collect(),
                 ),
+                _ if path.ends_with("/deployment-branch-policies") => json!({
+                    "branch_policies": if self.existing_tag_policy {
+                        vec![json!({ "name": "v*", "type": "tag" })]
+                    } else {
+                        Vec::new()
+                    },
+                }),
                 _ if path.contains("/environments/") && path.ends_with("/secrets") => {
                     let secrets: Vec<Value> = [
                         "APPLE_DEVELOPER_ID_P12_BASE64",
@@ -921,6 +954,44 @@ mod tests {
             .map(|(_, _, body)| body.clone())
             .unwrap();
         assert_eq!(integrity["bypass_actors"], json!([]));
+    }
+
+    #[test]
+    fn environments_send_a_valid_deployment_policy_and_reapply_cleanly() {
+        let environment = |client: &FakeClient, name: &str| {
+            client
+                .writes
+                .iter()
+                .find(|(method, path, _)| {
+                    method == "PUT" && path.ends_with(&format!("/environments/{name}"))
+                })
+                .map(|(_, _, body)| body["deployment_branch_policy"].clone())
+                .unwrap()
+        };
+        let tag_policy_posts = |client: &FakeClient| {
+            client
+                .writes
+                .iter()
+                .filter(|(method, path, _)| {
+                    method == "POST" && path.ends_with("/deployment-branch-policies")
+                })
+                .count()
+        };
+        let mut client = FakeClient::default();
+        apply_governance(&mut client, &config(), "ultradotdev/tide:thekeith").unwrap();
+        assert_eq!(environment(&client, "release-signing"), Value::Null);
+        assert_eq!(
+            environment(&client, "release"),
+            json!({ "protected_branches": false, "custom_branch_policies": true })
+        );
+        assert_eq!(tag_policy_posts(&client), 1);
+
+        let mut again = FakeClient {
+            existing_tag_policy: true,
+            ..FakeClient::default()
+        };
+        apply_governance(&mut again, &config(), "ultradotdev/tide:thekeith").unwrap();
+        assert_eq!(tag_policy_posts(&again), 0);
     }
 
     #[test]
