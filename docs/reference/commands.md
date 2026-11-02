@@ -72,7 +72,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Paste | `Ctrl+V` | `edit.paste` |
 | Redo | `Ctrl+Shift+Z`, `Ctrl+Y` | `edit.redo` |
 | Select All | `Ctrl+A` | `edit.selectAll` |
-| Select All Occurrences | `Ctrl+Shift+L` | `edit.selectAllOccurrences` |
+| Select All Occurrences | `Ctrl+Shift+L`, `Ctrl+F2` | `edit.selectAllOccurrences` |
 | Transform to Lowercase | — | `edit.transformToLowercase` |
 | Transform to Title Case | — | `edit.transformToTitleCase` |
 | Transform to Uppercase | — | `edit.transformToUppercase` |
@@ -96,7 +96,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Format Document | — | `editor.formatDocument` |
 | Format Selection | — | `editor.formatSelection` |
 | Remove Line Comment | — | `editor.uncommentLine` |
-| Rename Symbol | — | `lsp.rename` |
+| Rename Symbol | `F2` | `lsp.rename` |
 | Restart Language Server | — | `lsp.restartServer` |
 | Select Line | `Ctrl+L` | `editor.selectLine` |
 | Show Code Actions | `Ctrl+.` | `lsp.codeActions` |
@@ -104,7 +104,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Sort Lines Ascending | — | `editor.sortLinesAscending` |
 | Sort Lines Descending | — | `editor.sortLinesDescending` |
 | Toggle Block Comment | `Alt+Shift+A` | `editor.toggleBlockComment` |
-| Toggle Line Comment | `Ctrl+/` | `editor.toggleComment` |
+| Toggle Line Comment | `Ctrl+/`, `Ctrl+_` | `editor.toggleComment` |
 | Trigger Completion | `Ctrl+Space` | `lsp.triggerCompletion` |
 | Trigger Signature Help | `Ctrl+Shift+Space` | `lsp.triggerSignatureHelp` |
 | Trim Trailing Whitespace | — | `editor.trimTrailingWhitespace` |
@@ -205,9 +205,9 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 
 | Command | Keys | ID |
 | --- | --- | --- |
-| Find All References | — | `lsp.findReferences` |
+| Find All References | `Shift+F12` | `lsp.findReferences` |
 | Go to Declaration | — | `lsp.goToDeclaration` |
-| Go to Definition | `Ctrl+Shift+K` | `lsp.goToDefinition` |
+| Go to Definition | `Ctrl+Shift+K`, `F12` | `lsp.goToDefinition` |
 | Go to Implementation | `Ctrl+F12` | `lsp.goToImplementation` |
 | Go to Line... | `Ctrl+G` | `editor.gotoLine` |
 | Go to Next Problem | — | `lsp.nextDiagnostic` |

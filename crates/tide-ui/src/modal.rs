@@ -414,10 +414,29 @@ impl ModalBase {
                 Utf32Str::new(&item.label, &mut haystack_buffer)
             };
             if let Some(score) = matcher.fuzzy_match_greedy(haystack, needle) {
-                results.push((score, index));
+                // Quick Open ranks a match in the file name above one spread across folders.
+                let name_score = if self.kind == ModalKind::QuickOpen {
+                    let name = item.label.rsplit('/').next().unwrap_or(&item.label);
+                    matcher
+                        .fuzzy_match_greedy(Utf32Str::new(name, &mut haystack_buffer), needle)
+                        .unwrap_or(0)
+                } else {
+                    0
+                };
+                results.push((u32::from(score) + u32::from(name_score), index));
             }
         }
-        results.sort_by_key(|entry| std::cmp::Reverse(entry.0));
+        // Equal scores keep their original order, except that Quick Open lists the
+        // shorter path first.
+        let quick_open = self.kind == ModalKind::QuickOpen;
+        results.sort_by_key(|&(score, index)| {
+            let length = if quick_open {
+                self.items[index].label.len()
+            } else {
+                0
+            };
+            (std::cmp::Reverse(score), length, index)
+        });
         self.filtered = results.into_iter().map(|entry| entry.1).collect();
         self.selected = self.selected.min(self.filtered.len().saturating_sub(1));
     }

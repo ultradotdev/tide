@@ -50,10 +50,10 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+Alt+E` | Focus Explorer | `workbench.focusExplorer` |
 | `Ctrl+Alt+U` | Focus Outline | `workbench.focusOutline` |
 | `Ctrl+Alt+L` | Focus Timeline | `workbench.focusTimeline` |
-| `Alt+Right`, `Ctrl+Alt+Right` | Focus Pane to the Right | `workbench.focusPaneRight` |
-| `Alt+Left`, `Ctrl+Alt+Left` | Focus Pane to the Left | `workbench.focusPaneLeft` |
 | `Alt+Up` | Focus Pane Above | `workbench.focusPaneUp` |
 | `Alt+Down` | Focus Pane Below | `workbench.focusPaneDown` |
+| `Ctrl+Alt+Right` | Focus Pane to the Right | `workbench.focusPaneRight` |
+| `Ctrl+Alt+Left` | Focus Pane to the Left | `workbench.focusPaneLeft` |
 
 ### Edit
 
@@ -66,7 +66,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+V`, `Cmd+V` | Paste | `edit.paste` |
 | `Ctrl+A`, `Cmd+A` | Select All | `edit.selectAll` |
 | `Ctrl+D`, `Cmd+D` | Add Selection to Next Match | `edit.selectNextMatch` |
-| `Ctrl+Shift+L` | Select All Occurrences | `edit.selectAllOccurrences` |
+| `Ctrl+Shift+L`, `Ctrl+F2` | Select All Occurrences | `edit.selectAllOccurrences` |
 
 ### Editor
 
@@ -78,7 +78,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+Shift+D` | Duplicate Selection | `editor.duplicateSelection` |
 | `Ctrl+Shift+[` | Fold | `editor.fold` |
 | `Ctrl+Shift+]` | Unfold | `editor.unfold` |
-| `Ctrl+/`, `Cmd+/` | Toggle Line Comment | `editor.toggleComment` |
+| `Ctrl+/`, `Cmd+/`, `Ctrl+_` | Toggle Line Comment | `editor.toggleComment` |
 | `Ctrl+I` | Show Hover | `lsp.showHover` |
 | `Ctrl+Space` | Trigger Completion | `lsp.triggerCompletion` |
 | `Ctrl+Shift+Space` | Trigger Signature Help | `lsp.triggerSignatureHelp` |
@@ -102,7 +102,8 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+G` | Go to Line... | `editor.gotoLine` |
 | `Ctrl+R`, `Cmd+R` | Go to Symbol in Editor... | `editor.gotoSymbol` |
 | `Ctrl+Shift+R`, `Shift+Cmd+R` | Go to Symbol in Workspace... | `editor.gotoWorkspaceSymbol` |
-| `Ctrl+Shift+K` | Go to Definition | `lsp.goToDefinition` |
+| `Ctrl+Shift+K`, `F12` | Go to Definition | `lsp.goToDefinition` |
+| `Shift+F12` | Find All References | `lsp.findReferences` |
 
 ### Terminal
 
@@ -153,6 +154,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Shift+Cmd+K` | Delete Line | `edit.deleteLine` |
 | `Alt+Shift+A` | Toggle Block Comment | `editor.toggleBlockComment` |
 | `Ctrl+F12` | Go to Implementation | `lsp.goToImplementation` |
+| `F2` | Rename Symbol | `lsp.rename` |
 | `Ctrl+.` | Show Code Actions | `lsp.codeActions` |
 
 ### Terminal
@@ -259,3 +261,5 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | --- | --- | --- |
 | `Ctrl+Alt+Up` | Focus Pane Above | `workbench.focusPaneUp` |
 | `Ctrl+Alt+Down` | Focus Pane Below | `workbench.focusPaneDown` |
+| `Alt+Right` | Focus Pane to the Right | `workbench.focusPaneRight` |
+| `Alt+Left` | Focus Pane to the Left | `workbench.focusPaneLeft` |

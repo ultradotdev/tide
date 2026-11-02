@@ -9,7 +9,7 @@ This guide is also built into Tide, where it shows your own keybindings, setting
 
 Press `Ctrl+K` or `Ctrl+Shift+P` to open the **command palette**. Every command in Tide is there: start typing a few letters of what you want, such as `split`, `commit` or `theme`, and press Enter. The palette is also how you reach anything that has no key, including all the help guides (type `help`).
 
-While a terminal has focus, every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, goes to the program running there. Open the palette from a terminal with `Ctrl+Shift+P` or `F1`.
+While a terminal has focus, every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, goes to the program running there. Open the palette from a terminal with `F1`.
 
 ## The essentials
 
@@ -48,7 +48,7 @@ The screen is split into **regions**: the workspace sidebar (Explorer, Source Co
 
 ### Editing
 
-Open files with `Ctrl+P` or from the Explorer. The editor has syntax highlighting, multiple cursors (`Ctrl+D` adds the next match), folding, comments (`Ctrl+/`), find and replace with regular expressions, and language-server features such as completion, hover, go to definition and rename when a server is installed for the language. See [Editor and Language Servers](features/editor.md).
+Open files with `Ctrl+P` or from the Explorer. The editor has syntax highlighting, multiple cursors (`Ctrl+D` adds the next match), folding, comments (`Ctrl+/` or `Ctrl+_`), find and replace with regular expressions, and language-server features such as completion, hover, go to definition and rename when a server is installed for the language. See [Editor and Language Servers](features/editor.md).
 
 ### Git
 

@@ -97,11 +97,7 @@ impl FileTreeState {
                     .cmp(&b.file_name().to_string_lossy().to_lowercase())
             })
         });
-        let mut excludes = ignore::overrides::OverrideBuilder::new(&self.root);
-        for pattern in &self.exclusions {
-            let _ = excludes.add(&format!("!{pattern}"));
-        }
-        let excludes = excludes.build().ok();
+        let excludes = exclude_rules(&self.root, &self.exclusions);
         for child in children {
             if self.entries.len() >= 50_000 {
                 break;
@@ -460,6 +456,48 @@ fn file_icon(entry: &FileEntry, ascii: bool) -> &'static str {
         "toml" | "yaml" | "yml" => "\u{e615}",
         _ => "\u{f15b}",
     }
+}
+
+/// Matches the paths `files.exclude` hides, as globs relative to `root`. The Explorer,
+/// Quick Open and Find in Files all leave them out.
+pub(crate) fn exclude_rules(
+    root: &Path,
+    patterns: &[String],
+) -> Option<ignore::overrides::Override> {
+    let mut rules = ignore::overrides::OverrideBuilder::new(root);
+    for pattern in patterns {
+        let _ = rules.add(&format!("!{pattern}"));
+    }
+    rules.build().ok()
+}
+
+/// A walk of the workspace for file lists and searches: it honours `.gitignore`, the
+/// repository's exclude file, the user's global gitignore and `files.exclude`, and never
+/// enters `.git`.
+pub(crate) fn workspace_walk(
+    root: &Path,
+    start: &Path,
+    patterns: &[String],
+) -> ignore::WalkBuilder {
+    let excludes = exclude_rules(root, patterns);
+    let mut builder = ignore::WalkBuilder::new(start);
+    builder
+        .hidden(false)
+        .git_ignore(true)
+        .git_global(true)
+        .git_exclude(true)
+        .filter_entry(move |entry| {
+            entry.file_name() != ".git"
+                && !excludes.as_ref().is_some_and(|rules| {
+                    rules
+                        .matched(
+                            entry.path(),
+                            entry.file_type().is_some_and(|kind| kind.is_dir()),
+                        )
+                        .is_ignore()
+                })
+        });
+    builder
 }
 
 #[cfg(test)]

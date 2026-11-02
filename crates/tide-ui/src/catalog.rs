@@ -138,6 +138,12 @@ const ALTERNATES: &[(&str, &str)] = &[
     ("alt+3", "workbench.focusEditor3"),
     ("f7", "workbench.focusNextPane"),
     ("f8", "workbench.focusPreviousPane"),
+    // Without the kitty keyboard protocol, Ctrl+Shift+letter arrives as Ctrl+letter and
+    // Ctrl+/ as Ctrl+_, so the Ctrl+Shift defaults need keys every terminal can send.
+    ("ctrl+_", "editor.toggleComment"),
+    ("f12", "lsp.goToDefinition"),
+    ("shift+f12", "lsp.findReferences"),
+    ("ctrl+f2", "edit.selectAllOccurrences"),
 ];
 
 pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
@@ -153,7 +159,8 @@ pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
         bindings.push(Keybinding {
             key: (*key).to_owned(),
             command: (*command).to_owned(),
-            when: None,
+            // In an editor, Alt+Left and Alt+Right (Option on macOS) move by word.
+            when: matches!(*key, "alt+left" | "alt+right").then(|| "!editorFocus".to_owned()),
             args: None,
         });
     }

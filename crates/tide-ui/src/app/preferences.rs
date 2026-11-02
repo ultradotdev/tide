@@ -216,6 +216,21 @@ impl App {
         self.set_status(format!("Theme: {}", theme.name));
     }
 
+    /// The enabled `files.exclude` globs.
+    pub(super) fn file_excludes(&self) -> Vec<String> {
+        self.settings
+            .get("files.exclude")
+            .and_then(serde_json::Value::as_object)
+            .map(|patterns| {
+                patterns
+                    .iter()
+                    .filter(|(_, enabled)| enabled.as_bool() == Some(true))
+                    .map(|(pattern, _)| pattern.clone())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     pub(super) fn show_line_numbers(&self) -> bool {
         self.settings
             .get("editor.lineNumbers")

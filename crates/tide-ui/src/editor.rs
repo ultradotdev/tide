@@ -2637,15 +2637,88 @@ impl EditorState {
         });
     }
 
+    /// Moves to the line's first non-blank character, or to column 0 when already there.
     pub fn home(&mut self, extend: bool) {
         self.follow_cursor = true;
+        let smart_home = |document: &Document, position: Position| {
+            let indent = document.line_str(position.line).map_or(0, |line| {
+                line.chars()
+                    .take_while(|ch| *ch == ' ' || *ch == '\t')
+                    .count()
+            });
+            let indent = if indent == document.line_len_chars(position.line) {
+                0
+            } else {
+                indent
+            };
+            Position::new(
+                position.line,
+                if position.column == indent { 0 } else { indent },
+            )
+        };
         if self.extra_cursors().is_empty() {
             let cursor = self.document.cursor().position;
-            self.document
-                .move_cursor_to(Position::new(cursor.line, 0), extend);
+            let target = self.document.with(|document| smart_home(document, cursor));
+            self.document.move_cursor_to(target, extend);
             return;
         }
-        self.move_cursors(extend, |_, position| Position::new(position.line, 0));
+        self.move_cursors(extend, smart_home);
+    }
+
+    /// Moves to the previous or next word boundary, crossing line breaks, as Ctrl+Left
+    /// and Ctrl+Right (Option+Left and Option+Right on macOS) do in other editors.
+    pub fn move_word(&mut self, forward: bool, extend: bool) {
+        self.follow_cursor = true;
+        let step = move |document: &Document, position: Position| {
+            if forward {
+                word_end(document, position)
+            } else {
+                word_start(document, position)
+            }
+        };
+        if self.extra_cursors().is_empty() {
+            let cursor = self.document.cursor().position;
+            let target = self.document.with(|document| step(document, cursor));
+            self.document.move_cursor_to(target, extend);
+            return;
+        }
+        self.move_cursors(extend, step);
+    }
+
+    /// Moves to the start or end of the document.
+    pub fn move_to_document_edge(&mut self, end: bool, extend: bool) {
+        self.follow_cursor = true;
+        let target = self.document.with(|document| {
+            if end {
+                let line = document.len_lines().saturating_sub(1);
+                Position::new(line, document.line_len_chars(line))
+            } else {
+                Position::new(0, 0)
+            }
+        });
+        if !self.extra_cursors().is_empty() {
+            self.clear_extra_cursors();
+        }
+        self.document.move_cursor_to(target, extend);
+    }
+
+    /// Deletes back to the previous word boundary, or on to the next one. A selection is
+    /// deleted as it is.
+    pub fn delete_word(&mut self, forward: bool) {
+        let selected = self
+            .document
+            .selection_positions()
+            .is_some_and(|(start, end)| start != end);
+        if !selected {
+            self.move_word(forward, true);
+        }
+        let selected = self
+            .document
+            .selection_positions()
+            .is_some_and(|(start, end)| start != end);
+        if selected || !self.extra_cursors().is_empty() {
+            self.backspace();
+        }
     }
 
     pub fn end(&mut self, extend: bool) {
@@ -3477,6 +3550,81 @@ fn styled_slice(
         }
     }
     result
+}
+
+/// How a character groups into words for word-wise movement.
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum CharClass {
+    Space,
+    Word,
+    Punctuation,
+}
+
+fn char_class(ch: char) -> CharClass {
+    if ch.is_whitespace() {
+        CharClass::Space
+    } else if ch.is_alphanumeric() || ch == '_' {
+        CharClass::Word
+    } else {
+        CharClass::Punctuation
+    }
+}
+
+/// The start of the word before `position`, skipping blanks; at a line's start, the end of
+/// the line above.
+fn word_start(document: &Document, position: Position) -> Position {
+    if position.column == 0 {
+        return if position.line == 0 {
+            position
+        } else {
+            Position::new(
+                position.line - 1,
+                document.line_len_chars(position.line - 1),
+            )
+        };
+    }
+    let chars = document
+        .line_str(position.line)
+        .map_or_else(Vec::new, |line| line.chars().collect::<Vec<_>>());
+    let mut column = position.column.min(chars.len());
+    while column > 0 && char_class(chars[column - 1]) == CharClass::Space {
+        column -= 1;
+    }
+    if column > 0 {
+        let class = char_class(chars[column - 1]);
+        while column > 0 && char_class(chars[column - 1]) == class {
+            column -= 1;
+        }
+    }
+    Position::new(position.line, column)
+}
+
+/// The end of the word after `position`, skipping blanks; at a line's end, the start of
+/// the line below.
+fn word_end(document: &Document, position: Position) -> Position {
+    let length = document.line_len_chars(position.line);
+    if position.column >= length {
+        return if position.line + 1 < document.len_lines() {
+            Position::new(position.line + 1, 0)
+        } else {
+            position
+        };
+    }
+    let chars = document
+        .line_str(position.line)
+        .map_or_else(Vec::new, |line| line.chars().collect::<Vec<_>>());
+    let length = length.min(chars.len());
+    let mut column = position.column;
+    while column < length && char_class(chars[column]) == CharClass::Space {
+        column += 1;
+    }
+    if column < length {
+        let class = char_class(chars[column]);
+        while column < length && char_class(chars[column]) == class {
+            column += 1;
+        }
+    }
+    Position::new(position.line, column)
 }
 
 #[cfg(test)]

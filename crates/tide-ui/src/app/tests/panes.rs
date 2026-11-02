@@ -357,11 +357,15 @@ fn keyboard_navigates_between_main_panes() {
         panes[1],
         "Ctrl+2 did not focus pane 2"
     );
-    app.handle_key(KeyEvent::new(KeyCode::Right, KeyModifiers::ALT));
+    // In an editor, Alt+Right moves by word; Ctrl+Alt+Right moves between panes.
+    app.handle_key(KeyEvent::new(
+        KeyCode::Right,
+        KeyModifiers::CONTROL | KeyModifiers::ALT,
+    ));
     assert_eq!(
         app.workbench.focused(),
         panes[0],
-        "Alt+Right did not cycle panes"
+        "Ctrl+Alt+Right did not cycle panes"
     );
 }
 

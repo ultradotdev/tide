@@ -132,3 +132,77 @@ async fn native_typescript_document_receives_background_token_colors() {
     }
     app.shutdown().await;
 }
+
+#[test]
+fn word_document_and_smart_home_motion_work_from_the_keyboard() {
+    let (_home, mut app) = test_app();
+    app.new_file();
+    app.focus = Focus::Main;
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("    let total_count = add(1, 2);\nnext line");
+    let key = |code, modifiers| KeyEvent::new(code, modifiers);
+    let cursor = |app: &App| {
+        let position = app
+            .workbench
+            .active_editor()
+            .unwrap()
+            .document
+            .cursor()
+            .position;
+        (position.line, position.column)
+    };
+
+    app.handle_key(key(KeyCode::Home, KeyModifiers::CONTROL));
+    assert_eq!(cursor(&app), (0, 0));
+    app.handle_key(key(KeyCode::Right, KeyModifiers::CONTROL));
+    assert_eq!(cursor(&app), (0, 7), "skips the indent, then `let`");
+    app.handle_key(key(KeyCode::Right, KeyModifiers::CONTROL));
+    assert_eq!(cursor(&app), (0, 19), "underscores join a word");
+    // Option+Right in iTerm2 and other terminals arrives as Alt+Right.
+    app.handle_key(key(KeyCode::Right, KeyModifiers::ALT));
+    assert_eq!(cursor(&app), (0, 21), "punctuation is its own word");
+    // Option+Left in Terminal.app arrives as Alt+B.
+    app.handle_key(key(KeyCode::Char('b'), KeyModifiers::ALT));
+    assert_eq!(cursor(&app), (0, 20));
+    app.handle_key(key(
+        KeyCode::Left,
+        KeyModifiers::CONTROL | KeyModifiers::SHIFT,
+    ));
+    assert_eq!(cursor(&app), (0, 8));
+    let selection = app
+        .workbench
+        .active_editor()
+        .unwrap()
+        .document
+        .selection_positions()
+        .unwrap();
+    assert_eq!((selection.0.column, selection.1.column), (8, 20));
+
+    app.handle_key(key(KeyCode::End, KeyModifiers::NONE));
+    app.handle_key(key(KeyCode::Right, KeyModifiers::CONTROL));
+    assert_eq!(cursor(&app), (1, 0), "word motion crosses the line break");
+    app.handle_key(key(KeyCode::End, KeyModifiers::CONTROL));
+    assert_eq!(cursor(&app), (1, 9));
+
+    app.handle_key(key(KeyCode::Backspace, KeyModifiers::ALT));
+    assert_eq!(
+        app.workbench.active_editor().unwrap().document.text(),
+        "    let total_count = add(1, 2);\nnext "
+    );
+
+    app.handle_key(key(KeyCode::Up, KeyModifiers::NONE));
+    app.handle_key(key(KeyCode::Home, KeyModifiers::NONE));
+    assert_eq!(
+        cursor(&app),
+        (0, 4),
+        "Home goes to the first non-blank first"
+    );
+    app.handle_key(key(KeyCode::Home, KeyModifiers::NONE));
+    assert_eq!(cursor(&app), (0, 0), "and to column 0 on the second press");
+
+    // Outside an editor, Alt+Left still moves pane focus.
+    app.focus = Focus::Sidebar;
+    assert!(app.resolve_binding("alt+left").is_some());
+}

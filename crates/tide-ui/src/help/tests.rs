@@ -156,7 +156,12 @@ fn keys_render_from_the_live_keymap_and_unbound_commands_point_to_the_palette() 
             "Reopen it any time with “Help: Welcome” from the command palette (`Ctrl+K`)."
         )
     );
-    assert!(welcome.contains("Open the palette from a terminal with `Ctrl+Shift+P` or `F1`"));
+    // Ctrl+Shift+P arrives as Ctrl+P, a shell key, in terminals without the kitty
+    // keyboard protocol, so the terminal advice names only keys that always arrive.
+    assert!(
+        welcome.contains("Open the palette from a terminal with `F1`"),
+        "{welcome}"
+    );
     assert!(welcome.contains("| Show or hide the bottom terminal | `` Ctrl+` `` |"));
     let terminal = render_live("terminal", &[], &Install::Managed { local: false }).text;
     assert!(
