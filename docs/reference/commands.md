@@ -63,10 +63,19 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Add Selection to Next Match | `Ctrl+D` | `edit.selectNextMatch` |
 | Copy | `Ctrl+C` | `edit.copy` |
 | Cut | `Ctrl+X` | `edit.cut` |
+| Delete Line | `Shift+Cmd+K` | `edit.deleteLine` |
+| Indent Line | — | `edit.indentLine` |
+| Join Lines | — | `edit.joinLines` |
+| Move Line Down | `Ctrl+Shift+Down` | `edit.moveLinesDown` |
+| Move Line Up | `Ctrl+Shift+Up` | `edit.moveLinesUp` |
+| Outdent Line | — | `edit.outdentLine` |
 | Paste | `Ctrl+V` | `edit.paste` |
 | Redo | `Ctrl+Shift+Z`, `Ctrl+Y` | `edit.redo` |
 | Select All | `Ctrl+A` | `edit.selectAll` |
 | Select All Occurrences | `Ctrl+Shift+L` | `edit.selectAllOccurrences` |
+| Transform to Lowercase | — | `edit.transformToLowercase` |
+| Transform to Title Case | — | `edit.transformToTitleCase` |
+| Transform to Uppercase | — | `edit.transformToUppercase` |
 | Undo | `Ctrl+Z` | `edit.undo` |
 
 ### Editor
@@ -81,15 +90,23 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Duplicate Selection | `Ctrl+Shift+D` | `editor.duplicateSelection` |
 | Fold | `Ctrl+Shift+[` | `editor.fold` |
 | Fold All | — | `editor.foldAll` |
+| Fold Level 1 | — | `editor.foldLevel1` |
+| Fold Level 2 | — | `editor.foldLevel2` |
+| Fold Level 3 | — | `editor.foldLevel3` |
 | Format Document | — | `editor.formatDocument` |
+| Format Selection | — | `editor.formatSelection` |
 | Remove Line Comment | — | `editor.uncommentLine` |
 | Rename Symbol | — | `lsp.rename` |
 | Select Line | `Ctrl+L` | `editor.selectLine` |
 | Show Code Actions | `Ctrl+.` | `lsp.codeActions` |
 | Show Hover | `Ctrl+I` | `lsp.showHover` |
+| Sort Lines Ascending | — | `editor.sortLinesAscending` |
+| Sort Lines Descending | — | `editor.sortLinesDescending` |
+| Toggle Block Comment | `Alt+Shift+A` | `editor.toggleBlockComment` |
 | Toggle Line Comment | `Ctrl+/` | `editor.toggleComment` |
 | Trigger Completion | `Ctrl+Space` | `lsp.triggerCompletion` |
 | Trigger Signature Help | `Ctrl+Shift+Space` | `lsp.triggerSignatureHelp` |
+| Trim Trailing Whitespace | — | `editor.trimTrailingWhitespace` |
 | Unfold | `Ctrl+Shift+]` | `editor.unfold` |
 | Unfold All | — | `editor.unfoldAll` |
 
@@ -355,8 +372,10 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Split Main Pane Down | `Ctrl+Shift+\`, `Ctrl+Alt+H` | `view.splitHorizontal` |
 | Split Main Pane Right | `Ctrl+\` | `view.splitVertical` |
 | Toggle Bottom Terminal | `` Ctrl+` `` | `workbench.toggleTerminal` |
+| Toggle Minimap | — | `workbench.toggleMinimap` |
 | Toggle Sidebar | `Ctrl+Shift+B`, `Ctrl+B` | `workbench.toggleSidebar` |
 | Toggle Word Wrap | — | `workbench.toggleWordWrap` |
+| Toggle Zen Mode | — | `workbench.toggleZenMode` |
 | View: Move Agents Sidebar Left | — | `workbench.moveAgentsSidebarLeft` |
 | View: Move Agents Sidebar Right | — | `workbench.moveAgentsSidebarRight` |
 | Workspace Sidebar Menu... | — | `workbench.sidebarMenu` |

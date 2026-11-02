@@ -410,7 +410,19 @@ impl App {
             .active_editor()
             .and_then(EditorState::path)
             .map(|path| path.display().to_string());
-        let focused_region = match self.focus {
+        // Zen mode is not saved: a snapshot keeps the layout it will restore.
+        let (sidebar_visible, terminal_visible, agents_visible, focus) = self.zen.map_or_else(
+            || {
+                (
+                    self.sidebar_visible,
+                    self.dock.visible,
+                    self.ai.agents_visible,
+                    self.focus,
+                )
+            },
+            |zen| (zen.sidebar, zen.dock, zen.agents, zen.focus),
+        );
+        let focused_region = match focus {
             Focus::Sidebar => "sidebar",
             Focus::Main => "main",
             Focus::Agents => "agents",
@@ -432,10 +444,10 @@ impl App {
             active_pane_id: format!("pane-{}", self.workbench.focused()),
             layout,
             ui: SessionUIState {
-                sidebar_visible: self.sidebar_visible,
+                sidebar_visible,
                 sidebar_width: self.sidebar_width,
                 sidebar_location: Some(if self.sidebar_left { "left" } else { "right" }.to_owned()),
-                agents_sidebar_visible: self.ai.agents_visible,
+                agents_sidebar_visible: agents_visible,
                 agents_sidebar_width: self.ai.agents_width,
                 agents_sidebar_location: Some(
                     if self.agents_left { "left" } else { "right" }.to_owned(),
@@ -446,7 +458,7 @@ impl App {
                     .map(|provider| provider.id().to_owned())
                     .collect(),
                 agents_sidebar_expanded_sections: Vec::new(),
-                terminal_visible: self.dock.visible,
+                terminal_visible,
                 terminal_height: self.dock.height,
                 git_panel_visible: self.accordion.focused_section() == SectionId::SourceControl,
                 git_panel_width: self.sidebar_width,

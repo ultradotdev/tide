@@ -35,7 +35,7 @@ use crate::controllers::db::{DbController, DbEvent};
 use crate::controllers::git::{GitController, GitEvent};
 use crate::controllers::lsp::{LspController, LspEvent, LspRequestKind};
 use crate::controllers::{Effect, Ui};
-use crate::editor::{DocumentRegistry, EditorState, EditorView};
+use crate::editor::{CaseTransform, CommentMode, DocumentRegistry, EditorState, EditorView};
 use crate::file_tree::FileTreeState;
 use crate::jobs::{Jobs, Tracked};
 use crate::modal::{
@@ -358,6 +358,15 @@ struct SaveBeforeAction {
     focus: Focus,
 }
 
+/// The regions zen mode hid, restored when it turns off.
+#[derive(Debug, Clone, Copy)]
+struct ZenLayout {
+    sidebar: bool,
+    dock: bool,
+    agents: bool,
+    focus: Focus,
+}
+
 struct CachedOutline {
     document: crate::editor::DocumentHandle,
     revision: u64,
@@ -454,6 +463,7 @@ pub struct App {
     external_check_running: bool,
     files_pending: Option<Instant>,
     session_dirty: bool,
+    zen: Option<ZenLayout>,
 }
 
 impl App {
@@ -619,6 +629,7 @@ impl App {
             external_check_running: false,
             files_pending: None,
             session_dirty: false,
+            zen: None,
         };
         app.apply_preferences();
         for (section, key) in [

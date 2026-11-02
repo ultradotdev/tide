@@ -176,11 +176,16 @@ impl App {
             Command::WorkbenchSelectTheme => self.open_theme_picker(),
             Command::WorkbenchOpenSettings => self.open_settings(),
             Command::WorkbenchOpenKeybindings => self.open_keybindings(),
-            Command::EditorCommentLine => self.toggle_comment(),
-            Command::EditorUncommentLine => self.toggle_comment(),
-            Command::EditorDuplicateLine | Command::EditorDuplicateSelection => {
-                self.duplicate_line()
-            }
+            Command::EditorCommentLine => self.comment_lines(CommentMode::Add),
+            Command::EditorUncommentLine => self.comment_lines(CommentMode::Remove),
+            Command::EditorDuplicateLine => self.edit_lines(|editor, _| {
+                editor.duplicate_lines();
+                None
+            }),
+            Command::EditorDuplicateSelection => self.edit_lines(|editor, _| {
+                editor.duplicate_selections();
+                None
+            }),
             Command::GitFocusPanel => {
                 self.add_sidebar_section(SectionId::SourceControl);
                 self.accordion.enter_content();
@@ -280,7 +285,7 @@ impl App {
             Command::TerminalScrollToTop => self.scroll_terminal(true),
             Command::TerminalScrollToBottom => self.scroll_terminal(false),
             Command::TerminalCloseAll => self.confirm_close_all_terminals(),
-            Command::EditorToggleComment => self.toggle_comment(),
+            Command::EditorToggleComment => self.comment_lines(CommentMode::Toggle),
             Command::EditorFold => self.with_active_editor(EditorState::fold),
             Command::EditorFoldAll => self.with_active_editor(EditorState::fold_all),
             Command::EditorUnfold => self.with_active_editor(EditorState::unfold),
@@ -309,6 +314,70 @@ impl App {
                 }
             }
             Command::EditorSelectLine => self.with_active_editor(EditorState::select_line),
+            Command::EditMoveLinesUp | Command::EditMoveLinesDown => {
+                self.edit_lines(|editor, _| {
+                    editor.move_lines(command == Command::EditMoveLinesUp);
+                    None
+                })
+            }
+            Command::EditDeleteLine => self.edit_lines(|editor, _| {
+                editor.delete_lines();
+                None
+            }),
+            Command::EditIndentLine | Command::EditOutdentLine => {
+                self.edit_lines(|editor, tab_size| {
+                    editor.indent_lines(command == Command::EditOutdentLine, tab_size);
+                    None
+                })
+            }
+            Command::EditJoinLines => self.edit_lines(|editor, _| {
+                editor.join_lines();
+                None
+            }),
+            Command::EditTransformToUppercase
+            | Command::EditTransformToLowercase
+            | Command::EditTransformToTitleCase => self.edit_lines(|editor, _| {
+                let transform = match command {
+                    Command::EditTransformToUppercase => CaseTransform::Upper,
+                    Command::EditTransformToLowercase => CaseTransform::Lower,
+                    _ => CaseTransform::Title,
+                };
+                (!editor.transform_case(transform))
+                    .then(|| "Select text, or put the cursor on a word, to change its case".into())
+            }),
+            Command::EditorSortLinesAscending | Command::EditorSortLinesDescending => self
+                .edit_lines(|editor, _| {
+                    editor
+                        .sort_lines(command == Command::EditorSortLinesDescending)
+                        .map(|count| format!("Sorted {count} line(s)"))
+                }),
+            Command::EditorTrimTrailingWhitespace => self.edit_lines(|editor, _| {
+                editor.trim_trailing_whitespace().map(|count| match count {
+                    0 => "No trailing whitespace to trim".to_owned(),
+                    count => format!("Trimmed trailing whitespace on {count} line(s)"),
+                })
+            }),
+            Command::EditorToggleBlockComment => self.toggle_block_comment(),
+            Command::EditorFormatSelection => self.lsp_request(LspRequestKind::FormatSelection),
+            Command::EditorFoldLevel1 | Command::EditorFoldLevel2 | Command::EditorFoldLevel3 => {
+                let level = match command {
+                    Command::EditorFoldLevel1 => 1,
+                    Command::EditorFoldLevel2 => 2,
+                    _ => 3,
+                };
+                if let Some(editor) = self.workbench.active_editor_mut() {
+                    let folded = editor.fold_level(level);
+                    self.set_status(if folded == 0 {
+                        format!("No regions to fold at level {level}")
+                    } else {
+                        format!("Folded {folded} region(s) at level {level}")
+                    });
+                } else {
+                    self.set_status("Open a file to fold its regions");
+                }
+            }
+            Command::WorkbenchToggleMinimap => self.toggle_minimap(),
+            Command::WorkbenchToggleZenMode => self.toggle_zen_mode(),
             Command::SearchFindPrevious => self.find_previous(),
             Command::SessionSaveAs => {
                 let initial = self.session_name.clone().unwrap_or_default();
@@ -559,6 +628,44 @@ impl App {
             serde_json::Value::String(next.to_owned()),
         );
         self.set_status(format!("Word wrap {next}"));
+    }
+
+    pub(super) fn toggle_minimap(&mut self) {
+        let enabled = !self.setting_bool("editor.minimap.enabled", true);
+        self.settings
+            .set("editor.minimap.enabled", serde_json::Value::Bool(enabled));
+        self.mark_session_dirty();
+        self.set_status(format!("Minimap {}", if enabled { "on" } else { "off" }));
+    }
+
+    /// Hides the sidebars and the bottom terminal around the main area, or restores the
+    /// layout zen mode hid.
+    pub(super) fn toggle_zen_mode(&mut self) {
+        if let Some(zen) = self.zen.take() {
+            self.sidebar_visible = zen.sidebar;
+            self.dock.visible = zen.dock && !self.dock.tabs.is_empty();
+            self.ai.agents_visible = zen.agents;
+            self.focus = match zen.focus {
+                Focus::Sidebar if !self.sidebar_visible => Focus::Main,
+                Focus::Dock if !self.dock.visible => Focus::Main,
+                Focus::Agents if !self.ai.agents_visible => Focus::Main,
+                focus => focus,
+            };
+            self.set_status("Zen mode off");
+        } else {
+            self.zen = Some(ZenLayout {
+                sidebar: self.sidebar_visible,
+                dock: self.dock.visible,
+                agents: self.ai.agents_visible,
+                focus: self.focus,
+            });
+            self.sidebar_visible = false;
+            self.dock.visible = false;
+            self.ai.agents_visible = false;
+            self.focus = Focus::Main;
+            self.set_status("Zen mode on; run Toggle Zen Mode again to restore the layout");
+        }
+        self.mark_session_dirty();
     }
 
     pub(super) fn reset_region_sizes(&mut self) {

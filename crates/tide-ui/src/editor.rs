@@ -16,6 +16,10 @@ use tide_services::{HighlightSpan, SyntaxHighlighter};
 
 use crate::palette::Palette;
 
+mod lines;
+pub use lines::{CaseTransform, CommentMode};
+pub(crate) use lines::{block_comment, line_comment};
+
 /// Stable identity for an authoritative file-backed document.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DocumentId(String);

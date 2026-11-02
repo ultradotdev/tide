@@ -99,6 +99,9 @@
   { "key": "ctrl+l", "command": "editor.selectLine" }, // Select current line
   { "key": "meta+l", "command": "editor.selectLine" }, // Select current line (macOS)
   { "key": "ctrl+shift+d", "command": "editor.duplicateSelection" }, // Duplicate selection
+  { "key": "ctrl+shift+up", "command": "edit.moveLinesUp", "when": "editorFocus" }, // Move line up
+  { "key": "ctrl+shift+down", "command": "edit.moveLinesDown", "when": "editorFocus" }, // Move line down
+  { "key": "shift+meta+k", "command": "edit.deleteLine", "when": "editorFocus" }, // Delete line (macOS)
 
   // Terminal
   { "key": "ctrl+shift+`", "command": "terminal.new" }, // Open bottom terminal tab
@@ -226,6 +229,7 @@
   // Comments
   { "key": "ctrl+/", "command": "editor.toggleComment" }, // Toggle comment
   { "key": "meta+/", "command": "editor.toggleComment" }, // Toggle comment (macOS)
+  { "key": "alt+shift+a", "command": "editor.toggleBlockComment", "when": "editorFocus" }, // Toggle block comment
 
   // LSP
   { "key": "ctrl+shift+k", "command": "lsp.goToDefinition" }, // Go to definition

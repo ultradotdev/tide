@@ -208,79 +208,66 @@ impl App {
         });
     }
 
-    pub(super) fn toggle_comment(&mut self) {
+    /// Runs a line or selection edit on the active editor, with the tab size, and shows
+    /// the status it returns. Read-only buffers, such as help pages, refuse with a status.
+    pub(super) fn edit_lines(
+        &mut self,
+        edit: impl FnOnce(&mut EditorState, usize) -> Option<String>,
+    ) {
+        let tab_size = self.tab_size();
+        let insert_spaces = self.setting_bool("editor.insertSpaces", true);
+        let relative = self
+            .settings
+            .get("editor.lineNumbers")
+            .and_then(serde_json::Value::as_str)
+            == Some("relative");
         let Some(editor) = self.workbench.active_editor_mut() else {
+            self.set_status("Open a file to edit its text");
             return;
         };
-        let extension = editor.language_extension().to_owned();
-        let prefix = comment_prefix(&extension);
-        let (start_line, end_line) = editor.document.selection_positions().map_or_else(
-            || {
-                let line = editor.document.cursor().position.line;
-                (line, line)
-            },
-            |(start, end)| (start.line, end.line),
-        );
-        let mut all_commented = true;
-        for line in start_line..=end_line {
-            let text = editor.document.line(line).unwrap_or_default();
-            if !text.trim().is_empty() && !text.trim_start().starts_with(prefix) {
-                all_commented = false;
-                break;
-            }
-        }
-        for line in (start_line..=end_line).rev() {
-            let text = editor.document.line(line).unwrap_or_default();
-            if text.trim().is_empty() {
-                continue;
-            }
-            let indent = &text[..text.len() - text.trim_start().len()];
-            if all_commented {
-                let trimmed = text.trim_start();
-                if let Some(rest) = trimmed.strip_prefix(prefix) {
-                    let rest = rest.strip_prefix(' ').unwrap_or(rest);
-                    let new_text = format!("{indent}{rest}");
-                    editor.document.replace(
-                        tide_core::Range::new(
-                            Position::new(line, 0),
-                            Position::new(line, text.chars().count()),
-                        ),
-                        &new_text,
-                    );
-                }
-            } else {
-                let new_text = format!("{indent}{prefix} {}", &text[indent.len()..]);
-                editor.document.replace(
-                    tide_core::Range::new(
-                        Position::new(line, 0),
-                        Position::new(line, text.chars().count()),
-                    ),
-                    &new_text,
-                );
-            }
-        }
-        self.mark_session_dirty();
-    }
-
-    pub(super) fn duplicate_line(&mut self) {
-        let Some(editor) = self.workbench.active_editor_mut() else {
+        if editor.is_read_only() {
+            let title = editor
+                .help
+                .map_or_else(|| editor.title(), |page| page.title.to_owned());
+            self.set_status(format!("{title} is read-only"));
             return;
-        };
-        let line = editor.document.cursor().position.line;
-        let text = editor.document.line(line).unwrap_or_default();
-        let column = editor.document.line_len_chars(line);
-        editor
-            .document
-            .insert(Position::new(line, column), &format!("\n{text}"));
-        editor.document.set_cursor(Position::new(line + 1, 0));
-        self.mark_session_dirty();
+        }
+        editor.configure_editing(tab_size, insert_spaces, relative);
+        let revision = editor.revision();
+        let status = edit(editor, tab_size);
+        if editor.revision() != revision {
+            self.mark_session_dirty();
+            self.lsp.invalidate();
+        }
+        if let Some(status) = status {
+            self.set_status(status);
+        }
     }
-}
 
-pub(super) fn comment_prefix(extension: &str) -> &'static str {
-    match extension {
-        "py" | "sh" | "bash" | "zsh" | "yaml" | "yml" | "toml" | "rb" | "r" => "#",
-        "sql" | "lua" | "hs" => "--",
-        _ => "//",
+    pub(super) fn comment_lines(&mut self, mode: CommentMode) {
+        self.edit_lines(|editor, _| {
+            let marker = crate::editor::line_comment(editor.language_extension());
+            editor.comment_lines(marker, mode);
+            None
+        });
+    }
+
+    pub(super) fn toggle_block_comment(&mut self) {
+        self.edit_lines(|editor, _| {
+            let language = editor.language_extension().to_owned();
+            let Some((open, close)) = crate::editor::block_comment(&language) else {
+                return Some(format!(
+                    "{} has no block comments; use {}",
+                    if language.is_empty() {
+                        "This file".to_owned()
+                    } else {
+                        format!(".{language}")
+                    },
+                    "Toggle Line Comment"
+                ));
+            };
+            editor.toggle_block_comment(open, close);
+            None
+        });
     }
 }

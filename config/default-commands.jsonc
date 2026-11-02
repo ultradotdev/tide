@@ -32,6 +32,15 @@
   "edit.selectAll": { "label": "Select All", "category": "Edit" },
   "edit.selectNextMatch": { "label": "Add Selection to Next Match", "category": "Edit" },
   "edit.selectAllOccurrences": { "label": "Select All Occurrences", "category": "Edit" },
+  "edit.moveLinesUp": { "label": "Move Line Up", "category": "Edit", "description": "Move the lines under each cursor up one line" },
+  "edit.moveLinesDown": { "label": "Move Line Down", "category": "Edit", "description": "Move the lines under each cursor down one line" },
+  "edit.deleteLine": { "label": "Delete Line", "category": "Edit", "description": "Delete the lines under each cursor" },
+  "edit.indentLine": { "label": "Indent Line", "category": "Edit", "description": "Indent the lines under each cursor one level" },
+  "edit.outdentLine": { "label": "Outdent Line", "category": "Edit", "description": "Remove one level of indentation from the lines under each cursor" },
+  "edit.joinLines": { "label": "Join Lines", "category": "Edit", "description": "Join each line with the next, or a selection's lines into one" },
+  "edit.transformToUppercase": { "label": "Transform to Uppercase", "category": "Edit", "description": "Upper-case the selection, or the word at the cursor" },
+  "edit.transformToLowercase": { "label": "Transform to Lowercase", "category": "Edit", "description": "Lower-case the selection, or the word at the cursor" },
+  "edit.transformToTitleCase": { "label": "Transform to Title Case", "category": "Edit", "description": "Capitalize each word of the selection, or the word at the cursor" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Search Commands
@@ -59,12 +68,20 @@
   "editor.commentLine": { "label": "Add Line Comment", "category": "Editor" },
   "editor.uncommentLine": { "label": "Remove Line Comment", "category": "Editor" },
   "editor.selectLine": { "label": "Select Line", "category": "Editor" },
-  "editor.duplicateLine": { "label": "Duplicate Line", "category": "Editor" },
-  "editor.duplicateSelection": { "label": "Duplicate Selection", "category": "Editor" },
+  "editor.duplicateLine": { "label": "Duplicate Line", "category": "Editor", "description": "Copy the lines under each cursor below them" },
+  "editor.duplicateSelection": { "label": "Duplicate Selection", "category": "Editor", "description": "Copy each selection after itself, or the line without a selection" },
   "editor.addCursorAbove": { "label": "Add Cursor Above", "category": "Editor" },
   "editor.addCursorBelow": { "label": "Add Cursor Below", "category": "Editor" },
   "editor.clearCursors": { "label": "Clear Cursors", "category": "Editor" },
   "editor.formatDocument": { "label": "Format Document", "category": "Editor" },
+  "editor.formatSelection": { "label": "Format Selection", "category": "Editor", "description": "Format the selection, or the cursor's line, with the language server" },
+  "editor.toggleBlockComment": { "label": "Toggle Block Comment", "category": "Editor", "description": "Wrap the selection or line in the language's block comment, or unwrap it" },
+  "editor.sortLinesAscending": { "label": "Sort Lines Ascending", "category": "Editor", "description": "Sort the selected lines, or the whole file without a multi-line selection" },
+  "editor.sortLinesDescending": { "label": "Sort Lines Descending", "category": "Editor", "description": "Sort the selected lines in reverse, or the whole file without a multi-line selection" },
+  "editor.trimTrailingWhitespace": { "label": "Trim Trailing Whitespace", "category": "Editor", "description": "Remove whitespace at the end of every line" },
+  "editor.foldLevel1": { "label": "Fold Level 1", "category": "Editor", "description": "Fold every outermost region" },
+  "editor.foldLevel2": { "label": "Fold Level 2", "category": "Editor", "description": "Fold every region nested two deep" },
+  "editor.foldLevel3": { "label": "Fold Level 3", "category": "Editor", "description": "Fold every region nested three deep" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Workbench Commands
@@ -81,6 +98,8 @@
   "workbench.resizeDown": { "label": "Move Focused Region Boundary Down", "category": "View" },
   "workbench.resetRegionSizes": { "label": "Reset Workbench Region Sizes", "category": "View" },
   "workbench.toggleWordWrap": { "label": "Toggle Word Wrap", "category": "View" },
+  "workbench.toggleMinimap": { "label": "Toggle Minimap", "category": "View", "description": "Show or hide the minimap beside each editor's scrollbar" },
+  "workbench.toggleZenMode": { "label": "Toggle Zen Mode", "category": "View", "description": "Hide the sidebars and the bottom terminal, or bring them back" },
   "workbench.focusNextPane": { "label": "Focus Next Main Pane", "category": "View" },
   "workbench.focusPreviousPane": { "label": "Focus Previous Main Pane", "category": "View" },
   "workbench.focusNextRegion": { "label": "Focus Next Workbench Region", "category": "View" },

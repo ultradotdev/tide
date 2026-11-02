@@ -60,7 +60,7 @@ Each tab has a `×` close button. When the tabs do not fit, `‹` and `›` scro
 
 Sidebar widths and the dock height are saved with the session. When the terminal is too small, the Agents sidebar hides first, then the workspace sidebar; below 60 columns the sidebars hide unless focused, and the dock hides when the main region would be shorter than four rows. Their visibility and sizes are remembered, so they come back when there is room. `tui.mainRegion.minimumWidth` (`56` columns) is how much width the main region keeps before a sidebar collapses.
 
-Toggling a sidebar that collapsed for lack of space focuses it instead. **Reset Workbench Region Sizes** restores the default sizes.
+Toggling a sidebar that collapsed for lack of space focuses it instead. **Reset Workbench Region Sizes** restores the default sizes. **Toggle Zen Mode** hides both sidebars and the dock to leave only the main region; running it again brings back exactly what it hid.
 
 ## Mouse
 

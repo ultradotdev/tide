@@ -36,6 +36,8 @@ pub enum LspRequestKind {
     References,
     SignatureHelp,
     Format,
+    /// Formats the selection, or the cursor's line without one.
+    FormatSelection,
     CodeActions,
     ExecuteCommand(serde_json::Value),
     Rename(String),
@@ -123,13 +125,17 @@ pub(crate) struct ActiveDocument {
     text: String,
     version: i64,
     pub position: LspPosition,
+    /// The selection, or the cursor's whole line without one.
+    selection: LspRange,
 }
 
 /// What a request sends besides the document itself.
 struct RequestInput {
     generation: u64,
+    language: String,
     uri: String,
     position: LspPosition,
+    selection: LspRange,
     diagnostics: Vec<Diagnostic>,
     tab_size: usize,
     insert_spaces: bool,
@@ -636,8 +642,10 @@ impl LspController {
         };
         let input = RequestInput {
             generation: self.generation,
+            language: document.language.clone(),
             uri: document.uri.clone(),
             position: document.position,
+            selection: document.selection,
             diagnostics: self
                 .diagnostics
                 .get(&document.uri)
@@ -709,6 +717,16 @@ impl LspController {
             position: LspPosition {
                 line: 0,
                 character: 0,
+            },
+            selection: LspRange {
+                start: LspPosition {
+                    line: 0,
+                    character: 0,
+                },
+                end: LspPosition {
+                    line: 0,
+                    character: 0,
+                },
             },
         };
         let lease = self.leases.entry(document.uri.clone()).or_default().clone();
@@ -1106,6 +1124,36 @@ impl LspRequestKind {
                     },
                 )
             }
+            Self::FormatSelection => {
+                if !client.supports("documentRangeFormattingProvider") {
+                    return LspEvent::Error(format!(
+                        "the {} language server cannot format a selection; use Format Document",
+                        input.language
+                    ));
+                }
+                let result = client
+                    .range_formatting_with_options(
+                        uri,
+                        input.selection,
+                        input.tab_size,
+                        input.insert_spaces,
+                    )
+                    .await;
+                reply(
+                    "format selection",
+                    result,
+                    |value| match tide_lsp::checked_text_edits(&value) {
+                        Ok(edits) => LspEvent::Edits {
+                            generation,
+                            files: vec![LspFileEdits {
+                                uri: uri.to_owned(),
+                                edits,
+                            }],
+                        },
+                        Err(error) => LspEvent::Error(format!("Formatting rejected: {error:#}")),
+                    },
+                )
+            }
             Self::Rename(new_name) => {
                 let result = client.rename(uri, position, &new_name).await;
                 reply(
@@ -1160,23 +1208,43 @@ pub(crate) fn active_document(ui: &Ui<'_>) -> Option<ActiveDocument> {
     }
     let editor = ui.workbench.active_editor()?;
     let path = editor.path()?;
-    let cursor = editor.document.cursor().position;
+    let cursor = editor.document.cursor();
+    let lsp_position = |position: Position| {
+        Some(LspPosition {
+            // LSP lines are u32; there is no request position past that.
+            line: u32::try_from(position.line).ok()?,
+            character: editor
+                .document
+                .line(position.line)
+                .unwrap_or_default()
+                .chars()
+                .take(position.column)
+                .map(utf16_units)
+                .sum(),
+        })
+    };
+    let (start, end) = cursor
+        .range()
+        .filter(|range| !range.is_empty())
+        .map_or_else(
+            || {
+                let line = cursor.position.line;
+                (
+                    Position::new(line, 0),
+                    Position::new(line, editor.document.line_len_chars(line)),
+                )
+            },
+            |range| (range.start, range.end),
+        );
     Some(ActiveDocument {
         language: language_id_for_path(path)?.to_owned(),
         uri: path_to_uri(path)?,
         text: editor.document.text(),
         version: saturating_i64(editor.revision()),
-        position: LspPosition {
-            // LSP lines are u32; there is no request position past that.
-            line: u32::try_from(cursor.line).ok()?,
-            character: editor
-                .document
-                .line(cursor.line)
-                .unwrap_or_default()
-                .chars()
-                .take(cursor.column)
-                .map(utf16_units)
-                .sum(),
+        position: lsp_position(cursor.position)?,
+        selection: LspRange {
+            start: lsp_position(start)?,
+            end: lsp_position(end)?,
         },
     })
 }

@@ -543,3 +543,50 @@ async fn saving_notifies_a_server_that_wants_did_save() {
     assert_eq!(saves[0]["text"], "// saved\nfn main() {}\n");
     app.lsp.clients.shutdown_all().await;
 }
+
+fn mock_rust_server(app: &mut App, capabilities: &str) {
+    let mock = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../tide-lsp/tests/mock_server.py"
+    );
+    app.settings.set(
+        "lsp.servers",
+        serde_json::json!({"rust": {
+            "command": "python3",
+            "args": [mock, "--sync", "full", "--capabilities", capabilities],
+        }}),
+    );
+}
+
+#[test]
+fn format_selection_uses_range_formatting_or_explains_that_the_server_cannot() {
+    for (capabilities, expected, status) in [
+        ("rangeFormatting", "fn a() {}\nranged fn b() {}\n", None),
+        (
+            "",
+            "fn a() {}\nfn b() {}\n",
+            Some("rust language server cannot format a selection"),
+        ),
+    ] {
+        let (home, mut app) = test_app();
+        mock_rust_server(&mut app, capabilities);
+        let path = home.path().join("workspace/format.rs");
+        std::fs::write(&path, "fn a() {}\nfn b() {}\n").unwrap();
+        app.open_file(&path);
+        app.settle();
+        app.workbench
+            .active_editor_mut()
+            .unwrap()
+            .document
+            .set_cursor(Position::new(1, 3));
+        app.execute_command(Command::EditorFormatSelection);
+        app.settle();
+        assert_eq!(
+            app.workbench.active_editor().unwrap().document.text(),
+            expected
+        );
+        if let Some(status) = status {
+            assert!(app.status.contains(status), "{}", app.status);
+        }
+    }
+}

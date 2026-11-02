@@ -518,6 +518,8 @@ pub struct LspClient {
     /// Serializes document notifications; the reader never takes it.
     sync_gate: Mutex<()>,
     sync: OnceLock<TextDocumentSync>,
+    /// The `capabilities` the server returned from initialize.
+    capabilities: OnceLock<Value>,
     reader_alive: Arc<AtomicBool>,
     stderr: StderrTail,
     event_tx: mpsc::Sender<LspEvent>,
@@ -666,6 +668,7 @@ impl LspClient {
             opened,
             sync_gate: Mutex::new(()),
             sync: OnceLock::new(),
+            capabilities: OnceLock::new(),
             reader_alive,
             stderr: stderr_tail,
             event_tx,
@@ -722,6 +725,8 @@ impl LspClient {
                     "documentSymbol": {},
                     "references": {},
                     "rename": {},
+                    "formatting": {},
+                    "rangeFormatting": {},
                     "publishDiagnostics": { "relatedInformation": true }
                 },
                 "workspace": { "workspaceFolders": true, "symbol": {}, "applyEdit":true, "workspaceEdit":{"documentChanges":true,"failureHandling":"transactional"} },
@@ -751,9 +756,11 @@ impl LspClient {
         if encoding != "utf-16" {
             return Err(LspError::UnsupportedEncoding(encoding.to_owned()));
         }
-        let _ = self.sync.set(TextDocumentSync::from_capabilities(
-            result.get("capabilities").unwrap_or(&Value::Null),
-        ));
+        let capabilities = result.get("capabilities").cloned().unwrap_or(Value::Null);
+        let _ = self
+            .sync
+            .set(TextDocumentSync::from_capabilities(&capabilities));
+        let _ = self.capabilities.set(capabilities);
         self.notify("initialized", json!({})).await?;
         Ok(())
     }
@@ -798,6 +805,16 @@ impl LspClient {
     #[must_use]
     pub fn text_document_sync(&self) -> TextDocumentSync {
         self.sync.get().copied().unwrap_or(TextDocumentSync::FULL)
+    }
+
+    /// Whether the server declared `provider` (such as `documentRangeFormattingProvider`)
+    /// in its capabilities, as `true` or as an options object.
+    #[must_use]
+    pub fn supports(&self, provider: &str) -> bool {
+        self.capabilities
+            .get()
+            .and_then(|capabilities| capabilities.get(provider))
+            .is_some_and(|value| value.as_bool().unwrap_or_else(|| value.is_object()))
     }
 
     /// The most recent lines the server wrote to stderr.
@@ -1086,6 +1103,24 @@ impl LspClient {
             "textDocument/formatting",
             json!({
                 "textDocument": { "uri": uri },
+                "options": { "tabSize": tab_size.clamp(1,16), "insertSpaces": insert_spaces }
+            }),
+        )
+        .await
+    }
+
+    pub async fn range_formatting_with_options(
+        &self,
+        uri: &str,
+        range: Range,
+        tab_size: usize,
+        insert_spaces: bool,
+    ) -> Result<Value> {
+        self.request(
+            "textDocument/rangeFormatting",
+            json!({
+                "textDocument": { "uri": uri },
+                "range": range,
                 "options": { "tabSize": tab_size.clamp(1,16), "insertSpaces": insert_spaces }
             }),
         )

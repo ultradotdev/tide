@@ -141,6 +141,16 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | --- | --- | --- |
 | `Esc` | Clear Cursors | `editor.clearCursors` |
 
+### While editing
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Shift+Up` | Move Line Up | `edit.moveLinesUp` |
+| `Ctrl+Shift+Down` | Move Line Down | `edit.moveLinesDown` |
+| `Shift+Cmd+K` | Delete Line | `edit.deleteLine` |
+| `Alt+Shift+A` | Toggle Block Comment | `editor.toggleBlockComment` |
+| `Ctrl+.` | Show Code Actions | `lsp.codeActions` |
+
 ### Terminal
 
 | Keys | Action | Command |
@@ -238,12 +248,6 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+R`, `Ctrl+Enter`, `F5` | Execute Query | `database.executeQuery` |
 | `Ctrl+Shift+C` | Connect to Database | `database.connect` |
 | `Ctrl+Space` | Complete SQL | `database.complete` |
-
-### While editing
-
-| Keys | Action | Command |
-| --- | --- | --- |
-| `Ctrl+.` | Show Code Actions | `lsp.codeActions` |
 
 ### Outside the editor
 

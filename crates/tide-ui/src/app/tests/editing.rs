@@ -19,12 +19,12 @@ fn comments_and_uncomments_the_current_line() {
         .active_editor_mut()
         .unwrap()
         .insert_text("let value = 1;");
-    app.toggle_comment();
+    app.comment_lines(CommentMode::Toggle);
     assert_eq!(
         app.workbench.active_editor().unwrap().document.text(),
         "// let value = 1;"
     );
-    app.toggle_comment();
+    app.comment_lines(CommentMode::Toggle);
     assert_eq!(
         app.workbench.active_editor().unwrap().document.text(),
         "let value = 1;"
@@ -45,7 +45,7 @@ fn toggling_a_comment_keeps_tab_and_multibyte_indentation() {
         .unwrap()
         .document
         .select_all();
-    app.toggle_comment();
+    app.comment_lines(CommentMode::Toggle);
     assert_eq!(
         app.workbench.active_editor().unwrap().document.text(),
         "\t\t// build: all\n\u{3000}// value"
@@ -55,7 +55,7 @@ fn toggling_a_comment_keeps_tab_and_multibyte_indentation() {
         .unwrap()
         .document
         .select_all();
-    app.toggle_comment();
+    app.comment_lines(CommentMode::Toggle);
     assert_eq!(
         app.workbench.active_editor().unwrap().document.text(),
         original

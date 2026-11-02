@@ -23,6 +23,9 @@ Undo, redo, selection, comments, folding, automatic indentation, auto-closing pa
 | --- | --- |
 | Undo / redo | {{key:edit.undo}} / {{key:edit.redo}} |
 | Toggle a line comment | {{key:editor.toggleComment}} |
+| Toggle a block comment | {{key:editor.toggleBlockComment}} |
+| Move the line up / down | {{key:edit.moveLinesUp}} / {{key:edit.moveLinesDown}} |
+| Indent / outdent the selected lines | `Tab` / `Shift+Tab` |
 | Select the line | {{key:editor.selectLine}} |
 | Duplicate the selection or line | {{key:editor.duplicateSelection}} |
 | Add the next match to the selection | {{key:edit.selectNextMatch}} |
@@ -31,9 +34,11 @@ Undo, redo, selection, comments, folding, automatic indentation, auto-closing pa
 | Back to one cursor | {{key:editor.clearCursors}} |
 | Fold / unfold the region | {{key:editor.fold}} / {{key:editor.unfold}} |
 
-**{{label:editor.foldAll}}** and **{{label:editor.unfoldAll}}** are in the palette, and the fold arrows in the gutter respond to clicks. Folding follows indentation and multi-line brackets. Moving the caret highlights the innermost matching brackets and the lines that open and close them; brackets inside strings and comments are ignored.
+Line commands act on every cursor and count as one undo step. More are in the palette: **{{label:edit.deleteLine}}**, **{{label:edit.joinLines}}**, **{{label:edit.transformToUppercase}}**, **{{label:edit.transformToLowercase}}** and **{{label:edit.transformToTitleCase}}** (the selection, or the word at the cursor), **{{label:editor.sortLinesAscending}}** and **{{label:editor.sortLinesDescending}}** (the selected lines, or the whole file), and **{{label:editor.trimTrailingWhitespace}}**. Help pages are read-only, so these leave them unchanged.
 
-Word wrap follows `editor.wordWrap` ({{setting:editor.wordWrap}}): `off`, `on`, or `bounded` and `wordWrapColumn` at `editor.wordWrapColumn` ({{setting:editor.wordWrapColumn}}). **{{label:workbench.toggleWordWrap}}** switches it on or off until Tide restarts. The minimap beside the scrollbar follows `editor.minimap.enabled` ({{setting:editor.minimap.enabled}}) and needs an editor at least 30 columns wide.
+**{{label:editor.foldAll}}**, **{{label:editor.unfoldAll}}** and **{{label:editor.foldLevel1}}** to level 3 are in the palette, and the fold arrows in the gutter respond to clicks. Folding follows indentation and multi-line brackets. Moving the caret highlights the innermost matching brackets and the lines that open and close them; brackets inside strings and comments are ignored.
+
+Word wrap follows `editor.wordWrap` ({{setting:editor.wordWrap}}): `off`, `on`, or `bounded` and `wordWrapColumn` at `editor.wordWrapColumn` ({{setting:editor.wordWrapColumn}}). **{{label:workbench.toggleWordWrap}}** switches it on or off until Tide restarts. The minimap beside the scrollbar follows `editor.minimap.enabled` ({{setting:editor.minimap.enabled}}) and needs an editor at least 30 columns wide; **{{label:workbench.toggleMinimap}}** shows or hides it, and the session remembers the choice.
 
 ## Find and replace
 
@@ -63,7 +68,7 @@ Servers start on demand when their executable is on the `PATH`:
 
 {{languageservers}}
 
-With a server running you get completion ({{key:lsp.triggerCompletion}}), hover ({{key:lsp.showHover}}), signature help ({{key:lsp.triggerSignatureHelp}}), go to definition ({{key:lsp.goToDefinition}}), code actions ({{key:lsp.codeActions}}), and from the palette **{{label:lsp.findReferences}}**, **{{label:lsp.rename}}**, **{{label:editor.formatDocument}}** and diagnostics navigation. Without a server, editing and highlighting work as usual. Run `tide --check-lsp` to see which servers are installed.
+With a server running you get completion ({{key:lsp.triggerCompletion}}), hover ({{key:lsp.showHover}}), signature help ({{key:lsp.triggerSignatureHelp}}), go to definition ({{key:lsp.goToDefinition}}), code actions ({{key:lsp.codeActions}}), and from the palette **{{label:lsp.findReferences}}**, **{{label:lsp.rename}}**, **{{label:editor.formatDocument}}**, **{{label:editor.formatSelection}}** and diagnostics navigation. Without a server, editing and highlighting work as usual. Run `tide --check-lsp` to see which servers are installed.
 
 To use another server or turn one off, add `lsp.servers` to {{path:settings}}. Each key is a language ID from the table's languages (`typescript`, `rust`, `python`, `go`, `ruby`, `c`, `cpp`, `json`, `html`, `css`, `sql` and so on); the value is a command with optional arguments, or `null` to disable that language:
 

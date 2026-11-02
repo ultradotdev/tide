@@ -258,6 +258,54 @@
       "paletteVisible": true
     },
     {
+      "canonical": "edit.deleteLine",
+      "category": "Edit",
+      "description": "Delete the lines under each cursor",
+      "id": "edit.deleteLine",
+      "label": "Delete Line",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.indentLine",
+      "category": "Edit",
+      "description": "Indent the lines under each cursor one level",
+      "id": "edit.indentLine",
+      "label": "Indent Line",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.joinLines",
+      "category": "Edit",
+      "description": "Join each line with the next, or a selection's lines into one",
+      "id": "edit.joinLines",
+      "label": "Join Lines",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.moveLinesDown",
+      "category": "Edit",
+      "description": "Move the lines under each cursor down one line",
+      "id": "edit.moveLinesDown",
+      "label": "Move Line Down",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.moveLinesUp",
+      "category": "Edit",
+      "description": "Move the lines under each cursor up one line",
+      "id": "edit.moveLinesUp",
+      "label": "Move Line Up",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.outdentLine",
+      "category": "Edit",
+      "description": "Remove one level of indentation from the lines under each cursor",
+      "id": "edit.outdentLine",
+      "label": "Outdent Line",
+      "paletteVisible": true
+    },
+    {
       "canonical": "edit.paste",
       "category": "Edit",
       "description": null,
@@ -295,6 +343,30 @@
       "description": null,
       "id": "edit.selectNextMatch",
       "label": "Add Selection to Next Match",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.transformToLowercase",
+      "category": "Edit",
+      "description": "Lower-case the selection, or the word at the cursor",
+      "id": "edit.transformToLowercase",
+      "label": "Transform to Lowercase",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.transformToTitleCase",
+      "category": "Edit",
+      "description": "Capitalize each word of the selection, or the word at the cursor",
+      "id": "edit.transformToTitleCase",
+      "label": "Transform to Title Case",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.transformToUppercase",
+      "category": "Edit",
+      "description": "Upper-case the selection, or the word at the cursor",
+      "id": "edit.transformToUppercase",
+      "label": "Transform to Uppercase",
       "paletteVisible": true
     },
     {
@@ -340,7 +412,7 @@
     {
       "canonical": "editor.duplicateLine",
       "category": "Editor",
-      "description": null,
+      "description": "Copy the lines under each cursor below them",
       "id": "editor.duplicateLine",
       "label": "Duplicate Line",
       "paletteVisible": true
@@ -348,7 +420,7 @@
     {
       "canonical": "editor.duplicateSelection",
       "category": "Editor",
-      "description": null,
+      "description": "Copy each selection after itself, or the line without a selection",
       "id": "editor.duplicateSelection",
       "label": "Duplicate Selection",
       "paletteVisible": true
@@ -370,11 +442,43 @@
       "paletteVisible": true
     },
     {
+      "canonical": "editor.foldLevel1",
+      "category": "Editor",
+      "description": "Fold every outermost region",
+      "id": "editor.foldLevel1",
+      "label": "Fold Level 1",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.foldLevel2",
+      "category": "Editor",
+      "description": "Fold every region nested two deep",
+      "id": "editor.foldLevel2",
+      "label": "Fold Level 2",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.foldLevel3",
+      "category": "Editor",
+      "description": "Fold every region nested three deep",
+      "id": "editor.foldLevel3",
+      "label": "Fold Level 3",
+      "paletteVisible": true
+    },
+    {
       "canonical": "editor.formatDocument",
       "category": "Editor",
       "description": null,
       "id": "editor.formatDocument",
       "label": "Format Document",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.formatSelection",
+      "category": "Editor",
+      "description": "Format the selection, or the cursor's line, with the language server",
+      "id": "editor.formatSelection",
+      "label": "Format Selection",
       "paletteVisible": true
     },
     {
@@ -450,6 +554,22 @@
       "paletteVisible": true
     },
     {
+      "canonical": "editor.sortLinesAscending",
+      "category": "Editor",
+      "description": "Sort the selected lines, or the whole file without a multi-line selection",
+      "id": "editor.sortLinesAscending",
+      "label": "Sort Lines Ascending",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.sortLinesDescending",
+      "category": "Editor",
+      "description": "Sort the selected lines in reverse, or the whole file without a multi-line selection",
+      "id": "editor.sortLinesDescending",
+      "label": "Sort Lines Descending",
+      "paletteVisible": true
+    },
+    {
       "canonical": "editor.switchTab",
       "category": "Workbench",
       "description": null,
@@ -466,11 +586,27 @@
       "paletteVisible": true
     },
     {
+      "canonical": "editor.toggleBlockComment",
+      "category": "Editor",
+      "description": "Wrap the selection or line in the language's block comment, or unwrap it",
+      "id": "editor.toggleBlockComment",
+      "label": "Toggle Block Comment",
+      "paletteVisible": true
+    },
+    {
       "canonical": "editor.toggleComment",
       "category": "Editor",
       "description": null,
       "id": "editor.toggleComment",
       "label": "Toggle Line Comment",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.trimTrailingWhitespace",
+      "category": "Editor",
+      "description": "Remove whitespace at the end of every line",
+      "id": "editor.trimTrailingWhitespace",
+      "label": "Trim Trailing Whitespace",
       "paletteVisible": true
     },
     {
@@ -2346,6 +2482,14 @@
       "paletteVisible": false
     },
     {
+      "canonical": "workbench.toggleMinimap",
+      "category": "View",
+      "description": "Show or hide the minimap beside each editor's scrollbar",
+      "id": "workbench.toggleMinimap",
+      "label": "Toggle Minimap",
+      "paletteVisible": true
+    },
+    {
       "canonical": "workbench.toggleSidebar",
       "category": "View",
       "description": null,
@@ -2367,6 +2511,14 @@
       "description": null,
       "id": "workbench.toggleWordWrap",
       "label": "Toggle Word Wrap",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "workbench.toggleZenMode",
+      "category": "View",
+      "description": "Hide the sidebars and the bottom terminal, or bring them back",
+      "id": "workbench.toggleZenMode",
+      "label": "Toggle Zen Mode",
       "paletteVisible": true
     }
   ],
@@ -2538,6 +2690,11 @@
     {
       "command": "editor.nextTab",
       "key": "meta+alt+right"
+    },
+    {
+      "command": "editor.toggleBlockComment",
+      "key": "alt+shift+a",
+      "when": "editorFocus"
     },
     {
       "command": "fileTree.moveDown",
@@ -2774,6 +2931,16 @@
     {
       "command": "pane.addPanel",
       "key": "ctrl+shift+a"
+    },
+    {
+      "command": "edit.moveLinesDown",
+      "key": "ctrl+shift+down",
+      "when": "editorFocus"
+    },
+    {
+      "command": "edit.moveLinesUp",
+      "key": "ctrl+shift+up",
+      "when": "editorFocus"
     },
     {
       "command": "workbench.toggleSidebar",
@@ -3214,6 +3381,11 @@
     {
       "command": "agents.openSession",
       "key": "shift+meta+j"
+    },
+    {
+      "command": "edit.deleteLine",
+      "key": "shift+meta+k",
+      "when": "editorFocus"
     },
     {
       "command": "workbench.commandPalette",

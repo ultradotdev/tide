@@ -22,6 +22,7 @@ mod files;
 mod git;
 mod help;
 mod input;
+mod lines;
 mod lsp;
 mod overlays;
 mod panes;

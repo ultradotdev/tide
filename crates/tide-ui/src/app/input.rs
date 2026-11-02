@@ -89,6 +89,7 @@ impl App {
             self.overlay = None;
         }
         let typing = edit_key
+            || key.code == KeyCode::BackTab
             || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Enter | KeyCode::Tab));
         let help = self
             .workbench
@@ -390,8 +391,16 @@ impl App {
                     editor.newline();
                     self.mark_session_dirty();
                 }
+                KeyCode::Tab if editor.selection_spans_lines() => {
+                    editor.indent_lines(false, tab_size);
+                    self.mark_session_dirty();
+                }
                 KeyCode::Tab => {
                     editor.insert_tab();
+                    self.mark_session_dirty();
+                }
+                KeyCode::BackTab => {
+                    editor.indent_lines(true, tab_size);
                     self.mark_session_dirty();
                 }
                 KeyCode::Backspace => {

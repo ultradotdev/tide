@@ -82,6 +82,8 @@ def main():
     parser.add_argument("--stderr-lines", type=int, default=0)
     parser.add_argument("--init-delay", type=float, default=0)
     parser.add_argument("--crash-after-init", action="store_true")
+    # Comma-separated optional features: rangeFormatting, declaration, typeDefinition, implementation.
+    parser.add_argument("--capabilities", default="")
     options = parser.parse_args()
     if options.start_log:
         with open(options.start_log, "a") as file:
@@ -162,6 +164,9 @@ def main():
             sync = sync_capability(options)
             if sync is not None:
                 capabilities["textDocumentSync"] = sync
+            for feature in filter(None, options.capabilities.split(",")):
+                provider = "documentRangeFormattingProvider" if feature == "rangeFormatting" else feature + "Provider"
+                capabilities[provider] = True
             send({"jsonrpc": "2.0", "id": message["id"], "result": {"capabilities": capabilities}})
         elif method == "initialized":
             if options.crash_after_init:
@@ -195,6 +200,17 @@ def main():
             format_options=message["params"]["options"]
             text=(" "*format_options["tabSize"] if format_options["insertSpaces"] else "\t")+"formatted"
             send({"jsonrpc":"2.0","id":message["id"],"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}},"newText":text}]})
+        elif method == "textDocument/rangeFormatting":
+            start=message["params"]["range"]["start"]
+            send({"jsonrpc":"2.0","id":message["id"],"result":[{"range":{"start":start,"end":start},"newText":"ranged "}]})
+        elif method in ("textDocument/declaration", "textDocument/typeDefinition", "textDocument/implementation"):
+            # Each request answers with two locations named after it, so callers can tell them apart.
+            line = {"textDocument/declaration": 1, "textDocument/typeDefinition": 2, "textDocument/implementation": 3}[method]
+            uri = message["params"]["textDocument"]["uri"]
+            send({"jsonrpc":"2.0","id":message["id"],"result":[
+                {"uri": uri, "range": {"start": {"line": line, "character": 0}, "end": {"line": line, "character": 1}}},
+                {"uri": uri, "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 1}}},
+            ]})
         elif method == "textDocument/didClose":
             opened.discard(message["params"]["textDocument"]["uri"])
         elif method == "textDocument/completion" and message["params"]["textDocument"]["uri"] not in opened:
