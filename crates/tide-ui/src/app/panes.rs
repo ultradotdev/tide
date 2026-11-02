@@ -527,10 +527,11 @@ impl App {
     }
 
     pub(super) fn focus_in_terminal(&self) -> bool {
-        if self.focus == Focus::Dock {
-            return !self.dock.tabs.is_empty();
+        match self.focus {
+            Focus::Dock => !self.dock.tabs.is_empty(),
+            Focus::Main => matches!(self.workbench.active_tab(), Some(Tab::Terminal(_))),
+            Focus::Sidebar | Focus::Agents | Focus::Status => false,
         }
-        matches!(self.workbench.active_tab(), Some(Tab::Terminal(_)))
     }
 }
 

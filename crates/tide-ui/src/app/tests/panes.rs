@@ -624,3 +624,20 @@ fn tab_overflow_scrolls_and_picker_reveals_any_selected_tab() {
             .all(|(target, _)| target.x >= rect.x && target.right() <= rect.right())
     );
 }
+
+#[test]
+fn a_terminal_tab_only_takes_shell_keys_while_its_region_has_focus() {
+    let (_home, mut app) = test_app();
+    app.open_terminal(true);
+    assert!(matches!(app.workbench.active_tab(), Some(Tab::Terminal(_))));
+    app.focus = Focus::Main;
+    assert!(app.focus_in_terminal());
+
+    app.focus = Focus::Sidebar;
+    assert!(!app.focus_in_terminal());
+    app.handle_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL));
+    assert!(
+        app.overlay.is_some(),
+        "Ctrl+K opens the palette from the sidebar"
+    );
+}
