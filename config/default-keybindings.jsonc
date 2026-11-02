@@ -120,7 +120,7 @@
   { "key": "o", "command": "gitPanel.openFile", "when": "gitPanelFocus" }, // Open file
   { "key": "r", "command": "gitPanel.refresh", "when": "gitPanelFocus" }, // Refresh status
   { "key": "c", "command": "gitPanel.commit", "when": "gitPanelFocus" }, // Commit
-  { "key": " ", "command": "gitPanel.toggleSection", "when": "gitPanelFocus" }, // Toggle section (space)
+  { "key": " ", "command": "gitPanel.toggleSection", "when": "gitPanelFocus" }, // Collapse or expand the selected group (space)
   { "key": "ArrowUp", "command": "gitPanel.moveUp", "when": "gitPanelFocus" }, // Move up
   { "key": "ArrowDown", "command": "gitPanel.moveDown", "when": "gitPanelFocus" }, // Move down
   { "key": "k", "command": "gitPanel.moveUp", "when": "gitPanelFocus" }, // Move up (vim)

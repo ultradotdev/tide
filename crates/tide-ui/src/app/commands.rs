@@ -610,12 +610,12 @@ impl App {
         }
     }
 
+    /// Collapses or expands the Source Control group (Staged, Changes, ...)
+    /// under the selection, not the whole sidebar section.
     pub(super) fn toggle_git_section(&mut self) {
-        self.focus_sidebar_section(1, false);
-        let index = self.accordion.focused;
-        if let Some(section) = self.accordion.sections.get_mut(index) {
-            section.expanded = !section.expanded;
-        }
+        self.focus_sidebar_section(1, true);
+        self.git.sync_panel();
+        self.git.toggle_panel_group();
     }
 
     pub(super) fn with_active_editor(&mut self, action: impl FnOnce(&mut EditorState)) {

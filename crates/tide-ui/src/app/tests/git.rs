@@ -441,3 +441,34 @@ async fn git_jobs_are_fifo_and_closed_preview_results_do_not_steal_focus() {
     assert!(matches!(app.workbench.active_tab(), Some(Tab::Editor(_))));
     app.shutdown().await;
 }
+
+#[test]
+fn space_in_source_control_collapses_the_selected_group_not_the_section() {
+    let (_home, mut app) = test_app();
+    let git = |args: &[&str]| {
+        let status = std::process::Command::new("git")
+            .arg("-C")
+            .arg(&app.workspace)
+            .args(args)
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?} failed");
+    };
+    git(&["init", "-q"]);
+    std::fs::write(app.workspace.join("new.txt"), "one\n").unwrap();
+    with_ui!(app, |ui| app.git.refresh(ui));
+    app.settle();
+    app.focus_sidebar_section(1, true);
+    app.git.sync_panel();
+    let rows = app.git.panel.rows.len();
+    assert!(rows > 1, "the Changes group should list new.txt");
+
+    app.handle_key(KeyEvent::new(KeyCode::Char(' '), KeyModifiers::NONE));
+
+    assert!(
+        app.accordion.sections[1].expanded,
+        "the section stayed open"
+    );
+    assert_eq!(app.git.panel.collapsed.len(), 1);
+    assert!(app.git.panel.rows.len() < rows);
+}
