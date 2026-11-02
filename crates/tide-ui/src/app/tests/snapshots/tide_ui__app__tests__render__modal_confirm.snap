@@ -2,7 +2,7 @@
 source: crates/tide-ui/src/app/tests/render.rs
 expression: "snapshot_modal(120, 40, |app|\n{\n    app.overlay =\n    Some(modal::confirm(ConfirmAction::CloseDirty, \"Unsaved Changes\",\n    \"Discard changes in this tab?\",));\n})"
 ---
- ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
 No files · . hidden · Enter expand/│Tide
                                    │
                                    │A terminal-native code editor.
@@ -21,7 +21,7 @@ No files · . hidden · Enter expand/│Tide
                                    │
                                    │
 Enter open · ←/→ folders · . hidden│
- ▼ Source Control                × │
+ ▼ Source Control                  │
  no repository                     │
                                    │
                                    │
@@ -39,6 +39,6 @@ Enter open · ←/→ folders · . hidden│
                                    │
                                    │
                                    │
- ▶ Outline                       × │
- ▶ Timeline                      × │                                                                                  ↑
+ ▶ Outline                         │
+ ▶ Timeline                        │                                                                                  ↑
  >_ │

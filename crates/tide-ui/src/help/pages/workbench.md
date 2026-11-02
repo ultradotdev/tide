@@ -4,7 +4,7 @@ Tide's workbench arranges two optional sidebars, one or more main panes, a botto
 
 ## Regions
 
-- The **workspace sidebar** holds the Explorer, Source Control, Outline and Timeline sections as an accordion. Close a section with its `×`; add it back with {{key:pane.addPanel}} or commands such as **{{label:sidebar.addGitPanel}}**.
+- The **workspace sidebar** holds the Explorer, Source Control, Outline and Timeline sections as an accordion. Click a section header to collapse or expand it. If a saved session is missing a section, add it back with {{key:pane.addPanel}} or commands such as **{{label:sidebar.addGitPanel}}**.
 - The **main region** is a tree of split panes. Each pane has its own tab strip and can hold files, diffs, terminals, SQL editors with results, and AI agent sessions.
 - The **Agents sidebar** lists the sessions of the AI CLI agents installed on this machine. Toggle it with {{key:agents.togglePanel}}.
 - The **bottom dock** holds terminal tabs and spans the main region between the sidebars. Toggle it with {{key:workbench.toggleTerminal}}.

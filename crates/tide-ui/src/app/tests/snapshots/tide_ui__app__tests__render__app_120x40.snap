@@ -2,7 +2,7 @@
 source: crates/tide-ui/src/app/tests/render.rs
 expression: "snapshot_app(120, 40)"
 ---
- ▼ Explorer  [2]               ▾ × │ ←  main.ts ×                                                                  ▾  ←
+ ▼ Explorer  [2]                 ▾ │ ←  main.ts ×                                                                  ▾  ←
 ▸  src                            │▎1   const answer = 42;                                                  ▒░
    README.md                      │ 2
                                    │
@@ -21,7 +21,7 @@ expression: "snapshot_app(120, 40)"
                                    │
                                    │
 Enter open · ←/→ folders · . hidden│
- ▼ Source Control                × │
+ ▼ Source Control                  │
  no repository                     │
                                    │
                                    │
@@ -39,6 +39,6 @@ Enter open · ←/→ folders · . hidden│
                                    │
                                    │
                                    │
- ▶ Outline  [1]                  × │
- ▶ Timeline                      × │                                                                                  ↑
+ ▶ Outline  [1]                    │
+ ▶ Timeline                        │                                                                                  ↑
  >_ │ main.ts │                                                       Ln 1, Col 1 │ TypeScript │ Spaces: 2 │ UTF-8 │ LF

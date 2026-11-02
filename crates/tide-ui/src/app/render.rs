@@ -282,16 +282,10 @@ impl App {
             out.hits
                 .push((section.header, HitTarget::AccordionHeader(section.index)));
             if section.index == 0 && section.header.width >= 22 {
-                let rect = Rect::new(section.header.right() - 5, section.header.y, 3, 1);
+                let rect = Rect::new(section.header.right() - 3, section.header.y, 3, 1);
                 frame.render_widget(Paragraph::new(" ▾ ").style(header_style), rect);
                 out.hits
                     .push((rect, HitTarget::Command(Command::WorkbenchSidebarMenu)));
-            }
-            if section.header.width >= 22 {
-                let rect = Rect::new(section.header.right() - 2, section.header.y, 2, 1);
-                frame.render_widget(Paragraph::new("× ").style(header_style), rect);
-                out.hits
-                    .push((rect, HitTarget::SectionClose(section.index)));
             }
             if section.content.height == 0 {
                 continue;

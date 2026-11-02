@@ -377,10 +377,6 @@ impl App {
                     PaneControl::SplitHorizontal => self.split(SplitDirection::Horizontal),
                 }
             }
-            HitTarget::SectionClose(index) => {
-                self.accordion.remove(index);
-                self.mark_session_dirty();
-            }
             HitTarget::Resize(target) => {
                 self.pointer.resize = Some((target, mouse.column, mouse.row))
             }

@@ -105,6 +105,30 @@ fn pane_controls_preserve_dirty_views_and_panel_state_round_trips() {
 }
 
 #[test]
+fn sidebar_section_headers_fold_and_never_remove_their_section() {
+    let (_home, mut app) = test_app();
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 40)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let count = app.accordion.sections.len();
+    let expanded = app.accordion.sections[1].expanded;
+    let header = app
+        .layout
+        .hits
+        .iter()
+        .find(|(_, hit)| *hit == HitTarget::AccordionHeader(1))
+        .unwrap()
+        .0;
+    app.handle_mouse(MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: header.right() - 1,
+        row: header.y,
+        modifiers: KeyModifiers::NONE,
+    });
+    assert_eq!(app.accordion.sections.len(), count);
+    assert_ne!(app.accordion.sections[1].expanded, expanded);
+}
+
+#[test]
 fn responsive_split_dock_geometry_drag_and_status_targets_remain_actionable() {
     let (_home, mut app) = test_app();
     app.new_file();
