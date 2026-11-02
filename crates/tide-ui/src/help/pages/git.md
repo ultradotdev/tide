@@ -54,4 +54,4 @@ Branch switching, checkout and **{{label:git.branches}}** open the same branch p
 
 ## Conflicts
 
-When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **{{label:git.conflicts}}** opens a conflicted file. Resolve and stage each one, then run **{{label:git.continueRebase}}** or **{{label:git.abortRebase}}**; finish a merge by committing or with **{{label:git.abortMerge}}**.
+When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **{{label:git.conflicts}}** opens a conflicted file. Resolve and stage each one, then run **{{label:git.continue}}**, or **{{label:git.abort}}** to return to where you started; both act on whichever operation is paused. Finish a merge by committing.

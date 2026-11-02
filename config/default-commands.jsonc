@@ -168,6 +168,8 @@
   "git.rebase": { "label": "Rebase Branch...", "category": "Git", "description": "Rebase the current branch onto another branch" },
   "git.continueRebase": { "label": "Continue Rebase", "category": "Git", "description": "Continue the paused rebase after resolving and staging conflicts" },
   "git.abortRebase": { "label": "Abort Rebase", "category": "Git", "description": "Abort the paused rebase and restore the branch" },
+  "git.continue": { "label": "Continue Rebase, Cherry-Pick or Revert", "category": "Git", "description": "Continue whichever operation is paused after resolving and staging conflicts" },
+  "git.abort": { "label": "Abort Merge, Rebase, Cherry-Pick or Revert", "category": "Git", "description": "Abort whichever operation is paused, after confirmation, and restore the branch" },
   "git.conflicts": { "label": "Open Conflicted File...", "category": "Git", "description": "Pick a file with merge conflicts to open" },
   "git.cherryPick": { "label": "Cherry-Pick Commit...", "category": "Git", "description": "Apply a commit from another branch to the current branch" },
   "git.revert": { "label": "Revert Commit...", "category": "Git", "description": "Add a commit that undoes a commit" },

@@ -676,7 +676,7 @@ impl ModalBase {
                         ["push", ..] => "Push [Y]",
                         ["reset", ..] => "Reset [Y]",
                         ["clean", ..] => "Delete [Y]",
-                        ["rebase", "--abort"] => "Abort [Y]",
+                        [_, "--abort"] => "Abort [Y]",
                         ["rebase", ..] => "Rebase [Y]",
                         ["commit", "--amend", ..] => "Amend [Y]",
                         _ => "Discard [Y]",

@@ -1289,18 +1289,23 @@ impl GitController {
         confirm(ui, args, "Amend Commit", &text);
     }
 
-    pub fn continue_rebase(&mut self, ui: &mut Ui<'_>) {
-        self.run_with(ui, |root, cancel| {
-            if let Some(message) = not_rebasing(root, cancel) {
-                return message;
-            }
-            let args = ["rebase", "--continue"];
+    /// Continues the paused operation, or only a rebase when `only_rebase`.
+    pub fn continue_operation(&mut self, only_rebase: bool, ui: &mut Ui<'_>) {
+        self.run_with(ui, move |root, cancel| {
+            let operation = match paused(root, only_rebase, cancel) {
+                Ok(Operation::Merge) => {
+                    return "Git: a merge is in progress; commit it to finish, or run Abort Merge, Rebase, Cherry-Pick or Revert".into();
+                }
+                Ok(operation) => operation,
+                Err(message) => return message,
+            };
+            let args = [operation.command(), "--continue"];
             match tide_services::git_process::git_cancellable(root, &args, None, cancel) {
                 Ok(output) if output.success => {
-                    if operation_in_progress(root, cancel) == Some(Operation::Rebase) {
-                        "Rebase continued".into()
+                    if operation_in_progress(root, cancel) == Some(operation) {
+                        format!("{} continued", operation.name())
                     } else {
-                        "Rebase complete".into()
+                        format!("{} complete", operation.name())
                     }
                 }
                 Ok(output) => stopped_message(root, &args, cancel)
@@ -1310,15 +1315,24 @@ impl GitController {
         });
     }
 
-    pub fn prepare_abort_rebase(&mut self, ui: &mut Ui<'_>) {
-        self.prepare(ui, |root, cancel| {
-            if let Some(message) = not_rebasing(root, cancel) {
-                return GitNext::Status(message);
-            }
+    /// Asks to abort the paused operation, or only a rebase when `only_rebase`.
+    pub fn prepare_abort(&mut self, only_rebase: bool, ui: &mut Ui<'_>) {
+        self.prepare(ui, move |root, cancel| {
+            let operation = match paused(root, only_rebase, cancel) {
+                Ok(operation) => operation,
+                Err(message) => return GitNext::Status(message),
+            };
+            let name = operation.name();
             GitNext::Confirm {
-                action: ConfirmAction::GitCommand(vec!["rebase".into(), "--abort".into()]),
-                title: "Abort Rebase".into(),
-                message: "Abort the rebase and return the branch to where it was before the rebase started?".into(),
+                action: ConfirmAction::GitCommand(vec![
+                    operation.command().into(),
+                    "--abort".into(),
+                ]),
+                title: format!("Abort {name}"),
+                message: format!(
+                    "Abort the {} and return the branch and working tree to where they were before it started?",
+                    name.to_lowercase()
+                ),
             }
         });
     }
@@ -2053,20 +2067,40 @@ pub(crate) fn operation_in_progress(root: &Path, cancel: &AtomicBool) -> Option<
         .map(|(_, (_, operation))| operation)
 }
 
-/// Why Continue or Abort Rebase cannot run, if no rebase is paused.
-fn not_rebasing(root: &Path, cancel: &AtomicBool) -> Option<String> {
-    match operation_in_progress(root, cancel) {
-        Some(Operation::Rebase) => None,
-        Some(Operation::CherryPick) => Some(
-            "Git: no rebase in progress; a cherry-pick is, so run git cherry-pick --continue or --abort in a terminal".into(),
-        ),
-        Some(Operation::Revert) => Some(
-            "Git: no rebase in progress; a revert is, so run git revert --continue or --abort in a terminal".into(),
-        ),
-        Some(Operation::Merge) => {
-            Some("Git: no rebase in progress; a merge is, so commit it or run Abort Merge".into())
+impl Operation {
+    fn command(self) -> &'static str {
+        match self {
+            Self::Rebase => "rebase",
+            Self::CherryPick => "cherry-pick",
+            Self::Revert => "revert",
+            Self::Merge => "merge",
         }
-        None => Some("Git: no rebase in progress".into()),
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Rebase => "Rebase",
+            Self::CherryPick => "Cherry-pick",
+            Self::Revert => "Revert",
+            Self::Merge => "Merge",
+        }
+    }
+}
+
+const CONTINUE: &str = "Continue Rebase, Cherry-Pick or Revert";
+const ABORT: &str = "Abort Merge, Rebase, Cherry-Pick or Revert";
+
+/// The paused operation Continue or Abort acts on, or why there is none.
+fn paused(root: &Path, only_rebase: bool, cancel: &AtomicBool) -> Result<Operation, String> {
+    match operation_in_progress(root, cancel) {
+        None if only_rebase => Err("Git: no rebase in progress".into()),
+        None => Err("Git: no merge, rebase, cherry-pick or revert is in progress".into()),
+        Some(Operation::Rebase) => Ok(Operation::Rebase),
+        Some(other) if only_rebase => Err(format!(
+            "Git: no rebase in progress; a {} is, so run {CONTINUE} or {ABORT}",
+            other.name().to_lowercase()
+        )),
+        Some(other) => Ok(other),
     }
 }
 
@@ -2095,19 +2129,13 @@ fn stopped_message(root: &Path, args: &[&str], cancel: &AtomicBool) -> Option<St
     if conflicts == 0 {
         return None;
     }
-    let (name, finish) = match operation {
-        Operation::Rebase => ("Rebase", "run Continue Rebase, or Abort Rebase"),
-        Operation::CherryPick => (
-            "Cherry-pick",
-            "run git cherry-pick --continue (or --abort) in a terminal",
-        ),
-        Operation::Revert => (
-            "Revert",
-            "run git revert --continue (or --abort) in a terminal",
-        ),
-        Operation::Merge => ("Merge", "commit, or run Abort Merge"),
+    let name = operation.name();
+    let finish = if operation == Operation::Merge {
+        format!("commit, or run {ABORT}")
+    } else {
+        format!("run {CONTINUE}, or {ABORT}")
     };
     Some(format!(
-        "{name} stopped with conflicts in {conflicts} file(s): resolve and stage them (Conflicts lists them), then {finish}"
+        "{name} stopped with conflicts in {conflicts} file(s): resolve and stage them (Open Conflicted File lists them), then {finish}"
     ))
 }

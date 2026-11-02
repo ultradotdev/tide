@@ -253,8 +253,12 @@ impl App {
             Command::GitPullRebase => with_ui!(self, |ui| self.git.run(&["pull", "--rebase"], ui)),
             Command::GitFetchAll => with_ui!(self, |ui| self.git.run(&["fetch", "--all"], ui)),
             Command::GitRebase => with_ui!(self, |ui| self.git.open_choices("rebase", ui)),
-            Command::GitContinueRebase => with_ui!(self, |ui| self.git.continue_rebase(ui)),
-            Command::GitAbortRebase => with_ui!(self, |ui| self.git.prepare_abort_rebase(ui)),
+            Command::GitContinueRebase => {
+                with_ui!(self, |ui| self.git.continue_operation(true, ui))
+            }
+            Command::GitAbortRebase => with_ui!(self, |ui| self.git.prepare_abort(true, ui)),
+            Command::GitContinue => with_ui!(self, |ui| self.git.continue_operation(false, ui)),
+            Command::GitAbort => with_ui!(self, |ui| self.git.prepare_abort(false, ui)),
             Command::GitConflicts => with_ui!(self, |ui| self.git.open_conflicts(ui)),
             Command::GitCreateTag => self.open_prompt(PromptAction::CreateTag, "Create Tag", ""),
             Command::GitCherryPick => with_ui!(self, |ui| self.git.open_choices("cherryPick", ui)),

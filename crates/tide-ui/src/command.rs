@@ -168,6 +168,8 @@ commands! {
     GitRebase = "git.rebase",
     GitContinueRebase = "git.continueRebase",
     GitAbortRebase = "git.abortRebase",
+    GitContinue = "git.continue",
+    GitAbort = "git.abort",
     GitConflicts = "git.conflicts",
     GitCreateTag = "git.createTag",
     GitCherryPick = "git.cherryPick",

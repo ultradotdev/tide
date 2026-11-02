@@ -44,6 +44,7 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Command | Keys | ID |
 | --- | --- | --- |
 | Abort Merge | — | `git.abortMerge` |
+| Abort Merge, Rebase, Cherry-Pick or Revert | — | `git.abort` |
 | Abort Rebase | — | `git.abortRebase` |
 | Apply Stash | — | `git.stashApply` |
 | Checkout... | — | `git.checkout` |
@@ -52,6 +53,7 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Commit | — | `git.commit` |
 | Commit (Amend)... | — | `git.commitAmend` |
 | Continue Rebase | — | `git.continueRebase` |
+| Continue Rebase, Cherry-Pick or Revert | — | `git.continue` |
 | Create Branch... | — | `git.createBranch` |
 | Create Tag... | — | `git.createTag` |
 | Delete Branch... | — | `git.deleteBranch` |
@@ -104,4 +106,4 @@ Branch switching, checkout and **List Branches** open the same branch picker. Re
 
 ## Conflicts
 
-When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **Open Conflicted File...** opens a conflicted file. Resolve and stage each one, then run **Continue Rebase** or **Abort Rebase**; finish a merge by committing or with **Abort Merge**.
+When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **Open Conflicted File...** opens a conflicted file. Resolve and stage each one, then run **Continue Rebase, Cherry-Pick or Revert**, or **Abort Merge, Rebase, Cherry-Pick or Revert** to return to where you started; both act on whichever operation is paused. Finish a merge by committing.

@@ -670,6 +670,14 @@
       "paletteVisible": false
     },
     {
+      "canonical": "git.abort",
+      "category": "Git",
+      "description": "Abort whichever operation is paused, after confirmation, and restore the branch",
+      "id": "git.abort",
+      "label": "Abort Merge, Rebase, Cherry-Pick or Revert",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.abortMerge",
       "category": "Git",
       "description": "Abort current merge",
@@ -747,6 +755,14 @@
       "description": "Pick a file with merge conflicts to open",
       "id": "git.conflicts",
       "label": "Open Conflicted File...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.continue",
+      "category": "Git",
+      "description": "Continue whichever operation is paused after resolving and staging conflicts",
+      "id": "git.continue",
+      "label": "Continue Rebase, Cherry-Pick or Revert",
       "paletteVisible": true
     },
     {

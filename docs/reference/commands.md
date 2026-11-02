@@ -108,6 +108,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Command | Keys | ID |
 | --- | --- | --- |
 | Abort Merge | — | `git.abortMerge` |
+| Abort Merge, Rebase, Cherry-Pick or Revert | — | `git.abort` |
 | Abort Rebase | — | `git.abortRebase` |
 | Apply Stash | — | `git.stashApply` |
 | Checkout... | — | `git.checkout` |
@@ -116,6 +117,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Commit | — | `git.commit` |
 | Commit (Amend)... | — | `git.commitAmend` |
 | Continue Rebase | — | `git.continueRebase` |
+| Continue Rebase, Cherry-Pick or Revert | — | `git.continue` |
 | Create Branch... | — | `git.createBranch` |
 | Create Tag... | — | `git.createTag` |
 | Delete Branch... | — | `git.deleteBranch` |

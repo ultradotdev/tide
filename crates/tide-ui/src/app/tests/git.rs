@@ -868,3 +868,90 @@ fn fetch_all_and_pull_rebase_bring_in_remote_commits_linearly() {
     );
     assert!(app.workspace.join("theirs.txt").exists());
 }
+
+#[test]
+fn continue_and_abort_finish_stopped_cherry_picks_and_reverts() {
+    let (_home, mut app) = repository();
+    refreshed(&mut app);
+    for command in [Command::GitContinue, Command::GitAbort] {
+        app.execute_command(command);
+        app.settle();
+        assert!(app.overlay.is_none());
+        assert!(app.status.contains("is in progress"), "{}", app.status);
+    }
+    let in_progress = |app: &App| {
+        crate::controllers::git::operation_in_progress(
+            &app.workspace,
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+    };
+    git_in(&app.workspace, &["checkout", "-q", "-b", "other"]);
+    commit_file(&app.workspace, "file.txt", "theirs\n", "their change");
+    git_in(&app.workspace, &["checkout", "-q", "main"]);
+    commit_file(&app.workspace, "file.txt", "ours\n", "our change");
+    let ours = git_in(&app.workspace, &["rev-parse", "HEAD"]);
+    let pick = |app: &mut App| {
+        app.execute_command(Command::GitCherryPick);
+        app.settle();
+        choose(app, "their change");
+        assert!(
+            app.status.contains("Cherry-pick stopped with conflicts")
+                && app
+                    .status
+                    .contains("Continue Rebase, Cherry-Pick or Revert"),
+            "{}",
+            app.status
+        );
+    };
+
+    // Abort a stopped cherry-pick.
+    pick(&mut app);
+    app.execute_command(Command::GitAbort);
+    app.settle();
+    assert!(confirm_overlay(&mut app).contains("cherry-pick"));
+    assert_eq!(in_progress(&app), None);
+    assert_eq!(git_in(&app.workspace, &["rev-parse", "HEAD"]), ours);
+
+    // Continue one after resolving it; Git never waits for an editor.
+    pick(&mut app);
+    std::fs::write(app.workspace.join("file.txt"), "both\n").unwrap();
+    git_in(&app.workspace, &["add", "file.txt"]);
+    app.execute_command(Command::GitContinue);
+    app.settle();
+    assert_eq!(app.status, "Cherry-pick complete");
+    assert_eq!(
+        git_in(&app.workspace, &["log", "--format=%s", "-n", "1"]),
+        "their change"
+    );
+
+    // Reverting "our change" now conflicts with the resolved content.
+    let revert = |app: &mut App| {
+        app.execute_command(Command::GitRevert);
+        app.settle();
+        choose(app, "our change");
+        assert!(
+            app.status.contains("Revert stopped with conflicts"),
+            "{}",
+            app.status
+        );
+    };
+    let head = git_in(&app.workspace, &["rev-parse", "HEAD"]);
+    revert(&mut app);
+    app.execute_command(Command::GitContinueRebase);
+    app.settle();
+    assert!(app.status.contains("a revert is"), "{}", app.status);
+    app.execute_command(Command::GitAbort);
+    app.settle();
+    assert!(confirm_overlay(&mut app).contains("revert"));
+    assert_eq!(in_progress(&app), None);
+    assert_eq!(git_in(&app.workspace, &["rev-parse", "HEAD"]), head);
+
+    revert(&mut app);
+    std::fs::write(app.workspace.join("file.txt"), "base\n").unwrap();
+    git_in(&app.workspace, &["add", "file.txt"]);
+    app.execute_command(Command::GitContinue);
+    app.settle();
+    assert_eq!(app.status, "Revert complete");
+    assert!(git_in(&app.workspace, &["log", "--format=%s", "-n", "1"]).starts_with("Revert"));
+    assert_eq!(in_progress(&app), None);
+}
