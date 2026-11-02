@@ -269,5 +269,6 @@
   "help.troubleshooting": { "label": "Help: Troubleshooting", "category": "Help" },
   "help.about": { "label": "Help: About Tide", "category": "Help", "description": "Version, license, installation and links" },
   "help.documentation": { "label": "Help: Online Documentation", "category": "Help", "description": "Open the documentation in your browser" },
-  "help.reportIssue": { "label": "Help: Report an Issue", "category": "Help", "description": "Open a new GitHub issue with version and platform filled in" }
+  "help.reportIssue": { "label": "Help: Report an Issue", "category": "Help", "description": "Open a new GitHub issue with version and platform filled in" },
+  "help.checkForUpdates": { "label": "Help: Check for Updates", "category": "Help", "description": "Ask GitHub for the latest release and show how to update this installation" }
 }

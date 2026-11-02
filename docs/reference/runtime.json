@@ -1166,6 +1166,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "help.checkForUpdates",
+      "category": "Help",
+      "description": "Ask GitHub for the latest release and show how to update this installation",
+      "id": "help.checkForUpdates",
+      "label": "Help: Check for Updates",
+      "paletteVisible": true
+    },
+    {
       "canonical": "help.commands",
       "category": "Help",
       "description": null,

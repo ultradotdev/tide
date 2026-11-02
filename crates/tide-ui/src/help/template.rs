@@ -240,6 +240,26 @@ fn release_commands(set: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// How to update a copy installed with `install`, as plain text for a dialog.
+#[must_use]
+pub fn update_instruction(install: &Install) -> String {
+    match install {
+        Install::Homebrew { formula } => format!("Update with Homebrew:\n\n  brew upgrade {formula}"),
+        Install::Managed { local: false } => format!(
+            "Update by running the install command again:\n\n  {}",
+            release_command("binaryInstall", 0)
+        ),
+        Install::Managed { local: true } => "Update by pulling the latest source and running ./install-from-source.sh again from the checkout.".into(),
+        Install::Source { .. } => format!(
+            "Update with git pull, then rebuild in the checkout:\n\n  {}",
+            release_command("sourceBuild", 0)
+        ),
+        Install::Unknown { .. } => {
+            "Update the way you installed Tide; Help: Getting Started lists the command for each method.".into()
+        }
+    }
+}
+
 fn release_command(set: &str, index: usize) -> String {
     release_commands(set)
         .get(index)

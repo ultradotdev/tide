@@ -468,7 +468,8 @@ impl App {
             | Command::HelpTroubleshooting
             | Command::HelpAbout
             | Command::HelpDocumentation
-            | Command::HelpReportIssue => self.run_help(command),
+            | Command::HelpReportIssue
+            | Command::HelpCheckForUpdates => self.run_help(command),
             Command::WorkbenchSaveSession | Command::SessionSave => match self.adopt_session() {
                 Ok(()) => self.set_status("Session saved"),
                 Err(error) => self.set_status(format!("Session save failed: {error:#}")),

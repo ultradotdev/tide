@@ -67,8 +67,42 @@ impl App {
         }
     }
 
+    /// Checks GitHub for a newer release. Only this command touches the network.
+    pub(super) fn check_for_updates(&mut self) {
+        let fetch = self.latest_release;
+        let sender = self.events_tx.clone();
+        self.set_status("Checking for updates…");
+        self.jobs.spawn(async move {
+            let result = fetch(crate::help::latest_release_url()).await;
+            let _ = sender.send(AppEvent::LatestRelease(result)).await;
+        });
+    }
+
+    pub(super) fn show_latest_release(&mut self, result: Result<String, String>) {
+        let current = env!("CARGO_PKG_VERSION");
+        match result {
+            Err(error) => self.set_status(format!("Update check failed: {error}")),
+            Ok(latest) if crate::help::is_newer(&latest, current) => {
+                let latest = latest.trim_start_matches('v');
+                let message = format!(
+                    "Tide {latest} is available; this is {current}.\n\n{}",
+                    crate::help::update_instruction(&self.install)
+                );
+                self.set_status(format!("Tide {latest} is available"));
+                if self.overlay.is_none() {
+                    self.overlay = Some(modal::info("Update Available", &message));
+                }
+            }
+            Ok(latest) => self.set_status(format!(
+                "Tide {current} is up to date (latest release: {})",
+                latest.trim_start_matches('v')
+            )),
+        }
+    }
+
     pub(super) fn run_help(&mut self, command: Command) {
         match command {
+            Command::HelpCheckForUpdates => self.check_for_updates(),
             Command::HelpDocumentation => self.open_url(&crate::help::documentation_url()),
             Command::HelpReportIssue => self.open_url(&crate::help::new_issue_url(&self.install)),
             _ => {

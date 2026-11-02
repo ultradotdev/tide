@@ -175,6 +175,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Help: AI CLI Agents | — | `help.agents` |
 | Help: About Tide | — | `help.about` |
 | Help: All Commands | — | `help.commands` |
+| Help: Check for Updates | — | `help.checkForUpdates` |
 | Help: Editor and Language Servers | — | `help.editor` |
 | Help: Getting Started | — | `help.gettingStarted` |
 | Help: Git | — | `help.git` |

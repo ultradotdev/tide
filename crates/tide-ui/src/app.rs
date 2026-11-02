@@ -283,6 +283,8 @@ pub enum AppEvent {
         query: String,
         items: Vec<ModalItem>,
     },
+    /// The latest release tag, or why it could not be read.
+    LatestRelease(Result<String, String>),
     /// Named sessions saved for this workspace, for listing or deleting.
     SavedSessions {
         generation: u64,
@@ -372,6 +374,8 @@ pub struct App {
     install: crate::help::Install,
     /// Opens a URL in the desktop browser; tests substitute a recorder.
     url_opener: fn(&str) -> Result<(), String>,
+    /// Reads the latest release tag on demand; tests substitute one without network access.
+    latest_release: crate::help::LatestRelease,
     pub themes: ThemeCatalog,
     pub commands: BTreeMap<String, CommandInfo>,
     pub palette: Palette,
@@ -542,6 +546,7 @@ impl App {
             user_keybindings,
             install: config.install,
             url_opener: crate::help::open_url,
+            latest_release: crate::help::latest_release,
             themes,
             commands,
             palette,
@@ -866,6 +871,7 @@ impl App {
                     self.set_status(format!("{count} match(es) for {query}"));
                 }
             }
+            AppEvent::LatestRelease(result) => self.show_latest_release(result),
             AppEvent::SavedSessions {
                 generation,
                 delete,

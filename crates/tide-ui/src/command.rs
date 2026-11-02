@@ -304,6 +304,7 @@ commands! {
     HelpAbout = "help.about",
     HelpDocumentation = "help.documentation",
     HelpReportIssue = "help.reportIssue",
+    HelpCheckForUpdates = "help.checkForUpdates",
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
