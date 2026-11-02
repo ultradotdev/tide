@@ -105,4 +105,6 @@ The Outline section follows the active document, and Timeline shows the file's o
 
 ## Explorer and scrolling
 
-Explorer folders expand and collapse with their arrow or with Left and Right. With the Explorer focused, `n` creates a file, `Shift+N` a folder, `r` or `F2` renames and `d` or `Delete` deletes after asking. File icons use Nerd Font glyphs; set `tui.iconStyle` to `ascii` if your font lacks them. Scrollbars are proportional to the document.
+Explorer folders expand and collapse with their arrow or with Left and Right. With the Explorer focused, `n` creates a file, `Shift+N` a folder, `r` or `F2` renames and `d` or `Delete` deletes after asking.
+
+From the palette, **Rename File...**, **Delete File...**, **New Folder...**, **Copy Path** (`Ctrl+Alt+C`), **Copy Relative Path** and **Reveal in File Manager** (`Alt+Shift+R`) act on the active file, or on the Explorer selection while the Explorer has focus. Open tabs follow a rename. Deleting is permanent, since Tide does not use the trash, and closes the file's tabs; the confirmation says when unsaved changes would be lost. Rename and delete only work inside the workspace. File icons use Nerd Font glyphs; set `tui.iconStyle` to `ascii` if your font lacks them. Scrollbars are proportional to the document.

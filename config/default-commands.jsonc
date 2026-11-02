@@ -20,6 +20,13 @@
   "file.new": { "label": "New File", "category": "File", "description": "Create a new file" },
   "file.close": { "label": "Close Tab", "category": "File", "description": "Close the active tab" },
   "file.closeAll": { "label": "Close All", "category": "File", "description": "Close all open files" },
+  "file.closeOthers": { "label": "Close Other Tabs", "category": "File", "description": "Close every tab in the pane except the active one, asking about unsaved changes" },
+  "file.rename": { "label": "Rename File...", "category": "File", "description": "Rename the active file, or the Explorer selection while the Explorer has focus; open tabs follow" },
+  "file.delete": { "label": "Delete File...", "category": "File", "description": "Permanently delete the active file, or the Explorer selection while the Explorer has focus, after confirmation" },
+  "file.newFolder": { "label": "New Folder...", "category": "File", "description": "Create a folder beside the active file, or in the Explorer selection's folder" },
+  "file.copyPath": { "label": "Copy Path", "category": "File", "description": "Copy the active file's absolute path, or the Explorer selection's" },
+  "file.copyRelativePath": { "label": "Copy Relative Path", "category": "File", "description": "Copy the active file's path relative to the workspace, or the Explorer selection's" },
+  "file.revealInFinder": { "label": "Reveal in File Manager", "category": "File", "description": "Show the active file, or the Explorer selection, in Finder on macOS or the file manager elsewhere" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Edit Commands

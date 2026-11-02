@@ -65,6 +65,8 @@ pub enum ConfirmAction {
         index: usize,
     },
     CloseAllDirty,
+    /// Closes every tab in the pane except the one [`crate::app`] keeps.
+    CloseOtherTabs(usize),
     ClosePane(usize),
     SaveAs(std::path::PathBuf),
     RenamePath(std::path::PathBuf, std::path::PathBuf),
@@ -103,6 +105,7 @@ impl ConfirmAction {
             Self::CloseDirty
                 | Self::CloseTab { .. }
                 | Self::CloseAllDirty
+                | Self::CloseOtherTabs(_)
                 | Self::ClosePane(_)
                 | Self::SwitchSession(_)
                 | Self::QuitDirty

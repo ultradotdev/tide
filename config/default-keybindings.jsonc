@@ -10,6 +10,12 @@
   { "key": "meta+n", "command": "file.new" }, // New file (macOS)
   { "key": "ctrl+w", "command": "file.close" }, // Close current tab
   { "key": "meta+w", "command": "file.close" }, // Close current tab (macOS)
+  { "key": "ctrl+alt+c", "command": "file.copyPath" }, // Copy the file's path
+  { "key": "alt+meta+c", "command": "file.copyPath" }, // Copy the file's path (macOS)
+  { "key": "ctrl+alt+shift+c", "command": "file.copyRelativePath" }, // Copy the file's workspace-relative path
+  { "key": "alt+shift+meta+c", "command": "file.copyRelativePath" }, // Copy the file's workspace-relative path (macOS)
+  { "key": "alt+shift+r", "command": "file.revealInFinder" }, // Reveal the file in the file manager
+  { "key": "alt+meta+r", "command": "file.revealInFinder" }, // Reveal the file in Finder (macOS)
 
   // Tab cycling
   { "key": "ctrl+tab", "command": "editor.nextTab" }, // Next tab in pane

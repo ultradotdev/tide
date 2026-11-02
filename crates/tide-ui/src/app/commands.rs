@@ -40,6 +40,17 @@ impl App {
             Command::FileNew => self.new_file(),
             Command::FileClose => self.close_active(),
             Command::FileCloseAll => self.close_all(),
+            Command::FileCloseOthers => self.close_others(),
+            Command::FileRename => self.prompt_rename_file(),
+            Command::FileDelete => {
+                if let Some(path) = self.file_target("delete it") {
+                    self.confirm_delete(&path);
+                }
+            }
+            Command::FileNewFolder => self.prompt_new_folder(),
+            Command::FileCopyPath => self.copy_file_path(false),
+            Command::FileCopyRelativePath => self.copy_file_path(true),
+            Command::FileRevealInFinder => self.reveal_file(),
             Command::EditUndo => {
                 if let Some(editor) = self.workbench.active_editor_mut() {
                     editor.undo();
@@ -790,28 +801,15 @@ impl App {
             return;
         };
         let path = entry.path.clone();
-        self.overlay = Some(modal::confirm(
-            ConfirmAction::DeletePath(path.clone()),
-            "Delete",
-            &format!("Delete {}? This cannot be undone.", path.display()),
-        ));
+        self.confirm_delete(&path);
     }
 
     /// The workspace-relative folder of the Explorer selection, ending in a separator,
     /// for prompts that create a path there.
     pub(super) fn explorer_folder(&self) -> String {
-        let folder = self.file_tree.selected().and_then(|entry| {
-            if entry.is_dir {
-                Some(entry.path.as_path())
-            } else {
-                entry.path.parent()
-            }
-        });
-        folder
-            .and_then(|folder| folder.strip_prefix(&self.workspace).ok())
-            .filter(|relative| !relative.as_os_str().is_empty())
-            .map(|relative| format!("{}{}", relative.display(), std::path::MAIN_SEPARATOR))
-            .unwrap_or_default()
+        self.file_tree
+            .selected()
+            .map_or_else(String::new, |entry| self.relative_folder(&entry.path))
     }
 
     /// Collapses or expands the Source Control group (Staged, Changes, ...)

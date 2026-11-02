@@ -289,9 +289,25 @@ pub fn open_url(url: &str) -> Result<(), String> {
     } else {
         "xdg-open"
     };
+    spawn_desktop(program, &[std::ffi::OsStr::new(url)])
+}
+
+/// Shows `path` in the desktop file manager without waiting for it: selected in
+/// Finder on macOS, or its folder opened elsewhere.
+pub fn reveal_path(path: &std::path::Path) -> Result<(), String> {
+    if cfg!(target_os = "macos") {
+        spawn_desktop("open", &[std::ffi::OsStr::new("-R"), path.as_os_str()])
+    } else {
+        let folder = path.parent().unwrap_or(path);
+        spawn_desktop("xdg-open", &[folder.as_os_str()])
+    }
+}
+
+/// Runs a desktop helper detached from Tide's terminal, without Tide's secrets.
+fn spawn_desktop(program: &str, args: &[&std::ffi::OsStr]) -> Result<(), String> {
     let mut command = std::process::Command::new(program);
     tide_core::process::scrub_tide_secrets(&mut command)
-        .arg(url)
+        .args(args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());

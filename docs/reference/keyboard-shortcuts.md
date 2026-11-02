@@ -23,6 +23,9 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+O`, `Cmd+O` | Open File... | `file.open` |
 | `Ctrl+N`, `Cmd+N` | New File | `file.new` |
 | `Ctrl+W`, `Cmd+W` | Close Tab | `file.close` |
+| `Ctrl+Alt+C`, `Alt+Cmd+C` | Copy Path | `file.copyPath` |
+| `Ctrl+Alt+Shift+C`, `Alt+Shift+Cmd+C` | Copy Relative Path | `file.copyRelativePath` |
+| `Alt+Shift+R`, `Alt+Cmd+R` | Reveal in File Manager | `file.revealInFinder` |
 
 ### View
 

@@ -52,6 +52,8 @@ Region traversal skips hidden regions. When it enters the workspace sidebar, foc
 | Move the tab to the next or previous pane | “Move Active Tab to Next Main Pane” from the command palette (`Ctrl+K`), “Move Active Tab to Previous Main Pane” from the command palette (`Ctrl+K`) |
 | Move the tab to a chosen pane or the dock | “Move Active Tab to Main Pane...” from the command palette (`Ctrl+K`) |
 
+**Close Other Tabs** closes every tab in the pane except the active one, asking first about unsaved changes.
+
 Add Tab offers a new file, Quick Open, a terminal, a SQL editor or an AI agent in the focused pane, and can add any sidebar section back. Tabs keep their state when they move. Closing the last pane is refused, and closing a pane with unsaved changes asks first. An empty pane stays until you close it.
 
 Each tab has a `×` close button. When the tabs do not fit, `‹` and `›` scroll the strip and the mouse wheel scrolls it too; `▾` lists every tab.

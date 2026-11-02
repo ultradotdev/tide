@@ -385,6 +385,8 @@ pub struct App {
     url_opener: fn(&str) -> Result<(), String>,
     /// Reads the latest release tag on demand; tests substitute one without network access.
     latest_release: crate::help::LatestRelease,
+    /// Shows a path in the desktop file manager; tests substitute a recorder.
+    path_revealer: fn(&Path) -> Result<(), String>,
     pub themes: ThemeCatalog,
     pub commands: BTreeMap<String, CommandInfo>,
     pub palette: Palette,
@@ -409,6 +411,8 @@ pub struct App {
     status_action: usize,
     pending_move: Option<(PaneId, TabIdentity)>,
     pending_close: Option<(PaneId, TabIdentity)>,
+    /// The tab Close Others keeps while its confirmation is open.
+    pending_keep: Option<(PaneId, TabIdentity)>,
     save_before: Option<SaveBeforeAction>,
     save_as_form: Option<Box<dyn Modal>>,
     git: GitController,
@@ -528,7 +532,12 @@ impl App {
             }
         }
 
-        let commands = crate::catalog::commands();
+        let mut commands = crate::catalog::commands();
+        if cfg!(target_os = "macos")
+            && let Some(reveal) = commands.get_mut(Command::FileRevealInFinder.as_str())
+        {
+            "Reveal in Finder".clone_into(&mut reveal.label);
+        }
         let palette = Palette::from_theme(themes.selected());
         let syntax = SyntaxHighlighter::new(themes.selected());
         let file_tree = FileTreeState::new(&config.workspace);
@@ -557,6 +566,7 @@ impl App {
             install: config.install,
             url_opener: crate::help::open_url,
             latest_release: crate::help::latest_release,
+            path_revealer: crate::help::reveal_path,
             themes,
             commands,
             palette,
@@ -581,6 +591,7 @@ impl App {
             status_action: 0,
             pending_move: None,
             pending_close: None,
+            pending_keep: None,
             save_before: None,
             save_as_form: None,
             git,

@@ -134,10 +134,17 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Command | Keys | ID |
 | --- | --- | --- |
 | Close All | — | `file.closeAll` |
+| Close Other Tabs | — | `file.closeOthers` |
 | Close Tab | `Ctrl+W` | `file.close` |
+| Copy Path | `Ctrl+Alt+C` | `file.copyPath` |
+| Copy Relative Path | `Ctrl+Alt+Shift+C` | `file.copyRelativePath` |
+| Delete File... | — | `file.delete` |
 | New File | `Ctrl+N` | `file.new` |
+| New Folder... | — | `file.newFolder` |
 | Open File... | `Ctrl+O` | `file.open` |
 | Overwrite File on Disk | — | `file.overwrite` |
+| Rename File... | — | `file.rename` |
+| Reveal in File Manager | `Alt+Shift+R` | `file.revealInFinder` |
 | Revert File | — | `file.reload` |
 | Save | `Ctrl+S` | `file.save` |
 | Save All | — | `file.saveAll` |
