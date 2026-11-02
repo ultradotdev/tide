@@ -383,8 +383,8 @@ fn lossy_git_paths_are_never_selected_for_path_actions() {
     let (_home, mut app) = test_app();
     app.git.state = git.clone();
     for action in [
-        Command::GitStage,
-        Command::GitUnstage,
+        Command::GitPanelStage,
+        Command::GitPanelUnstage,
         Command::GitPanelOpenFile,
         Command::GitPanelDiscard,
         Command::GitLogFile,
@@ -970,7 +970,7 @@ fn stage_and_unstage_act_on_the_active_file() {
     git_in(&root, &["commit", "-q", "-m", "initial"]);
     std::fs::write(root.join("a.txt"), "two\n").unwrap();
     std::fs::write(root.join("b.txt"), "two\n").unwrap();
-    app.open_file(&root.join("a.txt"));
+    app.open_file(root.join("a.txt"));
     with_ui!(app, |ui| app.git.refresh(ui));
     app.settle();
 

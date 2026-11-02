@@ -211,7 +211,7 @@ impl App {
                         .any(|t| matches!(t,Tab::Sql(sql) if !sql.row_edits.is_empty()))
                 }) {
                     "Quit and discard unsaved database row edits? Query buffers remain in session recovery."
-                } else if self.session_ephemeral {
+                } else if self.session_ephemeral && self.restart.is_none() {
                     "Save changes before quitting? Started with --no-session, so Discard keeps no recovery copy."
                 } else {
                     "Save changes before quitting? Discard keeps a recovery copy."
@@ -223,6 +223,10 @@ impl App {
     }
 
     pub(super) fn finish_quit(&mut self) {
+        // A restart reopens the workspace from this snapshot, even after --no-session.
+        if self.restart.is_some() {
+            self.session_ephemeral = false;
+        }
         match self.save_recovery() {
             Ok(_) => {
                 self.workbench.kill_terminals();
