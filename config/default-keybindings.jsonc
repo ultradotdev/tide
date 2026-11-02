@@ -49,6 +49,8 @@
   { "key": "meta+h", "command": "search.replace" }, // Find and replace (macOS)
   { "key": "ctrl+shift+f", "command": "search.findInFiles" }, // Find in all files
   { "key": "shift+meta+f", "command": "search.findInFiles" }, // Find in all files (macOS)
+  { "key": "ctrl+shift+h", "command": "search.replaceInFiles" }, // Replace in all files
+  { "key": "shift+meta+h", "command": "search.replaceInFiles" }, // Replace in all files (macOS)
   { "key": "f3", "command": "search.findNext" }, // Find next match
   { "key": "shift+f3", "command": "search.findPrevious" }, // Find previous match
 

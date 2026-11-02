@@ -1598,6 +1598,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "search.replaceInFiles",
+      "category": "Search",
+      "description": "Preview and confirm a replacement across workspace files; open files change in their editors so Undo reverts them",
+      "id": "search.replaceInFiles",
+      "label": "Replace in Files",
+      "paletteVisible": true
+    },
+    {
       "canonical": "secrets.manage",
       "category": "Secrets",
       "description": null,
@@ -2742,6 +2750,10 @@
       "key": "ctrl+shift+g"
     },
     {
+      "command": "search.replaceInFiles",
+      "key": "ctrl+shift+h"
+    },
+    {
       "command": "terminal.scrollToTop",
       "key": "ctrl+shift+home",
       "when": "terminalFocus"
@@ -3138,6 +3150,10 @@
     {
       "command": "search.findInFiles",
       "key": "shift+meta+f"
+    },
+    {
+      "command": "search.replaceInFiles",
+      "key": "shift+meta+h"
     },
     {
       "command": "aiCli.toggle",

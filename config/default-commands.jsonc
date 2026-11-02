@@ -39,6 +39,7 @@
   "search.find": { "label": "Find", "category": "Search" },
   "search.replace": { "label": "Find and Replace", "category": "Search" },
   "search.findInFiles": { "label": "Find in Files", "category": "Search" },
+  "search.replaceInFiles": { "label": "Replace in Files", "category": "Search", "description": "Preview and confirm a replacement across workspace files; open files change in their editors so Undo reverts them" },
   "search.findNext": { "label": "Find Next", "category": "Search" },
   "search.findPrevious": { "label": "Find Previous", "category": "Search" },
 

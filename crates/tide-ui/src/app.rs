@@ -83,6 +83,7 @@ mod overlays;
 mod panes;
 mod preferences;
 mod render;
+mod replace;
 mod session;
 mod terminals;
 
@@ -282,6 +283,16 @@ pub enum AppEvent {
         query: String,
         items: Vec<ModalItem>,
     },
+    /// The preview of a Replace in Files.
+    ReplacePlanned {
+        generation: u64,
+        result: Result<crate::workspace_replace::Plan, String>,
+    },
+    /// Replace in Files finished; `buffers` open files changed in their editors.
+    ReplaceWritten {
+        written: crate::workspace_replace::Written,
+        buffers: usize,
+    },
     Git(GitEvent),
     Lsp(LspEvent),
     Db(DbEvent),
@@ -406,6 +417,10 @@ pub struct App {
     quick_open_generation: u64,
     search_generation: u64,
     search_cancel: Arc<std::sync::atomic::AtomicBool>,
+    replace_generation: u64,
+    replace_cancel: Arc<std::sync::atomic::AtomicBool>,
+    /// The previewed Replace in Files awaiting confirmation, by generation.
+    pending_replace: Option<(u64, crate::workspace_replace::Plan)>,
     instance_id: String,
     syntax: SyntaxHighlighter,
     keymap: HashMap<String, Command>,
@@ -568,6 +583,9 @@ impl App {
             quick_open_generation: 0,
             search_generation: 0,
             search_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            replace_generation: 0,
+            replace_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            pending_replace: None,
             instance_id,
             syntax,
             keymap: HashMap::new(),
@@ -840,6 +858,12 @@ impl App {
                     self.set_status(format!("{count} match(es) for {query}"));
                 }
             }
+            AppEvent::ReplacePlanned { generation, result } => {
+                self.show_replace_plan(generation, result);
+            }
+            AppEvent::ReplaceWritten { written, buffers } => {
+                self.report_replace_in_files(&written, buffers);
+            }
             AppEvent::Git(event) => {
                 with_ui!(self, |ui| self.git.handle_event(
                     event,
@@ -859,6 +883,8 @@ impl App {
 
     pub async fn shutdown(&mut self) {
         self.search_cancel
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.replace_cancel
             .store(true, std::sync::atomic::Ordering::Release);
         self.lsp.stop_requests().await;
         self.git.shutdown().await;

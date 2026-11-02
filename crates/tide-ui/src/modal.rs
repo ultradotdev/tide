@@ -42,6 +42,9 @@ pub enum PromptAction {
     EditSetting(String),
     EditKeybinding(String),
     RenameAgent(String, String),
+    ReplaceInFilesFind,
+    /// The search term to replace.
+    ReplaceInFilesWith(String),
     CreateTag,
     /// The new tag's name.
     TagMessage(String),
@@ -87,6 +90,8 @@ pub enum ConfirmAction {
     /// The terminal's unique serial.
     KillTerminal(u64),
     CloseAllTerminals,
+    /// The Replace in Files preview's generation.
+    ReplaceInFiles(u64),
 }
 
 impl ConfirmAction {
@@ -672,6 +677,7 @@ impl ModalBase {
                     }
                 }
                 ModalKind::Confirm(ConfirmAction::CloseAllTerminals) => "Close [Y]",
+                ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => "Replace [Y]",
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
                 ModalKind::Settings | ModalKind::Keybindings => "Edit",

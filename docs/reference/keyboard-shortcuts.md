@@ -82,6 +82,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+F`, `Cmd+F` | Find | `search.find` |
 | `Ctrl+H`, `Cmd+H` | Find and Replace | `search.replace` |
 | `Ctrl+Shift+F`, `Shift+Cmd+F`, `Ctrl+Alt+F` | Find in Files | `search.findInFiles` |
+| `Ctrl+Shift+H`, `Shift+Cmd+H` | Replace in Files | `search.replaceInFiles` |
 | `F3` | Find Next | `search.findNext` |
 | `Shift+F3` | Find Previous | `search.findPrevious` |
 

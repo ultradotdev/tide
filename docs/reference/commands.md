@@ -210,6 +210,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Find Previous | `Shift+F3` | `search.findPrevious` |
 | Find and Replace | `Ctrl+H` | `search.replace` |
 | Find in Files | `Ctrl+Shift+F`, `Ctrl+Alt+F` | `search.findInFiles` |
+| Replace in Files | `Ctrl+Shift+H` | `search.replaceInFiles` |
 
 ### Secrets
 

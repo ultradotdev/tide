@@ -118,6 +118,7 @@ commands! {
     SearchFindNext = "search.findNext",
     SearchReplace = "search.replace",
     SearchFindInFiles = "search.findInFiles",
+    SearchReplaceInFiles = "search.replaceInFiles",
     WorkbenchSelectTheme = "workbench.selectTheme",
     WorkbenchOpenSettings = "workbench.openSettings",
     WorkbenchOpenKeybindings = "workbench.openKeybindings",

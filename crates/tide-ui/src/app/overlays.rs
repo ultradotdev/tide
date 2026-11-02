@@ -172,6 +172,7 @@ impl App {
             ModalKind::Confirm(ConfirmAction::QuitDirty) => self.restart = None,
             ModalKind::MoveTab => self.pending_move = None,
             ModalKind::Confirm(ConfirmAction::CloseTab { .. }) => self.pending_close = None,
+            ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => self.pending_replace = None,
             _ => {}
         }
     }
@@ -324,6 +325,15 @@ impl App {
                         Err(error) => self.set_status(format!("Search: {error}")),
                     }
                 }
+            }
+            Submitted::Prompt(PromptAction::ReplaceInFilesFind, query) => {
+                self.prompt_replacement_in_files(query);
+            }
+            Submitted::Prompt(PromptAction::ReplaceInFilesWith(query), replacement) => {
+                self.preview_replace_in_files(query, replacement);
+            }
+            Submitted::Confirm(ConfirmAction::ReplaceInFiles(generation)) => {
+                self.apply_replace_in_files(generation);
             }
             Submitted::Prompt(PromptAction::FindInFiles, input) => {
                 let query = input;

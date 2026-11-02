@@ -27,6 +27,7 @@ mod overlays;
 mod panes;
 mod preferences;
 mod render;
+mod replace;
 mod session;
 mod terminals;
 

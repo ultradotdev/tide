@@ -35,6 +35,7 @@ pub mod terminal_tab;
 mod test_support;
 mod watch;
 pub mod workbench;
+pub mod workspace_replace;
 pub mod workspace_search;
 
 pub use accordion::{AccordionAction, AccordionState, SectionId};

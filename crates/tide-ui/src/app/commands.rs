@@ -174,6 +174,7 @@ impl App {
             Command::SearchFindNext => self.find_next(),
             Command::SearchReplace => self.open_replace(),
             Command::SearchFindInFiles => self.open_find_in_files(),
+            Command::SearchReplaceInFiles => self.open_replace_in_files(),
             Command::WorkbenchSelectTheme => self.open_theme_picker(),
             Command::WorkbenchOpenSettings => self.open_settings(),
             Command::WorkbenchOpenKeybindings => self.open_keybindings(),
