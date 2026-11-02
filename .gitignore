@@ -19,8 +19,8 @@
 .eva/
 .opencode/
 .mcp.json
-AGENTS.md
-CLAUDE*.md
+/AGENTS.md
+/CLAUDE*.md
 .github/agents/
 .github/hooks/
 .github/instructions/
