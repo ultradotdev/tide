@@ -4,6 +4,7 @@
   "editor.insertSpaces": true, // Use spaces instead of tabs
   "editor.autoIndent": "full", // Auto-indent mode: "none", "keep", or "full"
   "editor.wordWrap": "on", // Word wrap: "off", "on", "wordWrapColumn", "bounded"
+  "editor.wordWrapColumn": 80, // Wrap column for "wordWrapColumn" and "bounded" word wrap (10-1000)
   "editor.lineNumbers": "on", // Line numbers: "on", "off", "relative"
   "editor.diagnostics.curlyUnderline": true, // Use squiggly underlines for errors (requires modern terminal)
   "editor.undoHistoryLimit": 1000, // Maximum undo actions per document
@@ -21,6 +22,7 @@
 
   // Workbench
   "workbench.colorTheme": "ultra-dusk", // Color theme name
+  "workbench.startupEditor": "welcomeOnFirstRun", // Opening Welcome: "welcomeOnFirstRun" (the first start without a file or session), "welcome" (every such start) or "none"
 
   // TUI Sidebar
   "tui.sidebar.width": 36, // Sidebar width in characters
@@ -31,6 +33,7 @@
   "tui.mainRegion.minimumWidth": 56, // Minimum main-region width retained before the sidebar responsively collapses (24-200 columns)
   "tui.terminal.height": 10, // Bottom terminal dock height in rows
   "tui.terminal.scrollback": 1000, // Terminal scrollback buffer size in lines
+  "terminal.shell": "", // Shell program for new terminals; empty uses $SHELL, then /bin/sh
 
   // TUI File Tree
   "tui.fileTree.showGitStatus": true, // Show git status colors on files in file tree
@@ -63,6 +66,7 @@
   // AI
   "ai.cli.defaultProvider": "claude-code", // Default registered external AI CLI provider
   "ai.autoStartCli": true, // Start the external AI CLI automatically when its pane receives focus
+  "ai.cli.workspaceAliases": [], // Earlier absolute workspace paths whose agent sessions belong to this workspace
 
   // Session
   "session.restoreOnStartup": true, // Restore previous session on startup

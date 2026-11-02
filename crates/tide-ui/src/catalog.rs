@@ -4,11 +4,7 @@ use std::collections::BTreeMap;
 use tide_config::{CommandInfo, Keybinding, Settings};
 
 pub fn settings() -> Settings {
-    let mut settings = tide_config::builtin::settings();
-    settings.set("terminal.shell", serde_json::json!(""));
-    settings.set("ai.cli.workspaceAliases", serde_json::json!([]));
-    settings.set("editor.wordWrapColumn", serde_json::json!(80));
-    settings
+    tide_config::builtin::settings()
 }
 
 pub fn commands() -> BTreeMap<String, CommandInfo> {

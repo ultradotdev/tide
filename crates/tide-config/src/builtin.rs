@@ -65,6 +65,18 @@ pub fn settings() -> Settings {
     crate::parse_jsonc(SETTINGS_JSONC).expect("built-in settings must parse")
 }
 
+/// Each built-in setting's description: the trailing comment on its line in the JSONC authority.
+pub fn setting_descriptions() -> BTreeMap<String, String> {
+    SETTINGS_JSONC
+        .lines()
+        .filter_map(|line| {
+            let key = line.trim_start().strip_prefix('"')?.split_once("\":")?.0;
+            let (_, comment) = line.split_once(" // ")?;
+            Some((key.to_owned(), comment.trim().to_owned()))
+        })
+        .collect()
+}
+
 /// Built-in keybindings, parsed from the checked-in JSONC authority.
 pub fn keybindings() -> Vec<Keybinding> {
     crate::parse_jsonc(KEYBINDINGS_JSONC).expect("built-in keybindings must parse")
@@ -108,9 +120,21 @@ mod tests {
 
     #[test]
     fn embedded_catalogs_have_their_expected_sizes() {
-        assert_eq!(settings().len(), 48);
+        assert_eq!(settings().len(), 52);
         assert_eq!(keybindings().len(), 189);
         assert_eq!(commands().len(), 160);
         assert_eq!(themes().len(), 13);
+    }
+
+    #[test]
+    fn every_built_in_setting_has_a_description() {
+        let descriptions = setting_descriptions();
+        for (key, _) in settings().iter() {
+            assert!(
+                descriptions.get(key).is_some_and(|text| !text.is_empty()),
+                "{key} has no description"
+            );
+        }
+        assert_eq!(descriptions["editor.tabSize"], "Number of spaces per tab");
     }
 }
