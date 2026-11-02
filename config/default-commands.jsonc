@@ -3,7 +3,7 @@
   // Command Registry
   //
   // Labels, categories and descriptions for the command palette and the generated
-  // command reference. Entries without a workbench route stay out of the palette.
+  // command reference. Every entry must route to a workbench command.
   //
   // Format: { "command.id": { "label": "...", "category": "...", "description": "..." } }
   // ═══════════════════════════════════════════════════════════════════════════
@@ -17,17 +17,9 @@
   "file.reload": { "label": "Revert File", "category": "File", "description": "Reload the active file from disk" },
   "file.overwrite": { "label": "Overwrite File on Disk", "category": "File", "description": "Write the buffer over an externally changed file after confirmation" },
   "file.open": { "label": "Open File...", "category": "File", "description": "Open a file" },
-  "file.openFolder": { "label": "Open Folder...", "category": "File", "description": "Open a folder" },
   "file.new": { "label": "New File", "category": "File", "description": "Create a new file" },
-  "file.newFolder": { "label": "New Folder", "category": "File", "description": "Create a new folder" },
   "file.close": { "label": "Close Tab", "category": "File", "description": "Close the active tab" },
   "file.closeAll": { "label": "Close All", "category": "File", "description": "Close all open files" },
-  "file.closeOthers": { "label": "Close Others", "category": "File", "description": "Close all other files" },
-  "file.delete": { "label": "Delete File", "category": "File", "description": "Delete the current file" },
-  "file.rename": { "label": "Rename...", "category": "File", "description": "Rename the current file" },
-  "file.copyPath": { "label": "Copy Path", "category": "File", "description": "Copy file path to clipboard" },
-  "file.copyRelativePath": { "label": "Copy Relative Path", "category": "File", "description": "Copy relative path to clipboard" },
-  "file.revealInFinder": { "label": "Reveal in Finder", "category": "File", "description": "Show file in Finder" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Edit Commands
@@ -40,15 +32,6 @@
   "edit.selectAll": { "label": "Select All", "category": "Edit" },
   "edit.selectNextMatch": { "label": "Add Selection to Next Match", "category": "Edit" },
   "edit.selectAllOccurrences": { "label": "Select All Occurrences", "category": "Edit" },
-  "edit.indentLine": { "label": "Indent Line", "category": "Edit" },
-  "edit.outdentLine": { "label": "Outdent Line", "category": "Edit" },
-  "edit.moveLinesUp": { "label": "Move Lines Up", "category": "Edit" },
-  "edit.moveLinesDown": { "label": "Move Lines Down", "category": "Edit" },
-  "edit.deleteLine": { "label": "Delete Line", "category": "Edit" },
-  "edit.joinLines": { "label": "Join Lines", "category": "Edit" },
-  "edit.transformToUppercase": { "label": "Transform to Uppercase", "category": "Edit" },
-  "edit.transformToLowercase": { "label": "Transform to Lowercase", "category": "Edit" },
-  "edit.transformToTitleCase": { "label": "Transform to Title Case", "category": "Edit" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Search Commands
@@ -56,10 +39,8 @@
   "search.find": { "label": "Find", "category": "Search" },
   "search.replace": { "label": "Find and Replace", "category": "Search" },
   "search.findInFiles": { "label": "Find in Files", "category": "Search" },
-  "search.replaceInFiles": { "label": "Replace in Files", "category": "Search" },
   "search.findNext": { "label": "Find Next", "category": "Search" },
   "search.findPrevious": { "label": "Find Previous", "category": "Search" },
-  "search.clearHistory": { "label": "Clear Search History", "category": "Search" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Editor Commands
@@ -73,11 +54,7 @@
   "editor.unfold": { "label": "Unfold", "category": "Editor" },
   "editor.foldAll": { "label": "Fold All", "category": "Editor" },
   "editor.unfoldAll": { "label": "Unfold All", "category": "Editor" },
-  "editor.foldLevel1": { "label": "Fold Level 1", "category": "Editor" },
-  "editor.foldLevel2": { "label": "Fold Level 2", "category": "Editor" },
-  "editor.foldLevel3": { "label": "Fold Level 3", "category": "Editor" },
   "editor.toggleComment": { "label": "Toggle Line Comment", "category": "Editor" },
-  "editor.toggleBlockComment": { "label": "Toggle Block Comment", "category": "Editor" },
   "editor.commentLine": { "label": "Add Line Comment", "category": "Editor" },
   "editor.uncommentLine": { "label": "Remove Line Comment", "category": "Editor" },
   "editor.selectLine": { "label": "Select Line", "category": "Editor" },
@@ -87,10 +64,6 @@
   "editor.addCursorBelow": { "label": "Add Cursor Below", "category": "Editor" },
   "editor.clearCursors": { "label": "Clear Cursors", "category": "Editor" },
   "editor.formatDocument": { "label": "Format Document", "category": "Editor" },
-  "editor.formatSelection": { "label": "Format Selection", "category": "Editor" },
-  "editor.sortLinesAscending": { "label": "Sort Lines Ascending", "category": "Editor" },
-  "editor.sortLinesDescending": { "label": "Sort Lines Descending", "category": "Editor" },
-  "editor.trimTrailingWhitespace": { "label": "Trim Trailing Whitespace", "category": "Editor" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Workbench Commands
@@ -106,10 +79,7 @@
   "workbench.resizeUp": { "label": "Move Focused Region Boundary Up", "category": "View" },
   "workbench.resizeDown": { "label": "Move Focused Region Boundary Down", "category": "View" },
   "workbench.resetRegionSizes": { "label": "Reset Workbench Region Sizes", "category": "View" },
-  "workbench.toggleActivityBar": { "label": "Toggle Activity Bar", "category": "View" },
-  "workbench.toggleMinimap": { "label": "Toggle Minimap", "category": "View" },
   "workbench.toggleWordWrap": { "label": "Toggle Word Wrap", "category": "View" },
-  "workbench.toggleZenMode": { "label": "Toggle Zen Mode", "category": "View" },
   "workbench.focusNextPane": { "label": "Focus Next Main Pane", "category": "View" },
   "workbench.focusPreviousPane": { "label": "Focus Previous Main Pane", "category": "View" },
   "workbench.focusNextRegion": { "label": "Focus Next Workbench Region", "category": "View" },
@@ -124,8 +94,6 @@
   "workbench.openSettings": { "label": "Open Settings", "category": "Preferences" },
   "workbench.openKeybindings": { "label": "Open Keyboard Shortcuts", "category": "Preferences" },
   "workbench.quit": { "label": "Quit", "category": "Application" },
-  "workbench.reload": { "label": "Reload Window", "category": "Developer" },
-  "workbench.toggleDevTools": { "label": "Toggle Developer Tools", "category": "Developer" },
   "editor.moveTabToPreviousPane": { "label": "Move Active Tab to Previous Main Pane", "category": "View" },
   "editor.moveTabToNextPane": { "label": "Move Active Tab to Next Main Pane", "category": "View" },
   "editor.moveTabToPane": { "label": "Move Active Tab to Main Pane...", "category": "View" },
@@ -139,20 +107,6 @@
   "view.focusEditor": { "label": "Focus Main Pane", "category": "View" },
   "view.focusFileTree": { "label": "Focus File Explorer", "category": "View" },
   "view.focusTerminal": { "label": "Focus Bottom Terminal", "category": "View" },
-  "view.zoomIn": { "label": "Zoom In", "category": "View" },
-  "view.zoomOut": { "label": "Zoom Out", "category": "View" },
-  "view.resetZoom": { "label": "Reset Zoom", "category": "View" },
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Layout Commands
-  // ─────────────────────────────────────────────────────────────────────────────
-  "layout.default": { "label": "Default Layout", "category": "Layout", "description": "Balanced layout with all panels" },
-  "layout.detachedClaude": { "label": "Detached Claude", "category": "Layout", "description": "File tree, chat stack, and terminal for Claude Code" },
-  "layout.debug": { "label": "Debug", "category": "Layout", "description": "Terminal and activity prominent" },
-  "layout.zenEditor": { "label": "Zen Mode (Editor)", "category": "Layout", "description": "Distraction-free editor" },
-  "layout.presentation": { "label": "Presentation", "category": "Layout", "description": "Editor with minimal UI" },
-  "layout.next": { "label": "Next Layout", "category": "Layout", "description": "Switch to next layout preset" },
-  "layout.previous": { "label": "Previous Layout", "category": "Layout", "description": "Switch to previous layout preset" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Terminal Commands
@@ -160,14 +114,9 @@
   "terminal.new": { "label": "Open Bottom Terminal Tab", "category": "Terminal" },
   "terminal.newInPane": { "label": "Open Terminal Tab in Main Pane", "category": "Terminal" },
   "terminal.close": { "label": "Close Bottom Terminal Tab", "category": "Terminal" },
-  "terminal.closeAll": { "label": "Close All Bottom Terminal Tabs", "category": "Terminal" },
   "terminal.focus": { "label": "Focus Bottom Terminal", "category": "Terminal" },
   "terminal.nextTab": { "label": "Next Bottom Terminal Tab", "category": "Terminal" },
   "terminal.previousTab": { "label": "Previous Bottom Terminal Tab", "category": "Terminal" },
-  "terminal.clear": { "label": "Clear Terminal", "category": "Terminal" },
-  "terminal.scrollToTop": { "label": "Scroll to Top", "category": "Terminal" },
-  "terminal.scrollToBottom": { "label": "Scroll to Bottom", "category": "Terminal" },
-  "terminal.kill": { "label": "Kill Terminal Process", "category": "Terminal" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Git Commands
@@ -177,16 +126,10 @@
   "git.stageAll": { "label": "Stage All Changes", "category": "Git", "description": "Stage all changes" },
   "git.unstage": { "label": "Unstage Changes", "category": "Git", "description": "Unstage current file" },
   "git.unstageAll": { "label": "Unstage All", "category": "Git", "description": "Unstage all changes" },
-  "git.discard": { "label": "Discard Changes", "category": "Git", "description": "Discard changes in file" },
-  "git.discardAll": { "label": "Discard All Changes", "category": "Git", "description": "Discard all changes" },
   "git.commit": { "label": "Commit", "category": "Git", "description": "Commit staged changes" },
-  "git.commitAmend": { "label": "Commit (Amend)", "category": "Git", "description": "Amend last commit" },
   "git.push": { "label": "Push", "category": "Git", "description": "Push to remote" },
-  "git.pushForce": { "label": "Push (Force)", "category": "Git", "description": "Force push to remote" },
   "git.pull": { "label": "Pull", "category": "Git", "description": "Pull from remote" },
-  "git.pullRebase": { "label": "Pull (Rebase)", "category": "Git", "description": "Pull with rebase" },
   "git.fetch": { "label": "Fetch", "category": "Git", "description": "Fetch from remote" },
-  "git.fetchAll": { "label": "Fetch All", "category": "Git", "description": "Fetch from all remotes" },
   "git.stash": { "label": "Stash", "category": "Git", "description": "Stash changes" },
   "git.stashPop": { "label": "Pop Stash", "category": "Git", "description": "Pop latest stash" },
   "git.stashApply": { "label": "Apply Stash", "category": "Git", "description": "Apply stash without removing" },
@@ -203,19 +146,10 @@
   "git.deleteBranch": { "label": "Delete Branch...", "category": "Git", "description": "Delete a branch" },
   "git.renameBranch": { "label": "Rename Branch...", "category": "Git", "description": "Rename current branch" },
   "git.merge": { "label": "Merge Branch...", "category": "Git", "description": "Merge a branch" },
-  "git.rebase": { "label": "Rebase...", "category": "Git", "description": "Rebase onto branch" },
   "git.abortMerge": { "label": "Abort Merge", "category": "Git", "description": "Abort current merge" },
-  "git.abortRebase": { "label": "Abort Rebase", "category": "Git", "description": "Abort current rebase" },
-  "git.continueRebase": { "label": "Continue Rebase", "category": "Git", "description": "Continue rebase after resolving conflicts" },
-  "git.conflicts": { "label": "View Conflicts", "category": "Git", "description": "Show conflicted files" },
   "git.remotes": { "label": "Manage Remotes", "category": "Git", "description": "View and manage remotes" },
   "git.tags": { "label": "List Tags", "category": "Git", "description": "Show all tags" },
-  "git.createTag": { "label": "Create Tag...", "category": "Git", "description": "Create a new tag" },
   "git.checkout": { "label": "Checkout...", "category": "Git", "description": "Checkout a commit or branch" },
-  "git.cherryPick": { "label": "Cherry Pick...", "category": "Git", "description": "Cherry pick a commit" },
-  "git.revert": { "label": "Revert Commit...", "category": "Git", "description": "Revert a commit" },
-  "git.reset": { "label": "Reset...", "category": "Git", "description": "Reset to a commit" },
-  "git.clean": { "label": "Clean Untracked", "category": "Git", "description": "Remove untracked files" },
   "git.focusPanel": { "label": "Focus Git Panel", "category": "Git" },
   "git.refresh": { "label": "Refresh", "category": "Git", "description": "Refresh git status" },
 
@@ -248,8 +182,6 @@
   "session.save": { "label": "Save Session", "category": "Session" },
   "session.saveAs": { "label": "Save Session As...", "category": "Session" },
   "session.open": { "label": "Open Session...", "category": "Session" },
-  "session.delete": { "label": "Delete Session...", "category": "Session" },
-  "session.list": { "label": "List Sessions", "category": "Session" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Theme Commands
@@ -264,15 +196,11 @@
   // ─────────────────────────────────────────────────────────────────────────────
   "lsp.showHover": { "label": "Show Hover", "category": "Editor" },
   "lsp.goToDefinition": { "label": "Go to Definition", "category": "Go" },
-  "lsp.goToDeclaration": { "label": "Go to Declaration", "category": "Go" },
-  "lsp.goToTypeDefinition": { "label": "Go to Type Definition", "category": "Go" },
-  "lsp.goToImplementation": { "label": "Go to Implementation", "category": "Go" },
   "lsp.findReferences": { "label": "Find All References", "category": "Go" },
   "lsp.rename": { "label": "Rename Symbol", "category": "Editor" },
   "lsp.codeActions": { "label": "Show Code Actions", "category": "Editor" },
   "lsp.triggerCompletion": { "label": "Trigger Completion", "category": "Editor" },
   "lsp.triggerSignatureHelp": { "label": "Trigger Signature Help", "category": "Editor" },
-  "lsp.restartServer": { "label": "Restart Language Server", "category": "Developer" },
   "lsp.showDiagnostics": { "label": "Show Problems", "category": "View" },
   "lsp.nextDiagnostic": { "label": "Go to Next Problem", "category": "Go" },
   "lsp.previousDiagnostic": { "label": "Go to Previous Problem", "category": "Go" },
@@ -298,26 +226,5 @@
   // ─────────────────────────────────────────────────────────────────────────────
   // Secrets Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "secrets.manage": { "label": "Manage Secrets", "category": "Secrets" },
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Debug Commands
-  // ─────────────────────────────────────────────────────────────────────────────
-  "debug.start": { "label": "Start Debugging", "category": "Debug" },
-  "debug.stop": { "label": "Stop Debugging", "category": "Debug" },
-  "debug.restart": { "label": "Restart Debugging", "category": "Debug" },
-  "debug.stepOver": { "label": "Step Over", "category": "Debug" },
-  "debug.stepInto": { "label": "Step Into", "category": "Debug" },
-  "debug.stepOut": { "label": "Step Out", "category": "Debug" },
-  "debug.continue": { "label": "Continue", "category": "Debug" },
-  "debug.toggleBreakpoint": { "label": "Toggle Breakpoint", "category": "Debug" },
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Help Commands
-  // ─────────────────────────────────────────────────────────────────────────────
-  "help.documentation": { "label": "Documentation", "category": "Help" },
-  "help.reportIssue": { "label": "Report Issue", "category": "Help" },
-  "help.about": { "label": "About", "category": "Help" },
-  "help.keyboardShortcuts": { "label": "Keyboard Shortcuts Reference", "category": "Help" },
-  "help.checkForUpdates": { "label": "Check for Updates", "category": "Help" }
+  "secrets.manage": { "label": "Manage Secrets", "category": "Secrets" }
 }

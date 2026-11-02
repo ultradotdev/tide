@@ -20,9 +20,7 @@ pub fn reference_catalog() -> Value {
         .map(|id| {
             let info = metadata.get(id);
             let canonical = command_aliases::canonical(id);
-            let supported = app::command_supported(id);
-            json!({"id":id, "canonical":canonical, "supported":supported,
-            "paletteVisible":supported && info.is_some(),
+            json!({"id":id, "canonical":canonical, "paletteVisible":info.is_some(),
             "label":info.map_or(id, |info| info.label.as_str()),
             "category":info.map_or("Keybinding actions", |info| info.category.as_str()),
             "description":info.and_then(|info| info.description.as_deref())})
@@ -31,12 +29,10 @@ pub fn reference_catalog() -> Value {
     // Match the resolver's last entry for each key/context.
     let mut effective = BTreeMap::new();
     for binding in bindings {
-        if app::command_supported(&binding.command) {
-            effective.insert(
-                (app::canonical_key(&binding.key), binding.when.clone()),
-                binding,
-            );
-        }
+        effective.insert(
+            (app::canonical_key(&binding.key), binding.when.clone()),
+            binding,
+        );
     }
     let bindings = effective.into_values().collect::<Vec<_>>();
     let settings = catalog::settings();
@@ -49,20 +45,15 @@ pub fn reference_catalog() -> Value {
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let preserved = settings
-        .iter()
-        .filter(|(key, _)| !preferences::supported(key))
-        .map(|(key, _)| key)
-        .collect::<Vec<_>>();
     let aliases = command_aliases::ALIASES
         .iter()
         .copied()
         .collect::<BTreeMap<_, _>>();
     let providers = tide_ai::cli::CLI_PROVIDERS.iter().map(|provider| json!({"id":provider.id(), "name":provider.display_name(), "executable":provider.executable(), "pathOverride":provider.env_override(), "supportsRename":provider.supports_rename()})).collect::<Vec<_>>();
     let themes = tide_config::builtin::themes();
-    json!({"schemaVersion":1, "implementation":"rust", "version":env!("CARGO_PKG_VERSION"),
+    json!({"schemaVersion":2, "implementation":"rust", "version":env!("CARGO_PKG_VERSION"),
         "commands":commands, "aliases":aliases, "keybindings":bindings,
-        "settings":supported_settings, "preservedSettings":preserved,
+        "settings":supported_settings,
         "externalCliProviders":providers,
         "themes":themes.iter().map(|theme| json!({"id":theme.id,"name":theme.name})).collect::<Vec<_>>()})
 }
@@ -74,9 +65,13 @@ mod tests {
     fn references_keep_runtime_alternates_and_defaults() {
         let reference = reference_catalog();
         assert_eq!(reference, reference_catalog());
+        for command in reference["commands"].as_array().unwrap() {
+            let id = command["id"].as_str().unwrap();
+            assert!(app::command_supported(id), "unrouted command {id}");
+        }
         for binding in reference["keybindings"].as_array().unwrap() {
             let id = binding["command"].as_str().unwrap();
-            assert!(app::command_supported(id), "unsupported binding {id}");
+            assert!(app::command_supported(id), "unrouted binding {id}");
         }
         assert!(
             reference["keybindings"]

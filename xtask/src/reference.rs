@@ -70,7 +70,7 @@ fn rules(rule: &Json) -> String {
 pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, String)>> {
     let reference = Json::parse(raw)?;
     ensure!(
-        reference.get("schemaVersion").and_then(Json::as_f64) == Some(1.0)
+        reference.get("schemaVersion").and_then(Json::as_f64) == Some(2.0)
             && reference.str_at(&["implementation"]) == "rust"
             && reference.str_at(&["version"]) == product_version,
         "Rust reference identity does not match product metadata"
@@ -80,15 +80,11 @@ pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, Str
         .get("commands")
         .map(Json::as_array)
         .unwrap_or_default();
-    let supported: Vec<&Json> = commands
-        .iter()
-        .filter(|command| command.get("supported").and_then(Json::as_bool) == Some(true))
-        .collect();
     let by_id: HashMap<&str, &Json> = commands
         .iter()
         .map(|command| (command.str_at(&["id"]), command))
         .collect();
-    let command_rows = supported
+    let command_rows = commands
         .iter()
         .map(|command| {
             format!(
@@ -110,13 +106,6 @@ pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, Str
         .map(Json::entries)
         .unwrap_or_default()
         .iter()
-        .filter(|(id, _)| {
-            by_id
-                .get(id.as_str())
-                .and_then(|command| command.get("supported"))
-                .and_then(Json::as_bool)
-                == Some(true)
-        })
         .map(|(id, target)| format!("| {} | {} |", code(id), code(&target.display())))
         .collect::<Vec<_>>()
         .join("\n");
@@ -127,7 +116,7 @@ pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, Str
 
 Open the command palette with `ctrl+k`. Enhanced terminal key reporting also enables the bindings listed in the [keyboard reference](keyboard-shortcuts.md).
 
-The table includes supported command IDs and compatibility aliases. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
+The table lists every routed command ID and compatibility alias. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
 
 | Command ID | Label | Category | Palette |
 | --- | --- | --- | --- |
@@ -261,16 +250,14 @@ pub fn generate(root: &Path, write: bool) -> Result<()> {
         }
     }
     let reference = Json::parse(&raw)?;
-    let supported = reference
-        .get("commands")
-        .map(Json::as_array)
-        .unwrap_or_default()
-        .iter()
-        .filter(|command| command.get("supported").and_then(Json::as_bool) == Some(true))
-        .count();
     println!(
-        "{} Rust reference: {supported} command IDs, {} effective bindings, {} settings.",
+        "{} Rust reference: {} command IDs, {} effective bindings, {} settings.",
         if write { "Generated" } else { "Verified" },
+        reference
+            .get("commands")
+            .map(Json::as_array)
+            .unwrap_or_default()
+            .len(),
         reference
             .get("keybindings")
             .map(Json::as_array)
@@ -289,18 +276,17 @@ pub fn generate(root: &Path, write: bool) -> Result<()> {
 mod tests {
     use super::*;
 
-    const SAMPLE: &str = r#"{"schemaVersion":1,"version":"0.10.0","implementation":"rust",
-      "commands":[{"id":"a.run","label":"Run | all","category":"Run","supported":true,"paletteVisible":true},
-                  {"id":"a.hidden","label":"Hidden","category":"Run","supported":true,"paletteVisible":false},
-                  {"id":"a.unsupported","label":"Unsupported","category":"Run","supported":false,"paletteVisible":false}],
-      "aliases":{"a.run":"a.run2","a.unsupported":"x"},
+    const SAMPLE: &str = r#"{"schemaVersion":2,"version":"0.10.0","implementation":"rust",
+      "commands":[{"id":"a.run","label":"Run | all","category":"Run","paletteVisible":true},
+                  {"id":"a.hidden","label":"Hidden","category":"Run","paletteVisible":false}],
+      "aliases":{"a.run":"a.run2"},
       "keybindings":[{"key":"ctrl+k","command":"a.run"},{"key":"f1","command":"unknown","when":"editorFocus"}],
       "settings":{"editor.tabSize":{"default":4,"rule":{"type":"integer","minimum":1,"maximum":16}},
                   "theme":{"default":"Ultra Dusk","rule":{"type":"string","enum":["a","b"],"maxLength":64}}},
-      "preservedSettings":[],"externalCliProviders":[],"themes":[]}"#;
+      "externalCliProviders":[],"themes":[]}"#;
 
     #[test]
-    fn renders_supported_commands_aliases_bindings_and_rules() {
+    fn renders_commands_aliases_bindings_and_rules() {
         let outputs = render(SAMPLE, "0.10.0").unwrap();
         let file = |name: &str| {
             outputs
@@ -313,7 +299,6 @@ mod tests {
         let commands = file("commands.md");
         assert!(commands.contains("| `a.run` | Run \\| all | Run | Yes |"));
         assert!(commands.contains("| `a.hidden` | Hidden | Run | Keybinding action |"));
-        assert!(!commands.contains("a.unsupported"));
         assert!(commands.contains("| `a.run` | `a.run2` |"));
         let bindings = file("keyboard-shortcuts.md");
         assert!(bindings.contains("| `ctrl+k` | Run \\| all | `a.run` | Any |"));
@@ -326,7 +311,7 @@ mod tests {
         );
         assert!(configuration.contains(GENERATED_NOTE));
         let runtime = file("runtime.json");
-        assert!(runtime.starts_with("{\n  \"schemaVersion\": 1,\n  \"version\": \"0.10.0\""));
+        assert!(runtime.starts_with("{\n  \"schemaVersion\": 2,\n  \"version\": \"0.10.0\""));
     }
 
     #[test]

@@ -106,67 +106,44 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
     commands
 }
 
-pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
-    if !bindings
-        .iter()
-        .any(|binding| canonical_key(&binding.key) == "ctrl+/")
-    {
-        bindings.push(Keybinding {
-            key: "ctrl+/".to_owned(),
-            command: "editor.commentLine".to_owned(),
-            when: None,
-            args: None,
-        });
-    }
+/// Terminal-safe alternates, each for a key no default binding claims.
+const ALTERNATES: &[(&str, &str)] = &[
+    ("ctrl+alt+s", "file.saveAs"),
+    ("ctrl+alt+f", "search.findInFiles"),
+    ("ctrl+b", "workbench.toggleSidebar"),
+    ("ctrl+alt+b", "workbench.toggleSidebar"),
+    ("ctrl+alt+h", "view.splitHorizontal"),
+    ("ctrl+alt+d", "editor.duplicateLine"),
+    ("ctrl+alt+t", "terminal.new"),
+    ("ctrl+alt+m", "terminal.newInPane"),
+    ("ctrl+alt+g", "git.focusPanel"),
+    ("ctrl+alt+e", "workbench.focusExplorer"),
+    ("ctrl+alt+u", "workbench.focusOutline"),
+    ("ctrl+alt+l", "workbench.focusTimeline"),
+    ("ctrl+alt+k", "workbench.openKeybindings"),
+    ("ctrl+alt+o", "workbench.openSettings"),
+    ("ctrl+alt+r", "workbench.selectTheme"),
+    ("alt+right", "workbench.focusPaneRight"),
+    ("alt+left", "workbench.focusPaneLeft"),
+    ("alt+up", "workbench.focusPaneUp"),
+    ("alt+down", "workbench.focusPaneDown"),
+    ("ctrl+alt+right", "workbench.focusPaneRight"),
+    ("ctrl+alt+left", "workbench.focusPaneLeft"),
+    ("alt+1", "workbench.focusEditor1"),
+    ("alt+2", "workbench.focusEditor2"),
+    ("alt+3", "workbench.focusEditor3"),
+    ("f7", "workbench.focusNextPane"),
+    ("f8", "workbench.focusPreviousPane"),
+];
 
-    const ALTERNATES: &[(&str, &str)] = &[
-        ("ctrl+k", "workbench.commandPalette"),
-        ("ctrl+alt+s", "file.saveAs"),
-        ("ctrl+alt+f", "search.findInFiles"),
-        ("ctrl+alt+a", "pane.addPanel"),
-        ("ctrl+b", "workbench.toggleSidebar"),
-        ("ctrl+alt+b", "workbench.toggleSidebar"),
-        ("ctrl+alt+h", "view.splitHorizontal"),
-        ("ctrl+alt+d", "editor.duplicateLine"),
-        ("ctrl+alt+t", "terminal.new"),
-        ("ctrl+alt+m", "terminal.newInPane"),
-        ("ctrl+alt+g", "git.focusPanel"),
-        ("ctrl+space", "database.complete"),
-        ("ctrl+alt+a", "agents.openSession"),
-        ("ctrl+alt+e", "workbench.focusExplorer"),
-        ("ctrl+alt+u", "workbench.focusOutline"),
-        ("ctrl+alt+l", "workbench.focusTimeline"),
-        ("ctrl+alt+k", "workbench.openKeybindings"),
-        ("ctrl+alt+o", "workbench.openSettings"),
-        ("ctrl+alt+r", "workbench.selectTheme"),
-        ("alt+right", "workbench.focusPaneRight"),
-        ("alt+left", "workbench.focusPaneLeft"),
-        ("alt+up", "workbench.focusPaneUp"),
-        ("alt+down", "workbench.focusPaneDown"),
-        ("ctrl+alt+right", "workbench.focusPaneRight"),
-        ("ctrl+alt+left", "workbench.focusPaneLeft"),
-        ("ctrl+alt+up", "workbench.focusPaneUp"),
-        ("ctrl+alt+down", "workbench.focusPaneDown"),
-        ("alt+1", "workbench.focusEditor1"),
-        ("alt+2", "workbench.focusEditor2"),
-        ("alt+3", "workbench.focusEditor3"),
-        ("f7", "workbench.focusNextPane"),
-        ("f8", "workbench.focusPreviousPane"),
-    ];
+pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
     for (key, command) in ALTERNATES {
         let canonical = canonical_key(key);
-        if let Some(existing) = bindings
-            .iter_mut()
-            .find(|binding| canonical_key(&binding.key) == canonical)
+        // Existing bindings, including user removals, own their keys.
+        if bindings
+            .iter()
+            .any(|binding| canonical_key(&binding.key) == canonical)
         {
-            // User bindings, including explicit removals, own their keys.
-            if crate::app::command_supported(&existing.command)
-                || existing.command.is_empty()
-                || existing.command.starts_with('-')
-            {
-                continue;
-            }
-            existing.command = (*command).to_owned();
             continue;
         }
         bindings.push(Keybinding {
@@ -175,5 +152,44 @@ pub fn install_bindings(bindings: &mut Vec<Keybinding>) {
             when: None,
             args: None,
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_catalog_entry_has_a_runtime_consumer() {
+        for id in commands().keys() {
+            assert!(crate::app::command_supported(id), "{id} is not routed");
+        }
+        let settings = settings();
+        for (key, value) in settings.iter() {
+            crate::preferences::validate(key, value)
+                .unwrap_or_else(|error| panic!("{key}: {error}"));
+        }
+        for key in crate::preferences::SUPPORTED {
+            assert!(settings.get(key).is_some(), "{key} has no default");
+        }
+    }
+
+    #[test]
+    fn every_alternate_claims_a_key_no_default_binds() {
+        let mut bindings = tide_config::builtin::keybindings();
+        let defaults = bindings.len();
+        install_bindings(&mut bindings);
+        let added = bindings.split_off(defaults);
+        assert_eq!(added.len(), ALTERNATES.len());
+        for binding in &added {
+            assert!(crate::app::command_supported(&binding.command));
+            let key = canonical_key(&binding.key);
+            assert!(
+                !bindings
+                    .iter()
+                    .any(|existing| canonical_key(&existing.key) == key),
+                "{key} is already bound"
+            );
+        }
     }
 }

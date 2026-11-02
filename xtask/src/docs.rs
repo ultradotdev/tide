@@ -171,7 +171,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
         "Product identity drifted",
     );
     require(
-        runtime.get("schemaVersion").and_then(Json::as_f64) == Some(1.0)
+        runtime.get("schemaVersion").and_then(Json::as_f64) == Some(2.0)
             && runtime.str_at(&["implementation"]) == "rust"
             && runtime.str_at(&["version"]) == version,
         "Compiled Rust reference identity drifted",

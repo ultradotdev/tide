@@ -48,6 +48,7 @@ pub use jobs::Jobs;
 pub use modal::{
     ConfirmAction, Modal, ModalBase, ModalItem, ModalKind, ModalOutcome, PromptAction, Submitted,
 };
+pub use preferences::supported as setting_supported;
 pub use run::run;
 pub use workbench::{LayoutNode, Pane, SplitDirection, Tab, Workbench};
 
