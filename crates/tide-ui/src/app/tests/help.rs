@@ -317,7 +317,10 @@ fn check_for_updates_runs_only_on_demand_and_shows_the_install_specific_step() {
     let overlay = app.overlay.as_ref().expect("the update dialog");
     let message = overlay.base().message.clone().unwrap();
     assert!(message.contains("Tide 999.0.0 is available"), "{message}");
-    assert!(message.contains("brew upgrade tide"), "{message}");
+    assert!(
+        message.contains("brew update && brew upgrade tide"),
+        "{message}"
+    );
 
     app.overlay = None;
     app.latest_release = |_| Box::pin(async { Ok(format!("v{}", env!("CARGO_PKG_VERSION"))) });

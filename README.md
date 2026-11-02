@@ -18,8 +18,8 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 
 ```sh
 brew install ultradotdev/tap/tide
-brew upgrade tide      # Update
-brew uninstall tide    # Remove; settings, sessions and history are kept
+brew update && brew upgrade tide  # Update
+brew uninstall tide               # Remove; settings, sessions and history are kept
 ```
 
 Homebrew owns that copy: run from it, `tide --uninstall` refuses and names `brew uninstall tide` instead. Use one installation method at a time, so a single `tide` is on your PATH.

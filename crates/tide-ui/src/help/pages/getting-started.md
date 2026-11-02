@@ -16,7 +16,7 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 brew install ultradotdev/tap/tide
 ```
 
-The formula in the `ultradotdev/homebrew-tap` tap installs the prebuilt release archive for your platform; on macOS that executable is Developer ID signed and notarized. Update with `brew upgrade tide` and remove with `brew uninstall tide`. Homebrew owns that copy: run from it, `tide --uninstall` and the managed-install commands refuse and name the `brew` command to use instead.
+The formula in the `ultradotdev/homebrew-tap` tap installs the prebuilt release archive for your platform; on macOS that executable is Developer ID signed and notarized. Update with `brew update && brew upgrade tide` and remove with `brew uninstall tide`. Homebrew owns that copy: run from it, `tide --uninstall` and the managed-install commands refuse and name the `brew` command to use instead.
 
 ## Install with the install script
 
