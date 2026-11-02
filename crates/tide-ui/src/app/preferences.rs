@@ -52,8 +52,10 @@ impl App {
         }
         let mut next = self.settings.clone();
         next.set(key, value.clone());
-        let text = serde_json::to_string_pretty(&next).unwrap();
-        match write_file_atomic(&self.paths.settings_file, &text) {
+        let settings_file = self.paths.settings_file.clone();
+        match edit_config_file(&settings_file, |text| {
+            tide_config::set_jsonc_member(text, key, &value)
+        }) {
             Ok(()) => {
                 self.settings = next;
                 if key == "workbench.colorTheme" {
@@ -120,31 +122,42 @@ impl App {
                     }
                 ));
             }
-            Err(error) => self.set_status(format!("Settings save failed: {error}")),
+            Err(error) => self.set_status(format!("Setting not saved: {error}")),
         }
     }
 
-    pub(super) fn update_keybinding(&mut self, old_key: &str, new_key: &str) {
+    /// Moves `selected`, one of the active bindings, to `new_key`.
+    pub(super) fn update_keybinding(&mut self, selected: &Keybinding, new_key: &str) {
         let new_key = new_key.trim();
         if new_key.is_empty() {
             return;
         }
-        let canonical = canonical_key(old_key);
-        let Some(binding) = self
-            .keybindings
-            .iter_mut()
-            .find(|binding| canonical_key(&binding.key) == canonical)
-        else {
+        let canonical = canonical_key(&selected.key);
+        let Some(binding) = self.keybindings.iter().find(|binding| {
+            canonical_key(&binding.key) == canonical
+                && binding.command == selected.command
+                && binding.when == selected.when
+        }) else {
             return;
         };
         let removed = Keybinding {
-            key: old_key.into(),
+            key: selected.key.clone(),
             command: String::new(),
             when: binding.when.clone(),
             args: None,
         };
-        binding.key = new_key.to_owned();
-        let replacement = binding.clone();
+        let replacement = Keybinding {
+            key: new_key.to_owned(),
+            ..binding.clone()
+        };
+        let added = [&removed, &replacement]
+            .map(|binding| serde_json::to_value(binding).unwrap_or_default());
+        if let Err(error) = edit_config_file(&self.paths.keybindings_file, |text| {
+            tide_config::append_jsonc_elements(text, &added)
+        }) {
+            self.set_status(format!("Keybinding not saved: {error}"));
+            return;
+        }
         self.keybindings.retain(|binding| {
             !((canonical_key(&binding.key) == canonical
                 || canonical_key(&binding.key) == canonical_key(new_key))
@@ -154,14 +167,8 @@ impl App {
         self.user_keybindings.push(replacement.clone());
         self.keybindings.push(removed);
         self.keybindings.push(replacement);
-        let text = serde_json::to_string_pretty(&self.keybindings).unwrap_or_default();
-        match write_file_atomic(&self.paths.keybindings_file, &text) {
-            Ok(()) => {
-                self.rebuild_keymap();
-                self.set_status(format!("Keybinding updated to {new_key}"));
-            }
-            Err(error) => self.set_status(format!("Keybindings save failed: {error}")),
-        }
+        self.rebuild_keymap();
+        self.set_status(format!("Keybinding updated to {new_key}"));
     }
 
     pub(super) fn cycle_theme(&mut self, delta: isize, toggle: bool) {
@@ -196,11 +203,10 @@ impl App {
         };
         let mut next = self.settings.clone();
         next.set("workbench.colorTheme", serde_json::json!(id));
-        if let Err(error) = write_file_atomic(
-            &self.paths.settings_file,
-            &serde_json::to_string_pretty(&next).unwrap(),
-        ) {
-            self.set_status(format!("Theme save failed: {error}"));
+        if let Err(error) = edit_config_file(&self.paths.settings_file, |text| {
+            tide_config::set_jsonc_member(text, "workbench.colorTheme", &serde_json::json!(id))
+        }) {
+            self.set_status(format!("Theme not saved: {error}"));
             return;
         }
         self.themes.select(id);
@@ -220,4 +226,28 @@ impl App {
     pub(super) fn tab_size(&self) -> usize {
         crate::controllers::tab_size(&self.settings)
     }
+}
+
+/// Applies `edit` to the user's JSONC file at `path`, which may not exist yet. Only the
+/// edited value changes: the user's comments, ordering and other values are kept, and a
+/// file that does not parse is left as it is.
+fn edit_config_file(
+    path: &Path,
+    edit: impl FnOnce(&str) -> Result<String, tide_config::EditError>,
+) -> Result<(), String> {
+    let text = match std::fs::read_to_string(path) {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => return Err(format!("could not read {}: {error}", path.display())),
+    };
+    let edited = edit(&text).map_err(|error| {
+        format!(
+            "{} has an error, so it was left unchanged: {error}",
+            path.display()
+        )
+    })?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    write_file_atomic(path, &edited).map_err(|error| error.to_string())
 }

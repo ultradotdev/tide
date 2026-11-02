@@ -8,7 +8,7 @@ How a key is resolved:
 - A binding with a `when` context, such as `gitPanelFocus`, wins over a global binding for the same key while that context is active.
 - For the same key and context, the last entry wins, so your entries replace the defaults.
 - A command of `""` or `-<command>` removes a key.
-- While a terminal has focus, the shell keeps `Ctrl+A`, `Ctrl+C`, `Ctrl+D`, `Ctrl+E`, `Ctrl+K`, `Ctrl+L`, `Ctrl+R`, `Ctrl+U`, `Ctrl+V`, `Ctrl+W`, `Ctrl+Y`, `Ctrl+Z`, `Ctrl+Space` and `Ctrl+\`. Other workbench keys still reach Tide.
+- While a terminal has focus, the shell keeps every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`. Other workbench keys still reach Tide.
 
 Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so Tide adds Ctrl+Alt and function-key alternates for many commands. When a key does not arrive, run the command from the palette with `Ctrl+K` or `Ctrl+Shift+P`. Lists, dialogs, the find bar, diff tabs and the Agents sidebar also have keys of their own, described in each feature guide.
 

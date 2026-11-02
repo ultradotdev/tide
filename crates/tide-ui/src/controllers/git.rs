@@ -1020,6 +1020,16 @@ impl GitController {
     /// Runs `args`, reporting `done` instead of Git's own output when it succeeds. A command
     /// that stops on conflicts leaves them in place and says how to finish.
     pub fn run_as(&mut self, args: &[&str], done: Option<String>, ui: &mut Ui<'_>) {
+        if tide_services::git_process::is_long_running(args) {
+            ui.status(format!(
+                "Git: running git {}…",
+                args.iter()
+                    .take_while(|arg| **arg != "-m")
+                    .copied()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ));
+        }
         let args = args.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
         self.run_with(ui, move |root, cancel| {
             let refs = args.iter().map(String::as_str).collect::<Vec<_>>();
@@ -1957,10 +1967,35 @@ fn git_message(args: &[&str], output: &tide_services::git_process::GitOutput) ->
             message
         }
     } else {
-        format!(
-            "git failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        )
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        // Some failures, such as committing with nothing staged, are reported on stdout.
+        let detail = if stderr.is_empty() {
+            String::from_utf8_lossy(&output.stdout).trim().to_owned()
+        } else {
+            stderr
+        };
+        match failure_hint(&detail) {
+            Some(hint) => format!("git failed: {detail} ({hint})"),
+            None => format!("git failed: {detail}"),
+        }
+    }
+}
+
+/// Next steps for failures caused by a prompt Tide cannot show: Git runs without a
+/// terminal, so ssh and gpg cannot ask for a passphrase or a host-key confirmation.
+fn failure_hint(detail: &str) -> Option<&'static str> {
+    if detail.contains("Host key verification failed") {
+        Some("connect once from a terminal to accept the server's host key")
+    } else if detail.contains("Permission denied (publickey") {
+        Some("add your SSH key to the agent with ssh-add, or run the command in a terminal")
+    } else if detail.contains("gpg failed to sign") || detail.contains("error: gpg") {
+        Some("signing needs a graphical pinentry such as pinentry-mac, or commit from a terminal")
+    } else if detail.contains("could not read Username")
+        || detail.contains("terminal prompts disabled")
+    {
+        Some("set up a credential helper, or run the command in a terminal")
+    } else {
+        None
     }
 }
 

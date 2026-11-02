@@ -478,10 +478,16 @@ impl App {
             tracing::warn!(%error, "could not create Tide XDG roots");
         }
 
+        // Problems with the user's own files, shown once the workbench is up: otherwise a
+        // typo in settings.jsonc would leave Tide on its defaults without a word.
+        let mut config_errors = Vec::new();
         let mut settings = crate::catalog::settings();
         if paths.settings_file.exists()
             && let Some(user) = tide_config::load_jsonc::<Settings>(&paths.settings_file)
-                .inspect_err(|error| tracing::warn!(%error, "user settings were not loaded"))
+                .inspect_err(|error| {
+                    tracing::warn!(%error, "user settings were not loaded");
+                    config_errors.push(format!("{error}. Tide is using the default settings."));
+                })
                 .ok()
         {
             let defaults = settings.clone();
@@ -495,6 +501,10 @@ impl App {
                 .map(|(key, _)| key.clone())
                 .collect::<Vec<_>>();
             for key in invalid {
+                config_errors.push(format!(
+                    "{}: “{key}” has an invalid value, so Tide is using its default.",
+                    paths.settings_file.display()
+                ));
                 if let Some(value) = defaults.get(&key) {
                     settings.set(key, value.clone());
                 }
@@ -504,6 +514,7 @@ impl App {
         let mut themes = tide_config::builtin::themes();
         for diagnostic in themes.load_user_themes(&paths.themes_dir) {
             tracing::warn!(%diagnostic, "User theme was not loaded");
+            config_errors.push(format!("Theme not loaded: {diagnostic}"));
         }
         if let Some(theme_id) = settings
             .get("workbench.colorTheme")
@@ -516,7 +527,10 @@ impl App {
         let mut user_keybindings = Vec::new();
         if paths.keybindings_file.exists()
             && let Some(user) = tide_config::load_jsonc::<Vec<Keybinding>>(&paths.keybindings_file)
-                .inspect_err(|error| tracing::warn!(%error, "user keybindings were not loaded"))
+                .inspect_err(|error| {
+                    tracing::warn!(%error, "user keybindings were not loaded");
+                    config_errors.push(format!("{error}. Tide is using the default keys."));
+                })
                 .ok()
         {
             user_keybindings.clone_from(&user);
@@ -722,6 +736,15 @@ impl App {
         }
         if app.workbench.active_tab().is_none() {
             app.workbench.insert_tab_focused(Tab::Welcome);
+        }
+        if !config_errors.is_empty() {
+            app.overlay = Some(modal::info(
+                "Configuration Problems",
+                &format!(
+                    "{}\n\nFix the file, then restart Tide. Changes made from the Settings and Keyboard Shortcuts lists leave a file with errors unchanged.",
+                    config_errors.join("\n")
+                ),
+            ));
         }
         Ok(app)
     }

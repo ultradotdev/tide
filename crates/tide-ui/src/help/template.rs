@@ -395,14 +395,23 @@ impl Renderer<'_> {
     }
 
     fn terminal_keys(&self) -> String {
-        let keys = crate::app::TERMINAL_CONTROL_KEYS
+        let shown = |key: &str| code(&display(&format!("ctrl+{key}"), self.mac()));
+        let symbols = crate::app::TERMINAL_CONTROL_KEYS
             .iter()
-            .map(|key| code(&display(&format!("ctrl+{key}"), self.mac())))
+            .filter(|key| !(key.len() == 1 && key.as_bytes()[0].is_ascii_lowercase()))
+            .map(|key| shown(key))
             .collect::<Vec<_>>();
-        match keys.split_last() {
+        let symbols = match symbols.split_last() {
             Some((last, rest)) => format!("{} and {last}", rest.join(", ")),
             None => String::new(),
-        }
+        };
+        format!(
+            "every Ctrl+letter key, such as {}, {}, {} and {}, plus {symbols}",
+            shown("c"),
+            shown("r"),
+            shown("x"),
+            shown("q"),
+        )
     }
 
     fn path(&self, name: &str) -> Result<String, String> {

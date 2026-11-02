@@ -1014,3 +1014,23 @@ fn stage_and_unstage_act_on_the_active_file() {
         Command::GitFocusPanel
     );
 }
+
+#[test]
+fn a_commit_with_nothing_staged_says_why_and_long_commands_report_that_they_are_running() {
+    let (_home, mut app) = test_app();
+    initialize_git(&app);
+    commit_file(&app.workspace, "file.txt", "one\n", "initial");
+    refreshed(&mut app);
+    with_ui!(app, |ui| app.git.commit("nothing here", ui));
+    assert!(
+        app.status.contains("Git: running git commit…"),
+        "{}",
+        app.status
+    );
+    app.settle();
+    assert!(
+        app.status.contains("nothing to commit"),
+        "the failure names its cause: {}",
+        app.status
+    );
+}

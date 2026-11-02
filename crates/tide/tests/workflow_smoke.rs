@@ -140,6 +140,27 @@ fn tab_bar_text(snapshot: &TerminalSnapshot) -> String {
         .collect()
 }
 
+/// F1 opens the palette from anywhere, a focused terminal included: Ctrl+T and the other
+/// Ctrl+letter keys belong to the program running there.
+const F1: &[u8] = b"\x1bOP";
+
+/// Quits from the palette, confirming the dialog Tide shows while terminals or agents are
+/// still running a program.
+#[track_caller]
+fn quit_from_palette(session: &mut PtySession, screen: &mut TerminalEmulator) {
+    palette_command(session, screen, "Quit");
+    let mut confirmed = false;
+    let status = poll_until(|| {
+        screen.feed(&session.read_for(Duration::from_millis(25)));
+        if !confirmed && screen.snapshot().text().contains("Still running") {
+            confirmed = true;
+            session.write(b"y").unwrap();
+        }
+        session.poll_exit().unwrap()
+    });
+    assert_eq!(status.expect("TUI did not quit"), 0);
+}
+
 #[track_caller]
 fn quit(session: &mut PtySession) {
     session.write(&[0x11]).unwrap();
@@ -246,7 +267,7 @@ else:
     let mut session = PtySession::spawn(config).unwrap();
     let mut screen = TerminalEmulator::new(120, 40, 1000);
     wait_screen(&session, &mut screen, |s| s.text().contains("Ctrl+P"));
-    session.write(&[0x14]).unwrap();
+    session.write(F1).unwrap();
     wait_screen(&session, &mut screen, |s| {
         s.text().contains("Command Palette")
     });
@@ -256,7 +277,7 @@ else:
     wait_screen(&session, &mut screen, |s| {
         s.text().contains("CODEX_NATIVE_READY native-fresh")
     });
-    session.write(&[0x14]).unwrap();
+    session.write(F1).unwrap();
     wait_screen(&session, &mut screen, |s| {
         s.text().contains("Command Palette")
     });
@@ -265,7 +286,7 @@ else:
         s.text().contains("Native fresh") && s.text().contains("Codex (1)")
     });
     click(&mut session, position(&snapshot, "Native fresh", None, 0));
-    quit(&mut session);
+    quit_from_palette(&mut session, &mut screen);
     let text = std::fs::read_to_string(launches).unwrap();
     assert_eq!(text.lines().count(), 1);
     assert!(text.starts_with("resume -C "), "{text}");
@@ -382,7 +403,7 @@ fn terminal_agents_collapse_and_session_click_launch_one_native_cli() {
     wait_screen(&session, &mut screen, |snapshot| {
         snapshot.text().contains("Ctrl+P")
     });
-    session.write(&[0x14]).unwrap(); // Ctrl+T palette
+    session.write(F1).unwrap(); // palette
     wait_screen(&session, &mut screen, |snapshot| {
         snapshot.text().contains("Command Palette")
     });
@@ -419,7 +440,7 @@ fn terminal_agents_collapse_and_session_click_launch_one_native_cli() {
     let snapshot = wait_screen(&session, &mut screen, |s| s.text().contains("ONLY_SESSION"));
     click(&mut session, position(&snapshot, "ONLY_SESSION", None, 0));
     click(&mut session, position(&snapshot, "ONLY_SESSION", None, 0));
-    quit(&mut session);
+    quit_from_palette(&mut session, &mut screen);
     assert_eq!(std::fs::read_to_string(launches).unwrap(), "x");
 }
 
@@ -479,7 +500,7 @@ fn terminal_editor_fold_click_targets_visible_line_and_find_buttons_replace_matc
 }
 
 fn palette_command(session: &mut PtySession, screen: &mut TerminalEmulator, label: &str) {
-    session.write(&[0x14]).unwrap();
+    session.write(F1).unwrap();
     wait_screen(session, screen, |s| s.text().contains("Command Palette"));
     session.write(format!("{label}\r").as_bytes()).unwrap();
 }
@@ -646,7 +667,7 @@ fn terminal_dock_overflow_selects_and_closes_the_rendered_terminal() {
     wait_screen(&session, &mut screen, |s| {
         !s.text().contains("Command Palette") && !s.text().contains("Tabs Across Panes")
     });
-    quit(&mut session);
+    quit_from_palette(&mut session, &mut screen);
 }
 
 #[test]
@@ -685,7 +706,7 @@ fn git_diff_mouse_edit_stages_custom_text_without_touching_working_file() {
     wait_screen(&session, &mut screen, |s| {
         s.text().contains("WORKING_VERSION")
     });
-    session.write(&[0x14]).unwrap();
+    session.write(F1).unwrap();
     wait_screen(&session, &mut screen, |s| {
         s.text().contains("Command Palette")
     });
@@ -756,7 +777,7 @@ fn lsp_code_action_synchronizes_its_edit_before_the_dependent_command() {
     let mut session = PtySession::spawn(config).unwrap();
     let mut screen = TerminalEmulator::new(120, 40, 1000);
     wait_screen(&session, &mut screen, |s| s.text().contains("old"));
-    session.write(&[0x14]).unwrap();
+    session.write(F1).unwrap();
     wait_screen(&session, &mut screen, |s| {
         s.text().contains("Command Palette")
     });
@@ -813,7 +834,7 @@ fn native_restart_cancels_safely_then_restores_the_dirty_buffer() {
     wait_screen(&session, &mut screen, |s| s.text().contains("original"));
     session.write(b"changed ").unwrap();
     for confirm in [false, true] {
-        session.write(&[0x14]).unwrap();
+        session.write(F1).unwrap();
         wait_screen(&session, &mut screen, |s| {
             s.text().contains("Command Palette")
         });

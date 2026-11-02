@@ -974,10 +974,12 @@ impl<'a> WhenParser<'a> {
     }
 }
 
-/// Standard shell line-editing and control keys: with Ctrl alone they go to a focused
-/// terminal's child process instead of workbench bindings.
+/// Keys that, with Ctrl alone, go to a focused terminal's child process instead of
+/// workbench bindings: every letter (shells, nano, emacs, tmux and AI CLIs all use
+/// them), Space and the symbols that also map to control bytes.
 pub(crate) const TERMINAL_CONTROL_KEYS: &[&str] = &[
-    "a", "c", "d", "e", "k", "l", "r", "u", "v", "w", "y", "z", "space", "\\",
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
+    "t", "u", "v", "w", "x", "y", "z", "space", "@", "[", "\\", "]", "^", "_",
 ];
 
 pub(crate) fn canonical_key(key: &str) -> String {

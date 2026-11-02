@@ -171,7 +171,13 @@ fn reopening_a_help_page_renders_it_again_in_place() {
             .text()
             .contains("`Ctrl+Alt+J`")
     );
-    app.update_keybinding("ctrl+shift+j", "ctrl+alt+j");
+    let binding = app
+        .keybindings
+        .iter()
+        .find(|binding| binding.key == "ctrl+shift+j")
+        .cloned()
+        .unwrap();
+    app.update_keybinding(&binding, "ctrl+alt+j");
     app.execute_command(Command::EditorPreviousTab);
     app.execute_command(Command::HelpKeyboardShortcuts);
     assert_eq!(app.workbench.focused_pane().tabs.len(), tabs);

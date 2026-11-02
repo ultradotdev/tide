@@ -188,8 +188,62 @@ pub fn git_cancellable(
         args,
         input,
         cancel,
-        Duration::from_secs(15),
+        timeout_for(args),
     )
+}
+
+/// How long a Git command may run. Commands that talk to a remote, or that run hooks and
+/// commit signing, get ten minutes: pushes, fetches and pre-commit hooks routinely take
+/// longer than a quick local command.
+#[must_use]
+pub fn timeout_for(args: &[&str]) -> Duration {
+    if is_long_running(args) {
+        Duration::from_secs(600)
+    } else {
+        Duration::from_secs(60)
+    }
+}
+
+/// Whether `args` names a Git command that may talk to a remote or run hooks.
+#[must_use]
+pub fn is_long_running(args: &[&str]) -> bool {
+    matches!(
+        subcommand(args),
+        Some(
+            "push"
+                | "pull"
+                | "fetch"
+                | "clone"
+                | "ls-remote"
+                | "remote"
+                | "submodule"
+                | "lfs"
+                | "commit"
+                | "merge"
+                | "rebase"
+                | "cherry-pick"
+                | "revert"
+                | "am"
+                | "checkout"
+                | "switch"
+                | "gc"
+        )
+    )
+}
+
+/// The Git subcommand in `args`, skipping global options such as `-c key=value`.
+fn subcommand<'a>(args: &[&'a str]) -> Option<&'a str> {
+    let mut args = args.iter();
+    while let Some(arg) = args.next() {
+        match *arg {
+            "-c" | "-C" => {
+                args.next();
+            }
+            arg if arg.starts_with('-') => {}
+            arg => return Some(arg),
+        }
+    }
+    None
 }
 fn run(
     program: &std::ffi::OsStr,
@@ -248,6 +302,8 @@ fn run_mode(
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("GIT_EDITOR", "true")
         .env("GIT_PAGER", "cat")
+        // pinentry-curses would draw over Tide's screen; GUI pinentry programs still work.
+        .env_remove("GPG_TTY")
         .stdin(if input.is_some() {
             Stdio::piped()
         } else {
@@ -255,6 +311,17 @@ fn run_mode(
         })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    // Tide owns the terminal, so ssh must not prompt on it: a passphrase or host-key
+    // question would stop the command until it timed out. Ask through SSH_ASKPASS
+    // instead, which fails at once unless the user has configured a graphical one.
+    if git_args {
+        if std::env::var_os("SSH_ASKPASS").is_none() {
+            command.env("SSH_ASKPASS", "false");
+        }
+        if std::env::var_os("SSH_ASKPASS_REQUIRE").is_none() {
+            command.env("SSH_ASKPASS_REQUIRE", "force");
+        }
+    }
     {
         use std::os::unix::process::CommandExt;
         command.process_group(0);
@@ -513,5 +580,27 @@ mod tests {
             .is_err()
         );
         assert!(start.elapsed() < Duration::from_secs(1));
+    }
+
+    #[test]
+    fn remote_and_hook_running_commands_get_the_long_timeout() {
+        for args in [
+            &["push"][..],
+            &["pull", "--rebase"],
+            &["fetch", "--all"],
+            &["-c", "core.editor=true", "commit", "-m", "x"],
+            &["cherry-pick", "abc"],
+        ] {
+            assert!(is_long_running(args), "{args:?}");
+            assert_eq!(timeout_for(args), Duration::from_secs(600));
+        }
+        for args in [
+            &["status"][..],
+            &["add", "--", "push"],
+            &["-c", "push", "log"],
+        ] {
+            assert!(!is_long_running(args), "{args:?}");
+            assert_eq!(timeout_for(args), Duration::from_secs(60));
+        }
     }
 }

@@ -46,6 +46,18 @@ Timeline lists commits for the active file, or for the whole repository after {{
 
 **{{label:git.discard}}** and **{{label:git.discardAll}}** throw away unstaged changes after asking; staged changes and untracked files are kept. **{{label:git.clean}}** lists the untracked files it would delete before deleting them and never removes ignored files.
 
+## Remotes, hooks and signing
+
+Tide runs Git in the background, without a terminal, so Git cannot stop to ask you anything:
+
+- **SSH:** keys need to be loaded in `ssh-agent` (`ssh-add`), or set `SSH_ASKPASS` to a graphical prompt. A server whose host key you have never accepted fails with “Host key verification failed”; connect once from a terminal to accept it.
+- **HTTPS:** use a credential helper, such as the macOS keychain or Git Credential Manager.
+- **Signed commits:** signing needs a graphical pinentry such as `pinentry-mac`. `pinentry-curses` cannot draw while Tide owns the screen.
+
+When one of these stops a command, the status message says what to do. You can always run the same command in a Tide terminal instead.
+
+Push, pull, fetch and the commands that run hooks (commit, merge, rebase, cherry-pick, revert, checkout) show “Git: running …” and may take up to ten minutes before Tide gives up; other Git commands get one minute.
+
 ## Rewriting history
 
 **{{label:git.commitAmend}}** opens the commit prompt with the last commit's subject; its body is kept. The confirmation warns when that commit is already on the upstream branch, which then needs **{{label:git.pushForce}}**. That uses `--force-with-lease`, so it refuses when the remote has commits you have not fetched.

@@ -169,7 +169,9 @@ impl App {
             ModalKind::Prompt(PromptAction::UnlockConnectionSecrets) => {
                 self.with_db(|db, ui| db.restore_pending_form(ui))
             }
-            ModalKind::Confirm(ConfirmAction::QuitDirty) => self.restart = None,
+            ModalKind::Confirm(ConfirmAction::QuitDirty | ConfirmAction::QuitBusy { .. }) => {
+                self.restart = None
+            }
             ModalKind::MoveTab => self.pending_move = None,
             ModalKind::Confirm(ConfirmAction::CloseTab { .. }) => self.pending_close = None,
             ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => self.pending_replace = None,
@@ -266,14 +268,19 @@ impl App {
                     .settings
                     .get(&key)
                     .map_or_else(String::new, ToString::to_string);
-                self.open_prompt(PromptAction::EditSetting(key), "Edit Setting", &current);
+                let title = format!("Edit Setting: {key}");
+                self.open_prompt(PromptAction::EditSetting(key), &title, &current);
             }
-            Submitted::Keybinding(key) => {
-                self.open_prompt(
-                    PromptAction::EditKeybinding(key.clone()),
-                    "Edit Keybinding",
-                    &key,
-                );
+            Submitted::Keybinding(selected) => {
+                if let Ok(binding) = serde_json::from_str::<Keybinding>(&selected) {
+                    let title = format!(
+                        "Edit Keybinding: {}",
+                        self.commands
+                            .get(&binding.command)
+                            .map_or(binding.command.as_str(), |info| info.label.as_str())
+                    );
+                    self.open_prompt(PromptAction::EditKeybinding(selected), &title, &binding.key);
+                }
             }
             // Row cell editors submit as `RowCell`.
             Submitted::Nothing | Submitted::Prompt(PromptAction::EditRowCell(..), _) => {}
@@ -368,9 +375,10 @@ impl App {
                 let value = input;
                 self.update_setting(&key, &value);
             }
-            Submitted::Prompt(PromptAction::EditKeybinding(key), input) => {
-                let value = input;
-                self.update_keybinding(&key, &value);
+            Submitted::Prompt(PromptAction::EditKeybinding(selected), input) => {
+                if let Ok(binding) = serde_json::from_str::<Keybinding>(&selected) {
+                    self.update_keybinding(&binding, &input);
+                }
             }
             Submitted::Prompt(PromptAction::SaveSessionName, input) => {
                 let name = input;
@@ -436,7 +444,8 @@ impl App {
             Submitted::Confirm(ConfirmAction::SwitchSession(name)) => {
                 self.switch_named_session(&name)
             }
-            Submitted::Confirm(ConfirmAction::QuitDirty) => self.finish_quit(),
+            Submitted::Confirm(ConfirmAction::QuitDirty) => self.quit_unless_busy(),
+            Submitted::Confirm(ConfirmAction::QuitBusy { .. }) => self.finish_quit(),
             Submitted::Confirm(ConfirmAction::KillTerminal(serial)) => self.kill_terminal(serial),
             Submitted::Confirm(ConfirmAction::CloseAllTerminals) => self.close_all_terminals(),
         }
@@ -539,10 +548,12 @@ impl App {
             .iter()
             .filter(|binding| command_supported(&binding.command))
             .map(|binding| {
+                // The value names the whole binding: several share a key under different
+                // `when` contexts, and editing one must not rebind another.
                 ModalItem::new(
                     binding.key.clone(),
                     binding.command.clone(),
-                    binding.key.clone(),
+                    serde_json::to_string(binding).unwrap_or_default(),
                 )
             })
             .collect();
