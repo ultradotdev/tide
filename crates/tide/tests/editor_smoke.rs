@@ -17,6 +17,7 @@ fn edits_and_saves_a_file_through_the_tui() {
     config.env = vec![
         ("TERM".to_owned(), "xterm-256color".to_owned()),
         ("HOME".to_owned(), home.path().display().to_string()),
+        ("TIDE_NO_UPDATE_CHECK".to_owned(), "1".to_owned()),
         (
             "XDG_CONFIG_HOME".to_owned(),
             home.path().join("config").display().to_string(),

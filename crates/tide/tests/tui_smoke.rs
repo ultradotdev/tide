@@ -18,6 +18,7 @@ fn tui_starts_and_exits_on_quit() {
     config.env = vec![
         ("TERM".to_owned(), "xterm-256color".to_owned()),
         ("HOME".into(), home.path().display().to_string()),
+        ("TIDE_NO_UPDATE_CHECK".into(), "1".into()),
     ];
     for (key, name) in [
         ("XDG_CONFIG_HOME", "config"),

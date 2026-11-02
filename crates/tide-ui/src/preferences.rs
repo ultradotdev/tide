@@ -29,6 +29,7 @@ pub const SUPPORTED: &[&str] = &[
     "editor.wordWrapColumn",
     "workbench.colorTheme",
     "workbench.startupEditor",
+    "update.checkAutomatically",
     "tui.sidebar.width",
     "tui.sidebar.visible",
     "tui.sidebar.location",

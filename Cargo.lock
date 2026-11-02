@@ -4643,7 +4643,7 @@ dependencies = [
 
 [[package]]
 name = "tide"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -4671,7 +4671,7 @@ dependencies = [
 
 [[package]]
 name = "tide-ai"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -4695,7 +4695,7 @@ dependencies = [
 
 [[package]]
 name = "tide-config"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "anyhow",
  "jsonc-parser",
@@ -4707,7 +4707,7 @@ dependencies = [
 
 [[package]]
 name = "tide-core"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "ropey",
  "similar",
@@ -4719,7 +4719,7 @@ dependencies = [
 
 [[package]]
 name = "tide-db"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4742,7 +4742,7 @@ dependencies = [
 
 [[package]]
 name = "tide-lsp"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "nix 0.31.3",
  "rustix",
@@ -4759,7 +4759,7 @@ dependencies = [
 
 [[package]]
 name = "tide-services"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "anyhow",
  "gix",
@@ -4777,7 +4777,7 @@ dependencies = [
 
 [[package]]
 name = "tide-terminal"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -4793,7 +4793,7 @@ dependencies = [
 
 [[package]]
 name = "tide-ui"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "anyhow",
  "crossterm",
@@ -5717,7 +5717,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

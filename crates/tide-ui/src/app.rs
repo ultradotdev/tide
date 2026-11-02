@@ -282,8 +282,9 @@ pub enum AppEvent {
         query: String,
         items: Vec<ModalItem>,
     },
-    /// The latest release tag, or why it could not be read.
-    LatestRelease(Result<String, String>),
+    /// The latest release tag, or why it could not be read, and whether the daily check
+    /// asked rather than Help: Check for Updates.
+    LatestRelease(Result<String, String>, bool),
     /// Named sessions saved for this workspace, for listing or deleting.
     SavedSessions {
         generation: u64,
@@ -892,7 +893,9 @@ impl App {
                     self.set_status(format!("{count} match(es) for {query}"));
                 }
             }
-            AppEvent::LatestRelease(result) => self.show_latest_release(result),
+            AppEvent::LatestRelease(result, automatic) => {
+                self.show_latest_release(result, automatic)
+            }
             AppEvent::SavedSessions {
                 generation,
                 delete,

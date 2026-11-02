@@ -1,6 +1,6 @@
 # Tide by Ultra.dev
 
-_v0.11.0_
+_v0.11.1_
 
 ## Terminal-Native Agentic IDE
 
@@ -33,7 +33,7 @@ curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.
 The script installs the latest GitHub release into `~/.local/lib/tide/releases/` with the launcher `~/.local/bin/tide`. It checks the archive against the release's `SHA256SUMS`, on macOS the Developer ID signature and Apple notarization, and, when an authenticated GitHub CLI (`gh`) is available, the GitHub build attestation. To install a specific version, run that release's script with its version:
 
 ```sh
-curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.11.0/install.sh | sh -s -- --version 0.11.0
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.11.1/install.sh | sh -s -- --version 0.11.1
 ```
 
 Re-run the script to update; the previous release is retained for `install.sh --rollback`. Remove a script installation with `tide --uninstall` (add `--purge` to also remove Tide user data after confirmation), or `curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh`.
@@ -123,7 +123,7 @@ These are synthetic fixture measurements on shared CI runners. They are not a co
 - [PostgreSQL](docs/features/postgresql.md), [external agents](docs/features/ai.md), [themes](docs/features/themes.md)
 - [Configuration and storage](docs/reference/configuration.md), [troubleshooting](docs/troubleshooting.md)
 - [Architecture](docs/architecture/overview.md), [contributing](CONTRIBUTING.md), [security policy](SECURITY.md)
-- Release notes: [0.11.0](docs/v0.11.0.md), [0.10.0](docs/v0.10.0.md)
+- Release notes: [0.11.1](docs/v0.11.1.md), [0.11.0](docs/v0.11.0.md), [0.10.0](docs/v0.10.0.md)
 
 ## Development
 
