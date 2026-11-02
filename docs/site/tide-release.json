@@ -140,7 +140,7 @@
     "homebrewUpgrade": {
       "status": "available",
       "commands": [
-        "brew upgrade tide"
+        "brew update && brew upgrade tide"
       ]
     },
     "homebrewUninstall": {
@@ -267,8 +267,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "8cd139d382e161627f0c1f151721a0d3ffcecc2b05dcfc2e7331419388d2e253",
-    "lastVerifiedGitFingerprint": "5f4fdc64af026b70b4088f5c56cdc61afde70475",
+    "contentHash": "b70e3cbcbb3fbf2a5880eeca9e93c23c39bf0e308ab75480fd7c0c8af8a0894e",
+    "lastVerifiedGitFingerprint": "0749275b683b00501576f8e67a46066ace80f39d",
     "inputFiles": [
       "config/product.json",
       "config/release.json",

@@ -344,7 +344,7 @@ fn homebrew_refusal(executable: &Path, command: ManagedCommand) -> Result<()> {
             "Tide was installed with Homebrew ({shown}); remove it with `brew uninstall {formula}`"
         ),
         ManagedCommand::Install => anyhow::bail!(
-            "Tide was installed with Homebrew ({shown}); update it with `brew upgrade {formula}`, or run `brew uninstall {formula}` before using Tide's own installer"
+            "Tide was installed with Homebrew ({shown}); update it with `brew update && brew upgrade {formula}`, or run `brew uninstall {formula}` before using Tide's own installer"
         ),
     }
 }
@@ -816,7 +816,10 @@ mod tests {
         let update = homebrew_refusal(keg, ManagedCommand::Install)
             .unwrap_err()
             .to_string();
-        assert!(update.contains("`brew upgrade tide`"), "{update}");
+        assert!(
+            update.contains("`brew update && brew upgrade tide`"),
+            "{update}"
+        );
         let managed = Path::new("/home/dev/.local/lib/tide/releases/0.10.0/tide");
         homebrew_refusal(managed, ManagedCommand::Uninstall).unwrap();
         homebrew_refusal(managed, ManagedCommand::Install).unwrap();

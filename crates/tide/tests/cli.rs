@@ -54,10 +54,10 @@ fn homebrew_installs_refuse_managed_installation_commands() {
         .stderr(predicate::str::contains("brew uninstall tide"));
     run(&["--install-local"])
         .failure()
-        .stderr(predicate::str::contains("brew upgrade tide"));
+        .stderr(predicate::str::contains("brew update && brew upgrade tide"));
     run(&["--activate-existing", "0.10.0"])
         .failure()
-        .stderr(predicate::str::contains("brew upgrade tide"));
+        .stderr(predicate::str::contains("brew update && brew upgrade tide"));
     assert!(!root.join("home/.local").exists());
     run(&["--version"])
         .success()

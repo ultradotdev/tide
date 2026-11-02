@@ -244,7 +244,7 @@ fn release_commands(set: &str) -> Vec<String> {
 #[must_use]
 pub fn update_instruction(install: &Install) -> String {
     match install {
-        Install::Homebrew { formula } => format!("Update with Homebrew:\n\n  brew upgrade {formula}"),
+        Install::Homebrew { formula } => format!("Update with Homebrew:\n\n  brew update && brew upgrade {formula}"),
         Install::Managed { local: false } => format!(
             "Update by running the install command again:\n\n  {}",
             release_command("binaryInstall", 0)
@@ -780,7 +780,7 @@ impl Renderer<'_> {
         let homebrew = |formula: &str| {
             format!(
                 "Update with {} and uninstall with {}. Homebrew owns this copy, so {} refuses and names the {} command to use instead.",
-                code(&format!("brew upgrade {formula}")),
+                code(&format!("brew update && brew upgrade {formula}")),
                 code(&format!("brew uninstall {formula}")),
                 code("tide --uninstall"),
                 code("brew")
