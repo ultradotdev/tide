@@ -30,12 +30,16 @@
       ],
       "properties": {
         "release": {
-          "const": "planned"
+          "enum": [
+            "planned",
+            "published"
+          ]
         },
         "distribution": {
           "enum": [
             "in-validation",
-            "implemented-unpublished"
+            "implemented-unpublished",
+            "published"
           ]
         },
         "prerelease": {
@@ -151,7 +155,10 @@
             "uniqueItems": true
           },
           "status": {
-            "const": "planned-unpublished"
+            "enum": [
+            "planned-unpublished",
+            "published"
+          ]
           }
         }
       }
@@ -343,7 +350,10 @@
           ]
         },
         "status": {
-          "const": "planned-unpublished"
+          "enum": [
+            "planned-unpublished",
+            "published"
+          ]
         },
         "runner": {
           "enum": [
@@ -422,7 +432,10 @@
           "const": "all"
         },
         "status": {
-          "const": "planned-unpublished"
+          "enum": [
+            "planned-unpublished",
+            "published"
+          ]
         }
       }
     },
@@ -438,6 +451,7 @@
           "enum": [
             "in-validation",
             "implemented-unpublished",
+            "available",
             "available-in-source-checkout"
           ]
         },

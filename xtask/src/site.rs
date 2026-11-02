@@ -71,6 +71,7 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
     let content_hash = content_hash(root)?;
     let fingerprint = fingerprint(root, write)?;
     let field = |key: &str| release.get(key).cloned().unwrap_or(Json::Null);
+    let published = release.str_at(&["status", "distribution"]) == "published";
     let artifacts = Json::Array(
         release
             .get("artifacts")
@@ -79,7 +80,8 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
             .iter()
             .map(|artifact| {
                 let mut artifact = artifact.clone();
-                artifact.set("downloadButtonEnabled", Json::Bool(false));
+                let enabled = published && artifact.str_at(&["status"]) == "published";
+                artifact.set("downloadButtonEnabled", Json::Bool(enabled));
                 artifact
             })
             .collect(),
@@ -148,8 +150,18 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
         .map(Json::display)
         .unwrap_or_default();
     let version = product.str_at(&["version"]);
+    let download_claims = if published {
+        ""
+    } else {
+        "- Do not present downloads or binary install commands as available before distribution is published.\n- Do not claim the signed artifacts are publicly downloadable before the configured release tag workflow completes.\n"
+    };
+    let artifact_state = if published {
+        "Release artifacts and the common installer are published on GitHub Releases, and each artifact's `downloadButtonEnabled` says whether to offer it. Signing credentials and private acceptance material are excluded from this handoff."
+    } else {
+        "Release artifacts and the common installer are under private validation. Download buttons remain disabled; signing credentials and private acceptance material are excluded from this handoff."
+    };
     let guide = format!(
-        "# Tide Website Content Guide\n\n## Approved language\n\n**Headline:** {headline}\n\n**Description:** {description}\n\nUse **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version {version} as the first public release.\n\n## Permitted claims\n\nThe site may claim only features listed in `features.releaseReady` in `tide-release.json`. It may describe the five external AI CLI integrations listed there.\n\n## Prohibited claims\n\n- Do not present downloads or binary install commands as available before distribution is published.\n- Do not add features that are absent from the release-ready inventory.\n- Do not claim the signed artifacts are publicly downloadable before the configured release tag workflow completes.\n- Do not claim WSL support.\n\n## Authoritative fields\n\nTreat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. Download buttons stay disabled until both the artifact and distribution statuses become published.\n\n## Verification\n\nGenerated from source content hash `{content_hash}` and last verified against Git `{fingerprint}`.\n"
+        "# Tide Website Content Guide\n\n## Approved language\n\n**Headline:** {headline}\n\n**Description:** {description}\n\nUse **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version {version} as the first public release.\n\n## Permitted claims\n\nThe site may claim only features listed in `features.releaseReady` in `tide-release.json`. It may describe the five external AI CLI integrations listed there.\n\n## Prohibited claims\n\n{download_claims}- Do not add features that are absent from the release-ready inventory.\n- Do not claim WSL support.\n\n## Authoritative fields\n\nTreat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. An artifact's download button is enabled only when both its status and the distribution status are published.\n\n## Verification\n\nGenerated from source content hash `{content_hash}` and last verified against Git `{fingerprint}`.\n"
     );
     let homepage = release
         .at(&["urls", "homepage"])
@@ -160,7 +172,7 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
         .map(Json::display)
         .unwrap_or_default();
     let readme = format!(
-        "# Tide Site-Agent Package\n\nThis directory is generated from `config/product.json` and `config/release.json`. It is the machine-readable handoff for the Ultra.dev site agent.\n\n- `tide-release.json` contains authoritative release facts and claim boundaries.\n- `WEBSITE_CONTENT_GUIDE.md` contains approved copy and prohibited claims.\n- Release artifacts and the common installer are under private validation. Download buttons remain disabled; signing credentials and private acceptance material are excluded from this handoff.\n\n## Installer redirects\n\nThe website does not host installer scripts or version files. Each GitHub release publishes `install.sh` and `uninstall.sh`, covered by its `SHA256SUMS` and build attestation. Configure these HTTPS redirects as temporary redirects (302 or 307), never as HTML pages or permanent (301/308) redirects, so `curl -fsSL` always follows them to the current release:\n\n| Website URL | Redirect to |\n| --- | --- |\n| `{homepage}/install.sh` | `{repository}/releases/latest/download/install.sh` |\n| `{homepage}/uninstall.sh` | `{repository}/releases/latest/download/uninstall.sh` |\n\n`{homepage}/releases/latest-version` is no longer read by the installer and can be retired. GitHub's `latest` URLs skip prereleases: until a release that is not marked as a prerelease exists, they return 404 and the redirects cannot serve an installer. Show the canonical GitHub command from `commands.binaryInstall`; the short website form is `curl -fsSL {homepage}/install.sh | sh`.\n\nRegenerate with `cargo xtask generate-tide-site-package --write`. Verify with `--check`. Do not edit generated files directly.\n"
+        "# Tide Site-Agent Package\n\nThis directory is generated from `config/product.json` and `config/release.json`. It is the machine-readable handoff for the Ultra.dev site agent.\n\n- `tide-release.json` contains authoritative release facts and claim boundaries.\n- `WEBSITE_CONTENT_GUIDE.md` contains approved copy and prohibited claims.\n- {artifact_state}\n\n## Installer redirects\n\nThe website does not host installer scripts or version files. Each GitHub release publishes `install.sh` and `uninstall.sh`, covered by its `SHA256SUMS` and build attestation. Configure these HTTPS redirects as temporary redirects (302 or 307), never as HTML pages or permanent (301/308) redirects, so `curl -fsSL` always follows them to the current release:\n\n| Website URL | Redirect to |\n| --- | --- |\n| `{homepage}/install.sh` | `{repository}/releases/latest/download/install.sh` |\n| `{homepage}/uninstall.sh` | `{repository}/releases/latest/download/uninstall.sh` |\n\n`{homepage}/releases/latest-version` is no longer read by the installer and can be retired. GitHub's `latest` URLs skip prereleases, so only full releases are served through these redirects. Show the canonical GitHub command from `commands.binaryInstall`; the short website form is `curl -fsSL {homepage}/install.sh | sh`.\n\nRegenerate with `cargo xtask generate-tide-site-package --write`. Verify with `--check`. Do not edit generated files directly.\n"
     );
     Ok(vec![
         (

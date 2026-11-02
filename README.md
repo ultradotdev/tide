@@ -8,7 +8,7 @@ _v0.10.0_
 
 Tide combines a code editor, Git tools, PostgreSQL, shells and external coding agents in a persistent terminal workspace. The application is a native Rust executable, and its maintainer tooling is a Rust `cargo xtask` crate.
 
-This repository is preparing its first public release. The 0.10.0 artifacts and installer are still being validated. Public downloads are unavailable. The commands below work once the release is published on GitHub.
+Signed releases for macOS and Linux are published on [GitHub Releases](https://github.com/ultradotdev/tide/releases).
 
 ## Install
 

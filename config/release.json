@@ -2,8 +2,8 @@
   "$schema": "./release.schema.json",
   "schemaVersion": 2,
   "status": {
-    "release": "planned",
-    "distribution": "in-validation",
+    "release": "published",
+    "distribution": "published",
     "prerelease": false
   },
   "website": {
@@ -32,7 +32,7 @@
         "arm64",
         "x64"
       ],
-      "status": "planned-unpublished"
+      "status": "published"
     },
     {
       "id": "linux",
@@ -41,7 +41,7 @@
         "arm64",
         "x64"
       ],
-      "status": "planned-unpublished"
+      "status": "published"
     }
   ],
   "artifacts": [
@@ -50,7 +50,7 @@
       "filename": "tide-v0.10.0-darwin-arm64.zip",
       "platform": "darwin",
       "architecture": "arm64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "macos-15",
       "archiveFormat": "zip",
       "signing": "developer-id",
@@ -68,7 +68,7 @@
       "filename": "tide-v0.10.0-darwin-x64.zip",
       "platform": "darwin",
       "architecture": "x64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "macos-15-intel",
       "archiveFormat": "zip",
       "signing": "developer-id",
@@ -86,7 +86,7 @@
       "filename": "tide-v0.10.0-linux-arm64.tar.gz",
       "platform": "linux",
       "architecture": "arm64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "ubuntu-24.04-arm",
       "archiveFormat": "tar.gz",
       "signing": "none",
@@ -105,7 +105,7 @@
       "filename": "tide-v0.10.0-linux-x64.tar.gz",
       "platform": "linux",
       "architecture": "x64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "ubuntu-24.04",
       "archiveFormat": "tar.gz",
       "signing": "none",
@@ -124,36 +124,36 @@
       "filename": "SHA256SUMS",
       "platform": "all",
       "architecture": "all",
-      "status": "planned-unpublished"
+      "status": "published"
     }
   ],
   "commands": {
     "homebrewInstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "brew install ultradotdev/tap/tide"
       ]
     },
     "homebrewUpgrade": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "brew upgrade tide"
       ]
     },
     "homebrewUninstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "brew uninstall tide"
       ]
     },
     "binaryInstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh"
       ]
     },
     "binaryUninstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "tide --uninstall",
         "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh"
@@ -207,11 +207,6 @@
         "id": "wsl",
         "name": "Windows Subsystem for Linux",
         "description": "WSL packaging and support verification are deferred until after v0.10.0."
-      },
-      {
-        "id": "binary-distribution",
-        "name": "Published binary distribution",
-        "description": "Rust 0.10.0 archives and installation are being validated privately. Public downloads are unavailable."
       }
     ]
   },

@@ -4,7 +4,7 @@ This directory is generated from `config/product.json` and `config/release.json`
 
 - `tide-release.json` contains authoritative release facts and claim boundaries.
 - `WEBSITE_CONTENT_GUIDE.md` contains approved copy and prohibited claims.
-- Release artifacts and the common installer are under private validation. Download buttons remain disabled; signing credentials and private acceptance material are excluded from this handoff.
+- Release artifacts and the common installer are published on GitHub Releases, and each artifact's `downloadButtonEnabled` says whether to offer it. Signing credentials and private acceptance material are excluded from this handoff.
 
 ## Installer redirects
 
@@ -15,6 +15,6 @@ The website does not host installer scripts or version files. Each GitHub releas
 | `https://ultra.dev/tide/install.sh` | `https://github.com/ultradotdev/tide/releases/latest/download/install.sh` |
 | `https://ultra.dev/tide/uninstall.sh` | `https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh` |
 
-`https://ultra.dev/tide/releases/latest-version` is no longer read by the installer and can be retired. GitHub's `latest` URLs skip prereleases: until a release that is not marked as a prerelease exists, they return 404 and the redirects cannot serve an installer. Show the canonical GitHub command from `commands.binaryInstall`; the short website form is `curl -fsSL https://ultra.dev/tide/install.sh | sh`.
+`https://ultra.dev/tide/releases/latest-version` is no longer read by the installer and can be retired. GitHub's `latest` URLs skip prereleases, so only full releases are served through these redirects. Show the canonical GitHub command from `commands.binaryInstall`; the short website form is `curl -fsSL https://ultra.dev/tide/install.sh | sh`.
 
 Regenerate with `cargo xtask generate-tide-site-package --write`. Verify with `--check`. Do not edit generated files directly.

@@ -14,8 +14,8 @@
     "keychainService": "dev.ultra.tide"
   },
   "release": {
-    "release": "planned",
-    "distribution": "in-validation",
+    "release": "published",
+    "distribution": "published",
     "prerelease": false
   },
   "website": {
@@ -30,7 +30,7 @@
         "arm64",
         "x64"
       ],
-      "status": "planned-unpublished"
+      "status": "published"
     },
     {
       "id": "linux",
@@ -39,7 +39,7 @@
         "arm64",
         "x64"
       ],
-      "status": "planned-unpublished"
+      "status": "published"
     }
   ],
   "artifacts": [
@@ -48,7 +48,7 @@
       "filename": "tide-v0.10.0-darwin-arm64.zip",
       "platform": "darwin",
       "architecture": "arm64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "macos-15",
       "archiveFormat": "zip",
       "signing": "developer-id",
@@ -60,14 +60,14 @@
       ],
       "rustTarget": "aarch64-apple-darwin",
       "minimumOS": "14.0",
-      "downloadButtonEnabled": false
+      "downloadButtonEnabled": true
     },
     {
       "id": "darwin-x64",
       "filename": "tide-v0.10.0-darwin-x64.zip",
       "platform": "darwin",
       "architecture": "x64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "macos-15-intel",
       "archiveFormat": "zip",
       "signing": "developer-id",
@@ -79,14 +79,14 @@
       ],
       "rustTarget": "x86_64-apple-darwin",
       "minimumOS": "14.0",
-      "downloadButtonEnabled": false
+      "downloadButtonEnabled": true
     },
     {
       "id": "linux-arm64",
       "filename": "tide-v0.10.0-linux-arm64.tar.gz",
       "platform": "linux",
       "architecture": "arm64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "ubuntu-24.04-arm",
       "archiveFormat": "tar.gz",
       "signing": "none",
@@ -99,14 +99,14 @@
       "rustTarget": "aarch64-unknown-linux-gnu",
       "buildImage": "ubuntu:22.04",
       "minimumGlibc": "2.35",
-      "downloadButtonEnabled": false
+      "downloadButtonEnabled": true
     },
     {
       "id": "linux-x64",
       "filename": "tide-v0.10.0-linux-x64.tar.gz",
       "platform": "linux",
       "architecture": "x64",
-      "status": "planned-unpublished",
+      "status": "published",
       "runner": "ubuntu-24.04",
       "archiveFormat": "tar.gz",
       "signing": "none",
@@ -119,44 +119,44 @@
       "rustTarget": "x86_64-unknown-linux-gnu",
       "buildImage": "ubuntu:22.04",
       "minimumGlibc": "2.35",
-      "downloadButtonEnabled": false
+      "downloadButtonEnabled": true
     },
     {
       "id": "checksums",
       "filename": "SHA256SUMS",
       "platform": "all",
       "architecture": "all",
-      "status": "planned-unpublished",
-      "downloadButtonEnabled": false
+      "status": "published",
+      "downloadButtonEnabled": true
     }
   ],
   "commands": {
     "homebrewInstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "brew install ultradotdev/tap/tide"
       ]
     },
     "homebrewUpgrade": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "brew upgrade tide"
       ]
     },
     "homebrewUninstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "brew uninstall tide"
       ]
     },
     "binaryInstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh"
       ]
     },
     "binaryUninstall": {
-      "status": "in-validation",
+      "status": "available",
       "commands": [
         "tide --uninstall",
         "curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh"
@@ -217,11 +217,6 @@
         "id": "wsl",
         "name": "Windows Subsystem for Linux",
         "description": "WSL packaging and support verification are deferred until after v0.10.0."
-      },
-      {
-        "id": "binary-distribution",
-        "name": "Published binary distribution",
-        "description": "Rust 0.10.0 archives and installation are being validated privately. Public downloads are unavailable."
       }
     ]
   },
@@ -272,8 +267,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "b8708f9fb8efda741986eafcc0cff68084c66534547ede1571126779422b0d4f",
-    "lastVerifiedGitFingerprint": "2679fb7f91ded35ae61d9d505c1382feb3e441a1",
+    "contentHash": "f3b49c9f81234678e3dfe9e4878687acf3a3212ff4ed86ea4a09cbe91d872c0e",
+    "lastVerifiedGitFingerprint": "cc46da7e3f0d13c2aa57b0fda5247c14860ba366",
     "inputFiles": [
       "config/product.json",
       "config/release.json",
