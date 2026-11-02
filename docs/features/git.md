@@ -93,3 +93,15 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | View Staged Diff | — | `git.diffStaged` |
 
 Branch switching, checkout and **List Branches** open the same branch picker. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.
+
+**Discard Changes in Active File** and **Discard All Changes** throw away unstaged changes after asking; staged changes and untracked files are kept. **Clean Untracked Files...** lists the untracked files it would delete before deleting them and never removes ignored files.
+
+## Rewriting history
+
+**Commit (Amend)...** opens the commit prompt with the last commit's subject; its body is kept. The confirmation warns when that commit is already on the upstream branch, which then needs **Push (Force with Lease)**. That uses `--force-with-lease`, so it refuses when the remote has commits you have not fetched.
+
+**Rebase Branch...** picks a branch to rebase onto. **Cherry-Pick Commit...**, **Revert Commit...** and **Reset to Commit...** pick a commit from the log; a reset asks for soft, mixed or hard, and a hard reset asks again before it discards anything. Git never opens an editor for these: messages are used as they are.
+
+## Conflicts
+
+When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **Open Conflicted File...** opens a conflicted file. Resolve and stage each one, then run **Continue Rebase** or **Abort Rebase**; finish a merge by committing or with **Abort Merge**.

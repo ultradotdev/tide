@@ -13,8 +13,11 @@ Tide opens shells in the bottom dock or as ordinary tabs in the main panes. AI a
 | Next / previous dock tab | {{key:terminal.next}} / {{key:terminal.previous}} |
 | Close the focused terminal tab | {{key:terminal.close}} |
 | Send Ctrl+C to the terminal | {{key:terminal.interrupt}} |
+| Clear the scrollback and screen | {{key:terminal.clear}} |
 
 The dock's `+` button also opens a terminal, and **{{label:editor.moveTabToPane}}** moves a terminal between the dock and the panes.
+
+**{{label:terminal.kill}}** stops every process in a terminal and leaves its tab marked with the exit status, as when the shell exits; it asks first while a command or agent is running. **{{label:terminal.closeAll}}** closes the shell terminals in the dock and the panes, asking first if one is busy; agent tabs stay open. Terminal commands act on the focused terminal, or on the dock's active terminal when focus is elsewhere.
 
 New terminals start in the workspace folder with the program in `terminal.shell` ({{setting:terminal.shell}}); when it is empty Tide uses `$SHELL`, then `/bin/sh`. Bash, zsh and sh start as interactive login shells. Terminals report `TERM=xterm-256color`, `COLORTERM=truecolor` and `TERM_PROGRAM=tide`. Shell and scrollback changes apply to new terminals.
 
@@ -26,7 +29,9 @@ Escape also belongs to the program. To leave a terminal, use {{key:workbench.foc
 
 ## Scrollback
 
-Each terminal keeps `tui.terminal.scrollback` ({{setting:tui.terminal.scrollback}}) lines. Shift+PageUp and Shift+PageDown page through them, and the mouse wheel scrolls; hold Shift while scrolling when the program has asked for mouse input.
+Each terminal keeps `tui.terminal.scrollback` ({{setting:tui.terminal.scrollback}}) lines. Shift+PageUp and Shift+PageDown page through them, and the mouse wheel scrolls; hold Shift while scrolling when the program has asked for mouse input. {{key:terminal.scrollToTop}} jumps to the oldest line and {{key:terminal.scrollToBottom}} back to the live screen.
+
+{{key:terminal.clear}} clears the scrollback and the screen like a terminal's Clear Buffer: the prompt line moves to the top, and nothing is typed into the shell. A full-screen program such as an editor keeps its screen.
 
 ## Compatibility
 

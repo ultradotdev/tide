@@ -14,6 +14,8 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 
 Updates and uninstalls keep your settings, keybindings, sessions and connections; only `tide --uninstall --purge` removes them.
 
+**Help: Check for Updates** asks GitHub for the latest release and, when it is newer, shows the update step for this installation. Tide never checks on its own.
+
 ## Install with Homebrew
 
 ```sh

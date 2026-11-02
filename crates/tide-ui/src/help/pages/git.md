@@ -43,3 +43,15 @@ Timeline lists commits for the active file, or for the whole repository after {{
 {{commands:Git}}
 
 Branch switching, checkout and **{{label:git.branches}}** open the same branch picker. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.
+
+**{{label:git.discard}}** and **{{label:git.discardAll}}** throw away unstaged changes after asking; staged changes and untracked files are kept. **{{label:git.clean}}** lists the untracked files it would delete before deleting them and never removes ignored files.
+
+## Rewriting history
+
+**{{label:git.commitAmend}}** opens the commit prompt with the last commit's subject; its body is kept. The confirmation warns when that commit is already on the upstream branch, which then needs **{{label:git.pushForce}}**. That uses `--force-with-lease`, so it refuses when the remote has commits you have not fetched.
+
+**{{label:git.rebase}}** picks a branch to rebase onto. **{{label:git.cherryPick}}**, **{{label:git.revert}}** and **{{label:git.reset}}** pick a commit from the log; a reset asks for soft, mixed or hard, and a hard reset asks again before it discards anything. Git never opens an editor for these: messages are used as they are.
+
+## Conflicts
+
+When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **{{label:git.conflicts}}** opens a conflicted file. Resolve and stage each one, then run **{{label:git.continueRebase}}** or **{{label:git.abortRebase}}**; finish a merge by committing or with **{{label:git.abortMerge}}**.
