@@ -859,9 +859,8 @@ async fn a_crashing_server_restarts_with_backoff() {
     let log = workspace.path().join("starts.log");
     let config = mock_config(&["--crash-after-init", "--start-log", log.to_str().unwrap()]);
     let registry = LspRegistry::new();
-    let deadline = tokio::time::Instant::now() + Duration::from_millis(1500);
     let mut backoff_errors = 0;
-    while tokio::time::Instant::now() < deadline {
+    let mut poll = async || {
         if let Err(error) = registry
             .get_or_start(&config, workspace.path(), quiet_events)
             .await
@@ -871,10 +870,26 @@ async fn a_crashing_server_restarts_with_backoff() {
             backoff_errors += 1;
         }
         tokio::time::sleep(Duration::from_millis(20)).await;
+    };
+    // Slow runners take a while to start the mock, so wait for the restart generously.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+    while start_count(&log) < 2 {
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "the crashed server was never restarted"
+        );
+        poll().await;
+    }
+    // The second crash backs off for 500ms, so no third start can come this soon.
+    let quiet = tokio::time::Instant::now() + Duration::from_millis(300);
+    while tokio::time::Instant::now() < quiet {
+        poll().await;
     }
     let starts = start_count(&log);
-    assert!(starts >= 2, "the crashed server was never restarted");
-    assert!(starts <= 4, "the crashed server restarted {starts} times");
+    assert_eq!(
+        starts, 2,
+        "the crashed server restarted without backing off"
+    );
     assert!(backoff_errors > 0);
     registry.shutdown_all().await;
 }
