@@ -2,7 +2,7 @@
 source: crates/tide-ui/src/app/tests/render.rs
 expression: "snapshot_modal(120, 40, |app| { app.open_quick_open(); app.settle(); })"
 ---
- ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
 No files · . hidden · Enter expand/│Tide
                                    │
                                    │A terminal-native code editor.
@@ -39,6 +39,6 @@ Enter open · ←/→ folders │                                               
                                    │
                                    │
                                    │
- ▶ Outline                       × │
- ▶ Timeline                      × │                                                                                  ↑
+ ▶ Outline                         │
+ ▶ Timeline                        │                                                                                  ↑
  >_ │0 files

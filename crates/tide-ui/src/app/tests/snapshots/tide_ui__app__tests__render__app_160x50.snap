@@ -2,7 +2,7 @@
 source: crates/tide-ui/src/app/tests/render.rs
 expression: "snapshot_app(160, 50)"
 ---
- ▼ Explorer  [2]               ▾ × │ ←  main.ts ×                                                                      ▾  → │Agents                       +  ▾
+ ▼ Explorer  [2]                 ▾ │ ←  main.ts ×                                                                      ▾  → │Agents                       +  ▾
 ▸  src                            │▎1   const answer = 42;                                                      ▒░         │ / Search sessions
    README.md                      │ 2                                                                                      │ ▾ Claude Code (0)
                                    │                                                                                        │   Not installed
@@ -26,7 +26,7 @@ expression: "snapshot_app(160, 50)"
                                    │                                                                                        │
                                    │                                                                                        │
 Enter open · ←/→ folders · . hidden│                                                                                        │
- ▼ Source Control                × │                                                                                        │
+ ▼ Source Control                  │                                                                                        │
  no repository                     │                                                                                        │
                                    │                                                                                        │
                                    │                                                                                        │
@@ -49,6 +49,6 @@ Enter open · ←/→ folders · . hidden│                                    
                                    │                                                                                        │
                                    │                                                                                        │
                                    │                                                                                        │
- ▶ Outline  [1]                  × │                                                                                        │
- ▶ Timeline                      × │                                                                                      ↑ │ / search · n new · r refresh · w w
+ ▶ Outline  [1]                    │                                                                                        │
+ ▶ Timeline                        │                                                                                      ↑ │ / search · n new · r refresh · w w
  >_ │ main.ts │                                                                                               Ln 1, Col 1 │ TypeScript │ Spaces: 2 │ UTF-8 │ LF

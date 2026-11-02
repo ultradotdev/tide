@@ -129,7 +129,6 @@ pub enum HitTarget {
     ScrollBar(ScrollOwner, Rect),
     Command(Command),
     PaneControl(PaneId, PaneControl),
-    SectionClose(usize),
     Resize(ResizeTarget),
     Agents,
     AccordionHeader(usize),

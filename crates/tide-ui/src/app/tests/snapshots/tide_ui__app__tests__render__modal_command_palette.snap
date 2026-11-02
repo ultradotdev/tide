@@ -2,7 +2,7 @@
 source: crates/tide-ui/src/app/tests/render.rs
 expression: "snapshot_modal(120, 40, |app| app.open_command_palette())"
 ---
- ▼ Explorer  [0]               ▾ × │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
 No files · . hidden · Enter expand/│Tide
                                    │
                                    │A terminal-native code editor.
@@ -39,6 +39,6 @@ Enter open · ←/→ folders · . h│ Browse Schema                           
                                    │
                                    │
                                    │
- ▶ Outline                       × │
- ▶ Timeline                      × │                                                                                  ↑
+ ▶ Outline                         │
+ ▶ Timeline                        │                                                                                  ↑
  >_ │
