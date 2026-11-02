@@ -1,6 +1,6 @@
 # Tide by Ultra.dev
 
-_v0.10.0_
+_v0.11.0_
 
 ## Terminal-Native Agentic IDE
 
@@ -33,7 +33,7 @@ curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.
 The script installs the latest GitHub release into `~/.local/lib/tide/releases/` with the launcher `~/.local/bin/tide`. It checks the archive against the release's `SHA256SUMS`, on macOS the Developer ID signature and Apple notarization, and, when an authenticated GitHub CLI (`gh`) is available, the GitHub build attestation. To install a specific version, run that release's script with its version:
 
 ```sh
-curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.10.0/install.sh | sh -s -- --version 0.10.0
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.11.0/install.sh | sh -s -- --version 0.11.0
 ```
 
 Re-run the script to update; the previous release is retained for `install.sh --rollback`. Remove a script installation with `tide --uninstall` (add `--purge` to also remove Tide user data after confirmation), or `curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/uninstall.sh | sh`.
@@ -98,9 +98,9 @@ See [getting started](docs/getting-started.md) for prefixes, rollback and where 
 
 The [generated keyboard reference](docs/reference/keyboard-shortcuts.md) lists effective defaults, including context-specific controls and terminal-safe alternatives. The [command reference](docs/reference/commands.md) lists routed commands and compatibility aliases.
 
-## Candidate measurements
+## Measurements
 
-The unpublished 0.10.0 candidate was measured with Rust 1.97.1 release builds, a 4,377,826-byte Rust fixture and 100 cursor-movement samples:
+The 0.10.0 release was measured with Rust 1.97.1 release builds, a 4,377,826-byte Rust fixture and 100 cursor-movement samples:
 
 | CI runner | First frame | Cursor latency, p95 | Palette opening |
 | --- | --- | --- | --- |
@@ -109,7 +109,7 @@ The unpublished 0.10.0 candidate was measured with Rust 1.97.1 release builds, a
 
 These are synthetic fixture measurements on shared CI runners. They are not a controlled benchmark or a promise about every machine. Reproduce the workload after building with `cargo xtask measure-rust-performance --binary target/release/tide`.
 
-| Candidate target | Executable | Download archive |
+| 0.10.0 target | Executable | Download archive |
 | --- | --- | --- |
 | macOS ARM64, signed | 25.92 MiB | 10.02 MiB |
 | macOS x64, signed | 27.09 MiB | 10.80 MiB |
@@ -123,7 +123,7 @@ These are synthetic fixture measurements on shared CI runners. They are not a co
 - [PostgreSQL](docs/features/postgresql.md), [external agents](docs/features/ai.md), [themes](docs/features/themes.md)
 - [Configuration and storage](docs/reference/configuration.md), [troubleshooting](docs/troubleshooting.md)
 - [Architecture](docs/architecture/overview.md), [contributing](CONTRIBUTING.md), [security policy](SECURITY.md)
-- [0.10.0 release notes](docs/v0.10.0.md)
+- Release notes: [0.11.0](docs/v0.11.0.md), [0.10.0](docs/v0.10.0.md)
 
 ## Development
 

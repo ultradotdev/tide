@@ -6,7 +6,7 @@
     "endorsement": "Tide by Ultra.dev",
     "publisher": "Ultra.dev",
     "binary": "tide",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "prerelease": false,
     "repository": "https://github.com/ultradotdev/tide",
     "homepage": "https://ultra.dev/tide",
@@ -45,7 +45,7 @@
   "artifacts": [
     {
       "id": "darwin-arm64",
-      "filename": "tide-v0.10.0-darwin-arm64.zip",
+      "filename": "tide-v0.11.0-darwin-arm64.zip",
       "platform": "darwin",
       "architecture": "arm64",
       "status": "published",
@@ -64,7 +64,7 @@
     },
     {
       "id": "darwin-x64",
-      "filename": "tide-v0.10.0-darwin-x64.zip",
+      "filename": "tide-v0.11.0-darwin-x64.zip",
       "platform": "darwin",
       "architecture": "x64",
       "status": "published",
@@ -83,7 +83,7 @@
     },
     {
       "id": "linux-arm64",
-      "filename": "tide-v0.10.0-linux-arm64.tar.gz",
+      "filename": "tide-v0.11.0-linux-arm64.tar.gz",
       "platform": "linux",
       "architecture": "arm64",
       "status": "published",
@@ -103,7 +103,7 @@
     },
     {
       "id": "linux-x64",
-      "filename": "tide-v0.10.0-linux-x64.tar.gz",
+      "filename": "tide-v0.11.0-linux-x64.tar.gz",
       "platform": "linux",
       "architecture": "x64",
       "status": "published",
@@ -216,7 +216,7 @@
       {
         "id": "wsl",
         "name": "Windows Subsystem for Linux",
-        "description": "WSL packaging and support verification are deferred until after v0.10.0."
+        "description": "WSL packaging and support verification are deferred to a later release."
       }
     ]
   },
@@ -267,8 +267,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "ef0394a42a1cfedc2f16b7820da533ef71bc401e054a6adb421eb10157335e32",
-    "lastVerifiedGitFingerprint": "792e4b7d38f42ae57ad55167d17015ee5e4f0728",
+    "contentHash": "8cd139d382e161627f0c1f151721a0d3ffcecc2b05dcfc2e7331419388d2e253",
+    "lastVerifiedGitFingerprint": "5f4fdc64af026b70b4088f5c56cdc61afde70475",
     "inputFiles": [
       "config/product.json",
       "config/release.json",
@@ -290,7 +290,7 @@
       "Cargo.toml",
       "Cargo.lock",
       "docs/troubleshooting.md",
-      "docs/v0.10.0.md",
+      "docs/v0.11.0.md",
       "install.sh",
       "uninstall.sh"
     ]

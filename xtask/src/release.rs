@@ -885,7 +885,7 @@ pub mod tests {
             Ok(match argv.get(1).map(String::as_str) {
                 Some("rev-parse") => stdout(&format!("{head}\n")),
                 Some("show") => stdout("1767225600\n"),
-                Some("--version") => stdout("Tide 0.10.0\n"),
+                Some("--version") => stdout(&format!("Tide {}\n", crate::util::VERSION)),
                 _ => stdout(""),
             })
         })
@@ -930,13 +930,14 @@ pub mod tests {
             ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64"]
         );
         let darwin = contract.artifact("darwin-arm64").unwrap();
-        assert_eq!(darwin.filename, "tide-v0.10.0-darwin-arm64.zip");
+        let version = crate::util::VERSION;
+        assert_eq!(darwin.filename, format!("tide-v{version}-darwin-arm64.zip"));
         assert_eq!(darwin.rust_target, "aarch64-apple-darwin");
         assert_eq!(darwin.signing, "developer-id");
         assert_eq!(darwin.notarization, "notarytool");
         assert_eq!(
-            archive_stem("tide-v0.10.0-linux-x64.tar.gz").unwrap(),
-            "tide-v0.10.0-linux-x64"
+            archive_stem(&format!("tide-v{version}-linux-x64.tar.gz")).unwrap(),
+            format!("tide-v{version}-linux-x64")
         );
     }
 
@@ -1044,11 +1045,9 @@ pub mod tests {
         if let Ok(listing) = listing {
             let text = String::from_utf8_lossy(&listing.stdout);
             assert!(listing.status.success(), "{text}");
-            assert!(text.contains("-rwxr-xr-x") && text.contains("tide-v0.10.0-darwin-arm64/tide"));
-            assert!(
-                text.contains("-rw-r--r--")
-                    && text.contains("tide-v0.10.0-darwin-arm64/VERSION.json")
-            );
+            let stem = format!("tide-v{}-darwin-arm64", crate::util::VERSION);
+            assert!(text.contains("-rwxr-xr-x") && text.contains(&format!("{stem}/tide")));
+            assert!(text.contains("-rw-r--r--") && text.contains(&format!("{stem}/VERSION.json")));
         }
         let extracted = scratch.path().join("extracted");
         std::fs::create_dir(&extracted).unwrap();
@@ -1061,7 +1060,10 @@ pub mod tests {
         if let Ok(status) = status {
             assert!(status.success());
             assert_eq!(
-                std::fs::read(extracted.join("tide-v0.10.0-darwin-arm64/tide")).unwrap(),
+                std::fs::read(
+                    extracted.join(format!("tide-v{}-darwin-arm64/tide", crate::util::VERSION))
+                )
+                .unwrap(),
                 std::fs::read(&binary).unwrap()
             );
         }
@@ -1071,15 +1073,16 @@ pub mod tests {
     #[test]
     fn checksums_all_archives_receipts_and_installer_scripts() {
         let scratch = tempfile::tempdir().unwrap();
+        let version = crate::util::VERSION;
         let names = [
-            "tide-v0.10.0-darwin-arm64.zip",
-            "tide-v0.10.0-darwin-arm64.notarization.json",
-            "tide-v0.10.0-darwin-x64.zip",
-            "tide-v0.10.0-darwin-x64.notarization.json",
-            "tide-v0.10.0-linux-arm64.tar.gz",
-            "tide-v0.10.0-linux-x64.tar.gz",
-            "install.sh",
-            "uninstall.sh",
+            format!("tide-v{version}-darwin-arm64.zip"),
+            format!("tide-v{version}-darwin-arm64.notarization.json"),
+            format!("tide-v{version}-darwin-x64.zip"),
+            format!("tide-v{version}-darwin-x64.notarization.json"),
+            format!("tide-v{version}-linux-arm64.tar.gz"),
+            format!("tide-v{version}-linux-x64.tar.gz"),
+            "install.sh".to_owned(),
+            "uninstall.sh".to_owned(),
         ];
         let paths: Vec<PathBuf> = names.iter().map(|name| scratch.path().join(name)).collect();
         for (index, path) in paths.iter().enumerate() {

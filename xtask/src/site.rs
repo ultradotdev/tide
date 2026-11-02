@@ -5,7 +5,8 @@ use anyhow::{Result, bail};
 use std::path::Path;
 use std::process::Command;
 
-pub const INPUTS: [&str; 23] = [
+/// Inputs other than the release notes, whose path follows the version.
+const FIXED_INPUTS: [&str; 22] = [
     "config/product.json",
     "config/release.json",
     "README.md",
@@ -26,14 +27,20 @@ pub const INPUTS: [&str; 23] = [
     "Cargo.toml",
     "Cargo.lock",
     "docs/troubleshooting.md",
-    "docs/v0.10.0.md",
     "install.sh",
     "uninstall.sh",
 ];
 
+/// Every file the site package is generated from, in a stable order.
+pub fn inputs() -> Vec<String> {
+    let mut inputs: Vec<String> = FIXED_INPUTS.iter().map(|path| (*path).to_owned()).collect();
+    inputs.insert(20, format!("docs/v{}.md", crate::util::VERSION));
+    inputs
+}
+
 pub fn content_hash(root: &Path) -> Result<String> {
     let mut data = Vec::new();
-    for path in INPUTS {
+    for path in inputs() {
         data.extend_from_slice(path.as_bytes());
         data.push(0);
         data.extend_from_slice(&std::fs::read(root.join(path))?);
@@ -54,7 +61,7 @@ fn fingerprint(root: &Path, write: bool) -> Result<String> {
     Ok(capture(
         Command::new("git")
             .args(["log", "--no-merges", "-1", "--format=%H", "--"])
-            .args(INPUTS)
+            .args(inputs())
             .current_dir(root),
     )?
     .trim()
@@ -136,7 +143,7 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
                 ("lastVerifiedGitFingerprint".into(), text(&fingerprint)),
                 (
                     "inputFiles".into(),
-                    Json::Array(INPUTS.iter().map(|path| text(path)).collect()),
+                    Json::Array(inputs().iter().map(|path| text(path)).collect()),
                 ),
             ]),
         ),
@@ -161,7 +168,7 @@ pub fn render(root: &Path, write: bool) -> Result<Vec<(&'static str, String)>> {
         "Release artifacts and the common installer are under private validation. Download buttons remain disabled; signing credentials and private acceptance material are excluded from this handoff."
     };
     let guide = format!(
-        "# Tide Website Content Guide\n\n## Approved language\n\n**Headline:** {headline}\n\n**Description:** {description}\n\nUse **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version {version} as the first public release.\n\n## Permitted claims\n\nThe site may claim only features listed in `features.releaseReady` in `tide-release.json`. It may describe the five external AI CLI integrations listed there.\n\n## Prohibited claims\n\n{download_claims}- Do not add features that are absent from the release-ready inventory.\n- Do not claim WSL support.\n\n## Authoritative fields\n\nTreat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. An artifact's download button is enabled only when both its status and the distribution status are published.\n\n## Verification\n\nGenerated from source content hash `{content_hash}` and last verified against Git `{fingerprint}`.\n"
+        "# Tide Website Content Guide\n\n## Approved language\n\n**Headline:** {headline}\n\n**Description:** {description}\n\nUse **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version {version} as the current release.\n\n## Permitted claims\n\nThe site may claim only features listed in `features.releaseReady` in `tide-release.json`. It may describe the five external AI CLI integrations listed there.\n\n## Prohibited claims\n\n{download_claims}- Do not add features that are absent from the release-ready inventory.\n- Do not claim WSL support.\n\n## Authoritative fields\n\nTreat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. An artifact's download button is enabled only when both its status and the distribution status are published.\n\n## Verification\n\nGenerated from source content hash `{content_hash}` and last verified against Git `{fingerprint}`.\n"
     );
     let homepage = release
         .at(&["urls", "homepage"])

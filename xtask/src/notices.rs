@@ -323,7 +323,7 @@ pub fn render(root: &Path, inputs: &NoticeInputs<'_>) -> Result<(String, usize, 
 
 const HEADER: &str = "# Tide Attributions
 
-Tide 0.10.0 is a native Rust application. This standalone file includes notices from the locked dependency graph for the four macOS/Linux release targets, including build dependencies and platform alternatives. Presence here does not imply every crate is linked on every target. Tide itself is Copyright 2025-2026 Zorz LLC and licensed under the Apache License, Version 2.0.
+Tide is a native Rust application. This standalone file includes notices from the locked dependency graph for the four macOS/Linux release targets, including build dependencies and platform alternatives. Presence here does not imply every crate is linked on every target. Tide itself is Copyright 2025-2026 Zorz LLC and licensed under the Apache License, Version 2.0.
 
 Native terminal integration uses portable-pty and alacritty_terminal. Ratatui/Crossterm render and route input; Ropey supplies text storage; Syntect and two-face supply syntax grammars.
 
