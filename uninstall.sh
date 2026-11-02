@@ -13,27 +13,29 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
-# Run outside a release (`curl ... | sh`), hand over to the active release's own
-# uninstaller, which verifies ownership before it removes anything.
+# Run outside an installed release (`curl ... | sh`, or a source checkout's
+# copy), hand over to the active release's own uninstaller, which verifies
+# ownership before it removes anything.
+hand_off() {
+  case "${HOME:-}" in /*) ;; *) die 'HOME must be absolute' ;; esac
+  managed=${TIDE_INSTALL_ROOT:-$HOME/.local/lib/tide}
+  case "$managed" in /*/tide) ;; *) die 'TIDE_INSTALL_ROOT must be an absolute path ending in /tide' ;; esac
+  [ -f "$managed/current/uninstall.sh" ] || die "no managed Tide installation was found at $managed; if Tide was installed with Homebrew, run: brew uninstall tide"
+  set --
+  [ "$purge" -eq 0 ] || set -- "$@" --purge
+  [ "$yes" -eq 0 ] || set -- "$@" --yes
+  exec /bin/sh "$managed/current/uninstall.sh" "$@"
+}
 case "$0" in
   */uninstall.sh) ;;
-  *)
-    case "${HOME:-}" in /*) ;; *) die 'HOME must be absolute' ;; esac
-    managed=${TIDE_INSTALL_ROOT:-$HOME/.local/lib/tide}
-    case "$managed" in /*/tide) ;; *) die 'TIDE_INSTALL_ROOT must be an absolute path ending in /tide' ;; esac
-    [ -f "$managed/current/uninstall.sh" ] || die "no managed Tide installation was found at $managed; if Tide was installed with Homebrew, run: brew uninstall tide"
-    set --
-    [ "$purge" -eq 0 ] || set -- "$@" --purge
-    [ "$yes" -eq 0 ] || set -- "$@" --yes
-    exec /bin/sh "$managed/current/uninstall.sh" "$@"
-    ;;
+  *) hand_off ;;
 esac
 [ ! -L "$0" ] || die 'refusing a symlinked uninstaller'
 release=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
+releases=${release%/*}
+[ "${releases##*/}" = releases ] || hand_off
 identity=${release##*/}
 case "$identity" in ''|.|..|*[!0-9A-Za-z.-]*) die 'invalid release identity' ;; esac
-releases=${release%/*}
-[ "${releases##*/}" = releases ] || die 'refusing to uninstall from a source checkout'
 root=${releases%/*}
 [ "${root##*/}" = tide ] || die 'invalid Tide installation root'
 [ ! -L "$root" ] && [ ! -L "$root/releases" ] || die 'refusing a symlinked store'

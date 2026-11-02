@@ -172,6 +172,8 @@ impl App {
             ModalKind::Confirm(ConfirmAction::QuitDirty) => self.restart = None,
             ModalKind::MoveTab => self.pending_move = None,
             ModalKind::Confirm(ConfirmAction::CloseTab { .. }) => self.pending_close = None,
+            ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => self.pending_replace = None,
+            ModalKind::Confirm(ConfirmAction::CloseOtherTabs(_)) => self.pending_keep = None,
             _ => {}
         }
     }
@@ -194,6 +196,12 @@ impl App {
             Submitted::Command(command) => self.execute_command(command),
             Submitted::OpenFile(path) => self.open_file(path),
             Submitted::SearchResult { path, line } => {
+                // Language-server pickers name files by URI.
+                let path = if path.starts_with("file:") {
+                    tide_lsp::uri_to_path(&path).unwrap_or_else(|| PathBuf::from(&path))
+                } else {
+                    PathBuf::from(path)
+                };
                 self.open_file(path);
                 if let Some(line) = line
                     && let Some(editor) = self.workbench.active_editor_mut()
@@ -238,14 +246,21 @@ impl App {
                 PromptAction::Commit
                 | PromptAction::CreateBranch
                 | PromptAction::RenameBranch(_)
-                | PromptAction::StashMessage,
+                | PromptAction::StashMessage
+                | PromptAction::CreateTag
+                | PromptAction::TagMessage(_)
+                | PromptAction::CommitAmend { .. },
                 _,
             )
             | Submitted::Confirm(
-                ConfirmAction::GitCommand(_) | ConfirmAction::DiscardGitChange(_),
+                ConfirmAction::GitCommand(_)
+                | ConfirmAction::DiscardGitChange(_)
+                | ConfirmAction::DiscardAllGitChanges(_),
             ) => {}
             Submitted::AgentWorkspace(path) => self.associate_agent_workspace(&path),
             Submitted::Session(name) => self.open_named_session(&name),
+            Submitted::DeleteSession(name) => self.confirm_delete_session(&name),
+            Submitted::Confirm(ConfirmAction::DeleteSession(name)) => self.delete_session(&name),
             Submitted::Setting(key) => {
                 let current = self
                     .settings
@@ -320,6 +335,15 @@ impl App {
                     }
                 }
             }
+            Submitted::Prompt(PromptAction::ReplaceInFilesFind, query) => {
+                self.prompt_replacement_in_files(query);
+            }
+            Submitted::Prompt(PromptAction::ReplaceInFilesWith(query), replacement) => {
+                self.preview_replace_in_files(query, replacement);
+            }
+            Submitted::Confirm(ConfirmAction::ReplaceInFiles(generation)) => {
+                self.apply_replace_in_files(generation);
+            }
             Submitted::Prompt(PromptAction::FindInFiles, input) => {
                 let query = input;
                 self.spawn_search_in_files(&query);
@@ -333,7 +357,10 @@ impl App {
                 self.create_workspace_path(&path, true);
             }
             Submitted::Prompt(PromptAction::RenameFile(path), input) => {
-                let name = input;
+                let name = input.trim();
+                if name.is_empty() || name == path.file_name().unwrap_or_default() {
+                    return;
+                }
                 let target = path.parent().unwrap_or(&self.workspace).join(name);
                 self.rename_selected_path(&path, &target.display().to_string());
             }
@@ -403,17 +430,20 @@ impl App {
                 self.rename_path_confirmed(&from, &to)
             }
             Submitted::Confirm(ConfirmAction::CloseAllDirty) => self.force_close_all(),
+            Submitted::Confirm(ConfirmAction::CloseOtherTabs(pane)) => {
+                self.force_close_others(pane)
+            }
             Submitted::Confirm(ConfirmAction::SwitchSession(name)) => {
                 self.switch_named_session(&name)
             }
             Submitted::Confirm(ConfirmAction::QuitDirty) => self.finish_quit(),
+            Submitted::Confirm(ConfirmAction::KillTerminal(serial)) => self.kill_terminal(serial),
+            Submitted::Confirm(ConfirmAction::CloseAllTerminals) => self.close_all_terminals(),
         }
     }
 
     pub(super) fn open_command_palette(&mut self) {
-        let commands = self
-            .commands
-            .iter()
+        let commands = crate::catalog::palette_commands(&self.commands)
             .map(|(id, info)| (id.clone(), info.clone()))
             .collect::<Vec<_>>();
         self.overlay = Some(modal::command_palette(command_items(&commands)));

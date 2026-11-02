@@ -14,15 +14,13 @@ The site may claim only features listed in `features.releaseReady` in `tide-rele
 
 ## Prohibited claims
 
-- Do not present downloads or binary install commands as available before distribution is published.
 - Do not add features that are absent from the release-ready inventory.
-- Do not claim the signed artifacts are publicly downloadable before the configured release tag workflow completes.
 - Do not claim WSL support.
 
 ## Authoritative fields
 
-Treat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. Download buttons stay disabled until both the artifact and distribution statuses become published.
+Treat product identity, release status, platform support, artifact filenames, commands, paths, feature inventories, provider support, and URLs in `tide-release.json` as authoritative. An artifact's download button is enabled only when both its status and the distribution status are published.
 
 ## Verification
 
-Generated from source content hash `b8708f9fb8efda741986eafcc0cff68084c66534547ede1571126779422b0d4f` and last verified against Git `2679fb7f91ded35ae61d9d505c1382feb3e441a1`.
+Generated from source content hash `ef0394a42a1cfedc2f16b7820da533ef71bc401e054a6adb421eb10157335e32` and last verified against Git `792e4b7d38f42ae57ad55167d17015ee5e4f0728`.

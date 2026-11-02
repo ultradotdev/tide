@@ -407,6 +407,54 @@ impl PtySession {
         self.master.process_group_leader().filter(|id| *id > 1)
     }
 
+    /// Whether a job other than the session leader, such as a command the shell started,
+    /// owns the terminal's foreground.
+    #[must_use]
+    pub fn has_foreground_job(&self) -> bool {
+        #[cfg(unix)]
+        {
+            let Some(leader) = self.owned_pid() else {
+                return false;
+            };
+            self.exit_code.is_none()
+                && self
+                    .foreground_group()
+                    .is_some_and(|group| group != leader.as_raw_nonzero().get())
+        }
+        #[cfg(not(unix))]
+        false
+    }
+
+    /// Kill every process group in the session at once, without the hangup grace that
+    /// closing allows, then reap the leader.
+    pub fn terminate(&mut self) -> Result<()> {
+        if self.poll_exit()?.is_some() {
+            return Ok(());
+        }
+        #[cfg(unix)]
+        if let Some(pid) = self.owned_pid()
+            && reserved(pid)
+        {
+            use nix::sys::signal::{Signal, kill};
+            use nix::unistd::Pid;
+            let raw = pid.as_raw_nonzero().get();
+            for group in session_groups(raw, self.foreground_group()) {
+                let _ = kill(Pid::from_raw(-group), Signal::SIGKILL);
+            }
+            let _ = kill(Pid::from_raw(raw), Signal::SIGKILL);
+        }
+        #[cfg(not(unix))]
+        let _ = self.child.kill();
+        let deadline = std::time::Instant::now() + Duration::from_millis(250);
+        while std::time::Instant::now() < deadline {
+            if self.poll_exit()?.is_some() {
+                return Ok(());
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        Err(TerminalError::ShutdownTimeout)
+    }
+
     /// Close the terminal: hang up every process group in the session, allow
     /// a grace period for cleanup, kill survivors, then reap the shell.
     pub fn kill(&mut self) -> Result<()> {
@@ -812,6 +860,49 @@ os.waitpid(pid,0)
         let stopped = std::fs::read(&heartbeat).unwrap();
         std::thread::sleep(Duration::from_millis(100));
         assert_eq!(std::fs::read(&heartbeat).unwrap(), stopped);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn foreground_jobs_are_reported_and_terminate_kills_them_with_the_shell() {
+        let fixture = tempfile::tempdir().unwrap();
+        let mut config = PtyConfig::command(
+            "/bin/bash",
+            ["--norc", "--noprofile", "--noediting", "-i"].map(String::from),
+        );
+        config.cwd = Some(fixture.path().to_path_buf());
+        let mut session = PtySession::spawn(config).unwrap();
+        session.write(b"echo RE''ADY\n").unwrap();
+        wait_for_fixture(&session, "READY");
+        assert!(!session.has_foreground_job());
+        session
+            .write(b"/bin/sh -c 'echo $$ > job; trap \"\" HUP TERM; exec sleep 30'\n")
+            .unwrap();
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while !session.has_foreground_job() {
+            assert!(std::time::Instant::now() < deadline, "no foreground job");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        while !fixture.path().join("job").exists() {
+            assert!(std::time::Instant::now() < deadline, "job did not start");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let job = nix::unistd::Pid::from_raw(
+            std::fs::read_to_string(fixture.path().join("job"))
+                .unwrap()
+                .trim()
+                .parse()
+                .unwrap(),
+        );
+        let started = std::time::Instant::now();
+        session.terminate().unwrap();
+        assert!(started.elapsed() < Duration::from_millis(500));
+        assert!(session.poll_exit().unwrap().is_some());
+        assert!(!session.has_foreground_job());
+        while nix::sys::signal::kill(job, None).is_ok() {
+            assert!(std::time::Instant::now() < deadline, "the job survived");
+            std::thread::sleep(Duration::from_millis(10));
+        }
     }
 
     #[cfg(unix)]

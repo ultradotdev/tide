@@ -110,6 +110,7 @@ fn session_restore_reopens_dirty_documents() {
         initial_file: None,
         session_name: None,
         restore_session: true,
+        ephemeral_session: false,
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
@@ -118,6 +119,51 @@ fn session_restore_reopens_dirty_documents() {
     .unwrap();
     let editor = restored.workbench.active_editor().unwrap();
     assert!(editor.document.text().starts_with("draft"));
+}
+
+#[test]
+fn no_session_leaves_the_saved_session_alone_until_the_user_saves() {
+    let (_home, mut app) = test_app();
+    app.new_file();
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("kept");
+    app.save_session().unwrap();
+    let saved_path = app.session_store.workspace_session_path();
+    let saved = std::fs::read(&saved_path).unwrap();
+    let paths = app.paths.clone();
+    let workspace = app.workspace.clone();
+    drop(app);
+
+    let mut fresh = App::new(AppConfig {
+        workspace,
+        initial_file: None,
+        session_name: None,
+        restore_session: false,
+        ephemeral_session: true,
+        paths: Some(paths),
+        jobs: Jobs::manual(),
+        agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
+    })
+    .unwrap();
+    fresh.new_file();
+    fresh
+        .workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("scratch");
+    fresh.mark_session_dirty();
+    fresh.autosave_session().unwrap();
+    assert!(!fresh.save_recovery().unwrap());
+    fresh.finish_quit();
+    assert!(fresh.should_quit);
+    assert_eq!(std::fs::read(&saved_path).unwrap(), saved);
+
+    fresh.execute_command(Command::SessionSave);
+    assert_eq!(fresh.status, "Session saved");
+    assert_ne!(std::fs::read(&saved_path).unwrap(), saved);
 }
 
 #[test]
@@ -209,4 +255,81 @@ fn editor_and_sql_view_state_round_trip_without_changing_shared_write_guards() {
     assert_eq!(sql.editor.selected_text().as_deref(), Some("ELEC"));
     assert_eq!(sql.view_mode, 2);
     assert!(app.accordion.sections.iter().all(|s| !s.expanded));
+}
+
+fn choose_session(app: &mut App, name: &str) {
+    let base = app.overlay.as_mut().expect("a session picker").base_mut();
+    let index = base
+        .items
+        .iter()
+        .position(|item| item.value == name)
+        .unwrap_or_else(|| panic!("{name} is not listed"));
+    base.selected = base.filtered.iter().position(|i| *i == index).unwrap();
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    app.settle();
+}
+
+#[test]
+fn session_list_opens_this_workspaces_sessions_and_delete_explains_the_one_in_use() {
+    let (_home, mut app) = test_app();
+    app.settle();
+    app.execute_command(Command::SessionList);
+    app.settle();
+    assert!(app.overlay.is_none());
+    assert!(app.status.contains("no named sessions"), "{}", app.status);
+    app.save_session_as("Alpha");
+    app.save_session_as("Beta");
+
+    app.execute_command(Command::SessionList);
+    app.settle();
+    let picker = app.overlay.as_ref().expect("the session list");
+    assert_eq!(*picker.kind(), ModalKind::SessionPicker);
+    let items = &picker.base().items;
+    assert_eq!(items.len(), 2);
+    let beta = items.iter().find(|item| item.value == "beta").unwrap();
+    assert!(beta.current && beta.detail.contains("in use"), "{beta:?}");
+    choose_session(&mut app, "alpha");
+    assert_eq!(app.session_name.as_deref(), Some("alpha"));
+
+    app.execute_command(Command::SessionDelete);
+    app.settle();
+    choose_session(&mut app, "alpha");
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(message.contains("in use"), "{message}");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert_eq!(app.session_name, None);
+    assert!(!app.session_store.named_session_path("alpha").exists());
+    assert!(app.status.contains("recovery session"), "{}", app.status);
+
+    app.execute_command(Command::SessionDelete);
+    app.settle();
+    choose_session(&mut app, "beta");
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(!message.contains("in use"), "{message}");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert!(
+        app.session_store.named_session_path("beta").exists(),
+        "cancel keeps it"
+    );
+    app.execute_command(Command::SessionDelete);
+    app.settle();
+    choose_session(&mut app, "beta");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    app.execute_command(Command::SessionList);
+    app.settle();
+    assert!(app.status.contains("no named sessions"), "{}", app.status);
 }

@@ -518,6 +518,8 @@ pub struct LspClient {
     /// Serializes document notifications; the reader never takes it.
     sync_gate: Mutex<()>,
     sync: OnceLock<TextDocumentSync>,
+    /// The `capabilities` the server returned from initialize.
+    capabilities: OnceLock<Value>,
     reader_alive: Arc<AtomicBool>,
     stderr: StderrTail,
     event_tx: mpsc::Sender<LspEvent>,
@@ -666,6 +668,7 @@ impl LspClient {
             opened,
             sync_gate: Mutex::new(()),
             sync: OnceLock::new(),
+            capabilities: OnceLock::new(),
             reader_alive,
             stderr: stderr_tail,
             event_tx,
@@ -719,9 +722,14 @@ impl LspClient {
                     "completion": { "completionItem": { "snippetSupport": false } },
                     "hover": { "contentFormat": ["plaintext", "markdown"] },
                     "definition": {},
+                    "declaration": {},
+                    "typeDefinition": {},
+                    "implementation": {},
                     "documentSymbol": {},
                     "references": {},
                     "rename": {},
+                    "formatting": {},
+                    "rangeFormatting": {},
                     "publishDiagnostics": { "relatedInformation": true }
                 },
                 "workspace": { "workspaceFolders": true, "symbol": {}, "applyEdit":true, "workspaceEdit":{"documentChanges":true,"failureHandling":"transactional"} },
@@ -751,9 +759,11 @@ impl LspClient {
         if encoding != "utf-16" {
             return Err(LspError::UnsupportedEncoding(encoding.to_owned()));
         }
-        let _ = self.sync.set(TextDocumentSync::from_capabilities(
-            result.get("capabilities").unwrap_or(&Value::Null),
-        ));
+        let capabilities = result.get("capabilities").cloned().unwrap_or(Value::Null);
+        let _ = self
+            .sync
+            .set(TextDocumentSync::from_capabilities(&capabilities));
+        let _ = self.capabilities.set(capabilities);
         self.notify("initialized", json!({})).await?;
         Ok(())
     }
@@ -798,6 +808,16 @@ impl LspClient {
     #[must_use]
     pub fn text_document_sync(&self) -> TextDocumentSync {
         self.sync.get().copied().unwrap_or(TextDocumentSync::FULL)
+    }
+
+    /// Whether the server declared `provider` (such as `documentRangeFormattingProvider`)
+    /// in its capabilities, as `true` or as an options object.
+    #[must_use]
+    pub fn supports(&self, provider: &str) -> bool {
+        self.capabilities
+            .get()
+            .and_then(|capabilities| capabilities.get(provider))
+            .is_some_and(|value| value.as_bool().unwrap_or_else(|| value.is_object()))
     }
 
     /// The most recent lines the server wrote to stderr.
@@ -998,9 +1018,35 @@ impl LspClient {
     }
 
     pub async fn definition(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/definition", uri, position)
+            .await
+    }
+
+    pub async fn declaration(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/declaration", uri, position)
+            .await
+    }
+
+    pub async fn type_definition(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/typeDefinition", uri, position)
+            .await
+    }
+
+    pub async fn implementation(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/implementation", uri, position)
+            .await
+    }
+
+    /// A position request whose reply is a location, a list of locations or links.
+    async fn locations(
+        &self,
+        method: &str,
+        uri: &str,
+        position: Position,
+    ) -> Result<Vec<Location>> {
         let value = self
             .request(
-                "textDocument/definition",
+                method,
                 json!({ "textDocument": { "uri": uri }, "position": position }),
             )
             .await?;
@@ -1086,6 +1132,24 @@ impl LspClient {
             "textDocument/formatting",
             json!({
                 "textDocument": { "uri": uri },
+                "options": { "tabSize": tab_size.clamp(1,16), "insertSpaces": insert_spaces }
+            }),
+        )
+        .await
+    }
+
+    pub async fn range_formatting_with_options(
+        &self,
+        uri: &str,
+        range: Range,
+        tab_size: usize,
+        insert_spaces: bool,
+    ) -> Result<Value> {
+        self.request(
+            "textDocument/rangeFormatting",
+            json!({
+                "textDocument": { "uri": uri },
+                "range": range,
                 "options": { "tabSize": tab_size.clamp(1,16), "insertSpaces": insert_spaces }
             }),
         )
@@ -1330,6 +1394,26 @@ impl LspRegistry {
         .map_err(|error| LspError::Task(error.to_string()))?
     }
 
+    /// Shuts down the server for `config` if it is running and forgets its restart
+    /// backoff, so the next request starts a fresh server. True when one was running.
+    pub async fn stop(&self, config: &ServerConfig, root: &Path) -> bool {
+        let slot = self
+            .slots
+            .lock()
+            .unwrap()
+            .remove(&ServerKey::new(config, root));
+        let Some(slot) = slot else {
+            return false;
+        };
+        let client = slot.lock().await.client.take();
+        if let Some(client) = client {
+            client.shutdown().await;
+            true
+        } else {
+            false
+        }
+    }
+
     /// The running client for `config`, without starting one.
     pub async fn running(&self, config: &ServerConfig, root: &Path) -> Option<Arc<LspClient>> {
         let slot = self
@@ -1507,8 +1591,18 @@ pub fn parse_locations(value: &Value) -> Vec<Location> {
     values
         .into_iter()
         .filter_map(|location| {
-            let uri = location.get("uri")?.as_str()?.to_owned();
-            let range = serde_json::from_value::<Range>(location.get("range")?.clone()).ok()?;
+            // A LocationLink names its target and the range to select in it.
+            let (uri, range) = match location.get("targetUri") {
+                Some(uri) => (
+                    uri,
+                    location
+                        .get("targetSelectionRange")
+                        .or_else(|| location.get("targetRange"))?,
+                ),
+                None => (location.get("uri")?, location.get("range")?),
+            };
+            let uri = uri.as_str()?.to_owned();
+            let range = serde_json::from_value::<Range>(range.clone()).ok()?;
             Some(Location { uri, range })
         })
         .collect()
@@ -1912,6 +2006,24 @@ mod tests {
             );
         }
         assert_eq!(default_servers().len(), DEFAULT_SERVERS.len());
+    }
+
+    #[test]
+    fn parses_locations_and_location_links() {
+        let range =
+            json!({"start": {"line": 4, "character": 2}, "end": {"line": 4, "character": 6}});
+        let locations = parse_locations(&json!([
+            {"uri": "file:///a.rs", "range": range},
+            {"targetUri": "file:///b.rs", "targetRange": {"start": {"line": 1, "character": 0}, "end": {"line": 9, "character": 0}}, "targetSelectionRange": range},
+        ]));
+        assert_eq!(locations.len(), 2);
+        assert_eq!(locations[1].uri, "file:///b.rs");
+        assert_eq!(locations[1].range.start.line, 4);
+        assert_eq!(
+            parse_locations(&json!({"uri": "file:///c.rs", "range": range})).len(),
+            1
+        );
+        assert!(parse_locations(&Value::Null).is_empty());
     }
 
     #[test]

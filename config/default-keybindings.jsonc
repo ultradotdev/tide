@@ -10,6 +10,12 @@
   { "key": "meta+n", "command": "file.new" }, // New file (macOS)
   { "key": "ctrl+w", "command": "file.close" }, // Close current tab
   { "key": "meta+w", "command": "file.close" }, // Close current tab (macOS)
+  { "key": "ctrl+alt+c", "command": "file.copyPath" }, // Copy the file's path
+  { "key": "alt+meta+c", "command": "file.copyPath" }, // Copy the file's path (macOS)
+  { "key": "ctrl+alt+shift+c", "command": "file.copyRelativePath" }, // Copy the file's workspace-relative path
+  { "key": "alt+shift+meta+c", "command": "file.copyRelativePath" }, // Copy the file's workspace-relative path (macOS)
+  { "key": "alt+shift+r", "command": "file.revealInFinder" }, // Reveal the file in the file manager
+  { "key": "alt+meta+r", "command": "file.revealInFinder" }, // Reveal the file in Finder (macOS)
 
   // Tab cycling
   { "key": "ctrl+tab", "command": "editor.nextTab" }, // Next tab in pane
@@ -49,6 +55,8 @@
   { "key": "meta+h", "command": "search.replace" }, // Find and replace (macOS)
   { "key": "ctrl+shift+f", "command": "search.findInFiles" }, // Find in all files
   { "key": "shift+meta+f", "command": "search.findInFiles" }, // Find in all files (macOS)
+  { "key": "ctrl+shift+h", "command": "search.replaceInFiles" }, // Replace in all files
+  { "key": "shift+meta+h", "command": "search.replaceInFiles" }, // Replace in all files (macOS)
   { "key": "f3", "command": "search.findNext" }, // Find next match
   { "key": "shift+f3", "command": "search.findPrevious" }, // Find previous match
 
@@ -97,10 +105,17 @@
   { "key": "ctrl+l", "command": "editor.selectLine" }, // Select current line
   { "key": "meta+l", "command": "editor.selectLine" }, // Select current line (macOS)
   { "key": "ctrl+shift+d", "command": "editor.duplicateSelection" }, // Duplicate selection
+  { "key": "ctrl+shift+up", "command": "edit.moveLinesUp", "when": "editorFocus" }, // Move line up
+  { "key": "ctrl+shift+down", "command": "edit.moveLinesDown", "when": "editorFocus" }, // Move line down
+  { "key": "shift+meta+k", "command": "edit.deleteLine", "when": "editorFocus" }, // Delete line (macOS)
 
   // Terminal
   { "key": "ctrl+shift+`", "command": "terminal.new" }, // Open bottom terminal tab
   { "key": "ctrl+shift+t", "command": "terminal.newInPane" }, // Open terminal tab in main pane
+  { "key": "meta+k", "command": "terminal.clear", "when": "terminalFocus" }, // Clear terminal (macOS, like iTerm's Cmd+K)
+  { "key": "ctrl+shift+k", "command": "terminal.clear", "when": "terminalFocus" }, // Clear terminal
+  { "key": "ctrl+shift+home", "command": "terminal.scrollToTop", "when": "terminalFocus" }, // Scroll terminal to top
+  { "key": "ctrl+shift+end", "command": "terminal.scrollToBottom", "when": "terminalFocus" }, // Scroll terminal to bottom
 
   // Git
   { "key": "ctrl+shift+g", "command": "git.focusPanel" }, // Focus git panel
@@ -120,7 +135,7 @@
   { "key": "o", "command": "gitPanel.openFile", "when": "gitPanelFocus" }, // Open file
   { "key": "r", "command": "gitPanel.refresh", "when": "gitPanelFocus" }, // Refresh status
   { "key": "c", "command": "gitPanel.commit", "when": "gitPanelFocus" }, // Commit
-  { "key": " ", "command": "gitPanel.toggleSection", "when": "gitPanelFocus" }, // Toggle section (space)
+  { "key": " ", "command": "gitPanel.toggleSection", "when": "gitPanelFocus" }, // Collapse or expand the selected group (space)
   { "key": "ArrowUp", "command": "gitPanel.moveUp", "when": "gitPanelFocus" }, // Move up
   { "key": "ArrowDown", "command": "gitPanel.moveDown", "when": "gitPanelFocus" }, // Move down
   { "key": "k", "command": "gitPanel.moveUp", "when": "gitPanelFocus" }, // Move up (vim)
@@ -220,9 +235,11 @@
   // Comments
   { "key": "ctrl+/", "command": "editor.toggleComment" }, // Toggle comment
   { "key": "meta+/", "command": "editor.toggleComment" }, // Toggle comment (macOS)
+  { "key": "alt+shift+a", "command": "editor.toggleBlockComment", "when": "editorFocus" }, // Toggle block comment
 
   // LSP
   { "key": "ctrl+shift+k", "command": "lsp.goToDefinition" }, // Go to definition
+  { "key": "ctrl+f12", "command": "lsp.goToImplementation", "when": "editorFocus" }, // Go to implementation
   { "key": "ctrl+i", "command": "lsp.showHover" }, // Show hover info (type info, docs)
   { "key": "ctrl+space", "command": "lsp.triggerCompletion" }, // Trigger autocomplete
   { "key": "ctrl+shift+space", "command": "lsp.triggerSignatureHelp" }, // Show signature help

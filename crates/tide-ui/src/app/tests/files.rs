@@ -697,3 +697,217 @@ async fn file_watcher_refreshes_the_tree() {
             .any(|entry| entry.name == "watched.txt")
     );
 }
+
+/// Types `input` into the open prompt and submits it.
+fn submit_prompt(app: &mut App, input: &str) {
+    let base = app.overlay.as_mut().unwrap().base_mut();
+    base.input = input.to_owned();
+    base.cursor = input.chars().count();
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+}
+
+fn active_path(app: &App) -> Option<PathBuf> {
+    app.workbench
+        .active_editor()
+        .and_then(EditorState::path)
+        .map(Path::to_path_buf)
+}
+
+#[test]
+fn rename_file_acts_on_the_active_file_or_the_focused_explorer_selection() {
+    let (_home, mut app) = test_app();
+    std::fs::create_dir_all(app.workspace.join("src")).unwrap();
+    let old = app.workspace.join("src/old.rs");
+    std::fs::write(&old, "fn main() {}\n").unwrap();
+    app.open_file(&old);
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("// draft\n");
+    app.execute_command(Command::FileRename);
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "old.rs");
+    submit_prompt(&mut app, "new.rs");
+    let new = app.workspace.join("src/new.rs");
+    assert!(!old.exists() && new.exists());
+    assert_eq!(active_path(&app), Some(new.clone()));
+    assert!(app.workbench.active_editor().unwrap().is_dirty());
+
+    // With the Explorer focused, its selection is renamed instead of the active file.
+    std::fs::write(app.workspace.join("notes.txt"), "notes").unwrap();
+    app.file_tree.refresh();
+    let index = app
+        .file_tree
+        .entries
+        .iter()
+        .position(|entry| entry.name == "notes.txt")
+        .unwrap();
+    app.file_tree.selected = index;
+    app.focus_sidebar_section(0, true);
+    app.execute_command(Command::FileRename);
+    submit_prompt(&mut app, "renamed.txt");
+    assert!(app.workspace.join("renamed.txt").exists());
+    assert_eq!(active_path(&app), Some(new));
+
+    app.focus = Focus::Main;
+    app.new_file();
+    app.execute_command(Command::FileRename);
+    assert!(app.overlay.is_none());
+    assert!(app.status.contains("Save this buffer"), "{}", app.status);
+    app.execute_command(Command::HelpEditor);
+    app.execute_command(Command::FileDelete);
+    assert!(app.overlay.is_none());
+    assert!(
+        app.status.contains("help page, not a file"),
+        "{}",
+        app.status
+    );
+}
+
+#[test]
+fn delete_file_confirms_closes_its_tabs_and_stays_inside_the_workspace() {
+    let (home, mut app) = test_app();
+    let doomed = app.workspace.join("doomed.txt");
+    std::fs::write(&doomed, "bye").unwrap();
+    app.open_file(&doomed);
+    app.workbench.active_editor_mut().unwrap().insert_text("x");
+    app.execute_command(Command::FileDelete);
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(
+        message.contains("Permanently delete doomed.txt"),
+        "{message}"
+    );
+    assert!(message.contains("1 unsaved change"), "{message}");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert!(doomed.exists());
+    app.execute_command(Command::FileDelete);
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert!(!doomed.exists());
+    assert!(app.overlay.is_none());
+    assert!(
+        app.workbench
+            .tabs()
+            .all(|tab| tab.editor().and_then(EditorState::path).is_none())
+    );
+
+    let outside = home.path().join("outside.txt");
+    std::fs::write(&outside, "keep").unwrap();
+    app.open_file(&outside);
+    app.execute_command(Command::FileDelete);
+    assert!(app.overlay.is_none());
+    assert!(
+        app.status.contains("outside the workspace"),
+        "{}",
+        app.status
+    );
+    assert!(outside.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn deleting_a_symlink_removes_the_link_and_keeps_its_target() {
+    let (_home, mut app) = test_app();
+    let target = app.workspace.join("target.txt");
+    std::fs::write(&target, "kept").unwrap();
+    let link = app.workspace.join("link.txt");
+    std::os::unix::fs::symlink(&target, &link).unwrap();
+    app.confirm_delete(&link);
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert!(std::fs::symlink_metadata(&link).is_err());
+    assert_eq!(std::fs::read_to_string(&target).unwrap(), "kept");
+}
+
+#[test]
+fn new_folder_copy_path_and_reveal_use_the_active_file() {
+    static REVEALED: std::sync::Mutex<Vec<PathBuf>> = std::sync::Mutex::new(Vec::new());
+    let (_home, mut app) = test_app();
+    std::fs::create_dir_all(app.workspace.join("src")).unwrap();
+    let file = app.workspace.join("src/lib.rs");
+    std::fs::write(&file, "").unwrap();
+    app.open_file(&file);
+    app.execute_command(Command::FileNewFolder);
+    let separator = std::path::MAIN_SEPARATOR;
+    assert_eq!(
+        app.overlay.as_ref().unwrap().input(),
+        format!("src{separator}")
+    );
+    submit_prompt(&mut app, "src/nested");
+    assert!(app.workspace.join("src/nested").is_dir());
+
+    app.execute_command(Command::FileCopyPath);
+    assert_eq!(app.clipboard, file.display().to_string());
+    app.execute_command(Command::FileCopyRelativePath);
+    assert_eq!(
+        app.clipboard,
+        Path::new("src").join("lib.rs").display().to_string()
+    );
+
+    app.path_revealer = |path| {
+        REVEALED.lock().unwrap().push(path.to_path_buf());
+        Ok(())
+    };
+    app.execute_command(Command::FileRevealInFinder);
+    assert_eq!(*REVEALED.lock().unwrap(), [file]);
+    assert!(app.status.contains("Showing src"), "{}", app.status);
+    app.path_revealer = |_| Err("xdg-open: not found".into());
+    app.execute_command(Command::FileRevealInFinder);
+    assert!(app.status.contains("xdg-open: not found"), "{}", app.status);
+}
+
+#[test]
+fn close_others_keeps_the_active_tab_and_asks_about_unsaved_ones() {
+    let (_home, mut app) = test_app();
+    let open = |app: &mut App, name: &str| {
+        let path = app.workspace.join(name);
+        std::fs::write(&path, name).unwrap();
+        app.open_file(&path);
+    };
+    open(&mut app, "a.txt");
+    open(&mut app, "b.txt");
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("dirty ");
+    open(&mut app, "c.txt");
+    let tabs = |app: &App| app.workbench.focused_pane().tabs.len();
+    let before = tabs(&app);
+    app.execute_command(Command::FileCloseOthers);
+    assert!(matches!(
+        app.overlay.as_ref().unwrap().kind(),
+        ModalKind::Confirm(ConfirmAction::CloseOtherTabs(_))
+    ));
+    app.handle_modal_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert_eq!(tabs(&app), before);
+    app.execute_command(Command::FileCloseOthers);
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE));
+    assert_eq!(tabs(&app), 1);
+    assert_eq!(active_path(&app), Some(app.workspace.join("c.txt")));
+    assert_eq!(
+        std::fs::read_to_string(app.workspace.join("b.txt")).unwrap(),
+        "b.txt"
+    );
+    app.execute_command(Command::FileCloseOthers);
+    assert!(app.status.contains("No other tabs"), "{}", app.status);
+
+    // Saving first writes the other tabs, then closes them.
+    open(&mut app, "d.txt");
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("saved ");
+    open(&mut app, "e.txt");
+    app.execute_command(Command::FileCloseOthers);
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert_eq!(tabs(&app), 1);
+    assert_eq!(active_path(&app), Some(app.workspace.join("e.txt")));
+    assert_eq!(
+        std::fs::read_to_string(app.workspace.join("d.txt")).unwrap(),
+        "saved d.txt"
+    );
+}

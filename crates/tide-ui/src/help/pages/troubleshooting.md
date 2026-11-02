@@ -50,7 +50,7 @@ Check the active connection, its TLS mode and the server's permissions. A read-o
 
 ## Session restoration
 
-Sessions are saved under {{path:sessions}}. To check whether a problem comes from the saved session, start once with `--no-session`. That run still saves its own session over the folder's last one when it quits, so copy the session file first if you want to keep it. If a session fails to load, Tide stops writing sessions for that run so the file is not overwritten.
+Sessions are saved under {{path:sessions}}. To check whether a problem comes from the saved session, start once with `--no-session`. That run leaves the saved session untouched and writes no recovery snapshot, unless you run {{label:session.save}}, open a named session or restart Tide. If a session fails to load, Tide stops writing sessions for that run so the file is not overwritten.
 
 ## Reporting a problem
 

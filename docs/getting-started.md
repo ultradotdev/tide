@@ -1,7 +1,7 @@
 <!-- Generated from crates/tide-ui/src/help/pages/getting-started.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Getting Started
 
-Tide 0.10.0 runs as a native Rust executable on macOS and Linux. Public binary downloads are not published yet; the Homebrew and install-script commands below work once the release is published on GitHub. Until then, build from your source checkout.
+Tide 0.10.0 runs as a native Rust executable on macOS and Linux. Signed releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
 
 Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64).
 
@@ -13,6 +13,8 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 - **Source build** (`./target/release/tide`): Update with `git pull` and then `cargo build --locked --release -p tide` in the checkout. To remove it, delete the build; nothing else was installed.
 
 Updates and uninstalls keep your settings, keybindings, sessions and connections; only `tide --uninstall --purge` removes them.
+
+**Help: Check for Updates** asks GitHub for the latest release and, when it is newer, shows the update step for this installation. Tide never checks on its own.
 
 ## Install with Homebrew
 

@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use crate::command::Command;
 
 pub(crate) use keys::primary_key;
-pub use template::{Context, Host, Live, Rendered, render};
+pub use template::{Context, Host, Live, Rendered, render, update_instruction};
 
 /// A help page and the documentation file its static rendering produces.
 #[derive(Debug)]
@@ -204,6 +204,84 @@ pub fn new_issue_url(install: &Install) -> String {
         .map_or_else(|_| product("issues"), String::from)
 }
 
+/// Reads the tag of the latest release from a `/releases/latest` URL. Tests substitute one
+/// that never touches the network.
+pub type LatestRelease =
+    fn(String) -> futures_util::future::BoxFuture<'static, Result<String, String>>;
+
+/// Where GitHub redirects to the latest release, which skips prereleases.
+#[must_use]
+pub fn latest_release_url() -> String {
+    format!("{}/releases/latest", product("repository"))
+}
+
+/// One HTTPS request to `url`: GitHub answers with a redirect to `/releases/tag/v…`, and
+/// the tag is read from its location without following it, so no API rate limit applies.
+pub fn latest_release(
+    url: String,
+) -> futures_util::future::BoxFuture<'static, Result<String, String>> {
+    Box::pin(async move {
+        let client = reqwest::Client::builder()
+            .https_only(true)
+            .redirect(reqwest::redirect::Policy::none())
+            .timeout(std::time::Duration::from_secs(15))
+            .user_agent(concat!("tide/", env!("CARGO_PKG_VERSION")))
+            .build()
+            .map_err(|error| error.to_string())?;
+        let response = client
+            .head(&url)
+            .send()
+            .await
+            .map_err(|error| format!("could not reach GitHub: {error}"))?;
+        let location = if response.status().is_redirection() {
+            response
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned)
+        } else if response.status().is_success() {
+            Some(response.url().to_string())
+        } else {
+            None
+        };
+        location
+            .as_deref()
+            .and_then(release_tag)
+            .ok_or_else(|| format!("no published release was found ({})", response.status()))
+    })
+}
+
+/// The tag in a release URL such as `…/releases/tag/v1.2.3`.
+#[must_use]
+pub fn release_tag(location: &str) -> Option<String> {
+    let path = location.split(['?', '#']).next()?;
+    let tag = path.rsplit_once("/releases/tag/")?.1.trim_end_matches('/');
+    (!tag.is_empty() && !tag.contains('/')).then(|| tag.to_owned())
+}
+
+/// Whether release tag `latest` is a later version than `current`.
+#[must_use]
+pub fn is_newer(latest: &str, current: &str) -> bool {
+    let parse = |version: &str| -> Option<Vec<u64>> {
+        version
+            .trim_start_matches('v')
+            .split(['-', '+'])
+            .next()?
+            .split('.')
+            .map(|part| part.parse().ok())
+            .collect()
+    };
+    match (parse(latest), parse(current)) {
+        (Some(mut latest), Some(mut current)) => {
+            let length = latest.len().max(current.len());
+            latest.resize(length, 0);
+            current.resize(length, 0);
+            latest > current
+        }
+        _ => false,
+    }
+}
+
 /// Opens `url` in the desktop browser without waiting for it.
 pub fn open_url(url: &str) -> Result<(), String> {
     let program = if cfg!(target_os = "macos") {
@@ -211,9 +289,25 @@ pub fn open_url(url: &str) -> Result<(), String> {
     } else {
         "xdg-open"
     };
+    spawn_desktop(program, &[std::ffi::OsStr::new(url)])
+}
+
+/// Shows `path` in the desktop file manager without waiting for it: selected in
+/// Finder on macOS, or its folder opened elsewhere.
+pub fn reveal_path(path: &std::path::Path) -> Result<(), String> {
+    if cfg!(target_os = "macos") {
+        spawn_desktop("open", &[std::ffi::OsStr::new("-R"), path.as_os_str()])
+    } else {
+        let folder = path.parent().unwrap_or(path);
+        spawn_desktop("xdg-open", &[folder.as_os_str()])
+    }
+}
+
+/// Runs a desktop helper detached from Tide's terminal, without Tide's secrets.
+fn spawn_desktop(program: &str, args: &[&std::ffi::OsStr]) -> Result<(), String> {
     let mut command = std::process::Command::new(program);
     tide_core::process::scrub_tide_secrets(&mut command)
-        .arg(url)
+        .args(args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());

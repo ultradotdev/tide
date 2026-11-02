@@ -42,6 +42,19 @@ pub enum PromptAction {
     EditSetting(String),
     EditKeybinding(String),
     RenameAgent(String, String),
+    ReplaceInFilesFind,
+    /// The search term to replace.
+    ReplaceInFilesWith(String),
+    CreateTag,
+    /// The new tag's name.
+    TagMessage(String),
+    /// Rewrites the last commit; `message` is its current message and `upstream` names the
+    /// upstream branch that already contains it.
+    CommitAmend {
+        commit: String,
+        message: String,
+        upstream: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,6 +65,8 @@ pub enum ConfirmAction {
         index: usize,
     },
     CloseAllDirty,
+    /// Closes every tab in the pane except the one [`crate::app`] keeps.
+    CloseOtherTabs(usize),
     ClosePane(usize),
     SaveAs(std::path::PathBuf),
     RenamePath(std::path::PathBuf, std::path::PathBuf),
@@ -63,6 +78,8 @@ pub enum ConfirmAction {
     DeleteConnection(String),
     DeletePath(std::path::PathBuf),
     DiscardGitChange(String),
+    /// Unstaged changes in these tracked paths.
+    DiscardAllGitChanges(Vec<String>),
     GitCommand(Vec<String>),
     DeleteAiSession {
         provider: String,
@@ -72,6 +89,13 @@ pub enum ConfirmAction {
     ReloadFile,
     OverwriteFile,
     ExportResults(std::path::PathBuf),
+    /// The terminal's unique serial.
+    KillTerminal(u64),
+    CloseAllTerminals,
+    /// The Replace in Files preview's generation.
+    ReplaceInFiles(u64),
+    /// A saved session's file name.
+    DeleteSession(String),
 }
 
 impl ConfirmAction {
@@ -81,6 +105,7 @@ impl ConfirmAction {
             Self::CloseDirty
                 | Self::CloseTab { .. }
                 | Self::CloseAllDirty
+                | Self::CloseOtherTabs(_)
                 | Self::ClosePane(_)
                 | Self::SwitchSession(_)
                 | Self::QuitDirty
@@ -113,6 +138,8 @@ pub enum ModalKind {
     SchemaTables,
     QueryHistory,
     SessionPicker,
+    /// Picks a saved session to delete.
+    SessionDeletePicker,
     CodeActions,
     Info,
     SaveAs,
@@ -423,6 +450,7 @@ impl ModalBase {
                 | ModalKind::SchemaTables
                 | ModalKind::QueryHistory
                 | ModalKind::SessionPicker
+                | ModalKind::SessionDeletePicker
                 | ModalKind::CodeActions
         )
     }
@@ -502,7 +530,7 @@ impl ModalBase {
             ModalKind::RowInsert => (96, 24),
             ModalKind::SchemaTables => (70, 22),
             ModalKind::QueryHistory => (70, 22),
-            ModalKind::SessionPicker => (60, 20),
+            ModalKind::SessionPicker | ModalKind::SessionDeletePicker => (60, 20),
             ModalKind::CodeActions => (60, 20),
             ModalKind::Info => (60, 8),
             ModalKind::SaveAs => (70, 25),
@@ -629,6 +657,7 @@ impl ModalBase {
                     ConfirmAction::DeleteConnection(_)
                     | ConfirmAction::DeleteRow(_)
                     | ConfirmAction::DeletePath(_)
+                    | ConfirmAction::DeleteSession(_)
                     | ConfirmAction::DeleteAiSession { archive: false, .. },
                 ) => "Delete [Y]",
                 ModalKind::Confirm(ConfirmAction::DeleteAiSession { archive: true, .. }) => {
@@ -644,9 +673,24 @@ impl ModalBase {
                 ModalKind::Confirm(ConfirmAction::RunSql(_)) => "Run [Y]",
                 ModalKind::Confirm(ConfirmAction::ClearQueryHistory(_)) => "Clear [Y]",
                 ModalKind::Confirm(ConfirmAction::SwitchSession(_)) => "Switch [Y]",
+                ModalKind::Confirm(ConfirmAction::KillTerminal(_)) => "Kill [Y]",
+                ModalKind::Confirm(ConfirmAction::GitCommand(ref args)) => {
+                    match args.iter().map(String::as_str).collect::<Vec<_>>()[..] {
+                        ["push", ..] => "Push [Y]",
+                        ["reset", ..] => "Reset [Y]",
+                        ["clean", ..] => "Delete [Y]",
+                        [_, "--abort"] => "Abort [Y]",
+                        ["rebase", ..] => "Rebase [Y]",
+                        ["commit", "--amend", ..] => "Amend [Y]",
+                        _ => "Discard [Y]",
+                    }
+                }
+                ModalKind::Confirm(ConfirmAction::CloseAllTerminals) => "Close [Y]",
+                ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => "Replace [Y]",
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
                 ModalKind::Settings | ModalKind::Keybindings => "Edit",
+                ModalKind::SessionDeletePicker => "Delete…",
                 ModalKind::Prompt(_) | ModalKind::Find => "Submit",
                 _ => "Open",
             };
@@ -1337,6 +1381,7 @@ pub enum Submitted {
         filter: String,
     },
     Session(String),
+    DeleteSession(String),
     CodeAction(usize),
     Setting(String),
     Keybinding(String),
@@ -1405,6 +1450,7 @@ impl Submitted {
             ModalKind::ConnectionPicker => owned().map(Self::DatabaseConnection),
             ModalKind::QueryHistory => owned().map(Self::HistoryEntry),
             ModalKind::SessionPicker => owned().map(Self::Session),
+            ModalKind::SessionDeletePicker => owned().map(Self::DeleteSession),
             ModalKind::CodeActions => value
                 .and_then(|value| value.parse().ok())
                 .map(Self::CodeAction),
@@ -2663,12 +2709,17 @@ impl Modal for GitChoiceModal {
     }
 }
 pub fn git_choice(action: &str, items: Vec<ModalItem>) -> Box<dyn Modal> {
+    let title = match action {
+        "rebase" => "Rebase Onto Branch".to_owned(),
+        "cherryPick" => "Cherry-Pick Commit".to_owned(),
+        "revert" => "Revert Commit".to_owned(),
+        "reset" => "Reset Current Branch To".to_owned(),
+        "resetMode" => "Reset Mode".to_owned(),
+        "conflicts" => "Conflicted Files".to_owned(),
+        _ => format!("Git: {action}"),
+    };
     Box::new(GitChoiceModal {
-        base: ModalBase::new(
-            ModalKind::GitChoice(action.to_owned()),
-            format!("Git: {action}"),
-            items,
-        ),
+        base: ModalBase::new(ModalKind::GitChoice(action.to_owned()), title, items),
     })
 }
 

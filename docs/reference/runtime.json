@@ -3,6 +3,18 @@
     "aiCli.new": "agents.newSession",
     "aiCli.openSession": "agents.openSession",
     "aiCli.refreshSessions": "agents.refreshSessions",
+    "aiCli.toggle": "agents.newSession",
+    "git.branches": "git.switchBranch",
+    "git.checkout": "git.switchBranch",
+    "git.openFileDiff": "git.diff",
+    "git.status": "git.focusPanel",
+    "git.viewChanges": "gitPanel.openDiff",
+    "git.viewStagedChanges": "git.diffStaged",
+    "gitPanel.commit": "git.commit",
+    "gitPanel.refresh": "git.refresh",
+    "gitPanel.stageAll": "git.stageAll",
+    "queryResults.export": "database.exportResults",
+    "quit": "workbench.quit",
     "terminal.focus": "workbench.focusTerminal",
     "terminal.nextTab": "terminal.next",
     "terminal.previousTab": "terminal.previous",
@@ -10,6 +22,9 @@
     "view.focusEditor": "workbench.focusMainRegion",
     "view.focusFileTree": "workbench.focusExplorer",
     "view.focusTerminal": "workbench.focusTerminal",
+    "view.toggleSidebar": "workbench.toggleSidebar",
+    "view.toggleTerminal": "workbench.toggleTerminal",
+    "workbench.saveSession": "session.save",
     "workbench.toggleAgentsSidebar": "agents.togglePanel"
   },
   "commands": [
@@ -23,7 +38,7 @@
     },
     {
       "canonical": "agents.associateWorkspace",
-      "category": "AI CLI",
+      "category": "AI",
       "description": "Explicitly associate native sessions after moving a workspace",
       "id": "agents.associateWorkspace",
       "label": "Agents: Associate Previous Workspace...",
@@ -40,7 +55,7 @@
     {
       "canonical": "agents.newSession",
       "category": "AI",
-      "description": null,
+      "description": "Start an AI CLI session (Claude Code, Codex, Gemini CLI, etc.)",
       "id": "agents.newSession",
       "label": "Agents: New Session...",
       "paletteVisible": true
@@ -80,41 +95,41 @@
     {
       "canonical": "agents.newSession",
       "category": "AI",
-      "description": null,
+      "description": "Start an AI CLI session (Claude Code, Codex, Gemini CLI, etc.)",
       "id": "aiCli.new",
-      "label": "AI CLI: New...",
-      "paletteVisible": true
+      "label": "Agents: New Session...",
+      "paletteVisible": false
     },
     {
       "canonical": "agents.openSession",
       "category": "AI",
       "description": null,
       "id": "aiCli.openSession",
-      "label": "AI CLI: Open Session...",
-      "paletteVisible": true
+      "label": "Agents: Open Session...",
+      "paletteVisible": false
     },
     {
       "canonical": "agents.refreshSessions",
       "category": "AI",
       "description": null,
       "id": "aiCli.refreshSessions",
-      "label": "AI CLI: Refresh Sessions",
-      "paletteVisible": true
+      "label": "Agents: Refresh Sessions",
+      "paletteVisible": false
     },
     {
-      "canonical": "aiCli.toggle",
+      "canonical": "agents.newSession",
       "category": "AI",
-      "description": "Toggle the AI CLI terminal (Claude Code, Codex, Gemini CLI, etc.)",
+      "description": "Start an AI CLI session (Claude Code, Codex, Gemini CLI, etc.)",
       "id": "aiCli.toggle",
-      "label": "AI CLI: Toggle",
-      "paletteVisible": true
+      "label": "Agents: New Session...",
+      "paletteVisible": false
     },
     {
       "canonical": "database.addRow",
-      "category": "Workbench",
+      "category": "Database",
       "description": null,
       "id": "database.addRow",
-      "label": "Database: Add Row",
+      "label": "Add Row",
       "paletteVisible": true
     },
     {
@@ -246,6 +261,54 @@
       "paletteVisible": true
     },
     {
+      "canonical": "edit.deleteLine",
+      "category": "Edit",
+      "description": "Delete the lines under each cursor",
+      "id": "edit.deleteLine",
+      "label": "Delete Line",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.indentLine",
+      "category": "Edit",
+      "description": "Indent the lines under each cursor one level",
+      "id": "edit.indentLine",
+      "label": "Indent Line",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.joinLines",
+      "category": "Edit",
+      "description": "Join each line with the next, or a selection's lines into one",
+      "id": "edit.joinLines",
+      "label": "Join Lines",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.moveLinesDown",
+      "category": "Edit",
+      "description": "Move the lines under each cursor down one line",
+      "id": "edit.moveLinesDown",
+      "label": "Move Line Down",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.moveLinesUp",
+      "category": "Edit",
+      "description": "Move the lines under each cursor up one line",
+      "id": "edit.moveLinesUp",
+      "label": "Move Line Up",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.outdentLine",
+      "category": "Edit",
+      "description": "Remove one level of indentation from the lines under each cursor",
+      "id": "edit.outdentLine",
+      "label": "Outdent Line",
+      "paletteVisible": true
+    },
+    {
       "canonical": "edit.paste",
       "category": "Edit",
       "description": null,
@@ -283,6 +346,30 @@
       "description": null,
       "id": "edit.selectNextMatch",
       "label": "Add Selection to Next Match",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.transformToLowercase",
+      "category": "Edit",
+      "description": "Lower-case the selection, or the word at the cursor",
+      "id": "edit.transformToLowercase",
+      "label": "Transform to Lowercase",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.transformToTitleCase",
+      "category": "Edit",
+      "description": "Capitalize each word of the selection, or the word at the cursor",
+      "id": "edit.transformToTitleCase",
+      "label": "Transform to Title Case",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "edit.transformToUppercase",
+      "category": "Edit",
+      "description": "Upper-case the selection, or the word at the cursor",
+      "id": "edit.transformToUppercase",
+      "label": "Transform to Uppercase",
       "paletteVisible": true
     },
     {
@@ -328,7 +415,7 @@
     {
       "canonical": "editor.duplicateLine",
       "category": "Editor",
-      "description": null,
+      "description": "Copy the lines under each cursor below them",
       "id": "editor.duplicateLine",
       "label": "Duplicate Line",
       "paletteVisible": true
@@ -336,7 +423,7 @@
     {
       "canonical": "editor.duplicateSelection",
       "category": "Editor",
-      "description": null,
+      "description": "Copy each selection after itself, or the line without a selection",
       "id": "editor.duplicateSelection",
       "label": "Duplicate Selection",
       "paletteVisible": true
@@ -358,11 +445,43 @@
       "paletteVisible": true
     },
     {
+      "canonical": "editor.foldLevel1",
+      "category": "Editor",
+      "description": "Fold every outermost region",
+      "id": "editor.foldLevel1",
+      "label": "Fold Level 1",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.foldLevel2",
+      "category": "Editor",
+      "description": "Fold every region nested two deep",
+      "id": "editor.foldLevel2",
+      "label": "Fold Level 2",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.foldLevel3",
+      "category": "Editor",
+      "description": "Fold every region nested three deep",
+      "id": "editor.foldLevel3",
+      "label": "Fold Level 3",
+      "paletteVisible": true
+    },
+    {
       "canonical": "editor.formatDocument",
       "category": "Editor",
       "description": null,
       "id": "editor.formatDocument",
       "label": "Format Document",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.formatSelection",
+      "category": "Editor",
+      "description": "Format the selection, or the cursor's line, with the language server",
+      "id": "editor.formatSelection",
+      "label": "Format Selection",
       "paletteVisible": true
     },
     {
@@ -438,6 +557,22 @@
       "paletteVisible": true
     },
     {
+      "canonical": "editor.sortLinesAscending",
+      "category": "Editor",
+      "description": "Sort the selected lines, or the whole file without a multi-line selection",
+      "id": "editor.sortLinesAscending",
+      "label": "Sort Lines Ascending",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.sortLinesDescending",
+      "category": "Editor",
+      "description": "Sort the selected lines in reverse, or the whole file without a multi-line selection",
+      "id": "editor.sortLinesDescending",
+      "label": "Sort Lines Descending",
+      "paletteVisible": true
+    },
+    {
       "canonical": "editor.switchTab",
       "category": "Workbench",
       "description": null,
@@ -454,11 +589,27 @@
       "paletteVisible": true
     },
     {
+      "canonical": "editor.toggleBlockComment",
+      "category": "Editor",
+      "description": "Wrap the selection or line in the language's block comment, or unwrap it",
+      "id": "editor.toggleBlockComment",
+      "label": "Toggle Block Comment",
+      "paletteVisible": true
+    },
+    {
       "canonical": "editor.toggleComment",
       "category": "Editor",
       "description": null,
       "id": "editor.toggleComment",
       "label": "Toggle Line Comment",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "editor.trimTrailingWhitespace",
+      "category": "Editor",
+      "description": "Remove whitespace at the end of every line",
+      "id": "editor.trimTrailingWhitespace",
+      "label": "Trim Trailing Whitespace",
       "paletteVisible": true
     },
     {
@@ -502,11 +653,51 @@
       "paletteVisible": true
     },
     {
+      "canonical": "file.closeOthers",
+      "category": "File",
+      "description": "Close every tab in the pane except the active one, asking about unsaved changes",
+      "id": "file.closeOthers",
+      "label": "Close Other Tabs",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "file.copyPath",
+      "category": "File",
+      "description": "Copy the active file's absolute path, or the Explorer selection's",
+      "id": "file.copyPath",
+      "label": "Copy Path",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "file.copyRelativePath",
+      "category": "File",
+      "description": "Copy the active file's path relative to the workspace, or the Explorer selection's",
+      "id": "file.copyRelativePath",
+      "label": "Copy Relative Path",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "file.delete",
+      "category": "File",
+      "description": "Permanently delete the active file, or the Explorer selection while the Explorer has focus, after confirmation",
+      "id": "file.delete",
+      "label": "Delete File...",
+      "paletteVisible": true
+    },
+    {
       "canonical": "file.new",
       "category": "File",
       "description": "Create a new file",
       "id": "file.new",
       "label": "New File",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "file.newFolder",
+      "category": "File",
+      "description": "Create a folder beside the active file, or in the Explorer selection's folder",
+      "id": "file.newFolder",
+      "label": "New Folder...",
       "paletteVisible": true
     },
     {
@@ -531,6 +722,22 @@
       "description": "Reload the active file from disk",
       "id": "file.reload",
       "label": "Revert File",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "file.rename",
+      "category": "File",
+      "description": "Rename the active file, or the Explorer selection while the Explorer has focus; open tabs follow",
+      "id": "file.rename",
+      "label": "Rename File...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "file.revealInFinder",
+      "category": "File",
+      "description": "Show the active file, or the Explorer selection, in Finder on macOS or the file manager elsewhere",
+      "id": "file.revealInFinder",
+      "label": "Reveal in File Manager",
       "paletteVisible": true
     },
     {
@@ -559,115 +766,123 @@
     },
     {
       "canonical": "fileTree.collapse",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.collapse",
-      "label": "fileTree.collapse",
-      "paletteVisible": false
+      "label": "Explorer: Collapse Folder",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.delete",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Explorer",
+      "description": "Delete the selected file or folder after confirmation",
       "id": "fileTree.delete",
-      "label": "fileTree.delete",
-      "paletteVisible": false
+      "label": "Explorer: Delete...",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.expand",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.expand",
-      "label": "fileTree.expand",
-      "paletteVisible": false
+      "label": "Explorer: Expand Folder",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.goToFirst",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.goToFirst",
-      "label": "fileTree.goToFirst",
-      "paletteVisible": false
+      "label": "Explorer: Select First",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.goToLast",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.goToLast",
-      "label": "fileTree.goToLast",
-      "paletteVisible": false
+      "label": "Explorer: Select Last",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.moveDown",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.moveDown",
-      "label": "fileTree.moveDown",
-      "paletteVisible": false
+      "label": "Explorer: Select Next",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.moveUp",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.moveUp",
-      "label": "fileTree.moveUp",
-      "paletteVisible": false
+      "label": "Explorer: Select Previous",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.newFile",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Explorer",
+      "description": "Create a file in the selected folder",
       "id": "fileTree.newFile",
-      "label": "fileTree.newFile",
-      "paletteVisible": false
+      "label": "Explorer: New File...",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.newFolder",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Explorer",
+      "description": "Create a folder in the selected folder",
       "id": "fileTree.newFolder",
-      "label": "fileTree.newFolder",
-      "paletteVisible": false
+      "label": "Explorer: New Folder...",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.open",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Explorer",
+      "description": "Open the selected file, or expand or collapse the selected folder",
       "id": "fileTree.open",
-      "label": "fileTree.open",
-      "paletteVisible": false
+      "label": "Explorer: Open Selected",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.pageDown",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.pageDown",
-      "label": "fileTree.pageDown",
-      "paletteVisible": false
+      "label": "Explorer: Page Down",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.pageUp",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.pageUp",
-      "label": "fileTree.pageUp",
-      "paletteVisible": false
+      "label": "Explorer: Page Up",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.refresh",
-      "category": "Keybinding actions",
+      "category": "Explorer",
       "description": null,
       "id": "fileTree.refresh",
-      "label": "fileTree.refresh",
-      "paletteVisible": false
+      "label": "Explorer: Refresh",
+      "paletteVisible": true
     },
     {
       "canonical": "fileTree.rename",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Explorer",
+      "description": "Rename the selected file or folder",
       "id": "fileTree.rename",
-      "label": "fileTree.rename",
-      "paletteVisible": false
+      "label": "Explorer: Rename...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.abort",
+      "category": "Git",
+      "description": "Abort whichever operation is paused, after confirmation, and restore the branch",
+      "id": "git.abort",
+      "label": "Abort Merge, Rebase, Cherry-Pick or Revert",
+      "paletteVisible": true
     },
     {
       "canonical": "git.abortMerge",
@@ -675,6 +890,14 @@
       "description": "Abort current merge",
       "id": "git.abortMerge",
       "label": "Abort Merge",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.abortRebase",
+      "category": "Git",
+      "description": "Abort the paused rebase and restore the branch",
+      "id": "git.abortRebase",
+      "label": "Abort Rebase",
       "paletteVisible": true
     },
     {
@@ -686,19 +909,35 @@
       "paletteVisible": true
     },
     {
-      "canonical": "git.branches",
+      "canonical": "git.switchBranch",
       "category": "Git",
-      "description": "Show all branches",
+      "description": "Switch to another branch",
       "id": "git.branches",
-      "label": "List Branches",
+      "label": "Switch Branch...",
+      "paletteVisible": false
+    },
+    {
+      "canonical": "git.switchBranch",
+      "category": "Git",
+      "description": "Switch to another branch",
+      "id": "git.checkout",
+      "label": "Switch Branch...",
+      "paletteVisible": false
+    },
+    {
+      "canonical": "git.cherryPick",
+      "category": "Git",
+      "description": "Apply a commit from another branch to the current branch",
+      "id": "git.cherryPick",
+      "label": "Cherry-Pick Commit...",
       "paletteVisible": true
     },
     {
-      "canonical": "git.checkout",
+      "canonical": "git.clean",
       "category": "Git",
-      "description": "Checkout a commit or branch",
-      "id": "git.checkout",
-      "label": "Checkout...",
+      "description": "Delete untracked files after listing them; ignored files are kept",
+      "id": "git.clean",
+      "label": "Clean Untracked Files...",
       "paletteVisible": true
     },
     {
@@ -710,11 +949,51 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.commitAmend",
+      "category": "Git",
+      "description": "Rewrite the last commit with the staged changes and an edited message",
+      "id": "git.commitAmend",
+      "label": "Commit (Amend)...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.conflicts",
+      "category": "Git",
+      "description": "Pick a file with merge conflicts to open",
+      "id": "git.conflicts",
+      "label": "Open Conflicted File...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.continue",
+      "category": "Git",
+      "description": "Continue whichever operation is paused after resolving and staging conflicts",
+      "id": "git.continue",
+      "label": "Continue Rebase, Cherry-Pick or Revert",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.continueRebase",
+      "category": "Git",
+      "description": "Continue the paused rebase after resolving and staging conflicts",
+      "id": "git.continueRebase",
+      "label": "Continue Rebase",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.createBranch",
       "category": "Git",
       "description": "Create a new branch",
       "id": "git.createBranch",
       "label": "Create Branch...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.createTag",
+      "category": "Git",
+      "description": "Tag the current commit; a message makes it an annotated tag",
+      "id": "git.createTag",
+      "label": "Create Tag...",
       "paletteVisible": true
     },
     {
@@ -742,11 +1021,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.discard",
+      "category": "Git",
+      "description": "Discard unstaged changes in the active file after confirmation",
+      "id": "git.discard",
+      "label": "Discard Changes in Active File",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.discardAll",
+      "category": "Git",
+      "description": "Discard unstaged changes in every tracked file after confirmation; untracked files are kept",
+      "id": "git.discardAll",
+      "label": "Discard All Changes",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.fetch",
       "category": "Git",
       "description": "Fetch from remote",
       "id": "git.fetch",
       "label": "Fetch",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.fetchAll",
+      "category": "Git",
+      "description": "Fetch from every remote",
+      "id": "git.fetchAll",
+      "label": "Fetch All Remotes",
       "paletteVisible": true
     },
     {
@@ -782,12 +1085,12 @@
       "paletteVisible": true
     },
     {
-      "canonical": "git.openFileDiff",
+      "canonical": "git.diff",
       "category": "Git",
-      "description": null,
+      "description": "Show diff for file",
       "id": "git.openFileDiff",
-      "label": "View Active File Diff",
-      "paletteVisible": true
+      "label": "View Diff",
+      "paletteVisible": false
     },
     {
       "canonical": "git.pull",
@@ -798,11 +1101,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.pullRebase",
+      "category": "Git",
+      "description": "Pull and replay local commits on top of the upstream",
+      "id": "git.pullRebase",
+      "label": "Pull (Rebase)",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.push",
       "category": "Git",
       "description": "Push to remote",
       "id": "git.push",
       "label": "Push",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.pushForce",
+      "category": "Git",
+      "description": "Replace the remote branch with local history after confirmation, unless it has unfetched commits",
+      "id": "git.pushForce",
+      "label": "Push (Force with Lease)",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.rebase",
+      "category": "Git",
+      "description": "Rebase the current branch onto another branch",
+      "id": "git.rebase",
+      "label": "Rebase Branch...",
       "paletteVisible": true
     },
     {
@@ -830,11 +1157,27 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.reset",
+      "category": "Git",
+      "description": "Move the current branch to a commit, keeping changes (soft, mixed) or discarding them (hard)",
+      "id": "git.reset",
+      "label": "Reset to Commit...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.revert",
+      "category": "Git",
+      "description": "Add a commit that undoes a commit",
+      "id": "git.revert",
+      "label": "Revert Commit...",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.stage",
       "category": "Git",
-      "description": "Stage current file",
+      "description": "Stage the changes in the active file",
       "id": "git.stage",
-      "label": "Stage Changes",
+      "label": "Stage Active File",
       "paletteVisible": true
     },
     {
@@ -886,12 +1229,12 @@
       "paletteVisible": true
     },
     {
-      "canonical": "git.status",
+      "canonical": "git.focusPanel",
       "category": "Git",
-      "description": "Show git status",
+      "description": null,
       "id": "git.status",
-      "label": "Show Status",
-      "paletteVisible": true
+      "label": "Focus Git Panel",
+      "paletteVisible": false
     },
     {
       "canonical": "git.switchBranch",
@@ -912,9 +1255,9 @@
     {
       "canonical": "git.unstage",
       "category": "Git",
-      "description": "Unstage current file",
+      "description": "Unstage the active file's staged changes",
       "id": "git.unstage",
-      "label": "Unstage Changes",
+      "label": "Unstage Active File",
       "paletteVisible": true
     },
     {
@@ -926,108 +1269,108 @@
       "paletteVisible": true
     },
     {
-      "canonical": "git.viewChanges",
-      "category": "Keybinding actions",
+      "canonical": "gitPanel.openDiff",
+      "category": "Source Control",
       "description": null,
       "id": "git.viewChanges",
-      "label": "git.viewChanges",
+      "label": "Source Control: Open Selected Diff",
       "paletteVisible": false
     },
     {
-      "canonical": "git.viewStagedChanges",
+      "canonical": "git.diffStaged",
       "category": "Git",
-      "description": null,
+      "description": "Show staged changes",
       "id": "git.viewStagedChanges",
-      "label": "View Staged Changes",
-      "paletteVisible": true
+      "label": "View Staged Diff",
+      "paletteVisible": false
     },
     {
-      "canonical": "gitPanel.commit",
-      "category": "Keybinding actions",
-      "description": null,
+      "canonical": "git.commit",
+      "category": "Git",
+      "description": "Commit staged changes",
       "id": "gitPanel.commit",
-      "label": "gitPanel.commit",
+      "label": "Commit",
       "paletteVisible": false
     },
     {
       "canonical": "gitPanel.discard",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Source Control",
+      "description": "Discard the selected file's unstaged changes after confirmation",
       "id": "gitPanel.discard",
-      "label": "gitPanel.discard",
-      "paletteVisible": false
+      "label": "Source Control: Discard Selected Changes...",
+      "paletteVisible": true
     },
     {
       "canonical": "gitPanel.moveDown",
-      "category": "Keybinding actions",
+      "category": "Source Control",
       "description": null,
       "id": "gitPanel.moveDown",
-      "label": "gitPanel.moveDown",
-      "paletteVisible": false
+      "label": "Source Control: Select Next",
+      "paletteVisible": true
     },
     {
       "canonical": "gitPanel.moveUp",
-      "category": "Keybinding actions",
+      "category": "Source Control",
       "description": null,
       "id": "gitPanel.moveUp",
-      "label": "gitPanel.moveUp",
-      "paletteVisible": false
+      "label": "Source Control: Select Previous",
+      "paletteVisible": true
     },
     {
       "canonical": "gitPanel.openDiff",
-      "category": "Keybinding actions",
+      "category": "Source Control",
       "description": null,
       "id": "gitPanel.openDiff",
-      "label": "gitPanel.openDiff",
-      "paletteVisible": false
+      "label": "Source Control: Open Selected Diff",
+      "paletteVisible": true
     },
     {
       "canonical": "gitPanel.openFile",
-      "category": "Keybinding actions",
+      "category": "Source Control",
       "description": null,
       "id": "gitPanel.openFile",
-      "label": "gitPanel.openFile",
-      "paletteVisible": false
+      "label": "Source Control: Open Selected File",
+      "paletteVisible": true
     },
     {
-      "canonical": "gitPanel.refresh",
-      "category": "Keybinding actions",
-      "description": null,
+      "canonical": "git.refresh",
+      "category": "Git",
+      "description": "Refresh git status",
       "id": "gitPanel.refresh",
-      "label": "gitPanel.refresh",
+      "label": "Refresh",
       "paletteVisible": false
     },
     {
       "canonical": "gitPanel.stage",
-      "category": "Keybinding actions",
+      "category": "Source Control",
       "description": null,
       "id": "gitPanel.stage",
-      "label": "gitPanel.stage",
-      "paletteVisible": false
+      "label": "Source Control: Stage Selected File",
+      "paletteVisible": true
     },
     {
-      "canonical": "gitPanel.stageAll",
-      "category": "Keybinding actions",
-      "description": null,
+      "canonical": "git.stageAll",
+      "category": "Git",
+      "description": "Stage all changes",
       "id": "gitPanel.stageAll",
-      "label": "gitPanel.stageAll",
+      "label": "Stage All Changes",
       "paletteVisible": false
     },
     {
       "canonical": "gitPanel.toggleSection",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "Source Control",
+      "description": "Fold or unfold the Staged or Changes group under the selection",
       "id": "gitPanel.toggleSection",
-      "label": "gitPanel.toggleSection",
-      "paletteVisible": false
+      "label": "Source Control: Collapse or Expand Group",
+      "paletteVisible": true
     },
     {
       "canonical": "gitPanel.unstage",
-      "category": "Keybinding actions",
+      "category": "Source Control",
       "description": null,
       "id": "gitPanel.unstage",
-      "label": "gitPanel.unstage",
-      "paletteVisible": false
+      "label": "Source Control: Unstage Selected File",
+      "paletteVisible": true
     },
     {
       "canonical": "help.about",
@@ -1043,6 +1386,14 @@
       "description": null,
       "id": "help.agents",
       "label": "Help: AI CLI Agents",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.checkForUpdates",
+      "category": "Help",
+      "description": "Ask GitHub for the latest release and show how to update this installation",
+      "id": "help.checkForUpdates",
+      "label": "Help: Check for Updates",
       "paletteVisible": true
     },
     {
@@ -1174,11 +1525,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "lsp.goToDeclaration",
+      "category": "Go",
+      "description": "Go to the symbol's declaration, choosing when the server returns several",
+      "id": "lsp.goToDeclaration",
+      "label": "Go to Declaration",
+      "paletteVisible": true
+    },
+    {
       "canonical": "lsp.goToDefinition",
       "category": "Go",
       "description": null,
       "id": "lsp.goToDefinition",
       "label": "Go to Definition",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "lsp.goToImplementation",
+      "category": "Go",
+      "description": "Go to the symbol's implementations, choosing when there are several",
+      "id": "lsp.goToImplementation",
+      "label": "Go to Implementation",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "lsp.goToTypeDefinition",
+      "category": "Go",
+      "description": "Go to the definition of the symbol's type, choosing when the server returns several",
+      "id": "lsp.goToTypeDefinition",
+      "label": "Go to Type Definition",
       "paletteVisible": true
     },
     {
@@ -1203,6 +1578,14 @@
       "description": null,
       "id": "lsp.rename",
       "label": "Rename Symbol",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "lsp.restartServer",
+      "category": "Editor",
+      "description": "Restart the active file's language server and reopen its documents",
+      "id": "lsp.restartServer",
+      "label": "Restart Language Server",
       "paletteVisible": true
     },
     {
@@ -1239,83 +1622,83 @@
     },
     {
       "canonical": "outlinePanel.collapse",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.collapse",
-      "label": "outlinePanel.collapse",
-      "paletteVisible": false
+      "label": "Outline: Collapse Selected",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.expand",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.expand",
-      "label": "outlinePanel.expand",
-      "paletteVisible": false
+      "label": "Outline: Expand Selected",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.goToFirst",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.goToFirst",
-      "label": "outlinePanel.goToFirst",
-      "paletteVisible": false
+      "label": "Outline: Select First",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.goToLast",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.goToLast",
-      "label": "outlinePanel.goToLast",
-      "paletteVisible": false
+      "label": "Outline: Select Last",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.moveDown",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.moveDown",
-      "label": "outlinePanel.moveDown",
-      "paletteVisible": false
+      "label": "Outline: Select Next",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.moveUp",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.moveUp",
-      "label": "outlinePanel.moveUp",
-      "paletteVisible": false
+      "label": "Outline: Select Previous",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.pageDown",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.pageDown",
-      "label": "outlinePanel.pageDown",
-      "paletteVisible": false
+      "label": "Outline: Page Down",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.pageUp",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.pageUp",
-      "label": "outlinePanel.pageUp",
-      "paletteVisible": false
+      "label": "Outline: Page Up",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.select",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.select",
-      "label": "outlinePanel.select",
-      "paletteVisible": false
+      "label": "Outline: Go to Selected Symbol",
+      "paletteVisible": true
     },
     {
       "canonical": "outlinePanel.toggleExpand",
-      "category": "Keybinding actions",
+      "category": "Outline",
       "description": null,
       "id": "outlinePanel.toggleExpand",
-      "label": "outlinePanel.toggleExpand",
-      "paletteVisible": false
+      "label": "Outline: Toggle Selected",
+      "paletteVisible": true
     },
     {
       "canonical": "pane.addPanel",
@@ -1326,115 +1709,115 @@
       "paletteVisible": true
     },
     {
-      "canonical": "queryResults.export",
-      "category": "Keybinding actions",
+      "canonical": "database.exportResults",
+      "category": "Database",
       "description": null,
       "id": "queryResults.export",
-      "label": "queryResults.export",
+      "label": "Export Results",
       "paletteVisible": false
     },
     {
       "canonical": "queryResults.goToFirst",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.goToFirst",
-      "label": "queryResults.goToFirst",
-      "paletteVisible": false
+      "label": "Query Results: First Row",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.goToLast",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.goToLast",
-      "label": "queryResults.goToLast",
-      "paletteVisible": false
+      "label": "Query Results: Last Row",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.moveDown",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.moveDown",
-      "label": "queryResults.moveDown",
-      "paletteVisible": false
+      "label": "Query Results: Next Row",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.moveLeft",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.moveLeft",
-      "label": "queryResults.moveLeft",
-      "paletteVisible": false
+      "label": "Query Results: Previous Column",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.moveRight",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.moveRight",
-      "label": "queryResults.moveRight",
-      "paletteVisible": false
+      "label": "Query Results: Next Column",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.moveUp",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.moveUp",
-      "label": "queryResults.moveUp",
-      "paletteVisible": false
+      "label": "Query Results: Previous Row",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.pageDown",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.pageDown",
-      "label": "queryResults.pageDown",
-      "paletteVisible": false
+      "label": "Query Results: Page Down",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.pageUp",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.pageUp",
-      "label": "queryResults.pageUp",
-      "paletteVisible": false
+      "label": "Query Results: Page Up",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.refresh",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.refresh",
-      "label": "queryResults.refresh",
-      "paletteVisible": false
+      "label": "Query Results: Run Query Again",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.showDetails",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.showDetails",
-      "label": "queryResults.showDetails",
-      "paletteVisible": false
+      "label": "Query Results: Show Row Details",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.sort",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.sort",
-      "label": "queryResults.sort",
-      "paletteVisible": false
+      "label": "Query Results: Sort by Selected Column",
+      "paletteVisible": true
     },
     {
       "canonical": "queryResults.toggleViewMode",
-      "category": "Keybinding actions",
+      "category": "Database",
       "description": null,
       "id": "queryResults.toggleViewMode",
-      "label": "queryResults.toggleViewMode",
-      "paletteVisible": false
+      "label": "Query Results: Toggle View Mode",
+      "paletteVisible": true
     },
     {
-      "canonical": "quit",
-      "category": "Keybinding actions",
+      "canonical": "workbench.quit",
+      "category": "Application",
       "description": null,
       "id": "quit",
-      "label": "quit",
+      "label": "Quit",
       "paletteVisible": false
     },
     {
@@ -1478,11 +1861,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "search.replaceInFiles",
+      "category": "Search",
+      "description": "Preview and confirm a replacement across workspace files; open files change in their editors so Undo reverts them",
+      "id": "search.replaceInFiles",
+      "label": "Replace in Files",
+      "paletteVisible": true
+    },
+    {
       "canonical": "secrets.manage",
       "category": "Secrets",
       "description": null,
       "id": "secrets.manage",
       "label": "Manage Secrets",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "session.delete",
+      "category": "Session",
+      "description": "Delete a named session saved for this workspace after confirmation",
+      "id": "session.delete",
+      "label": "Delete Session...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "session.list",
+      "category": "Session",
+      "description": "Pick a named session saved for this workspace to open",
+      "id": "session.list",
+      "label": "List Sessions for This Workspace...",
       "paletteVisible": true
     },
     {
@@ -1542,6 +1949,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "terminal.clear",
+      "category": "Terminal",
+      "description": "Clear the scrollback and screen of the focused or bottom terminal without typing into the shell",
+      "id": "terminal.clear",
+      "label": "Clear Terminal",
+      "paletteVisible": true
+    },
+    {
       "canonical": "terminal.close",
       "category": "Terminal",
       "description": null,
@@ -1550,12 +1965,20 @@
       "paletteVisible": true
     },
     {
-      "canonical": "workbench.focusTerminal",
+      "canonical": "terminal.closeAll",
       "category": "Terminal",
-      "description": null,
+      "description": "Close bottom and pane terminals, asking first while a program is running; agent sessions stay open",
+      "id": "terminal.closeAll",
+      "label": "Close All Terminals",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "workbench.focusTerminal",
+      "category": "View",
+      "description": "Focus the bottom terminal, opening one if none is open",
       "id": "terminal.focus",
       "label": "Focus Bottom Terminal",
-      "paletteVisible": true
+      "paletteVisible": false
     },
     {
       "canonical": "terminal.interrupt",
@@ -1563,6 +1986,14 @@
       "description": null,
       "id": "terminal.interrupt",
       "label": "Interrupt Terminal",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "terminal.kill",
+      "category": "Terminal",
+      "description": "Stop every process in the terminal, asking first while a program is running",
+      "id": "terminal.kill",
+      "label": "Kill Terminal",
       "paletteVisible": true
     },
     {
@@ -1583,11 +2014,11 @@
     },
     {
       "canonical": "terminal.next",
-      "category": "Keybinding actions",
+      "category": "Terminal",
       "description": null,
       "id": "terminal.next",
-      "label": "terminal.next",
-      "paletteVisible": false
+      "label": "Next Bottom Terminal Tab",
+      "paletteVisible": true
     },
     {
       "canonical": "terminal.next",
@@ -1595,15 +2026,15 @@
       "description": null,
       "id": "terminal.nextTab",
       "label": "Next Bottom Terminal Tab",
-      "paletteVisible": true
+      "paletteVisible": false
     },
     {
       "canonical": "terminal.previous",
-      "category": "Keybinding actions",
+      "category": "Terminal",
       "description": null,
       "id": "terminal.previous",
-      "label": "terminal.previous",
-      "paletteVisible": false
+      "label": "Previous Bottom Terminal Tab",
+      "paletteVisible": true
     },
     {
       "canonical": "terminal.previous",
@@ -1611,6 +2042,22 @@
       "description": null,
       "id": "terminal.previousTab",
       "label": "Previous Bottom Terminal Tab",
+      "paletteVisible": false
+    },
+    {
+      "canonical": "terminal.scrollToBottom",
+      "category": "Terminal",
+      "description": "Return to the live screen",
+      "id": "terminal.scrollToBottom",
+      "label": "Scroll Terminal to Bottom",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "terminal.scrollToTop",
+      "category": "Terminal",
+      "description": "Show the oldest scrollback",
+      "id": "terminal.scrollToTop",
+      "label": "Scroll Terminal to Top",
       "paletteVisible": true
     },
     {
@@ -1632,10 +2079,10 @@
     {
       "canonical": "workbench.selectTheme",
       "category": "Preferences",
-      "description": "Select a color theme",
+      "description": "Switch the active semantic theme",
       "id": "theme.select",
-      "label": "Color Theme",
-      "paletteVisible": true
+      "label": "Select Color Theme",
+      "paletteVisible": false
     },
     {
       "canonical": "theme.toggleDarkMode",
@@ -1647,83 +2094,83 @@
     },
     {
       "canonical": "timelinePanel.copyHash",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.copyHash",
-      "label": "timelinePanel.copyHash",
-      "paletteVisible": false
+      "label": "Timeline: Copy Selected Commit Hash",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.goToFirst",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.goToFirst",
-      "label": "timelinePanel.goToFirst",
-      "paletteVisible": false
+      "label": "Timeline: Select First",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.goToLast",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.goToLast",
-      "label": "timelinePanel.goToLast",
-      "paletteVisible": false
+      "label": "Timeline: Select Last",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.moveDown",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.moveDown",
-      "label": "timelinePanel.moveDown",
-      "paletteVisible": false
+      "label": "Timeline: Select Next",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.moveUp",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.moveUp",
-      "label": "timelinePanel.moveUp",
-      "paletteVisible": false
+      "label": "Timeline: Select Previous",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.openFileAtCommit",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.openFileAtCommit",
-      "label": "timelinePanel.openFileAtCommit",
-      "paletteVisible": false
+      "label": "Timeline: Open File at Selected Commit",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.pageDown",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.pageDown",
-      "label": "timelinePanel.pageDown",
-      "paletteVisible": false
+      "label": "Timeline: Page Down",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.pageUp",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.pageUp",
-      "label": "timelinePanel.pageUp",
-      "paletteVisible": false
+      "label": "Timeline: Page Up",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.toggleMode",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.toggleMode",
-      "label": "timelinePanel.toggleMode",
-      "paletteVisible": false
+      "label": "Timeline: Toggle File or Repository History",
+      "paletteVisible": true
     },
     {
       "canonical": "timelinePanel.viewDiff",
-      "category": "Keybinding actions",
+      "category": "Timeline",
       "description": null,
       "id": "timelinePanel.viewDiff",
-      "label": "timelinePanel.viewDiff",
-      "paletteVisible": false
+      "label": "Timeline: View Selected Commit's Diff",
+      "paletteVisible": true
     },
     {
       "canonical": "view.closePane",
@@ -1738,24 +2185,24 @@
       "category": "View",
       "description": null,
       "id": "view.focusEditor",
-      "label": "Focus Main Pane",
-      "paletteVisible": true
+      "label": "Focus Main Region",
+      "paletteVisible": false
     },
     {
       "canonical": "workbench.focusExplorer",
       "category": "View",
       "description": null,
       "id": "view.focusFileTree",
-      "label": "Focus File Explorer",
-      "paletteVisible": true
+      "label": "Focus Explorer",
+      "paletteVisible": false
     },
     {
       "canonical": "workbench.focusTerminal",
       "category": "View",
-      "description": null,
+      "description": "Focus the bottom terminal, opening one if none is open",
       "id": "view.focusTerminal",
       "label": "Focus Bottom Terminal",
-      "paletteVisible": true
+      "paletteVisible": false
     },
     {
       "canonical": "view.splitHorizontal",
@@ -1774,28 +2221,28 @@
       "paletteVisible": true
     },
     {
-      "canonical": "view.toggleSidebar",
-      "category": "Keybinding actions",
+      "canonical": "workbench.toggleSidebar",
+      "category": "View",
       "description": null,
       "id": "view.toggleSidebar",
-      "label": "view.toggleSidebar",
+      "label": "Toggle Sidebar",
       "paletteVisible": false
     },
     {
-      "canonical": "view.toggleTerminal",
-      "category": "Keybinding actions",
-      "description": null,
+      "canonical": "workbench.toggleTerminal",
+      "category": "View",
+      "description": "Show or hide the bottom terminal dock",
       "id": "view.toggleTerminal",
-      "label": "view.toggleTerminal",
+      "label": "Toggle Bottom Terminal",
       "paletteVisible": false
     },
     {
       "canonical": "workbench.agentsMenu",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "View",
+      "description": "Move or hide the agents sidebar",
       "id": "workbench.agentsMenu",
-      "label": "workbench.agentsMenu",
-      "paletteVisible": false
+      "label": "Agents Sidebar Menu...",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.commandPalette",
@@ -1807,11 +2254,11 @@
     },
     {
       "canonical": "workbench.documentInfo",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "View",
+      "description": "Path, language, encoding, line endings and selection size of the active editor",
       "id": "workbench.documentInfo",
-      "label": "workbench.documentInfo",
-      "paletteVisible": false
+      "label": "Show Document Information",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusAgentsSidebar",
@@ -1855,11 +2302,11 @@
     },
     {
       "canonical": "workbench.focusExplorer",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusExplorer",
-      "label": "workbench.focusExplorer",
-      "paletteVisible": false
+      "label": "Focus Explorer",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusMainRegion",
@@ -1887,43 +2334,43 @@
     },
     {
       "canonical": "workbench.focusOutline",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusOutline",
-      "label": "workbench.focusOutline",
-      "paletteVisible": false
+      "label": "Focus Outline",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusPaneDown",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusPaneDown",
-      "label": "workbench.focusPaneDown",
-      "paletteVisible": false
+      "label": "Focus Pane Below",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusPaneLeft",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusPaneLeft",
-      "label": "workbench.focusPaneLeft",
-      "paletteVisible": false
+      "label": "Focus Pane to the Left",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusPaneRight",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusPaneRight",
-      "label": "workbench.focusPaneRight",
-      "paletteVisible": false
+      "label": "Focus Pane to the Right",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusPaneUp",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusPaneUp",
-      "label": "workbench.focusPaneUp",
-      "paletteVisible": false
+      "label": "Focus Pane Above",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusPreviousPane",
@@ -1943,19 +2390,19 @@
     },
     {
       "canonical": "workbench.focusTerminal",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "View",
+      "description": "Focus the bottom terminal, opening one if none is open",
       "id": "workbench.focusTerminal",
-      "label": "workbench.focusTerminal",
-      "paletteVisible": false
+      "label": "Focus Bottom Terminal",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusTimeline",
-      "category": "Keybinding actions",
+      "category": "View",
       "description": null,
       "id": "workbench.focusTimeline",
-      "label": "workbench.focusTimeline",
-      "paletteVisible": false
+      "label": "Focus Timeline",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.focusWorkspaceSidebar",
@@ -2086,11 +2533,11 @@
       "paletteVisible": true
     },
     {
-      "canonical": "workbench.saveSession",
-      "category": "Keybinding actions",
+      "canonical": "session.save",
+      "category": "Session",
       "description": null,
       "id": "workbench.saveSession",
-      "label": "workbench.saveSession",
+      "label": "Save Session",
       "paletteVisible": false
     },
     {
@@ -2103,11 +2550,11 @@
     },
     {
       "canonical": "workbench.sidebarMenu",
-      "category": "Keybinding actions",
-      "description": null,
+      "category": "View",
+      "description": "Move or hide the workspace sidebar",
       "id": "workbench.sidebarMenu",
-      "label": "workbench.sidebarMenu",
-      "paletteVisible": false
+      "label": "Workspace Sidebar Menu...",
+      "paletteVisible": true
     },
     {
       "canonical": "workbench.statusHistory",
@@ -2119,10 +2566,18 @@
     },
     {
       "canonical": "agents.togglePanel",
-      "category": "View",
+      "category": "AI",
       "description": null,
       "id": "workbench.toggleAgentsSidebar",
-      "label": "View: Toggle Agents Sidebar",
+      "label": "Agents: Toggle Sidebar",
+      "paletteVisible": false
+    },
+    {
+      "canonical": "workbench.toggleMinimap",
+      "category": "View",
+      "description": "Show or hide the minimap beside each editor's scrollbar",
+      "id": "workbench.toggleMinimap",
+      "label": "Toggle Minimap",
       "paletteVisible": true
     },
     {
@@ -2147,6 +2602,14 @@
       "description": null,
       "id": "workbench.toggleWordWrap",
       "label": "Toggle Word Wrap",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "workbench.toggleZenMode",
+      "category": "View",
+      "description": "Hide the sidebars and the bottom terminal, or bring them back",
+      "id": "workbench.toggleZenMode",
+      "label": "Toggle Zen Mode",
       "paletteVisible": true
     }
   ],
@@ -2260,6 +2723,10 @@
       "key": "ctrl+alt+b"
     },
     {
+      "command": "file.copyPath",
+      "key": "ctrl+alt+c"
+    },
+    {
       "command": "editor.duplicateLine",
       "key": "ctrl+alt+d"
     },
@@ -2304,6 +2771,10 @@
       "key": "ctrl+alt+s"
     },
     {
+      "command": "file.copyRelativePath",
+      "key": "ctrl+alt+shift+c"
+    },
+    {
       "command": "terminal.new",
       "key": "ctrl+alt+t"
     },
@@ -2318,6 +2789,27 @@
     {
       "command": "editor.nextTab",
       "key": "meta+alt+right"
+    },
+    {
+      "command": "file.copyPath",
+      "key": "alt+meta+c"
+    },
+    {
+      "command": "file.revealInFinder",
+      "key": "alt+meta+r"
+    },
+    {
+      "command": "file.copyRelativePath",
+      "key": "alt+shift+meta+c"
+    },
+    {
+      "command": "editor.toggleBlockComment",
+      "key": "alt+shift+a",
+      "when": "editorFocus"
+    },
+    {
+      "command": "file.revealInFinder",
+      "key": "alt+shift+r"
     },
     {
       "command": "fileTree.moveDown",
@@ -2475,6 +2967,11 @@
       "key": "ctrl+f"
     },
     {
+      "command": "lsp.goToImplementation",
+      "key": "ctrl+f12",
+      "when": "editorFocus"
+    },
+    {
       "command": "editor.gotoLine",
       "key": "ctrl+g"
     },
@@ -2556,6 +3053,16 @@
       "key": "ctrl+shift+a"
     },
     {
+      "command": "edit.moveLinesDown",
+      "key": "ctrl+shift+down",
+      "when": "editorFocus"
+    },
+    {
+      "command": "edit.moveLinesUp",
+      "key": "ctrl+shift+up",
+      "when": "editorFocus"
+    },
+    {
       "command": "workbench.toggleSidebar",
       "key": "ctrl+shift+b"
     },
@@ -2569,12 +3076,26 @@
       "key": "ctrl+shift+d"
     },
     {
+      "command": "terminal.scrollToBottom",
+      "key": "ctrl+shift+end",
+      "when": "terminalFocus"
+    },
+    {
       "command": "search.findInFiles",
       "key": "ctrl+shift+f"
     },
     {
       "command": "git.focusPanel",
       "key": "ctrl+shift+g"
+    },
+    {
+      "command": "search.replaceInFiles",
+      "key": "ctrl+shift+h"
+    },
+    {
+      "command": "terminal.scrollToTop",
+      "key": "ctrl+shift+home",
+      "when": "terminalFocus"
     },
     {
       "command": "aiCli.toggle",
@@ -2587,6 +3108,11 @@
     {
       "command": "lsp.goToDefinition",
       "key": "ctrl+shift+k"
+    },
+    {
+      "command": "terminal.clear",
+      "key": "ctrl+shift+k",
+      "when": "terminalFocus"
     },
     {
       "command": "edit.selectAllOccurrences",
@@ -2912,6 +3438,11 @@
       "key": "meta+h"
     },
     {
+      "command": "terminal.clear",
+      "key": "meta+k",
+      "when": "terminalFocus"
+    },
+    {
       "command": "editor.selectLine",
       "key": "meta+l"
     },
@@ -2960,12 +3491,21 @@
       "key": "shift+meta+f"
     },
     {
+      "command": "search.replaceInFiles",
+      "key": "shift+meta+h"
+    },
+    {
       "command": "aiCli.toggle",
       "key": "shift+meta+i"
     },
     {
       "command": "agents.openSession",
       "key": "shift+meta+j"
+    },
+    {
+      "command": "edit.deleteLine",
+      "key": "shift+meta+k",
+      "when": "editorFocus"
     },
     {
       "command": "workbench.commandPalette",

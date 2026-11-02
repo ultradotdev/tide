@@ -14,8 +14,11 @@ Tide opens shells in the bottom dock or as ordinary tabs in the main panes. AI a
 | Next / previous dock tab | “Next Bottom Terminal Tab” from the command palette (`Ctrl+K`) / “Previous Bottom Terminal Tab” from the command palette (`Ctrl+K`) |
 | Close the focused terminal tab | “Close Bottom Terminal Tab” from the command palette (`Ctrl+K`) |
 | Send Ctrl+C to the terminal | “Interrupt Terminal” from the command palette (`Ctrl+K`) |
+| Clear the scrollback and screen | `Ctrl+Shift+K` |
 
 The dock's `+` button also opens a terminal, and **Move Active Tab to Main Pane...** moves a terminal between the dock and the panes.
+
+**Kill Terminal** stops every process in a terminal and leaves its tab marked with the exit status, as when the shell exits; it asks first while a command or agent is running. **Close All Terminals** closes the shell terminals in the dock and the panes, asking first if one is busy; agent tabs stay open. Terminal commands act on the focused terminal, or on the dock's active terminal when focus is elsewhere.
 
 New terminals start in the workspace folder with the program in `terminal.shell` (`""`); when it is empty Tide uses `$SHELL`, then `/bin/sh`. Bash, zsh and sh start as interactive login shells. Terminals report `TERM=xterm-256color`, `COLORTERM=truecolor` and `TERM_PROGRAM=tide`. Shell and scrollback changes apply to new terminals.
 
@@ -27,7 +30,9 @@ Escape also belongs to the program. To leave a terminal, use `F6` or `Ctrl+Alt+]
 
 ## Scrollback
 
-Each terminal keeps `tui.terminal.scrollback` (`1000`) lines. Shift+PageUp and Shift+PageDown page through them, and the mouse wheel scrolls; hold Shift while scrolling when the program has asked for mouse input.
+Each terminal keeps `tui.terminal.scrollback` (`1000`) lines. Shift+PageUp and Shift+PageDown page through them, and the mouse wheel scrolls; hold Shift while scrolling when the program has asked for mouse input. `Ctrl+Shift+Home` jumps to the oldest line and `Ctrl+Shift+End` back to the live screen.
+
+`Ctrl+Shift+K` clears the scrollback and the screen like a terminal's Clear Buffer: the prompt line moves to the top, and nothing is typed into the shell. A full-screen program such as an editor keeps its screen.
 
 ## Compatibility
 

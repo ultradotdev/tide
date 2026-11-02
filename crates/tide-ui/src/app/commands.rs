@@ -40,6 +40,17 @@ impl App {
             Command::FileNew => self.new_file(),
             Command::FileClose => self.close_active(),
             Command::FileCloseAll => self.close_all(),
+            Command::FileCloseOthers => self.close_others(),
+            Command::FileRename => self.prompt_rename_file(),
+            Command::FileDelete => {
+                if let Some(path) = self.file_target("delete it") {
+                    self.confirm_delete(&path);
+                }
+            }
+            Command::FileNewFolder => self.prompt_new_folder(),
+            Command::FileCopyPath => self.copy_file_path(false),
+            Command::FileCopyRelativePath => self.copy_file_path(true),
+            Command::FileRevealInFinder => self.reveal_file(),
             Command::EditUndo => {
                 if let Some(editor) = self.workbench.active_editor_mut() {
                     editor.undo();
@@ -85,10 +96,8 @@ impl App {
             Command::WorkbenchResetRegionSizes => self.reset_region_sizes(),
             Command::WorkbenchCommandPalette => self.open_command_palette(),
             Command::WorkbenchQuickOpen => self.open_quick_open(),
-            Command::WorkbenchToggleSidebar | Command::ViewToggleSidebar => self.toggle_sidebar(),
-            Command::WorkbenchToggleTerminal | Command::ViewToggleTerminal => {
-                self.toggle_terminal()
-            }
+            Command::WorkbenchToggleSidebar => self.toggle_sidebar(),
+            Command::WorkbenchToggleTerminal => self.toggle_terminal(),
             Command::WorkbenchFocusNextRegion => self.focus_next_region(false),
             Command::WorkbenchFocusPreviousRegion => self.focus_next_region(true),
             Command::WorkbenchFocusNextPane => {
@@ -154,6 +163,10 @@ impl App {
             Command::LspTriggerCompletion => self.lsp_request(LspRequestKind::Completion),
             Command::LspShowHover => self.lsp_request(LspRequestKind::Hover),
             Command::LspGoToDefinition => self.lsp_request(LspRequestKind::Definition),
+            Command::LspGoToDeclaration => self.lsp_request(LspRequestKind::Declaration),
+            Command::LspGoToTypeDefinition => self.lsp_request(LspRequestKind::TypeDefinition),
+            Command::LspGoToImplementation => self.lsp_request(LspRequestKind::Implementation),
+            Command::LspRestartServer => with_ui!(self, |ui| self.lsp.restart_server(ui)),
             Command::LspTriggerSignatureHelp => self.lsp_request(LspRequestKind::SignatureHelp),
             Command::LspFindReferences => self.lsp_request(LspRequestKind::References),
             Command::LspRename => self.open_prompt(PromptAction::Rename, "Rename Symbol", ""),
@@ -174,36 +187,40 @@ impl App {
             Command::SearchFindNext => self.find_next(),
             Command::SearchReplace => self.open_replace(),
             Command::SearchFindInFiles => self.open_find_in_files(),
+            Command::SearchReplaceInFiles => self.open_replace_in_files(),
             Command::WorkbenchSelectTheme => self.open_theme_picker(),
             Command::WorkbenchOpenSettings => self.open_settings(),
             Command::WorkbenchOpenKeybindings => self.open_keybindings(),
-            Command::EditorCommentLine => self.toggle_comment(),
-            Command::EditorUncommentLine => self.toggle_comment(),
-            Command::EditorDuplicateLine | Command::EditorDuplicateSelection => {
-                self.duplicate_line()
-            }
+            Command::EditorCommentLine => self.comment_lines(CommentMode::Add),
+            Command::EditorUncommentLine => self.comment_lines(CommentMode::Remove),
+            Command::EditorDuplicateLine => self.edit_lines(|editor, _| {
+                editor.duplicate_lines();
+                None
+            }),
+            Command::EditorDuplicateSelection => self.edit_lines(|editor, _| {
+                editor.duplicate_selections();
+                None
+            }),
             Command::GitFocusPanel => {
-                self.focus_sidebar_section(1, true);
+                self.add_sidebar_section(SectionId::SourceControl);
+                self.accordion.enter_content();
                 with_ui!(self, |ui| self.git.refresh(ui));
             }
-            Command::WorkbenchFocusExplorer => self.focus_sidebar_section(0, false),
-            Command::WorkbenchFocusOutline => self.focus_sidebar_section(2, false),
-            Command::WorkbenchFocusTimeline => self.focus_sidebar_section(3, false),
+            Command::WorkbenchFocusExplorer => self.add_sidebar_section(SectionId::Explorer),
+            Command::WorkbenchFocusOutline => self.add_sidebar_section(SectionId::Outline),
+            Command::WorkbenchFocusTimeline => self.add_sidebar_section(SectionId::Timeline),
             Command::GitRefresh => with_ui!(self, |ui| self
                 .git
                 .request_refresh(Some("Git status refreshed".into()), ui)),
-            Command::GitStage => with_ui!(self, |ui| self.git.stage_selected(ui)),
+            Command::GitStage => with_ui!(self, |ui| self.git.stage_active(ui, true)),
             Command::GitStageAll => with_ui!(self, |ui| self.git.stage_all(ui)),
-            Command::GitUnstage => with_ui!(self, |ui| self.git.unstage_selected(ui)),
+            Command::GitUnstage => with_ui!(self, |ui| self.git.stage_active(ui, false)),
             Command::GitCommit => with_ui!(self, |ui| self.git.open_commit_prompt(ui)),
-            Command::GitViewChanges => with_ui!(self, |ui| self.git.open_selected_diff(ui)),
-            Command::GitDiffStaged | Command::GitViewStagedChanges => {
-                with_ui!(self, |ui| self.git.open_staged_diff(ui))
-            }
+            Command::GitDiffStaged => with_ui!(self, |ui| self.git.open_staged_diff(ui)),
             Command::GitLog => with_ui!(self, |ui| self.git.open_log(None, ui)),
             Command::GitLogFile => with_ui!(self, |ui| self.git.open_selected_log(ui)),
             Command::GitBlame => with_ui!(self, |ui| self.git.open_blame(ui)),
-            Command::GitBranches | Command::GitCheckout | Command::GitSwitchBranch => {
+            Command::GitSwitchBranch => {
                 with_ui!(self, |ui| self.git.open_branch_picker(ui))
             }
             Command::GitCreateBranch => {
@@ -221,9 +238,7 @@ impl App {
             }
             Command::GitMerge => with_ui!(self, |ui| self.git.open_choices("merge", ui)),
             Command::GitAbortMerge => with_ui!(self, |ui| self.git.confirm_abort_merge(ui)),
-            Command::GitOpenFileDiff | Command::GitDiff => {
-                with_ui!(self, |ui| self.git.open_active_diff(ui))
-            }
+            Command::GitDiff => with_ui!(self, |ui| self.git.open_active_diff(ui)),
             Command::GitStashList => with_ui!(self, |ui| self.git.open_output_tab(
                 "Stashes",
                 &["stash", "list"],
@@ -245,13 +260,46 @@ impl App {
             Command::GitFetch => with_ui!(self, |ui| self.git.run(&["fetch"], ui)),
             Command::GitPull => with_ui!(self, |ui| self.git.run(&["pull"], ui)),
             Command::GitPush => with_ui!(self, |ui| self.git.run(&["push"], ui)),
-            Command::GitStatus => with_ui!(self, |ui| self.git.refresh(ui)),
+            Command::GitDiscard => with_ui!(self, |ui| self.git.discard_active(ui)),
+            Command::GitDiscardAll => with_ui!(self, |ui| self.git.confirm_discard_all(ui)),
+            Command::GitCommitAmend => with_ui!(self, |ui| self.git.prepare_amend(ui)),
+            Command::GitPullRebase => with_ui!(self, |ui| self.git.run(&["pull", "--rebase"], ui)),
+            Command::GitFetchAll => with_ui!(self, |ui| self.git.run(&["fetch", "--all"], ui)),
+            Command::GitRebase => with_ui!(self, |ui| self.git.open_choices("rebase", ui)),
+            Command::GitContinueRebase => {
+                with_ui!(self, |ui| self.git.continue_operation(true, ui))
+            }
+            Command::GitAbortRebase => with_ui!(self, |ui| self.git.prepare_abort(true, ui)),
+            Command::GitContinue => with_ui!(self, |ui| self.git.continue_operation(false, ui)),
+            Command::GitAbort => with_ui!(self, |ui| self.git.prepare_abort(false, ui)),
+            Command::GitConflicts => with_ui!(self, |ui| self.git.open_conflicts(ui)),
+            Command::GitCreateTag => self.open_prompt(PromptAction::CreateTag, "Create Tag", ""),
+            Command::GitCherryPick => with_ui!(self, |ui| self.git.open_choices("cherryPick", ui)),
+            Command::GitRevert => with_ui!(self, |ui| self.git.open_choices("revert", ui)),
+            Command::GitReset => with_ui!(self, |ui| self.git.open_choices("reset", ui)),
+            Command::GitClean => with_ui!(self, |ui| self.git.confirm_clean(ui)),
+            Command::GitPushForce => with_ui!(self, |ui| self.git.confirm_push_force(ui)),
             Command::TerminalNew => self.open_terminal(false),
             Command::TerminalNewInPane => self.open_terminal(true),
             Command::TerminalClose => self.close_terminal(),
-            Command::TerminalNext => self.dock.next(),
-            Command::TerminalPrevious => self.dock.previous(),
-            Command::EditorToggleComment => self.toggle_comment(),
+            Command::TerminalNext | Command::TerminalPrevious => {
+                if self.dock.tabs.is_empty() {
+                    self.set_status("No bottom terminal tab is open");
+                } else {
+                    self.dock.visible = true;
+                    if command == Command::TerminalNext {
+                        self.dock.next();
+                    } else {
+                        self.dock.previous();
+                    }
+                }
+            }
+            Command::TerminalClear => self.clear_terminal(),
+            Command::TerminalKill => self.confirm_kill_terminal(),
+            Command::TerminalScrollToTop => self.scroll_terminal(true),
+            Command::TerminalScrollToBottom => self.scroll_terminal(false),
+            Command::TerminalCloseAll => self.confirm_close_all_terminals(),
+            Command::EditorToggleComment => self.comment_lines(CommentMode::Toggle),
             Command::EditorFold => self.with_active_editor(EditorState::fold),
             Command::EditorFoldAll => self.with_active_editor(EditorState::fold_all),
             Command::EditorUnfold => self.with_active_editor(EditorState::unfold),
@@ -280,6 +328,70 @@ impl App {
                 }
             }
             Command::EditorSelectLine => self.with_active_editor(EditorState::select_line),
+            Command::EditMoveLinesUp | Command::EditMoveLinesDown => {
+                self.edit_lines(|editor, _| {
+                    editor.move_lines(command == Command::EditMoveLinesUp);
+                    None
+                })
+            }
+            Command::EditDeleteLine => self.edit_lines(|editor, _| {
+                editor.delete_lines();
+                None
+            }),
+            Command::EditIndentLine | Command::EditOutdentLine => {
+                self.edit_lines(|editor, tab_size| {
+                    editor.indent_lines(command == Command::EditOutdentLine, tab_size);
+                    None
+                })
+            }
+            Command::EditJoinLines => self.edit_lines(|editor, _| {
+                editor.join_lines();
+                None
+            }),
+            Command::EditTransformToUppercase
+            | Command::EditTransformToLowercase
+            | Command::EditTransformToTitleCase => self.edit_lines(|editor, _| {
+                let transform = match command {
+                    Command::EditTransformToUppercase => CaseTransform::Upper,
+                    Command::EditTransformToLowercase => CaseTransform::Lower,
+                    _ => CaseTransform::Title,
+                };
+                (!editor.transform_case(transform))
+                    .then(|| "Select text, or put the cursor on a word, to change its case".into())
+            }),
+            Command::EditorSortLinesAscending | Command::EditorSortLinesDescending => self
+                .edit_lines(|editor, _| {
+                    editor
+                        .sort_lines(command == Command::EditorSortLinesDescending)
+                        .map(|count| format!("Sorted {count} line(s)"))
+                }),
+            Command::EditorTrimTrailingWhitespace => self.edit_lines(|editor, _| {
+                editor.trim_trailing_whitespace().map(|count| match count {
+                    0 => "No trailing whitespace to trim".to_owned(),
+                    count => format!("Trimmed trailing whitespace on {count} line(s)"),
+                })
+            }),
+            Command::EditorToggleBlockComment => self.toggle_block_comment(),
+            Command::EditorFormatSelection => self.lsp_request(LspRequestKind::FormatSelection),
+            Command::EditorFoldLevel1 | Command::EditorFoldLevel2 | Command::EditorFoldLevel3 => {
+                let level = match command {
+                    Command::EditorFoldLevel1 => 1,
+                    Command::EditorFoldLevel2 => 2,
+                    _ => 3,
+                };
+                if let Some(editor) = self.workbench.active_editor_mut() {
+                    let folded = editor.fold_level(level);
+                    self.set_status(if folded == 0 {
+                        format!("No regions to fold at level {level}")
+                    } else {
+                        format!("Folded {folded} region(s) at level {level}")
+                    });
+                } else {
+                    self.set_status("Open a file to fold its regions");
+                }
+            }
+            Command::WorkbenchToggleMinimap => self.toggle_minimap(),
+            Command::WorkbenchToggleZenMode => self.toggle_zen_mode(),
             Command::SearchFindPrevious => self.find_previous(),
             Command::SessionSaveAs => {
                 let initial = self.session_name.clone().unwrap_or_default();
@@ -290,6 +402,8 @@ impl App {
                 ));
             }
             Command::SessionOpen => self.open_session_picker(),
+            Command::SessionList => self.list_workspace_sessions(false),
+            Command::SessionDelete => self.list_workspace_sessions(true),
             Command::OutlinePanelMoveDown => self.outline_key(KeyCode::Down),
             Command::OutlinePanelMoveUp => self.outline_key(KeyCode::Up),
             Command::OutlinePanelPageDown => self.outline_key(KeyCode::PageDown),
@@ -297,27 +411,44 @@ impl App {
             Command::OutlinePanelGoToFirst => self.outline_key(KeyCode::Home),
             Command::OutlinePanelGoToLast => self.outline_key(KeyCode::End),
             Command::OutlinePanelSelect => self.outline_key(KeyCode::Enter),
-            Command::OutlinePanelExpand => self.toggle_outline(Some(true)),
-            Command::OutlinePanelCollapse => self.toggle_outline(Some(false)),
-            Command::OutlinePanelToggleExpand => self.toggle_outline(None),
+            Command::OutlinePanelExpand => self.outline_key(KeyCode::Right),
+            Command::OutlinePanelCollapse => self.outline_key(KeyCode::Left),
+            Command::OutlinePanelToggleExpand => {
+                if self.reveal_outline() {
+                    self.toggle_outline(None);
+                }
+            }
             Command::TimelinePanelMoveDown => self.timeline_key(KeyCode::Down),
             Command::TimelinePanelMoveUp => self.timeline_key(KeyCode::Up),
             Command::TimelinePanelPageDown => self.timeline_key(KeyCode::PageDown),
             Command::TimelinePanelPageUp => self.timeline_key(KeyCode::PageUp),
             Command::TimelinePanelGoToFirst => self.timeline_key(KeyCode::Home),
             Command::TimelinePanelGoToLast => self.timeline_key(KeyCode::End),
-            Command::TimelinePanelViewDiff => with_ui!(self, |ui| self.git.view_timeline_diff(ui)),
+            Command::TimelinePanelViewDiff => {
+                if self.reveal_timeline("view a commit's diff") {
+                    with_ui!(self, |ui| self.git.view_timeline_diff(ui));
+                }
+            }
             Command::TimelinePanelOpenFileAtCommit => {
-                with_ui!(self, |ui| self.git.open_historical_file(ui))
+                if self.reveal_timeline("open a file at a commit") {
+                    with_ui!(self, |ui| self.git.open_historical_file(ui));
+                }
             }
             Command::TimelinePanelCopyHash => {
-                with_ui!(self, |ui| self.git.copy_selected_commit_hash(ui))
+                if self.reveal_timeline("copy a commit hash") {
+                    with_ui!(self, |ui| self.git.copy_selected_commit_hash(ui));
+                }
             }
             Command::TimelinePanelToggleMode => {
-                with_ui!(self, |ui| self.git.toggle_timeline_mode(ui))
+                if self.reveal_panel(SectionId::Timeline, "switch its history") {
+                    with_ui!(self, |ui| self.git.toggle_timeline_mode(ui));
+                }
             }
-            Command::GitPanelDiscard => with_ui!(self, |ui| self.git.discard_selected(ui)),
-            Command::AiCliToggle => self.with_ai(|ai, ui| ai.open_cli_picker(ui)),
+            Command::GitPanelDiscard => {
+                if self.reveal_git_file("discard its changes") {
+                    with_ui!(self, |ui| self.git.discard_selected(ui));
+                }
+            }
             Command::FileTreeMoveDown => self.with_file_tree(FileTreeState::move_down),
             Command::FileTreeMoveUp => self.with_file_tree(FileTreeState::move_up),
             Command::FileTreeGoToFirst => self.with_file_tree(FileTreeState::select_first),
@@ -327,61 +458,88 @@ impl App {
             Command::FileTreeExpand => self.with_file_tree(FileTreeState::expand_selected),
             Command::FileTreeCollapse => self.with_file_tree(FileTreeState::collapse_selected),
             Command::FileTreeOpen => {
-                self.focus_sidebar_section(0, true);
-                if let Some(path) = self.file_tree.activate_selected() {
-                    self.open_file(path);
+                if self.reveal_panel(SectionId::Explorer, "open a file") {
+                    if self.file_tree.selected().is_none() {
+                        self.set_status("Select a file or folder in the Explorer to open");
+                    } else if let Some(path) = self.file_tree.activate_selected() {
+                        self.open_file(path);
+                    }
                 }
             }
-            Command::FileTreeRefresh => self.file_tree.refresh(),
-            Command::FileTreeNewFile => {
-                self.open_prompt(PromptAction::NewFile, "New File (workspace-relative)", "")
+            Command::FileTreeRefresh => {
+                if self.reveal_panel(SectionId::Explorer, "refresh it") {
+                    self.file_tree.refresh();
+                    self.set_status("Explorer refreshed");
+                }
             }
-            Command::FileTreeNewFolder => self.open_prompt(
-                PromptAction::NewFolder,
-                "New Folder (workspace-relative)",
-                "",
-            ),
-            Command::FileTreeRename => self.prompt_rename_selected_path(),
-            Command::FileTreeDelete => self.confirm_delete_selected_path(),
+            Command::FileTreeNewFile | Command::FileTreeNewFolder => {
+                if self.reveal_panel(SectionId::Explorer, "create a file there") {
+                    let folder = self.explorer_folder();
+                    let (action, title) = if command == Command::FileTreeNewFile {
+                        (PromptAction::NewFile, "New File (workspace-relative)")
+                    } else {
+                        (PromptAction::NewFolder, "New Folder (workspace-relative)")
+                    };
+                    self.open_prompt(action, title, &folder);
+                }
+            }
+            Command::FileTreeRename => {
+                if self.reveal_panel(SectionId::Explorer, "rename a file") {
+                    self.prompt_rename_selected_path();
+                }
+            }
+            Command::FileTreeDelete => {
+                if self.reveal_panel(SectionId::Explorer, "delete a file") {
+                    self.confirm_delete_selected_path();
+                }
+            }
             Command::GitPanelMoveDown => self.git_panel_key(KeyCode::Down),
             Command::GitPanelMoveUp => self.git_panel_key(KeyCode::Up),
             Command::GitPanelStage => {
-                self.focus_sidebar_section(1, true);
-                with_ui!(self, |ui| self.git.stage_selected(ui));
+                if self.reveal_git_file("stage it") {
+                    with_ui!(self, |ui| self.git.stage_selected(ui));
+                }
             }
-            Command::GitPanelStageAll => with_ui!(self, |ui| self.git.stage_all(ui)),
-            Command::GitPanelUnstage => with_ui!(self, |ui| self.git.unstage_selected(ui)),
-            Command::GitPanelCommit => with_ui!(self, |ui| self.git.open_commit_prompt(ui)),
-            Command::GitPanelRefresh => with_ui!(self, |ui| self.git.refresh(ui)),
-            Command::GitPanelOpenDiff => with_ui!(self, |ui| self.git.open_selected_diff(ui)),
-            Command::GitPanelOpenFile => with_ui!(self, |ui| self.git.open_selected_file(ui)),
+            Command::GitPanelUnstage => {
+                if self.reveal_git_file("unstage it") {
+                    with_ui!(self, |ui| self.git.unstage_selected(ui));
+                }
+            }
+            Command::GitPanelOpenDiff => {
+                if self.reveal_git_file("open its diff") {
+                    with_ui!(self, |ui| self.git.open_selected_diff(ui));
+                }
+            }
+            Command::GitPanelOpenFile => {
+                if self.reveal_git_file("open it") {
+                    with_ui!(self, |ui| self.git.open_selected_file(ui));
+                }
+            }
             Command::GitPanelToggleSection => self.toggle_git_section(),
-            Command::QueryResultsMoveDown => self.with_sql_tab(|tab| tab.move_selection(true)),
-            Command::QueryResultsMoveUp => self.with_sql_tab(|tab| tab.move_selection(false)),
-            Command::QueryResultsPageDown => self.with_sql_tab(|tab| tab.scroll_results(10)),
-            Command::QueryResultsPageUp => self.with_sql_tab(|tab| tab.scroll_results(-10)),
-            Command::QueryResultsGoToFirst => self.with_sql_tab(|tab| {
+            Command::QueryResultsMoveDown => self.with_results(|tab| tab.move_selection(true)),
+            Command::QueryResultsMoveUp => self.with_results(|tab| tab.move_selection(false)),
+            Command::QueryResultsPageDown => self.with_results(|tab| tab.scroll_results(10)),
+            Command::QueryResultsPageUp => self.with_results(|tab| tab.scroll_results(-10)),
+            Command::QueryResultsGoToFirst => self.with_results(|tab| {
                 tab.selected_row = 0;
                 tab.result_scroll = 0;
             }),
-            Command::QueryResultsGoToLast => {
-                if let Some(Tab::Sql(tab)) = self.workbench.active_tab_mut()
-                    && let Some(result) = &tab.result
-                {
-                    tab.selected_row = result.rows.len().saturating_sub(1);
+            Command::QueryResultsGoToLast => self.with_results(|tab| {
+                tab.selected_row = tab
+                    .result
+                    .as_ref()
+                    .map_or(0, |result| result.rows.len().saturating_sub(1));
+            }),
+            Command::QueryResultsRefresh => {
+                if self.focus_results() {
+                    self.with_db(|db, ui| db.refresh_results(ui));
                 }
             }
-            Command::QueryResultsExport => self.open_prompt(
-                PromptAction::ExportResults,
-                "Export Results (CSV)",
-                "results.csv",
-            ),
-            Command::QueryResultsRefresh => self.with_db(|db, ui| db.refresh_results(ui)),
-            Command::QueryResultsMoveLeft => self.with_sql_tab(|tab| tab.move_column(false)),
-            Command::QueryResultsMoveRight => self.with_sql_tab(|tab| tab.move_column(true)),
-            Command::QueryResultsSort => self.with_sql_tab(|tab| tab.sort_by_selected_column()),
-            Command::QueryResultsToggleViewMode => self.with_sql_tab(|tab| tab.cycle_view()),
-            Command::QueryResultsShowDetails => self.with_sql_tab(|tab| tab.show_details()),
+            Command::QueryResultsMoveLeft => self.with_results(|tab| tab.move_column(false)),
+            Command::QueryResultsMoveRight => self.with_results(|tab| tab.move_column(true)),
+            Command::QueryResultsSort => self.with_results(SqlTab::sort_by_selected_column),
+            Command::QueryResultsToggleViewMode => self.with_results(SqlTab::cycle_view),
+            Command::QueryResultsShowDetails => self.with_results(SqlTab::show_details),
             Command::DatabaseNewQuery => self.with_db(|db, ui| db.open_tab(None, ui)),
             Command::DatabaseExecuteQuery => self.with_db(|db, ui| db.execute(false, ui)),
             Command::DatabaseExecuteSelection => {
@@ -429,7 +587,7 @@ impl App {
             }
             Command::AgentsTogglePanel => self.toggle_agents(),
             Command::SecretsManage => self.with_db(|db, ui| db.manage_secrets(ui)),
-            Command::WorkbenchQuit | Command::Quit => self.quit(),
+            Command::WorkbenchQuit => self.quit(),
             Command::HelpWelcome
             | Command::HelpGettingStarted
             | Command::HelpWorkbench
@@ -445,8 +603,9 @@ impl App {
             | Command::HelpTroubleshooting
             | Command::HelpAbout
             | Command::HelpDocumentation
-            | Command::HelpReportIssue => self.run_help(command),
-            Command::WorkbenchSaveSession | Command::SessionSave => match self.save_session() {
+            | Command::HelpReportIssue
+            | Command::HelpCheckForUpdates => self.run_help(command),
+            Command::SessionSave => match self.adopt_session() {
                 Ok(()) => self.set_status("Session saved"),
                 Err(error) => self.set_status(format!("Session save failed: {error:#}")),
             },
@@ -483,6 +642,44 @@ impl App {
             serde_json::Value::String(next.to_owned()),
         );
         self.set_status(format!("Word wrap {next}"));
+    }
+
+    pub(super) fn toggle_minimap(&mut self) {
+        let enabled = !self.setting_bool("editor.minimap.enabled", true);
+        self.settings
+            .set("editor.minimap.enabled", serde_json::Value::Bool(enabled));
+        self.mark_session_dirty();
+        self.set_status(format!("Minimap {}", if enabled { "on" } else { "off" }));
+    }
+
+    /// Hides the sidebars and the bottom terminal around the main area, or restores the
+    /// layout zen mode hid.
+    pub(super) fn toggle_zen_mode(&mut self) {
+        if let Some(zen) = self.zen.take() {
+            self.sidebar_visible = zen.sidebar;
+            self.dock.visible = zen.dock && !self.dock.tabs.is_empty();
+            self.ai.agents_visible = zen.agents;
+            self.focus = match zen.focus {
+                Focus::Sidebar if !self.sidebar_visible => Focus::Main,
+                Focus::Dock if !self.dock.visible => Focus::Main,
+                Focus::Agents if !self.ai.agents_visible => Focus::Main,
+                focus => focus,
+            };
+            self.set_status("Zen mode off");
+        } else {
+            self.zen = Some(ZenLayout {
+                sidebar: self.sidebar_visible,
+                dock: self.dock.visible,
+                agents: self.ai.agents_visible,
+                focus: self.focus,
+            });
+            self.sidebar_visible = false;
+            self.dock.visible = false;
+            self.ai.agents_visible = false;
+            self.focus = Focus::Main;
+            self.set_status("Zen mode on; run Toggle Zen Mode again to restore the layout");
+        }
+        self.mark_session_dirty();
     }
 
     pub(super) fn reset_region_sizes(&mut self) {
@@ -588,33 +785,42 @@ impl App {
     }
 
     pub(super) fn prompt_rename_selected_path(&mut self) {
-        if let Some(entry) = self.file_tree.selected() {
-            let path = entry.path.clone();
-            let initial = entry.name.clone();
-            self.overlay = Some(modal::prompt(
-                PromptAction::RenameFile(path),
-                "Rename",
-                &initial,
-            ));
-        }
+        let Some(entry) = self.file_tree.selected() else {
+            self.set_status("Select a file or folder in the Explorer to rename");
+            return;
+        };
+        let path = entry.path.clone();
+        let initial = entry.name.clone();
+        self.overlay = Some(modal::prompt(
+            PromptAction::RenameFile(path),
+            "Rename",
+            &initial,
+        ));
     }
 
     pub(super) fn confirm_delete_selected_path(&mut self) {
-        if let Some(entry) = self.file_tree.selected() {
-            let path = entry.path.clone();
-            self.overlay = Some(modal::confirm(
-                ConfirmAction::DeletePath(path.clone()),
-                "Delete",
-                &format!("Delete {}? This cannot be undone.", path.display()),
-            ));
-        }
+        let Some(entry) = self.file_tree.selected() else {
+            self.set_status("Select a file or folder in the Explorer to delete");
+            return;
+        };
+        let path = entry.path.clone();
+        self.confirm_delete(&path);
     }
 
+    /// The workspace-relative folder of the Explorer selection, ending in a separator,
+    /// for prompts that create a path there.
+    pub(super) fn explorer_folder(&self) -> String {
+        self.file_tree
+            .selected()
+            .map_or_else(String::new, |entry| self.relative_folder(&entry.path))
+    }
+
+    /// Collapses or expands the Source Control group (Staged, Changes, ...)
+    /// under the selection, not the whole sidebar section.
     pub(super) fn toggle_git_section(&mut self) {
-        self.focus_sidebar_section(1, false);
-        let index = self.accordion.focused;
-        if let Some(section) = self.accordion.sections.get_mut(index) {
-            section.expanded = !section.expanded;
+        if self.reveal_section(SectionId::SourceControl, true, "collapse or expand a group") {
+            self.git.sync_panel();
+            self.git.toggle_panel_group();
         }
     }
 
@@ -624,19 +830,116 @@ impl App {
         }
     }
 
-    pub(super) fn with_sql_tab(&mut self, action: impl FnOnce(&mut SqlTab)) {
-        if let Some(Tab::Sql(tab)) = self.workbench.active_tab_mut() {
+    /// Runs `action` on the active SQL editor's results once they are focused.
+    pub(super) fn with_results(&mut self, action: impl FnOnce(&mut SqlTab)) {
+        if self.focus_results()
+            && let Some(Tab::Sql(tab)) = self.workbench.active_tab_mut()
+        {
             action(tab);
         }
     }
 
+    /// Focuses the active SQL editor's results. False, with a status, when there are
+    /// no results to act on.
+    pub(super) fn focus_results(&mut self) -> bool {
+        match self.workbench.active_tab_mut() {
+            Some(Tab::Sql(tab)) if tab.result.is_some() => {
+                tab.results_focused = true;
+                self.focus = Focus::Main;
+                true
+            }
+            Some(Tab::Sql(_)) => {
+                self.set_status("Run a query first; this SQL editor has no results yet");
+                false
+            }
+            _ => {
+                self.set_status("Open a SQL editor and run a query to use its results");
+                false
+            }
+        }
+    }
+
     pub(super) fn with_file_tree(&mut self, action: impl FnOnce(&mut FileTreeState)) {
-        self.focus_sidebar_section(0, true);
-        action(&mut self.file_tree);
+        if !self.reveal_panel(SectionId::Explorer, "browse files") {
+            return;
+        }
+        if self.file_tree.entries.is_empty() {
+            self.set_status("The Explorer has no files to select");
+        } else {
+            action(&mut self.file_tree);
+        }
+    }
+
+    /// Reveals the Timeline when it has commits to act on.
+    pub(super) fn reveal_timeline(&mut self, purpose: &str) -> bool {
+        if !self.reveal_panel(SectionId::Timeline, purpose) {
+            return false;
+        }
+        if self.git.timeline.entries.is_empty() {
+            self.set_status(format!(
+                "The Timeline has no commits; select one to {purpose}"
+            ));
+            return false;
+        }
+        true
+    }
+
+    /// Reveals the Outline when the active editor has symbols in it.
+    pub(super) fn reveal_outline(&mut self) -> bool {
+        if !self.reveal_panel(SectionId::Outline, "browse symbols") {
+            return false;
+        }
+        if self.outline_for_active().is_empty() {
+            self.set_status("The Outline has no symbols for the active editor");
+            return false;
+        }
+        true
+    }
+
+    /// Reveals Source Control when a changed file is selected in it.
+    pub(super) fn reveal_git_file(&mut self, purpose: &str) -> bool {
+        if !self.reveal_panel(SectionId::SourceControl, purpose) {
+            return false;
+        }
+        if !self.git.has_selected_file() {
+            self.set_status(format!(
+                "Select a changed file in Source Control to {purpose}"
+            ));
+            return false;
+        }
+        true
     }
 
     pub(super) fn open_prompt(&mut self, action: PromptAction, title: &str, initial: &str) {
         self.overlay = Some(modal::prompt(action, title, initial));
+    }
+
+    /// Shows and focuses the content of sidebar panel `id`, so a panel command run from
+    /// the palette acts on that panel's selection. False, with a status saying how to
+    /// add the panel, when the sidebar does not have it.
+    pub(super) fn reveal_panel(&mut self, id: SectionId, purpose: &str) -> bool {
+        self.reveal_section(id, true, purpose)
+    }
+
+    pub(super) fn reveal_section(&mut self, id: SectionId, content: bool, purpose: &str) -> bool {
+        let Some(index) = self
+            .accordion
+            .sections
+            .iter()
+            .position(|section| section.id == id)
+        else {
+            let title = id.title();
+            self.set_status(format!(
+                "Open the {title} to {purpose}: run “Sidebar: Add {title}”"
+            ));
+            return false;
+        };
+        if !self.sidebar_visible {
+            self.sidebar_visible = true;
+            self.mark_session_dirty();
+        }
+        self.focus_sidebar_section(index, content);
+        true
     }
 
     pub(super) fn focus_sidebar_section(&mut self, index: usize, content: bool) {

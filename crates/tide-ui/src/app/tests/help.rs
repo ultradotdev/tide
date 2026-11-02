@@ -9,6 +9,7 @@ fn launch(home: &Path, initial_file: Option<PathBuf>, restore_session: bool) -> 
         initial_file,
         session_name: None,
         restore_session,
+        ephemeral_session: false,
         paths: Some(Paths::from_env(home, |_| None)),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
@@ -289,4 +290,47 @@ fn the_start_screen_shows_the_live_keys() {
     let hints = app.start_hints();
     assert_eq!(hints[0], "F2  quick open        Ctrl+K  commands");
     assert_eq!(hints[3], "New here? Ctrl+Alt+W opens the Welcome guide.");
+}
+
+#[test]
+fn check_for_updates_runs_only_on_demand_and_shows_the_install_specific_step() {
+    static CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let (_home, mut app) = test_app();
+    app.latest_release = |url| {
+        CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        assert_eq!(url, "https://github.com/ultradotdev/tide/releases/latest");
+        Box::pin(async { Ok("v999.0.0".to_owned()) })
+    };
+    app.settle();
+    assert_eq!(
+        CALLS.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "startup never checks"
+    );
+    app.install = crate::help::Install::Homebrew {
+        formula: "tide".into(),
+    };
+    app.execute_command(Command::HelpCheckForUpdates);
+    assert_eq!(app.status, "Checking for updates…");
+    app.settle();
+    assert_eq!(CALLS.load(std::sync::atomic::Ordering::SeqCst), 1);
+    let overlay = app.overlay.as_ref().expect("the update dialog");
+    let message = overlay.base().message.clone().unwrap();
+    assert!(message.contains("Tide 999.0.0 is available"), "{message}");
+    assert!(message.contains("brew upgrade tide"), "{message}");
+
+    app.overlay = None;
+    app.latest_release = |_| Box::pin(async { Ok(format!("v{}", env!("CARGO_PKG_VERSION"))) });
+    app.execute_command(Command::HelpCheckForUpdates);
+    app.settle();
+    assert!(app.overlay.is_none());
+    assert!(app.status.contains("is up to date"), "{}", app.status);
+
+    app.latest_release = |_| Box::pin(async { Err("could not reach GitHub: offline".to_owned()) });
+    app.execute_command(Command::HelpCheckForUpdates);
+    app.settle();
+    assert_eq!(
+        app.status,
+        "Update check failed: could not reach GitHub: offline"
+    );
 }

@@ -202,9 +202,14 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
         readme.contains(&headline) && readme.contains(&description),
         "README approved copy drifted",
     );
+    let published = release.str_at(&["status", "distribution"]) == "published";
     require(
-        readme.contains("Public downloads are unavailable."),
-        "Unpublished download boundary is missing",
+        readme.contains("Public downloads are unavailable.") != published,
+        if published {
+            "README still says downloads are unavailable"
+        } else {
+            "Unpublished download boundary is missing"
+        },
     );
     let getting_started = read("docs/getting-started.md")?;
     let install_commands: Vec<String> = [
@@ -234,7 +239,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
     );
     let distribution = release.str_at(&["status", "distribution"]);
     require(
-        ["in-validation", "implemented-unpublished"].contains(&distribution)
+        ["in-validation", "implemented-unpublished", "published"].contains(&distribution)
             && release
                 .at(&["status", "prerelease"])
                 .and_then(Json::as_bool)
@@ -303,7 +308,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
                 artifact
                     .get("downloadButtonEnabled")
                     .and_then(Json::as_bool)
-                    != Some(true)
+                    == Some(published && artifact.str_at(&["status"]) == "published")
             }),
         "Site download claim drifted",
     );
@@ -333,7 +338,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
     }
     finish(
         &failures,
-        "Rust runtime references, documentation and unpublished site claims agree.",
+        "Rust runtime references, documentation and site claims agree with the release status.",
     )
 }
 

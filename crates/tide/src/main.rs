@@ -217,6 +217,7 @@ async fn main() -> Result<()> {
         initial_file,
         session_name: cli.session,
         restore_session: !cli.no_session,
+        ephemeral_session: cli.no_session,
         paths: None,
         jobs: tide_ui::Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: tide_ui::discover_agent_sessions,

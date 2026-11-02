@@ -543,3 +543,197 @@ async fn saving_notifies_a_server_that_wants_did_save() {
     assert_eq!(saves[0]["text"], "// saved\nfn main() {}\n");
     app.lsp.clients.shutdown_all().await;
 }
+
+fn mock_rust_server(app: &mut App, capabilities: &str) {
+    let mock = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../tide-lsp/tests/mock_server.py"
+    );
+    app.settings.set(
+        "lsp.servers",
+        serde_json::json!({"rust": {
+            "command": "python3",
+            "args": [mock, "--sync", "full", "--capabilities", capabilities],
+        }}),
+    );
+}
+
+#[test]
+fn format_selection_uses_range_formatting_or_explains_that_the_server_cannot() {
+    for (capabilities, expected, status) in [
+        ("rangeFormatting", "fn a() {}\nranged fn b() {}\n", None),
+        (
+            "",
+            "fn a() {}\nfn b() {}\n",
+            Some("rust language server cannot format a selection"),
+        ),
+    ] {
+        let (home, mut app) = test_app();
+        mock_rust_server(&mut app, capabilities);
+        let path = home.path().join("workspace/format.rs");
+        std::fs::write(&path, "fn a() {}\nfn b() {}\n").unwrap();
+        app.open_file(&path);
+        app.settle();
+        app.workbench
+            .active_editor_mut()
+            .unwrap()
+            .document
+            .set_cursor(Position::new(1, 3));
+        app.execute_command(Command::EditorFormatSelection);
+        app.settle();
+        assert_eq!(
+            app.workbench.active_editor().unwrap().document.text(),
+            expected
+        );
+        if let Some(status) = status {
+            assert!(app.status.contains(status), "{}", app.status);
+        }
+    }
+}
+
+#[test]
+fn go_to_commands_open_one_result_pick_among_several_and_check_capabilities() {
+    let (home, mut app) = test_app();
+    mock_rust_server(&mut app, "declaration,typeDefinition,implementation");
+    let path = home.path().join("workspace/main.rs");
+    std::fs::write(&path, "fn main() {}\nfn a() {}\nfn b() {}\nfn c() {}\n").unwrap();
+    app.open_file(&path);
+    app.settle();
+    for (command, line) in [
+        (Command::LspGoToDeclaration, 2),
+        (Command::LspGoToTypeDefinition, 3),
+        (Command::LspGoToImplementation, 4),
+    ] {
+        app.workbench
+            .active_editor_mut()
+            .unwrap()
+            .document
+            .set_cursor(Position::new(0, 3));
+        app.focus = Focus::Main;
+        app.execute_command(command);
+        app.settle();
+        let overlay = app.overlay.as_ref().expect("a picker for two results");
+        assert_eq!(overlay.base().items.len(), 2, "{command}");
+        assert!(
+            overlay.base().items[0]
+                .label
+                .ends_with(&format!("main.rs:{line}"))
+        );
+        app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert!(app.overlay.is_none());
+        let editor = app.workbench.active_editor().unwrap();
+        assert_eq!(
+            editor.path(),
+            Some(std::fs::canonicalize(&path).unwrap().as_path())
+        );
+        assert_eq!(
+            editor.document.cursor().position.line,
+            line - 1,
+            "{command}"
+        );
+    }
+
+    // Definition keeps opening a single result directly.
+    app.execute_command(Command::LspGoToDefinition);
+    app.settle();
+    assert!(app.overlay.is_none());
+
+    let (home, mut app) = test_app();
+    mock_rust_server(&mut app, "");
+    let path = home.path().join("workspace/main.rs");
+    std::fs::write(&path, "fn main() {}\n").unwrap();
+    app.open_file(&path);
+    app.settle();
+    app.execute_command(Command::LspGoToTypeDefinition);
+    app.settle();
+    assert!(app.overlay.is_none());
+    assert!(
+        app.status
+            .contains("rust language server does not support Go to Type Definition"),
+        "{}",
+        app.status
+    );
+}
+
+#[test]
+fn restarting_a_language_server_starts_a_new_process_and_reopens_documents() {
+    let (home, mut app) = test_app();
+    let log = home.path().join("starts.log");
+    let mock = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../tide-lsp/tests/mock_server.py"
+    );
+    app.settings.set(
+        "lsp.servers",
+        serde_json::json!({"rust": {
+            "command": "python3",
+            "args": [mock, "--sync", "full", "--start-log", log.display().to_string()],
+        }}),
+    );
+    let path = home.path().join("workspace/main.rs");
+    std::fs::write(&path, "fn main() {}\n").unwrap();
+    app.open_file(&path);
+    app.settle();
+    let starts = || {
+        std::fs::read_to_string(&log)
+            .unwrap_or_default()
+            .lines()
+            .count()
+    };
+    assert_eq!(starts(), 1);
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("// edited\n");
+    app.execute_command(Command::LspRestartServer);
+    assert!(
+        app.status.contains("Restarting python3 for rust"),
+        "{}",
+        app.status
+    );
+    app.settle();
+    assert_eq!(starts(), 2);
+
+    // The new server has the open buffer, edits included, without another request.
+    let server = server_for(&app.settings, "rust").unwrap();
+    let uri = path_to_uri(&std::fs::canonicalize(&path).unwrap()).unwrap();
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let clients = app.lsp.clients.clone();
+    let root = app.workspace.clone();
+    app.jobs.spawn(async move {
+        let client = clients.running(&server, &root).await.unwrap();
+        let state = client
+            .execute_command("fixture.syncState", serde_json::json!([uri]))
+            .await
+            .unwrap();
+        let _ = sender.send(state["text"].clone());
+    });
+    app.settle();
+    assert_eq!(receiver.recv().unwrap(), "// edited\nfn main() {}\n");
+
+    let (_home, mut app) = test_app();
+    app.new_file();
+    app.execute_command(Command::LspRestartServer);
+    assert!(
+        app.status.contains("Open a file with a language server"),
+        "{}",
+        app.status
+    );
+}
+
+#[test]
+fn reference_and_symbol_pickers_open_their_file_uris() {
+    let (home, mut app) = test_app();
+    let path = home.path().join("workspace/refs.rs");
+    std::fs::write(&path, "a\nb\nc\n").unwrap();
+    let uri = path_to_uri(&std::fs::canonicalize(&path).unwrap()).unwrap();
+    app.overlay = Some(modal::search_results(vec![ModalItem::new(
+        "refs.rs:2",
+        "reference",
+        format!("{uri}\t2"),
+    )]));
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    let editor = app.workbench.active_editor().expect("the reference opened");
+    assert!(editor.path().is_some_and(|open| open.ends_with("refs.rs")));
+    assert_eq!(editor.document.cursor().position.line, 1);
+}

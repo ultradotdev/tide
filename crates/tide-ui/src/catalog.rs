@@ -20,7 +20,7 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
         "agents.associateWorkspace".into(),
         CommandInfo {
             label: "Agents: Associate Previous Workspace...".into(),
-            category: "AI CLI".into(),
+            category: "AI".into(),
             description: Some(
                 "Explicitly associate native sessions after moving a workspace".into(),
             ),
@@ -57,7 +57,6 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
         ("workbench.resizeUp", "Workbench: Resize Up"),
         ("workbench.resizeDown", "Workbench: Resize Down"),
         ("workbench.statusHistory", "Workbench: Status History"),
-        ("database.addRow", "Database: Add Row"),
         ("sidebar.addFileTree", "Sidebar: Add Explorer"),
         ("sidebar.addGitPanel", "Sidebar: Add Source Control"),
         ("sidebar.addOutline", "Sidebar: Add Outline"),
@@ -84,14 +83,7 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
             "Preferences",
         ),
         ("terminal.interrupt", "Interrupt Terminal", "Terminal"),
-        ("terminal.focus", "Focus Terminal", "Terminal"),
-        (
-            "workbench.focusAgentsSidebar",
-            "Focus Agents Sidebar",
-            "AI CLI",
-        ),
-        ("git.openFileDiff", "View Active File Diff", "Git"),
-        ("git.viewStagedChanges", "View Staged Changes", "Git"),
+        ("database.addRow", "Add Row", "Database"),
     ] {
         commands.entry(id.into()).or_insert(CommandInfo {
             label: label.into(),
@@ -100,6 +92,22 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
         });
     }
     commands
+}
+
+/// Commands kept out of the command palette, each with the security reason. Only a
+/// command whose palette entry would reveal secret values or skip a security
+/// confirmation belongs here; every other routed command is in the palette.
+pub const PALETTE_PRIVATE: &[(&str, &str)] = &[];
+
+/// The command palette's entries: every catalog entry under its own ID, except
+/// [`PALETTE_PRIVATE`] commands. Aliases have no entry, so each action is listed once.
+pub fn palette_commands(
+    commands: &BTreeMap<String, CommandInfo>,
+) -> impl Iterator<Item = (&String, &CommandInfo)> {
+    commands.iter().filter(|(id, _)| {
+        !crate::command_aliases::is_alias(id)
+            && !PALETTE_PRIVATE.iter().any(|(private, _)| private == id)
+    })
 }
 
 /// Terminal-safe alternates, each for a key no default binding claims.
@@ -167,6 +175,62 @@ mod tests {
         }
         for key in crate::preferences::SUPPORTED {
             assert!(settings.get(key).is_some(), "{key} has no default");
+        }
+    }
+
+    #[test]
+    fn every_routed_command_is_in_the_palette_unless_private() {
+        let commands = commands();
+        let palette = palette_commands(&commands)
+            .map(|(id, _)| id.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        let missing = crate::command::Command::ALL
+            .iter()
+            .map(|command| command.as_str())
+            .filter(|id| !palette.contains(id))
+            .filter(|id| !PALETTE_PRIVATE.iter().any(|(private, _)| private == id))
+            .collect::<Vec<_>>();
+        assert!(missing.is_empty(), "not in the palette: {missing:?}");
+        for (id, reason) in PALETTE_PRIVATE {
+            assert!(crate::app::command_supported(id), "{id} is not routed");
+            assert!(!palette.contains(id), "{id} is private but listed");
+            assert!(!reason.is_empty(), "{id} needs a security reason");
+        }
+    }
+
+    #[test]
+    fn every_palette_entry_routes_and_no_alias_has_its_own_entry() {
+        let commands = commands();
+        for (id, info) in palette_commands(&commands) {
+            assert!(crate::app::command_supported(id), "{id} is not routed");
+            assert!(!info.label.trim().is_empty(), "{id} has no label");
+            assert!(!info.category.trim().is_empty(), "{id} has no category");
+        }
+        for (alias, canonical) in crate::command_aliases::ALIASES {
+            assert!(
+                crate::app::command_supported(alias),
+                "{alias} does not route"
+            );
+            assert!(
+                !commands.contains_key(*alias),
+                "{alias} runs {canonical}; list it under {canonical} instead"
+            );
+        }
+    }
+
+    #[test]
+    fn the_palette_lists_each_action_once() {
+        let commands = commands();
+        let mut actions = std::collections::HashMap::new();
+        let mut labels = std::collections::HashMap::new();
+        for (id, info) in palette_commands(&commands) {
+            let command = id.parse::<crate::command::Command>().unwrap();
+            if let Some(other) = actions.insert(command, id) {
+                panic!("{id} and {other} both run {command}");
+            }
+            if let Some(other) = labels.insert(info.label.to_lowercase(), id) {
+                panic!("{id} and {other} are both labelled {:?}", info.label);
+            }
         }
     }
 

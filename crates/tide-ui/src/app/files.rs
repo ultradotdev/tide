@@ -106,18 +106,228 @@ impl App {
     }
 
     pub(super) fn delete_path(&mut self, path: &Path) {
-        let result = if path.is_dir() {
-            std::fs::remove_dir_all(path)
-        } else {
-            std::fs::remove_file(path)
+        let Some(path) = self.workspace_entry(path, "delete") else {
+            return;
+        };
+        let metadata = std::fs::symlink_metadata(&path);
+        let result = match metadata {
+            Ok(metadata) if metadata.is_dir() => std::fs::remove_dir_all(&path),
+            Ok(_) => std::fs::remove_file(&path),
+            Err(error) => Err(error),
         };
         match result {
             Ok(()) => {
+                self.close_tabs_under(&path);
                 self.file_tree.refresh();
-                self.set_status(format!("Deleted {}", path.display()));
+                self.set_status(format!("Deleted {}", self.relative(&path)));
                 self.mark_session_dirty();
             }
             Err(error) => self.set_status(format!("File: delete failed: {error}")),
+        }
+    }
+
+    /// Closes every editor tab showing `path` or a file under it without asking: the
+    /// delete confirmation already said their unsaved changes would be lost.
+    fn close_tabs_under(&mut self, path: &Path) {
+        for pane in self.workbench.pane_ids() {
+            let doomed = self.workbench.pane(pane).map_or_else(Vec::new, |target| {
+                target
+                    .tabs
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, tab)| {
+                        tab.editor()
+                            .and_then(EditorState::path)
+                            .is_some_and(|open| open.starts_with(path))
+                    })
+                    .map(|(index, _)| index)
+                    .collect()
+            });
+            for index in doomed.into_iter().rev() {
+                self.force_close_tab(pane, index);
+            }
+        }
+    }
+
+    /// Open editor tabs under `path`, and how many of them have unsaved changes.
+    pub(super) fn open_tabs_under(&self, path: &Path) -> (usize, usize) {
+        self.workbench
+            .tabs()
+            .filter_map(Tab::editor)
+            .filter(|editor| editor.path().is_some_and(|open| open.starts_with(path)))
+            .fold((0, 0), |(open, dirty), editor| {
+                (open + 1, dirty + usize::from(editor.is_dirty()))
+            })
+    }
+
+    /// `path` displayed relative to the workspace when it is inside it.
+    pub(super) fn relative(&self, path: &Path) -> String {
+        path.strip_prefix(&self.workspace)
+            .unwrap_or(path)
+            .display()
+            .to_string()
+    }
+
+    /// `path` when it names an entry inside the workspace other than the workspace
+    /// itself, with its folder resolved but a final symlink left as the link. Otherwise
+    /// `None` with a status saying why Tide will not `verb` it.
+    pub(super) fn workspace_entry(&mut self, path: &Path, verb: &str) -> Option<PathBuf> {
+        let parent = path
+            .parent()
+            .zip(path.file_name())
+            .and_then(|(parent, name)| {
+                let workspace = Workspace::new(&self.workspace).ok()?;
+                let parent = workspace.resolve(&parent.display().to_string()).ok()?;
+                Some(parent.join(name))
+            });
+        match parent {
+            Some(entry) if entry != self.workspace => Some(entry),
+            Some(_) => {
+                self.set_status(format!("Tide does not {verb} the workspace folder itself"));
+                None
+            }
+            None => {
+                self.set_status(format!(
+                    "{} is outside the workspace; Tide can only {verb} files inside it",
+                    path.display()
+                ));
+                None
+            }
+        }
+    }
+
+    /// What a file command acts on: the Explorer selection while the Explorer has focus,
+    /// otherwise the active editor's file. `None`, with a status, when there is neither.
+    pub(super) fn file_target(&mut self, purpose: &str) -> Option<PathBuf> {
+        if self.focus == Focus::Sidebar && self.accordion.focused_section() == SectionId::Explorer {
+            if let Some(entry) = self.file_tree.selected() {
+                return Some(entry.path.clone());
+            }
+            self.set_status(format!(
+                "Select a file or folder in the Explorer to {purpose}"
+            ));
+            return None;
+        }
+        let message = match self.workbench.active_editor() {
+            Some(editor) => match (editor.path(), editor.help) {
+                (Some(path), _) => return Some(path.to_path_buf()),
+                (None, Some(page)) => format!("{} is a help page, not a file", page.title),
+                (None, None) => format!("Save this buffer to a file first to {purpose}"),
+            },
+            None => format!("Open a file or select one in the Explorer to {purpose}"),
+        };
+        self.set_status(message);
+        None
+    }
+
+    pub(super) fn prompt_rename_file(&mut self) {
+        let Some(path) = self.file_target("rename it") else {
+            return;
+        };
+        let Some(path) = self.workspace_entry(&path, "rename") else {
+            return;
+        };
+        let name = path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        self.overlay = Some(modal::prompt(
+            PromptAction::RenameFile(path),
+            "Rename",
+            &name,
+        ));
+    }
+
+    pub(super) fn confirm_delete(&mut self, path: &Path) {
+        let Some(path) = self.workspace_entry(path, "delete") else {
+            return;
+        };
+        let (open, dirty) = self.open_tabs_under(&path);
+        let tabs = match (open, dirty) {
+            (0, _) => String::new(),
+            (_, 0) => format!(" Its {open} open tab(s) will close."),
+            _ => format!(
+                " Its {open} open tab(s) will close and {dirty} unsaved change(s) will be lost."
+            ),
+        };
+        self.overlay = Some(modal::confirm(
+            ConfirmAction::DeletePath(path.clone()),
+            "Delete",
+            &format!(
+                "Permanently delete {}? It is not moved to the trash, and this cannot be undone.{tabs}",
+                self.relative(&path)
+            ),
+        ));
+    }
+
+    /// The workspace-relative folder holding `path` (or `path` itself when it is a
+    /// folder), ending in a separator, for prompts that create a path there.
+    pub(super) fn relative_folder(&self, path: &Path) -> String {
+        let folder = if path.is_dir() {
+            Some(path)
+        } else {
+            path.parent()
+        };
+        folder
+            .and_then(|folder| folder.strip_prefix(&self.workspace).ok())
+            .filter(|relative| !relative.as_os_str().is_empty())
+            .map(|relative| format!("{}{}", relative.display(), std::path::MAIN_SEPARATOR))
+            .unwrap_or_default()
+    }
+
+    pub(super) fn prompt_new_folder(&mut self) {
+        let explorer =
+            self.focus == Focus::Sidebar && self.accordion.focused_section() == SectionId::Explorer;
+        let target = if explorer {
+            self.file_tree.selected().map(|entry| entry.path.clone())
+        } else {
+            self.workbench
+                .active_editor()
+                .and_then(EditorState::path)
+                .map(Path::to_path_buf)
+        };
+        let folder = target.map_or_else(String::new, |path| self.relative_folder(&path));
+        self.open_prompt(
+            PromptAction::NewFolder,
+            "New Folder (workspace-relative)",
+            &folder,
+        );
+    }
+
+    pub(super) fn copy_file_path(&mut self, relative: bool) {
+        let Some(path) = self.file_target("copy its path") else {
+            return;
+        };
+        let text = if relative {
+            match path.strip_prefix(&self.workspace) {
+                Ok(inside) => inside.display().to_string(),
+                Err(_) => {
+                    self.set_status(format!(
+                        "{} is outside the workspace; copy its full path instead",
+                        path.display()
+                    ));
+                    return;
+                }
+            }
+        } else {
+            path.display().to_string()
+        };
+        self.clipboard.clone_from(&text);
+        self.export_clipboard(Some(&format!("Copied {text}")), Some("Copied inside Tide"));
+    }
+
+    pub(super) fn reveal_file(&mut self) {
+        let Some(path) = self.file_target("reveal it") else {
+            return;
+        };
+        let manager = if cfg!(target_os = "macos") {
+            "Finder"
+        } else {
+            "the file manager"
+        };
+        match (self.path_revealer)(&path) {
+            Ok(()) => self.set_status(format!("Showing {} in {manager}", self.relative(&path))),
+            Err(error) => self.set_status(format!("Could not open {manager}: {error}")),
         }
     }
 
@@ -196,6 +406,20 @@ impl App {
                 )];
             }
             ConfirmAction::ClosePane(pane) => Some(*pane),
+            ConfirmAction::CloseOtherTabs(pane) => {
+                let Some((_, kept)) = &self.pending_keep else {
+                    return Vec::new();
+                };
+                return self.workbench.pane(*pane).map_or_else(Vec::new, |target| {
+                    target
+                        .tabs
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, tab)| !kept.matches(tab))
+                        .map(|(index, _)| (*pane, index))
+                        .collect()
+                });
+            }
             _ => None,
         };
         self.workbench

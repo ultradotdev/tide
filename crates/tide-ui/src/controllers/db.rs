@@ -1488,7 +1488,7 @@ impl DbController {
             }
             SqlAction::Export => {
                 ui.effects
-                    .push(Effect::Command(Command::QueryResultsExport));
+                    .push(Effect::Command(Command::DatabaseExportResults));
             }
             SqlAction::Refresh => {
                 ui.effects

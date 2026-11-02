@@ -1,6 +1,6 @@
 # Tide Documentation
 
-This documentation describes Tide 0.10.0. Public archives are still unpublished.
+This documentation describes Tide 0.10.0. Signed releases are published on [GitHub Releases](https://github.com/ultradotdev/tide/releases).
 
 - [Welcome tour](welcome.md)
 - [Getting started and installation](getting-started.md)

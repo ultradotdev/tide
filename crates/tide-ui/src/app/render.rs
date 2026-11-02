@@ -859,7 +859,11 @@ impl App {
             Tab::Sql(sql) => {
                 out.hits
                     .push((content_area, HitTarget::SqlContent(id, content_area)));
-                sql.render(frame, &view);
+                sql.render(
+                    frame,
+                    &view,
+                    self.key_hint(Command::DatabaseExecuteQuery).as_deref(),
+                );
                 let (total, visible, top) = sql.scroll_metrics();
                 if let Some(bar) = crate::scrollbar::paint(
                     frame,
@@ -950,8 +954,13 @@ impl App {
         }
         if self.dock.tabs.is_empty() {
             frame.render_widget(
-                Paragraph::new("No terminals — Ctrl+` to open one")
-                    .style(Style::default().fg(self.palette.muted)),
+                Paragraph::new(match self.key_hint(Command::WorkbenchToggleTerminal) {
+                    Some(key) => format!("No terminals — {key} to open one"),
+                    None => {
+                        "No terminals — run Open Bottom Terminal Tab from the palette".to_owned()
+                    }
+                })
+                .style(Style::default().fg(self.palette.muted)),
                 content_area,
             );
             return;
@@ -982,7 +991,7 @@ impl App {
                         " {} ",
                         truncate_to_width(branch, (area.width as usize / 8).clamp(6, 24))
                     ),
-                    Command::GitBranches,
+                    Command::GitSwitchBranch,
                 ));
             }
             if let Some((ahead, behind)) = git.ahead_behind {

@@ -131,7 +131,8 @@ mod tests {
         ));
         assert!(jobs.submit(|_| AppEvent::Error("second finished".into())));
         for expected in ["first failed", "second finished"] {
-            let event = tokio::time::timeout(std::time::Duration::from_secs(1), events.recv())
+            // Generous: a loaded CI runner can spend seconds printing the panic's backtrace.
+            let event = tokio::time::timeout(std::time::Duration::from_secs(10), events.recv())
                 .await
                 .unwrap()
                 .unwrap();

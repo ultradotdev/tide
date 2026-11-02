@@ -31,11 +31,16 @@ pub enum LspRequestKind {
     Completion,
     Hover,
     Definition,
+    Declaration,
+    TypeDefinition,
+    Implementation,
     DocumentSymbols,
     WorkspaceSymbols(String),
     References,
     SignatureHelp,
     Format,
+    /// Formats the selection, or the cursor's line without one.
+    FormatSelection,
     CodeActions,
     ExecuteCommand(serde_json::Value),
     Rename(String),
@@ -71,8 +76,11 @@ pub enum LspEvent {
         generation: u64,
         text: String,
     },
-    Definition {
+    /// Go-to replies: one location opens directly, several open a picker.
+    Locations {
         generation: u64,
+        /// What was asked for, such as "definition".
+        target: &'static str,
         locations: Vec<Location>,
     },
     Symbols {
@@ -123,13 +131,17 @@ pub(crate) struct ActiveDocument {
     text: String,
     version: i64,
     pub position: LspPosition,
+    /// The selection, or the cursor's whole line without one.
+    selection: LspRange,
 }
 
 /// What a request sends besides the document itself.
 struct RequestInput {
     generation: u64,
+    language: String,
     uri: String,
     position: LspPosition,
+    selection: LspRange,
     diagnostics: Vec<Diagnostic>,
     tab_size: usize,
     insert_spaces: bool,
@@ -292,18 +304,45 @@ impl LspController {
                     anchor_overlay(ui);
                 }
             }
-            LspEvent::Definition {
+            LspEvent::Locations {
                 generation,
+                target,
                 locations,
             } => {
-                if self.current(generation, ui)
-                    && let Some(location) = locations.first()
-                    && let Some(path) = uri_to_path(&location.uri)
-                {
-                    ui.effects.push(Effect::OpenFile {
-                        path,
-                        line: Some(location.range.start.line as usize + 1),
-                    });
+                if !self.current(generation, ui) {
+                    return;
+                }
+                let mut items = locations
+                    .iter()
+                    .filter_map(|location| {
+                        let path = uri_to_path(&location.uri)?;
+                        let line = location.range.start.line as usize + 1;
+                        let shown = path.strip_prefix(ui.workspace).unwrap_or(&path);
+                        Some((path.clone(), line, shown.display().to_string()))
+                    })
+                    .collect::<Vec<_>>();
+                items.dedup_by(|a, b| a.0 == b.0 && a.1 == b.1);
+                match items.as_slice() {
+                    [] => ui.status(format!("No {target} found")),
+                    [(path, line, _)] => ui.effects.push(Effect::OpenFile {
+                        path: path.clone(),
+                        line: Some(*line),
+                    }),
+                    _ => {
+                        let items = items
+                            .into_iter()
+                            .map(|(path, line, shown)| {
+                                ModalItem::new(
+                                    format!("{shown}:{line}"),
+                                    target,
+                                    format!("{}\t{line}", path.display()),
+                                )
+                            })
+                            .collect();
+                        let mut picker = modal::search_results(items);
+                        picker.base_mut().title = format!("Go to {target}");
+                        *ui.overlay = Some(picker);
+                    }
                 }
             }
             LspEvent::Symbols { generation, items } => {
@@ -636,8 +675,10 @@ impl LspController {
         };
         let input = RequestInput {
             generation: self.generation,
+            language: document.language.clone(),
             uri: document.uri.clone(),
             position: document.position,
+            selection: document.selection,
             diagnostics: self
                 .diagnostics
                 .get(&document.uri)
@@ -675,6 +716,89 @@ impl LspController {
         }));
     }
 
+    /// Restarts the language server for the active document and reopens every open
+    /// document it serves.
+    pub fn restart_server(&mut self, ui: &mut Ui<'_>) {
+        let Some(language) = ui
+            .workbench
+            .active_editor()
+            .and_then(|editor| editor.path())
+            .and_then(language_id_for_path)
+        else {
+            ui.status("Open a file with a language server to restart it");
+            return;
+        };
+        if !enabled(ui.settings) {
+            ui.status("Language servers are off (lsp.enabled)");
+            return;
+        }
+        let Some(server) = server_for(ui.settings, language) else {
+            ui.status(format!("No language server configured for {language}"));
+            return;
+        };
+        if !command_available(&server.command) {
+            ui.status(format!("Language server not installed: {}", server.command));
+            return;
+        }
+        let key = status_key(&server);
+        let mut documents: Vec<(ActiveDocument, DocumentLease)> = Vec::new();
+        for editor in ui.workbench.tabs().filter_map(Tab::editor) {
+            let Some(path) = editor.path() else {
+                continue;
+            };
+            let (Some(language), Some(uri)) = (language_id_for_path(path), path_to_uri(path))
+            else {
+                continue;
+            };
+            if documents.iter().any(|(document, _)| document.uri == uri)
+                || server_for(ui.settings, language).is_none_or(|other| status_key(&other) != key)
+            {
+                continue;
+            }
+            let lease = self.leases.entry(uri.clone()).or_default().clone();
+            let start = LspPosition {
+                line: 0,
+                character: 0,
+            };
+            documents.push((
+                ActiveDocument {
+                    language: language.to_owned(),
+                    uri,
+                    text: editor.document.text(),
+                    version: saturating_i64(editor.revision()),
+                    position: start,
+                    selection: LspRange { start, end: start },
+                },
+                lease,
+            ));
+        }
+        for (document, _) in &documents {
+            self.diagnostics.remove(&document.uri);
+        }
+        self.status.remove(&key);
+        self.cancel();
+        let clients = self.clients.clone();
+        let sender = self.events.clone();
+        let root = ui.workspace.to_path_buf();
+        let name = server.command.clone();
+        ui.status(format!("Restarting {name} for {language}..."));
+        self.tasks.push(self.jobs.spawn(async move {
+            clients.stop(&server, &root).await;
+            let client = match client(&clients, server, root, sender.clone()).await {
+                Ok(client) => client,
+                Err(error) => {
+                    let _ = sender
+                        .send(lsp_error(format!("restart {name}: {error:#}")))
+                        .await;
+                    return;
+                }
+            };
+            for (document, lease) in documents {
+                let _ = document.synchronize(&client, &lease).await;
+            }
+        }));
+    }
+
     /// Opens `path` with its language server, starting the server if needed.
     pub fn open_document(
         &mut self,
@@ -709,6 +833,16 @@ impl LspController {
             position: LspPosition {
                 line: 0,
                 character: 0,
+            },
+            selection: LspRange {
+                start: LspPosition {
+                    line: 0,
+                    character: 0,
+                },
+                end: LspPosition {
+                    line: 0,
+                    character: 0,
+                },
             },
         };
         let lease = self.leases.entry(document.uri.clone()).or_default().clone();
@@ -1021,11 +1155,45 @@ impl LspRequestKind {
             Self::Definition => reply(
                 "definition",
                 client.definition(uri, position).await,
-                |locations| LspEvent::Definition {
+                |locations| LspEvent::Locations {
                     generation,
+                    target: "definition",
                     locations,
                 },
             ),
+            Self::Declaration | Self::TypeDefinition | Self::Implementation => {
+                let (target, provider, name) = match self {
+                    Self::Declaration => {
+                        ("declaration", "declarationProvider", "Go to Declaration")
+                    }
+                    Self::TypeDefinition => (
+                        "type definition",
+                        "typeDefinitionProvider",
+                        "Go to Type Definition",
+                    ),
+                    _ => (
+                        "implementation",
+                        "implementationProvider",
+                        "Go to Implementation",
+                    ),
+                };
+                if !client.supports(provider) {
+                    return LspEvent::Error(format!(
+                        "the {} language server does not support {name}",
+                        input.language
+                    ));
+                }
+                let result = match self {
+                    Self::Declaration => client.declaration(uri, position).await,
+                    Self::TypeDefinition => client.type_definition(uri, position).await,
+                    _ => client.implementation(uri, position).await,
+                };
+                reply(target, result, |locations| LspEvent::Locations {
+                    generation,
+                    target,
+                    locations,
+                })
+            }
             Self::References => reply(
                 "references",
                 client.references(uri, position).await,
@@ -1106,6 +1274,36 @@ impl LspRequestKind {
                     },
                 )
             }
+            Self::FormatSelection => {
+                if !client.supports("documentRangeFormattingProvider") {
+                    return LspEvent::Error(format!(
+                        "the {} language server cannot format a selection; use Format Document",
+                        input.language
+                    ));
+                }
+                let result = client
+                    .range_formatting_with_options(
+                        uri,
+                        input.selection,
+                        input.tab_size,
+                        input.insert_spaces,
+                    )
+                    .await;
+                reply(
+                    "format selection",
+                    result,
+                    |value| match tide_lsp::checked_text_edits(&value) {
+                        Ok(edits) => LspEvent::Edits {
+                            generation,
+                            files: vec![LspFileEdits {
+                                uri: uri.to_owned(),
+                                edits,
+                            }],
+                        },
+                        Err(error) => LspEvent::Error(format!("Formatting rejected: {error:#}")),
+                    },
+                )
+            }
             Self::Rename(new_name) => {
                 let result = client.rename(uri, position, &new_name).await;
                 reply(
@@ -1160,23 +1358,43 @@ pub(crate) fn active_document(ui: &Ui<'_>) -> Option<ActiveDocument> {
     }
     let editor = ui.workbench.active_editor()?;
     let path = editor.path()?;
-    let cursor = editor.document.cursor().position;
+    let cursor = editor.document.cursor();
+    let lsp_position = |position: Position| {
+        Some(LspPosition {
+            // LSP lines are u32; there is no request position past that.
+            line: u32::try_from(position.line).ok()?,
+            character: editor
+                .document
+                .line(position.line)
+                .unwrap_or_default()
+                .chars()
+                .take(position.column)
+                .map(utf16_units)
+                .sum(),
+        })
+    };
+    let (start, end) = cursor
+        .range()
+        .filter(|range| !range.is_empty())
+        .map_or_else(
+            || {
+                let line = cursor.position.line;
+                (
+                    Position::new(line, 0),
+                    Position::new(line, editor.document.line_len_chars(line)),
+                )
+            },
+            |range| (range.start, range.end),
+        );
     Some(ActiveDocument {
         language: language_id_for_path(path)?.to_owned(),
         uri: path_to_uri(path)?,
         text: editor.document.text(),
         version: saturating_i64(editor.revision()),
-        position: LspPosition {
-            // LSP lines are u32; there is no request position past that.
-            line: u32::try_from(cursor.line).ok()?,
-            character: editor
-                .document
-                .line(cursor.line)
-                .unwrap_or_default()
-                .chars()
-                .take(cursor.column)
-                .map(utf16_units)
-                .sum(),
+        position: lsp_position(cursor.position)?,
+        selection: LspRange {
+            start: lsp_position(start)?,
+            end: lsp_position(end)?,
         },
     })
 }

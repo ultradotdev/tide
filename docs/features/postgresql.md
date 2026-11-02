@@ -48,7 +48,7 @@ Results fill the lower part of the tab. Click a column header to sort: ascending
 
 Export writes the whole result as CSV, in its original row order, to a path you choose (relative paths are inside the workspace); it asks before overwriting a file.
 
-Updating, deleting and adding rows (**Database: Add Row**) need a writable connection and a result that maps to one table with a primary key. Field types and the key are checked before anything changes, and each change is confirmed.
+Updating, deleting and adding rows (**Add Row**) need a writable connection and a result that maps to one table with a primary key. Field types and the key are checked before anything changes, and each change is confirmed.
 
 ## History and favorites
 

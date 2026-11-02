@@ -26,6 +26,11 @@ fn signal_output(config: &mut PtyConfig) {
     })));
 }
 
+fn next_serial() -> u64 {
+    static SERIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+}
+
 pub struct SpawnSpec {
     pub program: String,
     pub args: Vec<String>,
@@ -50,6 +55,8 @@ impl SpawnSpec {
 
 pub struct TerminalTab {
     pub id: usize,
+    /// Unique for the life of the process, unlike `id`, so a confirmation can find its tab.
+    pub serial: u64,
     pub title: String,
     pub cwd: PathBuf,
     session: Option<PtySession>,
@@ -103,6 +110,7 @@ impl TerminalTab {
         let emulator = TerminalEmulator::new(cols as usize, rows as usize, scrollback);
         Ok(Self {
             id,
+            serial: next_serial(),
             title: "Terminal".to_owned(),
             cwd: cwd.as_ref().to_path_buf(),
             session: Some(session),
@@ -148,6 +156,7 @@ impl TerminalTab {
             TerminalEmulator::new(spec.cols as usize, spec.rows as usize, spec.scrollback);
         Ok(Self {
             id,
+            serial: next_serial(),
             title: spec.program,
             cwd: cwd.as_ref().to_path_buf(),
             session,
@@ -392,6 +401,41 @@ impl TerminalTab {
         if let Some(session) = &mut self.session {
             let _ = session.kill();
         }
+    }
+
+    /// Clears the scrollback and screen without sending anything to the child; false when a
+    /// full-screen program owns the screen.
+    pub fn clear(&mut self) -> bool {
+        self.emulator.scroll_to_bottom();
+        self.emulator.clear()
+    }
+
+    pub fn scroll_to_top(&mut self) {
+        self.emulator.scroll_to_top();
+    }
+
+    pub fn scroll_to_bottom(&mut self) {
+        self.emulator.scroll_to_bottom();
+    }
+
+    /// Whether stopping this terminal would interrupt work: a command the shell is running, or
+    /// a program such as an agent CLI that is the terminal's own process.
+    #[must_use]
+    pub fn is_busy(&self) -> bool {
+        self.exited.is_none()
+            && self
+                .session
+                .as_ref()
+                .is_some_and(|session| self.ai_provider.is_some() || session.has_foreground_job())
+    }
+
+    /// Kills the terminal's processes and marks the tab exited, as when its shell exits.
+    pub fn terminate(&mut self) -> Result<()> {
+        if let Some(session) = &mut self.session {
+            session.terminate()?;
+        }
+        self.poll();
+        Ok(())
     }
 
     pub fn scrollback(&self) -> usize {

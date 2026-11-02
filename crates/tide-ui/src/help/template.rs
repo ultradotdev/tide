@@ -3,7 +3,7 @@
 //! Inline values: `key`, `terminalkey`, `label` (command IDs), `setting`, `default`
 //! (setting keys), `path`, `url`, `help` (page IDs), `doc` (`path|text` under `docs/`),
 //! `version`, `license`, `platform`, `terminalkeys`. Blocks: `keybindings`, `commands` (optionally one
-//! category), `actions`, `aliases`, `settings`, `agents`, `languageservers`, `themes`,
+//! category), `aliases`, `settings`, `agents`, `languageservers`, `themes`,
 //! `install`.
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -240,6 +240,26 @@ fn release_commands(set: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// How to update a copy installed with `install`, as plain text for a dialog.
+#[must_use]
+pub fn update_instruction(install: &Install) -> String {
+    match install {
+        Install::Homebrew { formula } => format!("Update with Homebrew:\n\n  brew upgrade {formula}"),
+        Install::Managed { local: false } => format!(
+            "Update by running the install command again:\n\n  {}",
+            release_command("binaryInstall", 0)
+        ),
+        Install::Managed { local: true } => "Update by pulling the latest source and running ./install-from-source.sh again from the checkout.".into(),
+        Install::Source { .. } => format!(
+            "Update with git pull, then rebuild in the checkout:\n\n  {}",
+            release_command("sourceBuild", 0)
+        ),
+        Install::Unknown { .. } => {
+            "Update the way you installed Tide; Help: Getting Started lists the command for each method.".into()
+        }
+    }
+}
+
 fn release_command(set: &str, index: usize) -> String {
     release_commands(set)
         .get(index)
@@ -299,7 +319,6 @@ impl Renderer<'_> {
             "terminalkeys" => none(self.terminal_keys()),
             "keybindings" => none(self.keybindings()),
             "commands" => self.commands(argument),
-            "actions" => none(self.actions()),
             "aliases" => none(self.aliases()),
             "settings" => none(self.settings()),
             "agents" => none(self.agents()),
@@ -532,7 +551,7 @@ impl Renderer<'_> {
 
     fn commands(&self, category: Option<&str>) -> Result<String, String> {
         let mut categories: BTreeMap<&str, Vec<(&String, &CommandInfo)>> = BTreeMap::new();
-        for (id, info) in self.context.commands {
+        for (id, info) in crate::catalog::palette_commands(self.context.commands) {
             if category.is_none_or(|wanted| wanted == info.category) {
                 categories
                     .entry(&info.category)
@@ -566,28 +585,6 @@ impl Renderer<'_> {
             text.push('\n');
         }
         Ok(text.trim_end().to_owned())
-    }
-
-    fn actions(&self) -> String {
-        let aliases = crate::command_aliases::ALIASES;
-        let mut text = String::from("| Action | Keys | ID |\n| --- | --- | --- |\n");
-        for command in Command::ALL {
-            let id = command.as_str();
-            if self.context.commands.contains_key(id)
-                || aliases.iter().any(|(_, canonical)| *canonical == id)
-            {
-                continue;
-            }
-            writeln!(
-                text,
-                "| {} | {} | {} |",
-                humanize(id),
-                self.keys_cell(id),
-                code(id)
-            )
-            .ok();
-        }
-        text.trim_end().to_owned()
     }
 
     fn aliases(&self) -> String {

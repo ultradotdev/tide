@@ -22,12 +22,15 @@ mod files;
 mod git;
 mod help;
 mod input;
+mod lines;
 mod lsp;
 mod overlays;
 mod panes;
 mod preferences;
 mod render;
+mod replace;
 mod session;
+mod terminals;
 
 pub(super) fn submit_save_path(app: &mut App, path: &Path) {
     assert_eq!(*app.overlay.as_ref().unwrap().kind(), ModalKind::SaveAs);
@@ -40,7 +43,7 @@ pub(super) fn submit_save_path(app: &mut App, path: &Path) {
 
 pub(super) fn initialize_git(app: &App) {
     for args in [
-        &["init", "-q"][..],
+        &["init", "-q", "-b", "main"][..],
         &["config", "user.email", "tide@example.test"],
         &["config", "user.name", "Tide Test"],
     ] {
@@ -110,6 +113,7 @@ pub(super) fn test_app_with(jobs: Jobs) -> (tempfile::TempDir, App) {
         initial_file: None,
         session_name: None,
         restore_session: false,
+        ephemeral_session: false,
         paths: Some(paths),
         jobs,
         agent_discovery: no_agents,
@@ -159,6 +163,7 @@ pub(super) fn pinned_workbench(
         initial_file: Some(workspace.join("src/main.ts")),
         session_name: None,
         restore_session: false,
+        ephemeral_session: false,
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,

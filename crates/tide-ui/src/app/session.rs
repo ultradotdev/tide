@@ -5,6 +5,9 @@ use num_traits::ToPrimitive;
 impl App {
     /// Builds the recovery snapshot here and writes it on a blocking thread.
     pub(super) fn autosave_session(&mut self) -> Result<()> {
+        if self.session_ephemeral {
+            return Ok(());
+        }
         if self.session_write_blocked {
             return self.save_session();
         }
@@ -39,6 +42,104 @@ impl App {
         self.overlay = Some(modal::session_picker(items));
     }
 
+    /// Lists the named sessions saved for this workspace, to open or to delete, once they
+    /// have been read in the background.
+    pub(super) fn list_workspace_sessions(&mut self, delete: bool) {
+        self.sessions_generation = self.sessions_generation.wrapping_add(1);
+        let generation = self.sessions_generation;
+        let store = self.session_store.clone();
+        let sender = self.events_tx.clone();
+        self.jobs.spawn_blocking(move || {
+            let sessions = store.workspace_sessions();
+            let _ = sender.blocking_send(AppEvent::SavedSessions {
+                generation,
+                delete,
+                sessions,
+            });
+        });
+    }
+
+    pub(super) fn show_workspace_sessions(
+        &mut self,
+        delete: bool,
+        sessions: &[crate::session_store::SavedSession],
+    ) {
+        if sessions.is_empty() {
+            self.set_status("Sessions: no named sessions are saved for this workspace");
+            return;
+        }
+        if self.overlay.is_some() {
+            return;
+        }
+        let now = timestamp_millis();
+        let items = sessions
+            .iter()
+            .map(|session| {
+                let current = self
+                    .session_name
+                    .as_deref()
+                    .is_some_and(|name| SessionStore::same_name(name, &session.name));
+                let mut detail = Vec::new();
+                if current {
+                    detail.push("in use".to_owned());
+                }
+                if let Some(saved) = session.saved_millis {
+                    detail.push(format!("saved {}", age(now.saturating_sub(saved))));
+                }
+                detail.push(format!("{} file(s)", session.documents));
+                ModalItem::new(&session.title, detail.join(" · "), &session.name).current(current)
+            })
+            .collect();
+        self.overlay = Some(if delete {
+            modal::picker(ModalKind::SessionDeletePicker, "Delete Session", items)
+        } else {
+            modal::picker(
+                ModalKind::SessionPicker,
+                "Sessions for This Workspace",
+                items,
+            )
+        });
+    }
+
+    pub(super) fn confirm_delete_session(&mut self, name: &str) {
+        let current = self
+            .session_name
+            .as_deref()
+            .is_some_and(|session| SessionStore::same_name(session, name));
+        let message = if current {
+            format!(
+                "Delete the saved session {name}? It is the session in use: the workbench stays as it is, and from now on it is saved as this workspace's recovery session instead."
+            )
+        } else {
+            format!("Delete the saved session {name}? This cannot be undone.")
+        };
+        self.overlay = Some(modal::confirm(
+            ConfirmAction::DeleteSession(name.to_owned()),
+            "Delete Session",
+            &message,
+        ));
+    }
+
+    pub(super) fn delete_session(&mut self, name: &str) {
+        if let Err(error) = self.session_store.delete_named(name) {
+            self.set_status(format!("Session: delete failed: {error:#}"));
+            return;
+        }
+        if self
+            .session_name
+            .as_deref()
+            .is_some_and(|session| SessionStore::same_name(session, name))
+        {
+            self.session_name = None;
+            self.mark_session_dirty();
+            self.set_status(format!(
+                "Session: deleted {name}; this workspace's recovery session is saved instead"
+            ));
+        } else {
+            self.set_status(format!("Session: deleted {name}"));
+        }
+    }
+
     pub(super) fn open_named_session(&mut self, name: &str) {
         if self.has_dirty_tabs() {
             self.overlay = Some(modal::confirm(
@@ -54,7 +155,7 @@ impl App {
     pub(super) fn switch_named_session(&mut self, name: &str) {
         match self.session_store.load_named(name) {
             Ok(Some(loaded)) => {
-                if let Err(error) = self.save_session() {
+                if let Err(error) = self.save_recovery() {
                     self.set_status(format!("Session switch blocked: {error:#}"));
                     return;
                 }
@@ -63,6 +164,7 @@ impl App {
                 self.documents = DocumentRegistry::default();
                 self.dock = DockState::new();
                 self.session_name = Some(name.to_owned());
+                self.session_ephemeral = false;
                 match self.restore_session(loaded) {
                     Ok(()) => {
                         self.session_dirty = false;
@@ -82,7 +184,7 @@ impl App {
             return;
         }
         self.session_name = Some(name.to_owned());
-        match self.save_session() {
+        match self.adopt_session() {
             Ok(()) => self.set_status(format!("Session: saved {name}")),
             Err(error) => self.set_status(format!("Session save failed: {error:#}")),
         }
@@ -109,6 +211,8 @@ impl App {
                         .any(|t| matches!(t,Tab::Sql(sql) if !sql.row_edits.is_empty()))
                 }) {
                     "Quit and discard unsaved database row edits? Query buffers remain in session recovery."
+                } else if self.session_ephemeral && self.restart.is_none() {
+                    "Save changes before quitting? Started with --no-session, so Discard keeps no recovery copy."
                 } else {
                     "Save changes before quitting? Discard keeps a recovery copy."
                 },
@@ -119,8 +223,12 @@ impl App {
     }
 
     pub(super) fn finish_quit(&mut self) {
-        match self.save_session() {
-            Ok(()) => {
+        // A restart reopens the workspace from this snapshot, even after --no-session.
+        if self.restart.is_some() {
+            self.session_ephemeral = false;
+        }
+        match self.save_recovery() {
+            Ok(_) => {
                 self.workbench.kill_terminals();
                 self.should_quit = true;
             }
@@ -129,6 +237,21 @@ impl App {
                 self.set_status(format!("Quit blocked: recovery snapshot failed: {error:#}"))
             }
         }
+    }
+
+    /// Saves the session on the user's request, which ends `--no-session` mode.
+    pub(super) fn adopt_session(&mut self) -> Result<()> {
+        self.session_ephemeral = false;
+        self.save_session()
+    }
+
+    /// The snapshot written on quit, session switch and crash. `--no-session`
+    /// writes none, so the folder's saved session is left as it was.
+    pub(crate) fn save_recovery(&mut self) -> Result<bool> {
+        if self.session_ephemeral {
+            return Ok(false);
+        }
+        self.save_session().map(|()| true)
     }
 
     pub(crate) fn save_session(&mut self) -> Result<()> {
@@ -291,7 +414,19 @@ impl App {
             .active_editor()
             .and_then(EditorState::path)
             .map(|path| path.display().to_string());
-        let focused_region = match self.focus {
+        // Zen mode is not saved: a snapshot keeps the layout it will restore.
+        let (sidebar_visible, terminal_visible, agents_visible, focus) = self.zen.map_or_else(
+            || {
+                (
+                    self.sidebar_visible,
+                    self.dock.visible,
+                    self.ai.agents_visible,
+                    self.focus,
+                )
+            },
+            |zen| (zen.sidebar, zen.dock, zen.agents, zen.focus),
+        );
+        let focused_region = match focus {
             Focus::Sidebar => "sidebar",
             Focus::Main => "main",
             Focus::Agents => "agents",
@@ -313,10 +448,10 @@ impl App {
             active_pane_id: format!("pane-{}", self.workbench.focused()),
             layout,
             ui: SessionUIState {
-                sidebar_visible: self.sidebar_visible,
+                sidebar_visible,
                 sidebar_width: self.sidebar_width,
                 sidebar_location: Some(if self.sidebar_left { "left" } else { "right" }.to_owned()),
-                agents_sidebar_visible: self.ai.agents_visible,
+                agents_sidebar_visible: agents_visible,
                 agents_sidebar_width: self.ai.agents_width,
                 agents_sidebar_location: Some(
                     if self.agents_left { "left" } else { "right" }.to_owned(),
@@ -327,7 +462,7 @@ impl App {
                     .map(|provider| provider.id().to_owned())
                     .collect(),
                 agents_sidebar_expanded_sections: Vec::new(),
-                terminal_visible: self.dock.visible,
+                terminal_visible,
                 terminal_height: self.dock.height,
                 git_panel_visible: self.accordion.focused_section() == SectionId::SourceControl,
                 git_panel_width: self.sidebar_width,
@@ -830,5 +965,16 @@ pub(super) fn convert_session_layout(
         direction,
         children,
         ratios,
+    }
+}
+
+/// How long ago `millis` was, coarsely.
+fn age(millis: u128) -> String {
+    let minutes = millis / 60_000;
+    match minutes {
+        0 => "just now".to_owned(),
+        1..=59 => format!("{minutes} min ago"),
+        60..=1439 => format!("{} h ago", minutes / 60),
+        _ => format!("{} d ago", minutes / 1440),
     }
 }

@@ -103,7 +103,7 @@ fn unknown_placeholders_commands_and_settings_are_reported() {
         command: Command::HelpAbout,
         title: "Probe",
         doc: None,
-        template: "{{key:no.such}} {{label:fileTree.moveUp}} {{setting:editor.fontSize}} {{nope}} {{version:1}} {{path:home}} {{help:missing}} {{key:file.save",
+        template: "{{key:no.such}} {{label:workbench.notACommand}} {{setting:editor.fontSize}} {{nope}} {{version:1}} {{path:home}} {{help:missing}} {{key:file.save",
     };
     let keybindings = default_keybindings();
     let commands = crate::catalog::commands();
@@ -134,7 +134,9 @@ fn every_help_command_is_cataloged_and_opens_a_page_or_a_link() {
             for_command(*command).is_some()
                 || matches!(
                     command,
-                    Command::HelpDocumentation | Command::HelpReportIssue
+                    Command::HelpDocumentation
+                        | Command::HelpReportIssue
+                        | Command::HelpCheckForUpdates
                 ),
             "{id} opens nothing"
         );
@@ -253,4 +255,55 @@ fn issue_links_carry_the_version_and_platform_but_no_paths() {
     assert!(body.contains(env!("CARGO_PKG_VERSION")));
     assert!(body.contains("a source build"));
     assert!(!body.contains("private"));
+}
+
+#[test]
+fn release_tags_are_read_from_the_latest_release_redirect_and_compared_numerically() {
+    assert_eq!(
+        super::release_tag("https://github.com/ultradotdev/tide/releases/tag/v0.11.0"),
+        Some("v0.11.0".into())
+    );
+    assert_eq!(
+        super::release_tag("/ultradotdev/tide/releases/tag/v1.0.0/?x=1"),
+        Some("v1.0.0".into())
+    );
+    assert_eq!(
+        super::release_tag("https://github.com/ultradotdev/tide/releases"),
+        None
+    );
+    assert!(super::is_newer("v0.10.1", "0.10.0"));
+    assert!(super::is_newer("v0.11", "0.10.9"));
+    assert!(super::is_newer("v1.0.0", "0.99.99"));
+    assert!(!super::is_newer("v0.10.0", "0.10.0"));
+    assert!(!super::is_newer("v0.9.12", "0.10.0"));
+    assert!(!super::is_newer("nightly", "0.10.0"));
+    assert_eq!(
+        super::latest_release_url(),
+        "https://github.com/ultradotdev/tide/releases/latest"
+    );
+}
+
+#[test]
+fn update_instructions_follow_the_install_method() {
+    let homebrew = super::update_instruction(&Install::Homebrew {
+        formula: "ultradotdev/tap/tide".into(),
+    });
+    assert!(
+        homebrew.contains("brew upgrade ultradotdev/tap/tide"),
+        "{homebrew}"
+    );
+    let script = super::update_instruction(&Install::Managed { local: false });
+    assert!(
+        script.contains("releases/latest/download/install.sh | sh"),
+        "{script}"
+    );
+    let local = super::update_instruction(&Install::Managed { local: true });
+    assert!(local.contains("./install-from-source.sh"), "{local}");
+    let source = super::update_instruction(&Install::Source {
+        executable: "/src/tide/target/release/tide".into(),
+    });
+    assert!(
+        source.contains("git pull") && source.contains("cargo build"),
+        "{source}"
+    );
 }

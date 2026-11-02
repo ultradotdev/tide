@@ -398,6 +398,33 @@ impl TerminalEmulator {
         }
     }
 
+    pub fn scroll_to_top(&mut self) {
+        self.term
+            .scroll_display(alacritty_terminal::grid::Scroll::Top);
+        self.generation = self.generation.wrapping_add(1);
+    }
+
+    /// Clears the scrollback and the screen above the cursor, like a terminal's Clear Buffer:
+    /// the cursor's line, usually the prompt, moves to the top. Nothing is sent to the child.
+    /// A full-screen program owns the alternate screen, so that is left alone; returns
+    /// whether anything was cleared.
+    pub fn clear(&mut self) -> bool {
+        if self.term.mode().contains(TermMode::ALT_SCREEN) {
+            return false;
+        }
+        let cursor = self.term.grid().cursor.point;
+        let lines = cursor.line.0.max(0);
+        let column = cursor.column.0 + 1;
+        // Scroll the lines above the cursor into history, then erase the history (ED 3).
+        let mut sequence = String::new();
+        if lines > 0 {
+            sequence.push_str(&format!("\x1b[{lines}S"));
+        }
+        sequence.push_str(&format!("\x1b[1;{column}H\x1b[3J"));
+        self.feed(sequence.as_bytes());
+        true
+    }
+
     pub fn display_offset(&self) -> usize {
         self.term.grid().display_offset()
     }
@@ -619,6 +646,28 @@ mod tests {
         emulator.feed(b"\x1bc");
         assert_eq!(emulator.modes().kitty_flags, 0);
         assert_eq!(emulator.modes().modify_other_keys, 0);
+    }
+
+    #[test]
+    fn clear_drops_scrollback_and_keeps_the_cursor_line_at_the_top() {
+        let mut emulator = TerminalEmulator::new(20, 4, 100);
+        for line in 0..10 {
+            emulator.feed(format!("line {line}\r\n").as_bytes());
+        }
+        emulator.feed(b"$ prompt");
+        emulator.scroll_to_top();
+        assert!(emulator.display_offset() > 0);
+        assert!(emulator.clear());
+        assert_eq!(emulator.display_offset(), 0);
+        emulator.scroll_to_top();
+        assert_eq!(emulator.display_offset(), 0, "scrollback was kept");
+        let snapshot = emulator.snapshot();
+        assert_eq!(snapshot.text().trim(), "$ prompt");
+        assert_eq!((snapshot.cursor.x, snapshot.cursor.y), (8, 0));
+        // A full-screen program keeps its screen.
+        emulator.feed(b"\x1b[?1049hfull screen");
+        assert!(!emulator.clear());
+        assert!(emulator.snapshot().text().contains("full screen"));
     }
 
     #[test]

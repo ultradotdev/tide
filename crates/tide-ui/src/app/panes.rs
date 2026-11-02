@@ -448,6 +448,78 @@ impl App {
         self.force_close_all();
     }
 
+    /// Closes every tab but the active one in the focused pane, or in the dock while it
+    /// has focus. Unsaved tabs ask first.
+    pub(super) fn close_others(&mut self) {
+        if self.focus == Focus::Dock {
+            if self.dock.tabs.len() < 2 {
+                self.set_status("No other terminal tabs to close");
+                return;
+            }
+            let active = self.dock.active;
+            for index in (0..self.dock.tabs.len()).rev() {
+                if index != active {
+                    self.dock.close(index);
+                }
+            }
+            self.mark_session_dirty();
+            return;
+        }
+        let pane = self.workbench.focused();
+        let Some(kept) = self.workbench.active_tab().map(TabIdentity::of) else {
+            self.set_status("No other tabs to close");
+            return;
+        };
+        let target = self.workbench.focused_pane();
+        if target.tabs.len() < 2 {
+            self.set_status("No other tabs to close");
+            return;
+        }
+        let dirty = target
+            .tabs
+            .iter()
+            .filter(|tab| !kept.matches(tab) && tab.is_dirty())
+            .count();
+        self.pending_keep = Some((pane, kept));
+        if dirty > 0 {
+            self.overlay = Some(modal::confirm(
+                ConfirmAction::CloseOtherTabs(pane),
+                "Unsaved Changes",
+                &format!("Save changes in {dirty} other tab(s) before closing them?"),
+            ));
+        } else {
+            self.force_close_others(pane);
+        }
+    }
+
+    pub(super) fn force_close_others(&mut self, pane: PaneId) {
+        let Some((owner, kept)) = self.pending_keep.take().filter(|(owner, _)| *owner == pane)
+        else {
+            return;
+        };
+        let count = self
+            .workbench
+            .pane(owner)
+            .map_or(0, |target| target.tabs.len());
+        for index in (0..count).rev() {
+            if self
+                .workbench
+                .pane(owner)
+                .and_then(|target| target.tabs.get(index))
+                .is_some_and(|tab| !kept.matches(tab))
+            {
+                self.force_close_tab(owner, index);
+            }
+        }
+        if let Some(index) = self
+            .workbench
+            .pane(owner)
+            .and_then(|target| target.tabs.iter().position(|tab| kept.matches(tab)))
+        {
+            self.activate_tab(owner, index);
+        }
+    }
+
     pub(super) fn force_close_all(&mut self) {
         self.lsp
             .close_all_documents(&self.settings, &self.workspace);
@@ -527,10 +599,11 @@ impl App {
     }
 
     pub(super) fn focus_in_terminal(&self) -> bool {
-        if self.focus == Focus::Dock {
-            return !self.dock.tabs.is_empty();
+        match self.focus {
+            Focus::Dock => !self.dock.tabs.is_empty(),
+            Focus::Main => matches!(self.workbench.active_tab(), Some(Tab::Terminal(_))),
+            Focus::Sidebar | Focus::Agents | Focus::Status => false,
         }
-        matches!(self.workbench.active_tab(), Some(Tab::Terminal(_)))
     }
 }
 

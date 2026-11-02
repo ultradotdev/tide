@@ -9,6 +9,7 @@ use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent};
 use tide_lsp::{Diagnostic, path_to_uri};
 use tide_services::GitSnapshot;
+use tide_services::git::GitStatus;
 
 use super::{Effect, Ui};
 use ratatui::Frame;
@@ -115,6 +116,27 @@ pub enum GitEvent {
         version: u64,
         result: Result<(), String>,
     },
+    /// A command's background check finished and decided what to show.
+    Next {
+        generation: u64,
+        next: GitNext,
+    },
+}
+
+/// What a Git command shows after checking the repository in the background.
+#[derive(Debug)]
+pub enum GitNext {
+    Prompt {
+        action: PromptAction,
+        title: String,
+        initial: String,
+    },
+    Confirm {
+        action: ConfirmAction,
+        title: String,
+        message: String,
+    },
+    Status(String),
 }
 
 /// Commit history for the repository, or for the active file.
@@ -307,6 +329,17 @@ impl GitController {
         }
     }
 
+    /// Whether the Source Control panel has a changed file selected.
+    pub fn has_selected_file(&mut self) -> bool {
+        self.sync_panel();
+        self.panel.file().is_some()
+    }
+
+    /// Whether the Source Control panel lists any change.
+    pub fn has_changes(&self) -> bool {
+        !self.state.changed().is_empty()
+    }
+
     pub fn toggle_panel_group(&mut self) {
         self.panel
             .toggle(self.state.snapshot.as_ref(), self.state.revision);
@@ -398,10 +431,14 @@ impl GitController {
                         |o| matches!(o.kind(), ModalKind::GitChoice(open) if *open == action),
                     )
                 {
-                    *ui.overlay = Some(match result {
-                        Ok(items) => modal::git_choice(&action, items),
-                        Err(error) => modal::info("Git failed", &error),
-                    });
+                    *ui.overlay = match result {
+                        Ok(items) if items.is_empty() && empty_choice(&action).is_some() => {
+                            ui.status(empty_choice(&action).unwrap_or_default());
+                            None
+                        }
+                        Ok(items) => Some(modal::git_choice(&action, items)),
+                        Err(error) => Some(modal::info("Git failed", &error)),
+                    };
                 }
             }
             GitEvent::TimelineLoaded { path, entries } => {
@@ -483,6 +520,28 @@ impl GitController {
                     success,
                 });
             }
+            GitEvent::Next { generation, next } => {
+                if generation != self.picker_generation {
+                    return;
+                }
+                match next {
+                    GitNext::Status(message) => ui.status(message),
+                    // Never replace a dialog the user opened while the check ran.
+                    _ if ui.overlay.is_some() => {
+                        ui.status("Git: another dialog is open; run the command again");
+                    }
+                    GitNext::Prompt {
+                        action,
+                        title,
+                        initial,
+                    } => *ui.overlay = Some(modal::prompt(action, &title, &initial)),
+                    GitNext::Confirm {
+                        action,
+                        title,
+                        message,
+                    } => *ui.overlay = Some(modal::confirm(action, &title, &message)),
+                }
+            }
         }
     }
 
@@ -519,6 +578,66 @@ impl GitController {
                         "",
                     ));
                 }
+                "rebase" => {
+                    let current = self
+                        .state
+                        .snapshot
+                        .as_ref()
+                        .and_then(|snapshot| snapshot.branch.clone())
+                        .unwrap_or_else(|| "the current branch".into());
+                    confirm(
+                        ui,
+                        vec!["rebase".into(), value.clone()],
+                        "Rebase",
+                        &format!(
+                            "Rebase {current} onto {value}? Its commits are replayed on top of {value}; a conflict pauses the rebase for you to resolve."
+                        ),
+                    );
+                }
+                "cherryPick" => self.run(&["cherry-pick", &value], ui),
+                "revert" => self.run(&["revert", "--no-edit", &value], ui),
+                "reset" => {
+                    let short = crate::display::short_id(&value).to_owned();
+                    let items = [
+                        ("Soft", "keep the changes staged", "soft"),
+                        ("Mixed", "keep the changes, unstaged", "mixed"),
+                        ("Hard", "discard every uncommitted change", "hard"),
+                    ]
+                    .into_iter()
+                    .map(|(label, detail, mode)| {
+                        ModalItem::new(
+                            format!("{label}: reset to {short}"),
+                            detail,
+                            format!("{mode}\t{value}"),
+                        )
+                    })
+                    .collect();
+                    *ui.overlay = Some(modal::git_choice("resetMode", items));
+                }
+                "resetMode" => {
+                    if let Some((mode, commit)) = value.split_once('\t') {
+                        let short = crate::display::short_id(commit).to_owned();
+                        match mode {
+                            "soft" | "mixed" => self.run_as(
+                                &["reset", &format!("--{mode}"), commit],
+                                Some(format!("Reset ({mode}) to {short}")),
+                                ui,
+                            ),
+                            _ => confirm(
+                                ui,
+                                vec!["reset".into(), "--hard".into(), commit.into()],
+                                "Hard Reset",
+                                &format!(
+                                    "Reset the branch and working tree to {short}? Every uncommitted change in tracked files is lost; untracked files are kept. This cannot be undone."
+                                ),
+                            ),
+                        }
+                    }
+                }
+                "conflicts" => ui.effects.push(Effect::OpenFile {
+                    path: self.root(ui.workspace).join(value),
+                    line: None,
+                }),
                 "stashApply" | "stashPop" | "stashDrop" => {
                     if let Some((reference, oid)) = value.split_once('\t') {
                         let verb = match action.as_str() {
@@ -581,6 +700,56 @@ impl GitController {
                     self.run(&["__discard", &path], ui);
                 }
             }
+            Submitted::Confirm(ConfirmAction::DiscardAllGitChanges(paths)) => {
+                let root = self.root(ui.workspace);
+                if paths
+                    .iter()
+                    .any(|path| ui.documents.is_dirty(&root.join(path)))
+                {
+                    ui.status("Save or close dirty working buffers before discarding changes");
+                } else {
+                    let count = paths.len();
+                    let mut args = vec!["restore", "--worktree", "--"];
+                    args.extend(paths.iter().map(String::as_str));
+                    self.run_as(
+                        &args,
+                        Some(format!("Discarded changes in {count} file(s)")),
+                        ui,
+                    );
+                }
+            }
+            Submitted::Prompt(PromptAction::CreateTag, input) => {
+                let name = input.trim();
+                if valid_branch_name(name) {
+                    *ui.overlay = Some(modal::prompt(
+                        PromptAction::TagMessage(name.to_owned()),
+                        "Tag Message (empty: lightweight tag)",
+                        "",
+                    ));
+                } else {
+                    ui.status("Invalid tag name");
+                }
+            }
+            Submitted::Prompt(PromptAction::TagMessage(name), input) => {
+                let message = input.trim();
+                if message.is_empty() {
+                    self.run_as(&["tag", &name], Some(format!("Created tag {name}")), ui);
+                } else {
+                    self.run_as(
+                        &["tag", "-a", &name, "-m", message],
+                        Some(format!("Created annotated tag {name}")),
+                        ui,
+                    );
+                }
+            }
+            Submitted::Prompt(
+                PromptAction::CommitAmend {
+                    commit,
+                    message,
+                    upstream,
+                },
+                input,
+            ) => self.confirm_amend(&commit, &message, upstream.as_deref(), &input, ui),
             other => return Some(other),
         }
         None
@@ -845,16 +1014,35 @@ impl GitController {
     }
 
     pub fn run(&mut self, args: &[&str], ui: &mut Ui<'_>) {
+        self.run_as(args, None, ui);
+    }
+
+    /// Runs `args`, reporting `done` instead of Git's own output when it succeeds. A command
+    /// that stops on conflicts leaves them in place and says how to finish.
+    pub fn run_as(&mut self, args: &[&str], done: Option<String>, ui: &mut Ui<'_>) {
+        let args = args.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
+        self.run_with(ui, move |root, cancel| {
+            let refs = args.iter().map(String::as_str).collect::<Vec<_>>();
+            match run_git_checked(root, &refs, cancel) {
+                Ok(output) if output.success => done.unwrap_or_else(|| git_message(&refs, &output)),
+                Ok(output) => stopped_message(root, &refs, cancel)
+                    .unwrap_or_else(|| git_message(&refs, &output)),
+                Err(error) => format!("Git failed: {error:#}"),
+            }
+        });
+    }
+
+    /// Queues `work`, then refreshes the repository and reports the message it returns.
+    fn run_with(
+        &mut self,
+        ui: &mut Ui<'_>,
+        work: impl FnOnce(&Path, &AtomicBool) -> String + Send + 'static,
+    ) {
         self.generation = self.generation.wrapping_add(1);
         let generation = self.generation;
         let root = self.root(ui.workspace);
-        let args = args.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
         let accepted = self.jobs.submit(move |cancel| {
-            let refs = args.iter().map(String::as_str).collect::<Vec<_>>();
-            let message = match run_git_checked(&root, &refs, cancel) {
-                Ok(output) => git_message(&refs, &output),
-                Err(error) => format!("Git failed: {error:#}"),
-            };
+            let message = work(&root, cancel);
             match tide_services::git::repository_snapshot_cancellable(&root, cancel.clone()) {
                 Ok(snapshot) => AppEvent::Git(GitEvent::Refreshed {
                     generation,
@@ -872,6 +1060,319 @@ impl GitController {
         if !accepted {
             ui.status("Git queue full; operation was not started");
         }
+    }
+
+    /// Queues a read-only check whose result decides the dialog or message that follows.
+    fn prepare(
+        &mut self,
+        ui: &mut Ui<'_>,
+        check: impl FnOnce(&Path, &AtomicBool) -> GitNext + Send + 'static,
+    ) {
+        self.picker_generation = self.picker_generation.wrapping_add(1);
+        let generation = self.picker_generation;
+        let root = self.root(ui.workspace);
+        if !self.jobs.submit(move |cancel| {
+            AppEvent::Git(GitEvent::Next {
+                generation,
+                next: check(&root, cancel),
+            })
+        }) {
+            ui.status("Git queue full; try again after pending operations finish");
+        }
+    }
+
+    fn changes(&self, ui: &mut Ui<'_>) -> Option<&[tide_services::git::GitChange]> {
+        let changes = self
+            .state
+            .snapshot
+            .as_ref()
+            .map(|snapshot| snapshot.changes.as_slice());
+        if changes.is_none() {
+            ui.status("Git: no repository");
+        }
+        changes
+    }
+
+    /// Stages (or unstages) the active file, so the palette can act on the file
+    /// being edited; the Source Control panel's commands act on its selection.
+    pub fn stage_active(&mut self, ui: &mut Ui<'_>, stage: bool) {
+        let verb = if stage { "stage" } else { "unstage" };
+        let Some(path) = self.active_path(ui.workspace, ui.workbench) else {
+            ui.status(format!("Git: open a file to {verb} it"));
+            return;
+        };
+        let Some(changes) = self.changes(ui) else {
+            return;
+        };
+        let change = changes.iter().find(|change| change.path == path);
+        if change.is_some_and(|change| change.lossy_path) {
+            ui.status("Git: this path is not valid UTF-8; use a terminal");
+            return;
+        }
+        if stage && change.and_then(|change| change.worktree).is_none() {
+            ui.status(format!("Git: {path} has no unstaged changes"));
+        } else if !stage && change.and_then(|change| change.index).is_none() {
+            ui.status(format!("Git: {path} has no staged changes"));
+        } else if stage {
+            self.run(&["add", "--", &path], ui);
+        } else {
+            self.run(&["reset", "HEAD", "--", &path], ui);
+        }
+    }
+
+    /// Discards the unstaged changes in the active file, after confirmation.
+    pub fn discard_active(&mut self, ui: &mut Ui<'_>) {
+        let Some(path) = self.active_path(ui.workspace, ui.workbench) else {
+            ui.status("Git: open a file to discard its changes");
+            return;
+        };
+        let Some(changes) = self.changes(ui) else {
+            return;
+        };
+        let message = match changes
+            .iter()
+            .find(|change| change.path == path)
+            .and_then(|change| change.worktree)
+        {
+            None => {
+                ui.status(format!("Git: {path} has no unstaged changes"));
+                return;
+            }
+            Some(GitStatus::Untracked) => {
+                format!("Delete the untracked file {path}? This cannot be undone.")
+            }
+            Some(_) => format!("Discard unstaged changes in {path}? Staged changes are kept."),
+        };
+        *ui.overlay = Some(modal::confirm(
+            ConfirmAction::DiscardGitChange(path),
+            "Discard Changes",
+            &message,
+        ));
+    }
+
+    /// Discards unstaged changes in every tracked file. Untracked files are left to Clean.
+    pub fn confirm_discard_all(&mut self, ui: &mut Ui<'_>) {
+        let Some(changes) = self.changes(ui) else {
+            return;
+        };
+        let paths = changes
+            .iter()
+            .filter(|change| !change.lossy_path)
+            .filter_map(|change| match change.worktree? {
+                GitStatus::Untracked | GitStatus::Conflict => None,
+                // A rename in the working tree restores its original path.
+                GitStatus::Renamed => Some(
+                    change
+                        .previous_path
+                        .clone()
+                        .unwrap_or_else(|| change.path.clone()),
+                ),
+                _ => Some(change.path.clone()),
+            })
+            .collect::<Vec<_>>();
+        if paths.is_empty() {
+            ui.status("Git: no unstaged changes in tracked files");
+            return;
+        }
+        let message = format!(
+            "Discard unstaged changes in {} tracked file(s)? Staged changes and untracked files are kept. This cannot be undone.",
+            paths.len()
+        );
+        *ui.overlay = Some(modal::confirm(
+            ConfirmAction::DiscardAllGitChanges(paths),
+            "Discard All Changes",
+            &message,
+        ));
+    }
+
+    /// Deletes untracked files, listing them first. Ignored files are never removed.
+    pub fn confirm_clean(&mut self, ui: &mut Ui<'_>) {
+        let Some(changes) = self.changes(ui) else {
+            return;
+        };
+        let files = changes
+            .iter()
+            .filter(|change| change.worktree == Some(GitStatus::Untracked) && !change.lossy_path)
+            .map(|change| change.path.clone())
+            .collect::<Vec<_>>();
+        if files.is_empty() {
+            ui.status("Git: no untracked files to clean");
+            return;
+        }
+        const SHOWN: usize = 30;
+        let mut list = files
+            .iter()
+            .take(SHOWN)
+            .map(|path| format!("  {path}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        if files.len() > SHOWN {
+            list.push_str(&format!("\n  …and {} more", files.len() - SHOWN));
+        }
+        let message = format!(
+            "Delete {} untracked file(s)? Ignored files are kept. This cannot be undone.\n\n{list}",
+            files.len()
+        );
+        let mut args = vec!["clean".to_owned(), "-f".to_owned(), "--".to_owned()];
+        args.extend(files);
+        confirm(ui, args, "Clean Untracked Files", &message);
+    }
+
+    pub fn confirm_push_force(&mut self, ui: &mut Ui<'_>) {
+        let branch = self
+            .state
+            .snapshot
+            .as_ref()
+            .and_then(|snapshot| snapshot.branch.clone())
+            .unwrap_or_else(|| "the current branch".into());
+        confirm(
+            ui,
+            vec!["push".into(), "--force-with-lease".into()],
+            "Push (Force with Lease)",
+            &format!(
+                "Force-push {branch}? The remote branch is replaced with your local history. Git refuses if the remote has commits you have not fetched."
+            ),
+        );
+    }
+
+    /// Opens a picker of conflicted files.
+    pub fn open_conflicts(&mut self, ui: &mut Ui<'_>) {
+        let Some(changes) = self.changes(ui) else {
+            return;
+        };
+        let items = changes
+            .iter()
+            .filter(|change| {
+                change.index == Some(GitStatus::Conflict)
+                    || change.worktree == Some(GitStatus::Conflict)
+            })
+            .filter(|change| !change.lossy_path)
+            .map(|change| ModalItem::new(&change.path, "Conflict", &change.path))
+            .collect::<Vec<_>>();
+        if items.is_empty() {
+            ui.status("Git: no conflicted files");
+            return;
+        }
+        *ui.overlay = Some(modal::git_choice("conflicts", items));
+    }
+
+    /// Opens the amend prompt with the last commit's message once it has been read.
+    pub fn prepare_amend(&mut self, ui: &mut Ui<'_>) {
+        self.prepare(ui, |root, cancel| {
+            let git = |args: &[&str]| {
+                tide_services::git_process::git_cancellable(root, args, None, cancel)
+                    .ok()
+                    .filter(|output| output.success)
+                    .map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
+            };
+            let Some(last) = git(&["log", "-1", "--format=%h%x00%B"]) else {
+                return GitNext::Status("Git: nothing to amend; this branch has no commits".into());
+            };
+            let (commit, message) = last.split_once('\0').unwrap_or(("HEAD", &last));
+            let message = message.trim_end().to_owned();
+            let upstream = git(&[
+                "rev-parse",
+                "--abbrev-ref",
+                "--symbolic-full-name",
+                "@{upstream}",
+            ])
+            .map(|name| name.trim().to_owned())
+            .filter(|_| git(&["merge-base", "--is-ancestor", "HEAD", "@{upstream}"]).is_some());
+            let (subject, body) = split_message(&message);
+            GitNext::Prompt {
+                title: if body.is_some() {
+                    "Amend Commit (body is kept)".into()
+                } else {
+                    "Amend Commit".into()
+                },
+                initial: subject.to_owned(),
+                action: PromptAction::CommitAmend {
+                    commit: commit.trim().to_owned(),
+                    message,
+                    upstream,
+                },
+            }
+        });
+    }
+
+    fn confirm_amend(
+        &mut self,
+        commit: &str,
+        message: &str,
+        upstream: Option<&str>,
+        input: &str,
+        ui: &mut Ui<'_>,
+    ) {
+        let subject = input.trim();
+        if subject.is_empty() {
+            ui.status("Commit message is empty");
+            return;
+        }
+        // The prompt edits the subject; a body the commit had is kept.
+        let amended = match split_message(message).1 {
+            Some(body) => format!("{subject}\n\n{body}"),
+            None => subject.to_owned(),
+        };
+        let args = if amended == message {
+            vec!["commit".into(), "--amend".into(), "--no-edit".into()]
+        } else {
+            vec!["commit".into(), "--amend".into(), "-m".into(), amended]
+        };
+        let mut text = format!("Amend {commit}? Staged changes are added to it.");
+        if let Some(upstream) = upstream {
+            text.push_str(&format!(
+                " {commit} is already on {upstream}: amending rewrites a pushed commit, and the next push needs Push (Force with Lease)."
+            ));
+        }
+        confirm(ui, args, "Amend Commit", &text);
+    }
+
+    /// Continues the paused operation, or only a rebase when `only_rebase`.
+    pub fn continue_operation(&mut self, only_rebase: bool, ui: &mut Ui<'_>) {
+        self.run_with(ui, move |root, cancel| {
+            let operation = match paused(root, only_rebase, cancel) {
+                Ok(Operation::Merge) => {
+                    return "Git: a merge is in progress; commit it to finish, or run Abort Merge, Rebase, Cherry-Pick or Revert".into();
+                }
+                Ok(operation) => operation,
+                Err(message) => return message,
+            };
+            let args = [operation.command(), "--continue"];
+            match tide_services::git_process::git_cancellable(root, &args, None, cancel) {
+                Ok(output) if output.success => {
+                    if operation_in_progress(root, cancel) == Some(operation) {
+                        format!("{} continued", operation.name())
+                    } else {
+                        format!("{} complete", operation.name())
+                    }
+                }
+                Ok(output) => stopped_message(root, &args, cancel)
+                    .unwrap_or_else(|| git_message(&args, &output)),
+                Err(error) => format!("Git failed: {error:#}"),
+            }
+        });
+    }
+
+    /// Asks to abort the paused operation, or only a rebase when `only_rebase`.
+    pub fn prepare_abort(&mut self, only_rebase: bool, ui: &mut Ui<'_>) {
+        self.prepare(ui, move |root, cancel| {
+            let operation = match paused(root, only_rebase, cancel) {
+                Ok(operation) => operation,
+                Err(message) => return GitNext::Status(message),
+            };
+            let name = operation.name();
+            GitNext::Confirm {
+                action: ConfirmAction::GitCommand(vec![
+                    operation.command().into(),
+                    "--abort".into(),
+                ]),
+                title: format!("Abort {name}"),
+                message: format!(
+                    "Abort the {} and return the branch and working tree to where they were before it started?",
+                    name.to_lowercase()
+                ),
+            }
+        });
     }
 
     pub fn confirm_abort_merge(&mut self, ui: &mut Ui<'_>) {
@@ -900,14 +1401,44 @@ impl GitController {
         ui.status("Loading Git choices…");
         let job = move |cancel: &Arc<AtomicBool>| {
             let stash = action.starts_with("stash");
+            let commits = matches!(action.as_str(), "cherryPick" | "revert" | "reset");
+            let log = "--format=%H%x09%h %s%x09%an, %ar";
             let args = if stash {
                 vec!["stash", "list", "--format=%gd%x09%H%x09%gs"]
+            } else if action == "rebase" {
+                vec![
+                    "for-each-ref",
+                    "--format=%(HEAD)%09%(refname:short)%09%(refname)",
+                    "refs/heads/",
+                    "refs/remotes/",
+                ]
+            } else if action == "cherryPick" {
+                // Commits on other branches that the current branch does not have yet.
+                vec![
+                    "log",
+                    log,
+                    "-n",
+                    "500",
+                    "--branches",
+                    "--remotes",
+                    "--not",
+                    "HEAD",
+                ]
+            } else if commits {
+                vec!["log", log, "-n", "500", "HEAD"]
             } else {
                 vec!["for-each-ref", "--format=%(refname:short)", "refs/heads/"]
             };
             let result = (|| -> Result<Vec<ModalItem>> {
                 let output =
                     tide_services::git_process::git_cancellable(&root, &args, None, cancel)?;
+                if commits
+                    && !output.success
+                    && String::from_utf8_lossy(&output.stderr).contains("HEAD")
+                {
+                    // An unborn branch has no history to pick from.
+                    return Ok(Vec::new());
+                }
                 anyhow::ensure!(
                     output.success,
                     "{}",
@@ -917,6 +1448,28 @@ impl GitController {
                     .lines()
                     .take(10000)
                     .filter_map(|line| {
+                        if commits {
+                            let mut fields = line.splitn(3, '\t');
+                            let hash = fields.next()?;
+                            let label = fields.next()?;
+                            let detail = fields.next().unwrap_or("");
+                            return Some(ModalItem::new(label, detail, hash));
+                        }
+                        if action == "rebase" {
+                            let mut fields = line.splitn(3, '\t');
+                            let current = fields.next()? == "*";
+                            let name = fields.next()?;
+                            let reference = fields.next()?;
+                            if current || reference.ends_with("/HEAD") {
+                                return None;
+                            }
+                            let detail = if reference.starts_with("refs/remotes/") {
+                                "Remote branch"
+                            } else {
+                                "Local branch"
+                            };
+                            return Some(ModalItem::new(name, detail, name));
+                        }
                         if stash {
                             let mut fields = line.splitn(3, '\t');
                             let reference = fields.next()?;
@@ -1206,7 +1759,7 @@ impl GitController {
                         editor.hunk_edit = Some(crate::editor::HunkEdit { root, diff, hunk });
                         ui.workbench.insert_tab_focused(Tab::Editor(editor));
                         ui.mark_session_dirty();
-                        ui.status("Edit hunk; Ctrl+S saves using tui.diffViewer.editMode; Save As keeps a copy");
+                        ui.status("Edit hunk; Save applies it using tui.diffViewer.editMode; Save As keeps a copy");
                     }
                     Err(error) => ui.status(format!("Cannot edit hunk: {error:#}")),
                 }
@@ -1497,4 +2050,130 @@ pub(crate) fn run_git_checked(
         );
     }
     tide_services::git_process::git_cancellable(root, args, None, cancel)
+}
+
+/// The status message for a choice list that came back empty, for lists that close instead.
+fn empty_choice(action: &str) -> Option<&'static str> {
+    match action {
+        "rebase" => Some("Git: no other branch to rebase onto"),
+        "cherryPick" => Some("Git: no commits on other branches that this branch lacks"),
+        "revert" | "reset" => Some("Git: this branch has no commits"),
+        _ => None,
+    }
+}
+
+/// A commit message's subject line and, when it has one, its body.
+fn split_message(message: &str) -> (&str, Option<&str>) {
+    match message.split_once('\n') {
+        Some((subject, body)) if !body.trim().is_empty() => (
+            subject.trim_end(),
+            Some(body.trim_start_matches(['\n', '\r'])),
+        ),
+        Some((subject, _)) => (subject.trim_end(), None),
+        None => (message, None),
+    }
+}
+
+/// A multi-step operation that is paused in the repository.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Operation {
+    Rebase,
+    CherryPick,
+    Revert,
+    Merge,
+}
+
+pub(crate) fn operation_in_progress(root: &Path, cancel: &AtomicBool) -> Option<Operation> {
+    let markers = [
+        ("rebase-merge", Operation::Rebase),
+        ("rebase-apply", Operation::Rebase),
+        ("CHERRY_PICK_HEAD", Operation::CherryPick),
+        ("REVERT_HEAD", Operation::Revert),
+        ("MERGE_HEAD", Operation::Merge),
+    ];
+    let mut args = vec!["rev-parse"];
+    for (marker, _) in markers {
+        args.extend(["--git-path", marker]);
+    }
+    let output = tide_services::git_process::git_cancellable(root, &args, None, cancel)
+        .ok()
+        .filter(|output| output.success)?;
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .zip(markers)
+        .find(|(path, _)| root.join(path).exists())
+        .map(|(_, (_, operation))| operation)
+}
+
+impl Operation {
+    fn command(self) -> &'static str {
+        match self {
+            Self::Rebase => "rebase",
+            Self::CherryPick => "cherry-pick",
+            Self::Revert => "revert",
+            Self::Merge => "merge",
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Rebase => "Rebase",
+            Self::CherryPick => "Cherry-pick",
+            Self::Revert => "Revert",
+            Self::Merge => "Merge",
+        }
+    }
+}
+
+const CONTINUE: &str = "Continue Rebase, Cherry-Pick or Revert";
+const ABORT: &str = "Abort Merge, Rebase, Cherry-Pick or Revert";
+
+/// The paused operation Continue or Abort acts on, or why there is none.
+fn paused(root: &Path, only_rebase: bool, cancel: &AtomicBool) -> Result<Operation, String> {
+    match operation_in_progress(root, cancel) {
+        None if only_rebase => Err("Git: no rebase in progress".into()),
+        None => Err("Git: no merge, rebase, cherry-pick or revert is in progress".into()),
+        Some(Operation::Rebase) => Ok(Operation::Rebase),
+        Some(other) if only_rebase => Err(format!(
+            "Git: no rebase in progress; a {} is, so run {CONTINUE} or {ABORT}",
+            other.name().to_lowercase()
+        )),
+        Some(other) => Ok(other),
+    }
+}
+
+/// How to finish a command that stopped on conflicts, which stay in the working tree.
+fn stopped_message(root: &Path, args: &[&str], cancel: &AtomicBool) -> Option<String> {
+    if !matches!(
+        args.first(),
+        Some(&("pull" | "rebase" | "merge" | "cherry-pick" | "revert"))
+    ) {
+        return None;
+    }
+    let operation = operation_in_progress(root, cancel)?;
+    let output = tide_services::git_process::git_cancellable(
+        root,
+        &["diff", "--name-only", "--diff-filter=U", "-z"],
+        None,
+        cancel,
+    )
+    .ok()
+    .filter(|output| output.success)?;
+    let conflicts = output
+        .stdout
+        .split(|byte| *byte == 0)
+        .filter(|path| !path.is_empty())
+        .count();
+    if conflicts == 0 {
+        return None;
+    }
+    let name = operation.name();
+    let finish = if operation == Operation::Merge {
+        format!("commit, or run {ABORT}")
+    } else {
+        format!("run {CONTINUE}, or {ABORT}")
+    };
+    Some(format!(
+        "{name} stopped with conflicts in {conflicts} file(s): resolve and stage them (Open Conflicted File lists them), then {finish}"
+    ))
 }

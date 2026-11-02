@@ -35,7 +35,7 @@ use crate::controllers::db::{DbController, DbEvent};
 use crate::controllers::git::{GitController, GitEvent};
 use crate::controllers::lsp::{LspController, LspEvent, LspRequestKind};
 use crate::controllers::{Effect, Ui};
-use crate::editor::{DocumentRegistry, EditorState, EditorView};
+use crate::editor::{CaseTransform, CommentMode, DocumentRegistry, EditorState, EditorView};
 use crate::file_tree::FileTreeState;
 use crate::jobs::{Jobs, Tracked};
 use crate::modal::{
@@ -83,7 +83,9 @@ mod overlays;
 mod panes;
 mod preferences;
 mod render;
+mod replace;
 mod session;
+mod terminals;
 
 pub(crate) use self::files::resolve_path;
 use self::files::{collect_files, write_file_atomic};
@@ -247,6 +249,8 @@ pub struct AppConfig {
     pub initial_file: Option<PathBuf>,
     pub session_name: Option<String>,
     pub restore_session: bool,
+    /// `--no-session`: leave the saved session alone until the user saves one.
+    pub ephemeral_session: bool,
     pub paths: Option<Paths>,
     pub jobs: Jobs,
     pub agent_discovery: AgentDiscovery,
@@ -278,6 +282,24 @@ pub enum AppEvent {
         generation: u64,
         query: String,
         items: Vec<ModalItem>,
+    },
+    /// The latest release tag, or why it could not be read.
+    LatestRelease(Result<String, String>),
+    /// Named sessions saved for this workspace, for listing or deleting.
+    SavedSessions {
+        generation: u64,
+        delete: bool,
+        sessions: Vec<crate::session_store::SavedSession>,
+    },
+    /// The preview of a Replace in Files.
+    ReplacePlanned {
+        generation: u64,
+        result: Result<crate::workspace_replace::Plan, String>,
+    },
+    /// Replace in Files finished; `buffers` open files changed in their editors.
+    ReplaceWritten {
+        written: crate::workspace_replace::Written,
+        buffers: usize,
     },
     Git(GitEvent),
     Lsp(LspEvent),
@@ -336,6 +358,15 @@ struct SaveBeforeAction {
     focus: Focus,
 }
 
+/// The regions zen mode hid, restored when it turns off.
+#[derive(Debug, Clone, Copy)]
+struct ZenLayout {
+    sidebar: bool,
+    dock: bool,
+    agents: bool,
+    focus: Focus,
+}
+
 struct CachedOutline {
     document: crate::editor::DocumentHandle,
     revision: u64,
@@ -352,6 +383,10 @@ pub struct App {
     install: crate::help::Install,
     /// Opens a URL in the desktop browser; tests substitute a recorder.
     url_opener: fn(&str) -> Result<(), String>,
+    /// Reads the latest release tag on demand; tests substitute one without network access.
+    latest_release: crate::help::LatestRelease,
+    /// Shows a path in the desktop file manager; tests substitute a recorder.
+    path_revealer: fn(&Path) -> Result<(), String>,
     pub themes: ThemeCatalog,
     pub commands: BTreeMap<String, CommandInfo>,
     pub palette: Palette,
@@ -376,6 +411,8 @@ pub struct App {
     status_action: usize,
     pending_move: Option<(PaneId, TabIdentity)>,
     pending_close: Option<(PaneId, TabIdentity)>,
+    /// The tab Close Others keeps while its confirmation is open.
+    pending_keep: Option<(PaneId, TabIdentity)>,
     save_before: Option<SaveBeforeAction>,
     save_as_form: Option<Box<dyn Modal>>,
     git: GitController,
@@ -389,6 +426,9 @@ pub struct App {
     pub session_name: Option<String>,
     session_store: SessionStore,
     session_write_blocked: bool,
+    /// No snapshot is written until the user saves or opens a session.
+    session_ephemeral: bool,
+    sessions_generation: u64,
     events_tx: tokio::sync::mpsc::Sender<AppEvent>,
     events_rx: Option<tokio::sync::mpsc::Receiver<AppEvent>>,
     watcher: Option<notify::RecommendedWatcher>,
@@ -401,6 +441,10 @@ pub struct App {
     quick_open_generation: u64,
     search_generation: u64,
     search_cancel: Arc<std::sync::atomic::AtomicBool>,
+    replace_generation: u64,
+    replace_cancel: Arc<std::sync::atomic::AtomicBool>,
+    /// The previewed Replace in Files awaiting confirmation, by generation.
+    pending_replace: Option<(u64, crate::workspace_replace::Plan)>,
     instance_id: String,
     syntax: SyntaxHighlighter,
     keymap: HashMap<String, Command>,
@@ -423,6 +467,7 @@ pub struct App {
     external_check_running: bool,
     files_pending: Option<Instant>,
     session_dirty: bool,
+    zen: Option<ZenLayout>,
 }
 
 impl App {
@@ -487,7 +532,12 @@ impl App {
             }
         }
 
-        let commands = crate::catalog::commands();
+        let mut commands = crate::catalog::commands();
+        if cfg!(target_os = "macos")
+            && let Some(reveal) = commands.get_mut(Command::FileRevealInFinder.as_str())
+        {
+            "Reveal in Finder".clone_into(&mut reveal.label);
+        }
         let palette = Palette::from_theme(themes.selected());
         let syntax = SyntaxHighlighter::new(themes.selected());
         let file_tree = FileTreeState::new(&config.workspace);
@@ -515,6 +565,8 @@ impl App {
             user_keybindings,
             install: config.install,
             url_opener: crate::help::open_url,
+            latest_release: crate::help::latest_release,
+            path_revealer: crate::help::reveal_path,
             themes,
             commands,
             palette,
@@ -539,11 +591,12 @@ impl App {
             status_action: 0,
             pending_move: None,
             pending_close: None,
+            pending_keep: None,
             save_before: None,
             save_as_form: None,
             git,
             jobs: config.jobs,
-            status: "Tide 0.1 — Phase 1".to_owned(),
+            status: String::new(),
             should_quit: false,
             restart: None,
             layout: LayoutState::default(),
@@ -551,6 +604,8 @@ impl App {
             session_name: config.session_name.clone(),
             session_store,
             session_write_blocked: false,
+            session_ephemeral: config.ephemeral_session,
+            sessions_generation: 0,
             events_tx,
             events_rx: Some(events_rx),
             watcher: None,
@@ -562,6 +617,9 @@ impl App {
             quick_open_generation: 0,
             search_generation: 0,
             search_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            replace_generation: 0,
+            replace_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            pending_replace: None,
             instance_id,
             syntax,
             keymap: HashMap::new(),
@@ -582,6 +640,7 @@ impl App {
             external_check_running: false,
             files_pending: None,
             session_dirty: false,
+            zen: None,
         };
         app.apply_preferences();
         for (section, key) in [
@@ -834,6 +893,22 @@ impl App {
                     self.set_status(format!("{count} match(es) for {query}"));
                 }
             }
+            AppEvent::LatestRelease(result) => self.show_latest_release(result),
+            AppEvent::SavedSessions {
+                generation,
+                delete,
+                sessions,
+            } => {
+                if generation == self.sessions_generation {
+                    self.show_workspace_sessions(delete, &sessions);
+                }
+            }
+            AppEvent::ReplacePlanned { generation, result } => {
+                self.show_replace_plan(generation, result);
+            }
+            AppEvent::ReplaceWritten { written, buffers } => {
+                self.report_replace_in_files(&written, buffers);
+            }
             AppEvent::Git(event) => {
                 with_ui!(self, |ui| self.git.handle_event(
                     event,
@@ -853,6 +928,8 @@ impl App {
 
     pub async fn shutdown(&mut self) {
         self.search_cancel
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.replace_cancel
             .store(true, std::sync::atomic::Ordering::Release);
         self.lsp.stop_requests().await;
         self.git.shutdown().await;
