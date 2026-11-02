@@ -43,7 +43,7 @@ pub(super) fn submit_save_path(app: &mut App, path: &Path) {
 
 pub(super) fn initialize_git(app: &App) {
     for args in [
-        &["init", "-q"][..],
+        &["init", "-q", "-b", "main"][..],
         &["config", "user.email", "tide@example.test"],
         &["config", "user.name", "Tide Test"],
     ] {

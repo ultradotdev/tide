@@ -514,7 +514,7 @@ fn source_control_group_toggle_from_the_palette_keeps_the_section_open() {
     let status = std::process::Command::new("git")
         .arg("-C")
         .arg(&app.workspace)
-        .args(["init", "-q"])
+        .args(["init", "-q", "-b", "main"])
         .status()
         .unwrap();
     assert!(status.success());

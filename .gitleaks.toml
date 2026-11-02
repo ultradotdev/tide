@@ -7,3 +7,10 @@ condition = "AND"
 paths = ['''^crates/tide-ai/tests/fixtures/secrets-v2\.json$''']
 regexTarget = "match"
 regexes = ['''authTag":"tJkTZZ89V0IBTDa0lRxkxA=="''']
+
+[[allowlists]]
+description = "Key binding chords such as ctrl+shift+down in the keymap and its generated reference"
+condition = "AND"
+paths = ['''^config/default-keybindings\.jsonc$''', '''^docs/reference/runtime\.json$''']
+regexTarget = "secret"
+regexes = ['''^(?:(?:ctrl|shift|alt|meta|cmd)\+)+[a-z0-9`\\\[\];',./=-]+(?: (?:(?:ctrl|shift|alt|meta|cmd)\+)*[a-z0-9`\\\[\];',./=-]+)?$''']

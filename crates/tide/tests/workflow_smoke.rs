@@ -665,7 +665,7 @@ fn git_diff_mouse_edit_stages_custom_text_without_touching_working_file() {
         );
         output.stdout
     };
-    git(&["init", "-q"]);
+    git(&["init", "-q", "-b", "main"]);
     git(&["config", "user.name", "Tide Fixture"]);
     git(&["config", "user.email", "tide@example.test"]);
     let path = fixture.workspace.join("git-file.txt");
@@ -1072,7 +1072,7 @@ fn live_database_mouse_sort_edit_history_and_connection_form_use_real_targets() 
     });
     session.write(b"\r").unwrap();
     wait_screen(&session, &mut screen, |s| {
-        !s.text().contains("Query History") && s.text().contains("Ctrl+R / F5 run query")
+        !s.text().contains("Query History") && s.text().contains("Ctrl+R runs the query")
     });
     palette_command(&mut session, &mut screen, "Database: Edit Connection");
     wait_screen(&session, &mut screen, |s| {

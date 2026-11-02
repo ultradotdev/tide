@@ -12,7 +12,7 @@ fn stages_and_commits_a_git_change() {
             .unwrap();
         assert!(status.success(), "git {args:?} failed");
     };
-    git(&["init", "-q"]);
+    git(&["init", "-q", "-b", "main"]);
     git(&["config", "user.email", "tide@example.test"]);
     git(&["config", "user.name", "Tide Test"]);
     std::fs::write(app.workspace.join("file.txt"), "one\n").unwrap();
@@ -273,7 +273,7 @@ async fn startup_defers_git_status_to_the_background_queue() {
     let workspace = home.path().join("workspace");
     std::fs::create_dir_all(&workspace).unwrap();
     assert!(
-        tide_services::git_process::git(&workspace, &["init", "-q"], None)
+        tide_services::git_process::git(&workspace, &["init", "-q", "-b", "main"], None)
             .unwrap()
             .success
     );
@@ -454,7 +454,7 @@ fn space_in_source_control_collapses_the_selected_group_not_the_section() {
             .unwrap();
         assert!(status.success(), "git {args:?} failed");
     };
-    git(&["init", "-q"]);
+    git(&["init", "-q", "-b", "main"]);
     std::fs::write(app.workspace.join("new.txt"), "one\n").unwrap();
     with_ui!(app, |ui| app.git.refresh(ui));
     app.settle();
@@ -605,7 +605,14 @@ fn amend_prefills_the_message_keeps_the_body_and_warns_when_pushed() {
     let remote = home.path().join("remote.git");
     git_in(
         home.path(),
-        &["init", "-q", "--bare", remote.to_str().unwrap()],
+        &[
+            "init",
+            "-q",
+            "-b",
+            "main",
+            "--bare",
+            remote.to_str().unwrap(),
+        ],
     );
     git_in(
         &app.workspace,
@@ -829,7 +836,14 @@ fn fetch_all_and_pull_rebase_bring_in_remote_commits_linearly() {
     let remote = home.path().join("remote.git");
     git_in(
         home.path(),
-        &["init", "-q", "--bare", remote.to_str().unwrap()],
+        &[
+            "init",
+            "-q",
+            "-b",
+            "main",
+            "--bare",
+            remote.to_str().unwrap(),
+        ],
     );
     git_in(
         &app.workspace,
@@ -961,7 +975,7 @@ fn continue_and_abort_finish_stopped_cherry_picks_and_reverts() {
 fn stage_and_unstage_act_on_the_active_file() {
     let (_home, mut app) = test_app();
     let root = app.workspace.clone();
-    git_in(&root, &["init", "-q"]);
+    git_in(&root, &["init", "-q", "-b", "main"]);
     git_in(&root, &["config", "user.email", "tide@example.test"]);
     git_in(&root, &["config", "user.name", "Tide Test"]);
     std::fs::write(root.join("a.txt"), "one\n").unwrap();
