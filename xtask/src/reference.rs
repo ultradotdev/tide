@@ -1,15 +1,11 @@
-//! Generated command, keyboard and configuration references from the compiled runtime.
+//! The runtime reference and the help-template documentation, generated from the compiled runtime.
 use crate::ojson::Json;
 use crate::util::{capture, read_json};
 use anyhow::{Result, bail, ensure};
-use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 
-pub const GENERATED_NOTE: &str =
-    "Regenerate with `cargo xtask generate-rust-reference --write`; CI verifies with `--check`.";
-
-pub fn export_reference(root: &Path) -> Result<String> {
+pub fn export_reference(root: &Path, option: Option<&str>) -> Result<String> {
     capture(
         Command::new("cargo")
             .args([
@@ -22,52 +18,13 @@ pub fn export_reference(root: &Path) -> Result<String> {
                 "--example",
                 "export_reference",
             ])
+            .args(option.map(|option| ["--", option]).into_iter().flatten())
             .current_dir(root),
     )
 }
 
-fn cell(value: &str) -> String {
-    value.replace('|', "\\|").replace('\n', "<br>")
-}
-
-fn code(value: &str) -> String {
-    format!("`{}`", cell(value).replace('`', "\\`"))
-}
-
-fn rules(rule: &Json) -> String {
-    let text = |key: &str| rule.get(key).map(Json::display);
-    let mut parts = vec![rule.str_at(&["type"]).to_owned()];
-    if let Some(values) = rule.get("enum") {
-        parts.push(
-            values
-                .as_array()
-                .iter()
-                .map(|value| code(&value.display()))
-                .collect::<Vec<_>>()
-                .join(", "),
-        );
-    }
-    if let Some(minimum) = text("minimum") {
-        let maximum = text("maximum").unwrap_or_else(|| "undefined".into());
-        parts.push(format!("{minimum}–{maximum}"));
-    }
-    if let Some(length) = text("maxLength") {
-        parts.push(format!("up to {length} characters"));
-    }
-    if let Some(items) = text("maxItems") {
-        let kind = text("items").unwrap_or_else(|| "undefined".into());
-        parts.push(format!("up to {items} {kind}"));
-    }
-    if let Some(keys) = text("maxProperties") {
-        let values = text("values").unwrap_or_else(|| "undefined".into());
-        parts.push(format!("up to {keys} keys; {values} values"));
-    }
-    parts.retain(|part| !part.is_empty());
-    parts.join("; ")
-}
-
-/// Renders every generated reference file from the exporter's JSON.
-pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, String)>> {
+/// Renders the runtime reference file from the exporter's JSON.
+pub fn render(raw: &str, product_version: &str) -> Result<Vec<(String, String)>> {
     let reference = Json::parse(raw)?;
     ensure!(
         reference.get("schemaVersion").and_then(Json::as_f64) == Some(2.0)
@@ -75,169 +32,40 @@ pub fn render(raw: &str, product_version: &str) -> Result<Vec<(&'static str, Str
             && reference.str_at(&["version"]) == product_version,
         "Rust reference identity does not match product metadata"
     );
-    let version = reference.str_at(&["version"]);
-    let commands = reference
-        .get("commands")
-        .map(Json::as_array)
-        .unwrap_or_default();
-    let by_id: HashMap<&str, &Json> = commands
+    Ok(vec![(
+        "docs/reference/runtime.json".to_owned(),
+        format!("{}\n", reference.pretty()),
+    )])
+}
+
+/// The documentation pages rendered from the in-app help templates with default
+/// keybindings and settings, as `(repository path, Markdown)`.
+pub fn render_help_docs(raw: &str) -> Result<Vec<(String, String)>> {
+    let docs = Json::parse(raw)?;
+    let pages = docs
+        .entries()
         .iter()
-        .map(|command| (command.str_at(&["id"]), command))
-        .collect();
-    let command_rows = commands
-        .iter()
-        .map(|command| {
-            format!(
-                "| {} | {} | {} | {} |",
-                code(command.str_at(&["id"])),
-                cell(command.str_at(&["label"])),
-                cell(command.str_at(&["category"])),
-                if command.get("paletteVisible").and_then(Json::as_bool) == Some(true) {
-                    "Yes"
-                } else {
-                    "Keybinding action"
-                }
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    let aliases = reference
-        .get("aliases")
-        .map(Json::entries)
-        .unwrap_or_default()
-        .iter()
-        .map(|(id, target)| format!("| {} | {} |", code(id), code(&target.display())))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let generated =
-        format!("Generated from the compiled Rust runtime for Tide {version}. {GENERATED_NOTE}");
-    let commands_md = format!(
-        "# Commands
-
-Open the command palette with `ctrl+k`. Enhanced terminal key reporting also enables the bindings listed in the [keyboard reference](keyboard-shortcuts.md).
-
-The table lists every routed command ID and compatibility alias. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
-
-| Command ID | Label | Category | Palette |
-| --- | --- | --- | --- |
-{command_rows}
-
-## Compatibility aliases
-
-Aliases route to the same handler. Existing user bindings can retain these IDs.
-
-| Alias | Canonical command |
-| --- | --- |
-{aliases}
-
-{generated}
-"
+        .map(|(path, text)| (path.clone(), text.display()))
+        .collect::<Vec<_>>();
+    ensure!(
+        !pages.is_empty()
+            && pages.iter().all(|(path, text)| {
+                path.starts_with("docs/") && path.ends_with(".md") && !text.contains("{{")
+            }),
+        "Help documentation export is invalid"
     );
-    let keybindings = reference
-        .get("keybindings")
-        .map(Json::as_array)
-        .unwrap_or_default();
-    let binding_rows = keybindings
-        .iter()
-        .map(|binding| {
-            let command = binding.str_at(&["command"]);
-            let label = by_id
-                .get(command)
-                .map_or(command, |found| found.str_at(&["label"]));
-            let context = binding
-                .get("when")
-                .map(Json::display)
-                .filter(|when| !when.is_empty())
-                .map_or_else(|| "Any".to_owned(), |when| code(&when));
-            format!(
-                "| {} | {} | {} | {context} |",
-                code(binding.str_at(&["key"])),
-                cell(label),
-                code(command)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    let bindings_md = format!(
-        "# Keyboard Shortcuts
-
-These are the compiled Rust defaults, including terminal-safe alternatives. User bindings belong in `keybindings.jsonc` under the Tide configuration directory.
-
-Context-specific matches take precedence over unconditional bindings. Within the same context, the last matching entry wins. An empty command or a command beginning with `-` explicitly removes a binding. Some terminal emulators cannot transmit Ctrl+Shift or Cmd combinations; use a listed terminal-safe alternative such as `ctrl+k` for the command palette.
-
-| Keys | Action | Command ID | Context |
-| --- | --- | --- | --- |
-{binding_rows}
-
-Modal buttons, list navigation and editor input also have controls local to their surfaces. See the feature guides for Find/Replace options, database results and pane navigation.
-
-{generated}
-"
-    );
-    let settings = reference
-        .get("settings")
-        .map(Json::entries)
-        .unwrap_or_default();
-    let setting_rows = settings
-        .iter()
-        .map(|(key, value)| {
-            let default = value.get("default").unwrap_or(&Json::Null).compact();
-            let rule = value.get("rule").unwrap_or(&Json::Null);
-            format!("| {} | {} | {} |", code(key), code(&default), rules(rule))
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    let configuration_md = format!(
-        "# Configuration and Storage
-
-Tide loads embedded defaults and then user `settings.jsonc`. Supported settings are validated by the runtime. Other keys are kept in the file but have no effect.
-
-| Category | Default root | Contents |
-| --- | --- | --- |
-| Configuration | `$XDG_CONFIG_HOME/tide` or `~/.config/tide` | Settings, keybindings, themes, saved connections |
-| Data | `$XDG_DATA_HOME/tide` or `~/.local/share/tide` | Encrypted secrets and database history |
-| State | `$XDG_STATE_HOME/tide` or `~/.local/state/tide` | Sessions, recovery and logs |
-| Cache | `$XDG_CACHE_HOME/tide` or `~/.cache/tide` | Rebuildable application data |
-| Workspace | `<workspace>/.tide` | Project-scoped database connection records |
-
-XDG overrides must be absolute. See [getting started](../getting-started.md) for how installation, updates and uninstall treat these directories.
-
-## Supported settings
-
-Open Settings from the command palette. Values below come from the same defaults and constraints used by the workbench. An empty terminal shell selects the user's normal shell. Theme names must match a built-in or loaded user theme.
-
-| Key | Default | Accepted value |
-| --- | --- | --- |
-{setting_rows}
-
-## Keybindings
-
-User keybindings are JSONC entries with `key`, `command`, and an optional `when` context. Matching key/context entries replace defaults; new entries append. Command IDs and supported defaults are listed in the [keyboard reference](keyboard-shortcuts.md).
-
-## Permissions and removal
-
-Tide creates its application storage roots with owner-only permissions. Managed installation leaves settings, sessions, credentials and history intact. Purging that data requires explicit confirmation. Project directories and external providers' native session stores are not purged by Tide.
-
-{generated}
-"
-    );
-    Ok(vec![
-        (
-            "docs/reference/runtime.json",
-            format!("{}\n", reference.pretty()),
-        ),
-        ("docs/reference/commands.md", commands_md),
-        ("docs/reference/keyboard-shortcuts.md", bindings_md),
-        ("docs/reference/configuration.md", configuration_md),
-    ])
+    Ok(pages)
 }
 
 /// `generate-rust-reference --write|--check`.
 pub fn generate(root: &Path, write: bool) -> Result<()> {
     let product: serde_json::Value = read_json(&root.join("config/product.json"))?;
     let version = product["version"].as_str().unwrap_or_default();
-    let raw = export_reference(root)?;
-    let outputs = render(&raw, version)?;
+    let raw = export_reference(root, None)?;
+    let mut outputs = render(&raw, version)?;
+    let help = render_help_docs(&export_reference(root, Some("--help-docs"))?)?;
+    let pages = help.len();
+    outputs.extend(help);
     for (name, contents) in &outputs {
         let path = root.join(name);
         if write {
@@ -246,12 +74,14 @@ pub fn generate(root: &Path, write: bool) -> Result<()> {
             }
             std::fs::write(&path, contents)?;
         } else if std::fs::read_to_string(&path).ok().as_deref() != Some(contents.as_str()) {
-            bail!("Generated Rust reference is stale: {name}");
+            bail!(
+                "Generated Rust reference is stale: {name}; run `cargo xtask generate-rust-reference --write`"
+            );
         }
     }
     let reference = Json::parse(&raw)?;
     println!(
-        "{} Rust reference: {} command IDs, {} effective bindings, {} settings.",
+        "{} Rust reference: {} command IDs, {} effective bindings, {} settings, {pages} help pages.",
         if write { "Generated" } else { "Verified" },
         reference
             .get("commands")
@@ -277,45 +107,41 @@ mod tests {
     use super::*;
 
     const SAMPLE: &str = r#"{"schemaVersion":2,"version":"0.10.0","implementation":"rust",
-      "commands":[{"id":"a.run","label":"Run | all","category":"Run","paletteVisible":true},
-                  {"id":"a.hidden","label":"Hidden","category":"Run","paletteVisible":false}],
-      "aliases":{"a.run":"a.run2"},
-      "keybindings":[{"key":"ctrl+k","command":"a.run"},{"key":"f1","command":"unknown","when":"editorFocus"}],
-      "settings":{"editor.tabSize":{"default":4,"rule":{"type":"integer","minimum":1,"maximum":16}},
-                  "theme":{"default":"Ultra Dusk","rule":{"type":"string","enum":["a","b"],"maxLength":64}}},
+      "commands":[],"aliases":{},"keybindings":[],"settings":{},
       "externalCliProviders":[],"themes":[]}"#;
 
     #[test]
-    fn renders_commands_aliases_bindings_and_rules() {
+    fn renders_the_runtime_reference() {
         let outputs = render(SAMPLE, "0.10.0").unwrap();
-        let file = |name: &str| {
-            outputs
-                .iter()
-                .find(|(path, _)| path.ends_with(name))
-                .unwrap()
-                .1
-                .clone()
-        };
-        let commands = file("commands.md");
-        assert!(commands.contains("| `a.run` | Run \\| all | Run | Yes |"));
-        assert!(commands.contains("| `a.hidden` | Hidden | Run | Keybinding action |"));
-        assert!(commands.contains("| `a.run` | `a.run2` |"));
-        let bindings = file("keyboard-shortcuts.md");
-        assert!(bindings.contains("| `ctrl+k` | Run \\| all | `a.run` | Any |"));
-        assert!(bindings.contains("| `f1` | unknown | `unknown` | `editorFocus` |"));
-        let configuration = file("configuration.md");
-        assert!(configuration.contains("| `editor.tabSize` | `4` | integer; 1–16 |"));
+        assert_eq!(outputs.len(), 1);
+        assert_eq!(outputs[0].0, "docs/reference/runtime.json");
         assert!(
-            configuration
-                .contains("| `theme` | `\"Ultra Dusk\"` | string; `a`, `b`; up to 64 characters |")
+            outputs[0]
+                .1
+                .starts_with("{\n  \"schemaVersion\": 2,\n  \"version\": \"0.10.0\"")
         );
-        assert!(configuration.contains(GENERATED_NOTE));
-        let runtime = file("runtime.json");
-        assert!(runtime.starts_with("{\n  \"schemaVersion\": 2,\n  \"version\": \"0.10.0\""));
     }
 
     #[test]
     fn rejects_a_reference_for_another_version() {
         assert!(render(SAMPLE, "0.11.0").is_err());
+    }
+
+    #[test]
+    fn help_docs_must_be_resolved_markdown_under_docs() {
+        let pages =
+            render_help_docs(r##"{"docs/welcome.md":"# Welcome\n","docs/x.md":"ok"}"##).unwrap();
+        assert_eq!(pages.len(), 2);
+        assert_eq!(
+            pages[0],
+            ("docs/welcome.md".to_owned(), "# Welcome\n".to_owned())
+        );
+        for invalid in [
+            r#"{}"#,
+            r#"{"README.md":"x"}"#,
+            r#"{"docs/a.md":"{{key:file.save}}"}"#,
+        ] {
+            assert!(render_help_docs(invalid).is_err(), "{invalid}");
+        }
     }
 }

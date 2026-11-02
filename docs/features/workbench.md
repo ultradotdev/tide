@@ -1,46 +1,73 @@
+<!-- Generated from crates/tide-ui/src/help/pages/workbench.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Workbench, Panes, and Navigation
 
-Tide's workbench arranges two optional sidebars, one or more main panes, a bottom dock, and a status bar under one geometry and focus controller.
+Tide's workbench arranges two optional sidebars, one or more main panes, a bottom terminal dock and a status bar under one layout and focus controller.
 
 ## Regions
 
-The workspace sidebar contains Explorer, Source Control, Outline, and Timeline accordions. The Agents sidebar lists available external provider sessions. Either sidebar can move left or right; moving one onto the occupied side swaps them.
+- The **workspace sidebar** holds the Explorer, Source Control, Outline and Timeline sections as an accordion. Close a section with its `×`; add it back with `Ctrl+Shift+A` or commands such as **Sidebar: Add Source Control**.
+- The **main region** is a tree of split panes. Each pane has its own tab strip and can hold files, diffs, terminals, SQL editors with results, and AI agent sessions.
+- The **Agents sidebar** lists the sessions of the AI CLI agents installed on this machine. Toggle it with “Agents: Toggle Sidebar” from the command palette (`Ctrl+K`).
+- The **bottom dock** holds terminal tabs and spans the main region between the sidebars. Toggle it with `` Ctrl+` ``.
+- The **status bar** shows messages and the current Git branch with its ahead and behind counts. **Workbench: Status History** lists earlier messages.
 
-The main region is a recursive split tree. Each pane owns a tab strip and can host files, diffs, terminals, SQL editors with results, and agent CLIs. The bottom dock spans the entire main region between visible sidebars.
+Each sidebar can sit on the left or the right: use the `▾` menu in its header, or **Move Sidebar Right** and **View: Move Agents Sidebar Left** from the palette. Both sidebars may share a side.
 
 ## Keyboard focus
 
-`F6` and `Shift+F6` traverse visible regions in spatial order. `Ctrl+]` and `Ctrl+[` stay scoped to main panes. `Alt+1`, `Alt+2`, and `Alt+3` provide terminal-safe focus for the first three visible main panes.
+Exactly one region has keyboard focus at a time.
 
-When region traversal enters a sidebar, focus lands on an accordion header:
+| To | Press |
+| --- | --- |
+| Next region: sidebar, main, Agents, dock, status bar | `F6` or `Ctrl+Alt+]` |
+| Previous region | `Shift+F6` or `Ctrl+Alt+[` |
+| Next main pane | `Ctrl+]` or `F7` |
+| Previous main pane | `Ctrl+[` or `F8` |
+| First, second or third main pane | `Ctrl+1` or `Alt+1`, `Ctrl+2` or `Alt+2`, `Ctrl+3` or `Alt+3` |
+| The pane to the left or right | `Alt+Left` or `Ctrl+Alt+Left`, `Alt+Right` or `Ctrl+Alt+Right` |
+| The pane above or below | `Ctrl+Alt+Up` or `Alt+Up`, `Ctrl+Alt+Down` or `Alt+Down` |
+| Explorer | `Ctrl+Alt+E` |
+| Source Control | `Ctrl+Shift+G` or `Ctrl+Alt+G` |
+| Outline | `Ctrl+Alt+U` |
+| Timeline | `Ctrl+Alt+L` |
 
-- Up and Down move through headers.
-- Home and End jump to the first or last header.
-- Enter or Space toggles the section.
-- Right expands and enters content.
-- Left collapses.
-- Escape returns from section content to its header when the content has no local Escape action.
+Region traversal skips hidden regions. When it enters the workspace sidebar, focus lands on a section header:
 
-Only one host owns keyboard focus. The shared host-chrome system keeps an active tab visible when its host is unfocused while giving the focused region a stronger semantic treatment.
+- Up and Down, or `j` and `k`, move between headers; Home and End jump to the first or last.
+- Enter or Space expands or collapses the section.
+- Right expands a collapsed section; pressed again, it enters the section's content. Left collapses.
+- Escape in a section's content returns to its header; Escape on a header returns to the main region.
 
 ## Panes and tabs
 
-Use `Ctrl+\` to split right and `Ctrl+Shift+\` to split down. Commands in the palette can close a main pane or move the active tab to the previous, next, or chosen pane. An empty source pane remains until explicitly closed.
+| To | Press |
+| --- | --- |
+| Split the pane right | `Ctrl+\` |
+| Split the pane down | `Ctrl+Shift+\` or `Ctrl+Alt+H` |
+| Add a tab or sidebar section | `Ctrl+Shift+A` |
+| Next or previous tab | `Ctrl+Tab` or `Ctrl+PageDown`, `Ctrl+Shift+Tab` or `Ctrl+PageUp` |
+| Switch to a tab by name | “Editor: Switch Tab” from the command palette (`Ctrl+K`) |
+| Close the tab | `Ctrl+W` |
+| Close the pane | “Close Main Pane” from the command palette (`Ctrl+K`) |
+| Move the tab to the next or previous pane | “Move Active Tab to Next Main Pane” from the command palette (`Ctrl+K`), “Move Active Tab to Previous Main Pane” from the command palette (`Ctrl+K`) |
+| Move the tab to a chosen pane or the dock | “Move Active Tab to Main Pane...” from the command palette (`Ctrl+K`) |
 
-Tab strips provide close buttons, overflow menus and wheel scrolling. Tabs preserve their element state when moved. The bottom dock is a separate region and is not a main-pane move destination.
+Add Tab offers a new file, Quick Open, a terminal, a SQL editor or an AI agent in the focused pane, and can add any sidebar section back. Tabs keep their state when they move. Closing the last pane is refused, and closing a pane with unsaved changes asks first. An empty pane stays until you close it.
+
+Each tab has a `×` close button. When the tabs do not fit, `‹` and `›` scroll the strip and the mouse wheel scrolls it too; `▾` lists every tab.
 
 ## Responsive layout
 
-Sidebar widths and dock height are fixed cell extents saved with workspace state. When the terminal becomes too small, the Agents sidebar collapses first, followed by the workspace sidebar or dock as required. Requested visibility and saved sizes remain intact so regions can restore when space returns.
+Sidebar widths and the dock height are saved with the session. When the terminal is too small, the Agents sidebar hides first, then the workspace sidebar; below 60 columns the sidebars hide unless focused, and the dock hides when the main region would be shorter than four rows. Their visibility and sizes are remembered, so they come back when there is room. `tui.mainRegion.minimumWidth` (`56` columns) is how much width the main region keeps before a sidebar collapses.
 
-`tui.mainRegion.minimumWidth` controls how much main-region width Tide retains before responsively collapsing a sidebar.
+Toggling a sidebar that collapsed for lack of space focuses it instead. **Reset Workbench Region Sizes** restores the default sizes.
 
-## Mouse controls
+## Mouse
 
-Region dividers support captured drag resizing. Directional controls on tab strips collapse or restore sidebars and the dock. Tab actions, accordion rows, and split controls share render and hit-test geometry.
+Drag a region divider to resize it. Arrow buttons at the main region's top corners show or hide the sidebars, and the one at its bottom right shows or hides the dock. The dock's `+` opens another terminal. Click tabs, accordion headers and list rows to select them.
 
 ## Dialogs
 
-Dialogs wrap body text and align their action buttons consistently. Save/confirm actions and destructive discard/delete actions use semantic intent colors. Keyboard selection and mouse clicks invoke the same action. Ordinary dialogs dismiss when clicking outside; unresolved save/discard guards remain until an explicit choice.
+Dialogs wrap their text and line up their buttons. Save and confirm actions and destructive discard or delete actions use distinct colors, and a destructive confirmation starts on Cancel. Keyboard selection and mouse clicks run the same action. Clicking outside closes ordinary pickers; confirmations, Save As and forms stay open until you choose.
 
-The global status area and pane-local hints use the active bindings. The [generated keyboard reference](../reference/keyboard-shortcuts.md) lists effective defaults and terminal-safe alternatives.
+See [Keyboard Shortcuts](../reference/keyboard-shortcuts.md) for every key.

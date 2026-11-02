@@ -1,54 +1,59 @@
-# External AI CLI Integration
+<!-- Generated from crates/tide-ui/src/help/pages/agents.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
+# External AI CLI Agents
 
-Tide hosts supported coding-agent CLIs in the same pane and terminal system used by files, diffs, SQL, and shells. The integration is provider-neutral at the terminal layer and capability-aware at the session layer.
+Tide runs the coding-agent CLIs you already use, such as Claude Code and Codex, in its own tabs, and lists their saved sessions for this workspace. Each agent tab is a full terminal, so the CLI looks and behaves exactly as it does on its own.
 
-## Supported providers
+## Supported agents
 
-| Provider | Executable | Session discovery |
+| Agent | Executable | Path override |
 | --- | --- | --- |
-| Claude Code | `claude` | Read-only native catalog adapter |
-| Codex | `codex` | Local app-server thread API |
-| Gemini CLI | `gemini` | Native session-list commands |
-| Antigravity CLI | `agy` | Read-only local summary index |
-| OpenCode | `opencode` | Native CLI and local session API |
+| Claude Code | `claude` | `TIDE_CLAUDE_PATH` |
+| Codex | `codex` | `TIDE_CODEX_PATH` |
+| Gemini CLI | `gemini` | `TIDE_GEMINI_PATH` |
+| Antigravity | `agy` | `TIDE_ANTIGRAVITY_PATH` |
+| OpenCode | `opencode` | `TIDE_OPENCODE_PATH` |
 
-Tide checks exact executables on `PATH`. Available providers appear in Add Tab, provider-specific command-palette entries, the Agents sidebar, and the session picker.
+Tide looks for each executable on the `PATH` it was started with. Set the path override variable to use a copy elsewhere. Install, update and sign in to each CLI outside Tide; authentication stays with the CLI. Run `tide --check-ai-cli` to see what Tide detects and how many sessions each agent has.
 
 ## Start a session
 
-1. Install and authenticate the provider CLI outside Tide.
-2. Restart Tide after changing `PATH`.
-3. Open Add Tab with `Ctrl+Shift+A` or `Cmd+Shift+A`.
-4. Choose an available provider.
+1. Press `Ctrl+Shift+I`, or choose AI CLI from Add Tab (`Ctrl+Shift+A`).
+2. Pick an installed agent. `ai.cli.defaultProvider` (`claude-code`) is selected first.
 
-`AI CLI: New...` opens a chooser when multiple providers are available and launches directly when only one is available. Provider-specific commands are added dynamically while that executable is available.
+The session opens as a tab in the focused pane. With `ai.autoStartCli` (`true`) on, the CLI starts as soon as its tab has focus. Closing a tab stops only that process; the agent's own history is untouched.
 
 ## Find and resume sessions
 
-The Agents sidebar groups sessions by provider. Search matches session title, provider, and model. A single click selects a session; double-click or Enter opens it. Provider headers still expand/collapse on one click. If the session is already open anywhere in the workbench, Tide focuses the existing tab instead of creating a duplicate.
+`Ctrl+Shift+J` or `Ctrl+Alt+A` opens a picker of every agent's sessions for this workspace. The Agents sidebar (“Agents: Toggle Sidebar” from the command palette (`Ctrl+K`)) groups the same sessions by agent and refreshes them in the background while it is visible. If one agent fails to list its sessions, the others still load and the failure shows under that agent.
 
-Press `Ctrl+Shift+J` or `Cmd+Shift+J` to open the all-provider session picker. Press `Ctrl+Shift+I` or `Cmd+Shift+I` to focus the most recently used open agent tab, or choose a provider when no agent tab is open.
+| In the Agents sidebar | Press |
+| --- | --- |
+| Move | Up and Down, `j` and `k`, Home, End, PageUp, PageDown |
+| Open the session, or expand an agent | Enter, `o` or Space |
+| Collapse or expand an agent | Left, Right |
+| Search titles, session IDs and models | `/` |
+| New session | `n` |
+| Refresh | `r` |
+| Rename the session | `Shift+R` |
+| Delete the session (asks first) | `d` |
+| Archive the session | `a` |
+| Associate an earlier workspace path | `w` |
+| Back to the main region | Esc |
 
-Provider catalogs refresh in the background while visible. A failure in one provider is shown without preventing the other providers from loading.
+A single click selects and a double-click opens. If the session is already open, Tide focuses its tab instead of starting a second copy. The `+` in the sidebar header starts a new session and `▾` moves or hides the sidebar.
 
-## Session ownership
+Each agent decides which actions it supports: Codex and OpenCode can rename sessions, Codex, Gemini CLI and OpenCode can delete them, and Codex can archive them. Others report that the action is unavailable. Tide never edits an agent's private files to add an action it does not offer.
 
-- Provider-native IDs remain the source of session identity.
-- Closing a tab stops only the hosted PTY. It does not delete or archive native history.
-- Rename, delete, and archive actions appear only when the provider exposes a supported operation.
-- Tide does not rewrite private provider files to manufacture unsupported capabilities.
-- Restored tabs remain identifiable when a provider executable is temporarily unavailable.
-- Workspace filtering includes sessions rooted at the current workspace or a descendant directory.
+## Sessions and workspaces
 
-## Terminal behavior
+The sidebar shows sessions started in this workspace folder or any folder inside it. After moving or renaming a project folder, run **Agents: Associate Previous Workspace...** (or press `w`) and pick the old path; Tide records it in `ai.cli.workspaceAliases` so those sessions show here again.
 
-All provider tabs use the same native terminal emulator, viewport renderer, input controller, paste path, mouse reporting, and resize logic as ordinary terminals. Provider adapters can choose executable arguments and discover session identity; they cannot alter parsing, cursor painting, or terminal modes.
-
-Authentication remains owned by each CLI. Tide runs executable and argument arrays without a shell.
+Open agent tabs are restored with the rest of the session when the agent is still installed. A tab whose agent has since been removed is skipped with a message in the status bar.
 
 ## Troubleshooting
 
-- If a provider is missing, confirm its executable name with `command -v <name>` and restart Tide.
-- If session listing fails, open a fresh provider tab to confirm the CLI itself starts normally.
-- If a restored tab is unavailable, reinstall the same provider. Tide does not silently substitute another CLI.
-- Provider credentials and native stores are not copied into Tide fixtures or public diagnostics.
+- If an agent is missing, check `command -v <executable>` in the shell you start Tide from, or set its path override variable.
+- If its sessions do not list, open a new session to confirm the CLI itself starts and is signed in, then refresh the sidebar with `r`.
+- Tide never copies agent credentials or native session stores into its own files or diagnostics.
+
+See [Terminals](terminal.md) for how agent tabs handle keys and [Troubleshooting](../troubleshooting.md) for more.

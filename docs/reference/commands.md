@@ -1,279 +1,379 @@
+<!-- Generated from crates/tide-ui/src/help/pages/commands.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Commands
 
-Open the command palette with `ctrl+k`. Enhanced terminal key reporting also enables the bindings listed in the [keyboard reference](keyboard-shortcuts.md).
+Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part of its name and press Enter. Keys are listed where a command has one, using your current bindings. The ID is what you use in `~/.config/tide/keybindings.jsonc`.
 
-The table lists every routed command ID and compatibility alias. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
+## Palette commands
 
-| Command ID | Label | Category | Palette |
-| --- | --- | --- | --- |
-| `agents.archiveSession` | Agents: Archive Selected Session... | AI | Yes |
-| `agents.associateWorkspace` | Agents: Associate Previous Workspace... | AI CLI | Yes |
-| `agents.deleteSession` | Agents: Delete Selected Session... | AI | Yes |
-| `agents.newSession` | Agents: New Session... | AI | Yes |
-| `agents.openSession` | Agents: Open Session... | AI | Yes |
-| `agents.refreshSessions` | Agents: Refresh Sessions | AI | Yes |
-| `agents.renameSession` | Agents: Rename Selected Session... | AI | Yes |
-| `agents.togglePanel` | Agents: Toggle Sidebar | AI | Yes |
-| `aiCli.new` | AI CLI: New... | AI | Yes |
-| `aiCli.openSession` | AI CLI: Open Session... | AI | Yes |
-| `aiCli.refreshSessions` | AI CLI: Refresh Sessions | AI | Yes |
-| `aiCli.toggle` | AI CLI: Toggle | AI | Yes |
-| `database.addRow` | Database: Add Row | Workbench | Yes |
-| `database.browseSchema` | Browse Schema | Database | Yes |
-| `database.complete` | Complete SQL | Database | Yes |
-| `database.connect` | Connect to Database | Database | Yes |
-| `database.deleteConnection` | Delete Connection | Database | Yes |
-| `database.describeTable` | Describe Table | Database | Yes |
-| `database.disconnect` | Disconnect | Database | Yes |
-| `database.editConnection` | Edit Connection... | Database | Yes |
-| `database.executeQuery` | Execute Query | Database | Yes |
-| `database.executeSelection` | Execute Selection | Database | Yes |
-| `database.exportResults` | Export Results | Database | Yes |
-| `database.newConnection` | New Connection... | Database | Yes |
-| `database.newQuery` | New Query | Database | Yes |
-| `database.testConnection` | Test Connection | Database | Yes |
-| `database.viewHistory` | Query History | Database | Yes |
-| `edit.copy` | Copy | Edit | Yes |
-| `edit.cut` | Cut | Edit | Yes |
-| `edit.paste` | Paste | Edit | Yes |
-| `edit.redo` | Redo | Edit | Yes |
-| `edit.selectAll` | Select All | Edit | Yes |
-| `edit.selectAllOccurrences` | Select All Occurrences | Edit | Yes |
-| `edit.selectNextMatch` | Add Selection to Next Match | Edit | Yes |
-| `edit.undo` | Undo | Edit | Yes |
-| `editor.addCursorAbove` | Add Cursor Above | Editor | Yes |
-| `editor.addCursorBelow` | Add Cursor Below | Editor | Yes |
-| `editor.clearCursors` | Clear Cursors | Editor | Yes |
-| `editor.commentLine` | Add Line Comment | Editor | Yes |
-| `editor.duplicateLine` | Duplicate Line | Editor | Yes |
-| `editor.duplicateSelection` | Duplicate Selection | Editor | Yes |
-| `editor.fold` | Fold | Editor | Yes |
-| `editor.foldAll` | Fold All | Editor | Yes |
-| `editor.formatDocument` | Format Document | Editor | Yes |
-| `editor.gotoLine` | Go to Line... | Go | Yes |
-| `editor.gotoSymbol` | Go to Symbol in Editor... | Go | Yes |
-| `editor.gotoWorkspaceSymbol` | Go to Symbol in Workspace... | Go | Yes |
-| `editor.moveTabToNextPane` | Move Active Tab to Next Main Pane | View | Yes |
-| `editor.moveTabToPane` | Move Active Tab to Main Pane... | View | Yes |
-| `editor.moveTabToPreviousPane` | Move Active Tab to Previous Main Pane | View | Yes |
-| `editor.nextTab` | Next Tab | View | Yes |
-| `editor.previousTab` | Previous Tab | View | Yes |
-| `editor.selectLine` | Select Line | Editor | Yes |
-| `editor.switchTab` | Editor: Switch Tab | Workbench | Yes |
-| `editor.switchTabAllPanes` | Editor: Switch Tab Across Panes | Workbench | Yes |
-| `editor.toggleComment` | Toggle Line Comment | Editor | Yes |
-| `editor.uncommentLine` | Remove Line Comment | Editor | Yes |
-| `editor.unfold` | Unfold | Editor | Yes |
-| `editor.unfoldAll` | Unfold All | Editor | Yes |
-| `file.close` | Close Tab | File | Yes |
-| `file.closeAll` | Close All | File | Yes |
-| `file.new` | New File | File | Yes |
-| `file.open` | Open File... | File | Yes |
-| `file.overwrite` | Overwrite File on Disk | File | Yes |
-| `file.reload` | Revert File | File | Yes |
-| `file.save` | Save | File | Yes |
-| `file.saveAll` | Save All | File | Yes |
-| `file.saveAs` | Save As... | File | Yes |
-| `fileTree.collapse` | fileTree.collapse | Keybinding actions | Keybinding action |
-| `fileTree.delete` | fileTree.delete | Keybinding actions | Keybinding action |
-| `fileTree.expand` | fileTree.expand | Keybinding actions | Keybinding action |
-| `fileTree.goToFirst` | fileTree.goToFirst | Keybinding actions | Keybinding action |
-| `fileTree.goToLast` | fileTree.goToLast | Keybinding actions | Keybinding action |
-| `fileTree.moveDown` | fileTree.moveDown | Keybinding actions | Keybinding action |
-| `fileTree.moveUp` | fileTree.moveUp | Keybinding actions | Keybinding action |
-| `fileTree.newFile` | fileTree.newFile | Keybinding actions | Keybinding action |
-| `fileTree.newFolder` | fileTree.newFolder | Keybinding actions | Keybinding action |
-| `fileTree.open` | fileTree.open | Keybinding actions | Keybinding action |
-| `fileTree.pageDown` | fileTree.pageDown | Keybinding actions | Keybinding action |
-| `fileTree.pageUp` | fileTree.pageUp | Keybinding actions | Keybinding action |
-| `fileTree.refresh` | fileTree.refresh | Keybinding actions | Keybinding action |
-| `fileTree.rename` | fileTree.rename | Keybinding actions | Keybinding action |
-| `git.abortMerge` | Abort Merge | Git | Yes |
-| `git.blame` | Toggle Blame | Git | Yes |
-| `git.branches` | List Branches | Git | Yes |
-| `git.checkout` | Checkout... | Git | Yes |
-| `git.commit` | Commit | Git | Yes |
-| `git.createBranch` | Create Branch... | Git | Yes |
-| `git.deleteBranch` | Delete Branch... | Git | Yes |
-| `git.diff` | View Diff | Git | Yes |
-| `git.diffStaged` | View Staged Diff | Git | Yes |
-| `git.fetch` | Fetch | Git | Yes |
-| `git.focusPanel` | Focus Git Panel | Git | Yes |
-| `git.log` | View Log | Git | Yes |
-| `git.logFile` | View File History | Git | Yes |
-| `git.merge` | Merge Branch... | Git | Yes |
-| `git.openFileDiff` | View Active File Diff | Git | Yes |
-| `git.pull` | Pull | Git | Yes |
-| `git.push` | Push | Git | Yes |
-| `git.refresh` | Refresh | Git | Yes |
-| `git.remotes` | Manage Remotes | Git | Yes |
-| `git.renameBranch` | Rename Branch... | Git | Yes |
-| `git.stage` | Stage Changes | Git | Yes |
-| `git.stageAll` | Stage All Changes | Git | Yes |
-| `git.stash` | Stash | Git | Yes |
-| `git.stashApply` | Apply Stash | Git | Yes |
-| `git.stashDrop` | Drop Stash | Git | Yes |
-| `git.stashList` | List Stashes | Git | Yes |
-| `git.stashPop` | Pop Stash | Git | Yes |
-| `git.status` | Show Status | Git | Yes |
-| `git.switchBranch` | Switch Branch... | Git | Yes |
-| `git.tags` | List Tags | Git | Yes |
-| `git.unstage` | Unstage Changes | Git | Yes |
-| `git.unstageAll` | Unstage All | Git | Yes |
-| `git.viewChanges` | git.viewChanges | Keybinding actions | Keybinding action |
-| `git.viewStagedChanges` | View Staged Changes | Git | Yes |
-| `gitPanel.commit` | gitPanel.commit | Keybinding actions | Keybinding action |
-| `gitPanel.discard` | gitPanel.discard | Keybinding actions | Keybinding action |
-| `gitPanel.moveDown` | gitPanel.moveDown | Keybinding actions | Keybinding action |
-| `gitPanel.moveUp` | gitPanel.moveUp | Keybinding actions | Keybinding action |
-| `gitPanel.openDiff` | gitPanel.openDiff | Keybinding actions | Keybinding action |
-| `gitPanel.openFile` | gitPanel.openFile | Keybinding actions | Keybinding action |
-| `gitPanel.refresh` | gitPanel.refresh | Keybinding actions | Keybinding action |
-| `gitPanel.stage` | gitPanel.stage | Keybinding actions | Keybinding action |
-| `gitPanel.stageAll` | gitPanel.stageAll | Keybinding actions | Keybinding action |
-| `gitPanel.toggleSection` | gitPanel.toggleSection | Keybinding actions | Keybinding action |
-| `gitPanel.unstage` | gitPanel.unstage | Keybinding actions | Keybinding action |
-| `lsp.codeActions` | Show Code Actions | Editor | Yes |
-| `lsp.findReferences` | Find All References | Go | Yes |
-| `lsp.goToDefinition` | Go to Definition | Go | Yes |
-| `lsp.nextDiagnostic` | Go to Next Problem | Go | Yes |
-| `lsp.previousDiagnostic` | Go to Previous Problem | Go | Yes |
-| `lsp.rename` | Rename Symbol | Editor | Yes |
-| `lsp.showDiagnostics` | Show Problems | View | Yes |
-| `lsp.showHover` | Show Hover | Editor | Yes |
-| `lsp.triggerCompletion` | Trigger Completion | Editor | Yes |
-| `lsp.triggerSignatureHelp` | Trigger Signature Help | Editor | Yes |
-| `outlinePanel.collapse` | outlinePanel.collapse | Keybinding actions | Keybinding action |
-| `outlinePanel.expand` | outlinePanel.expand | Keybinding actions | Keybinding action |
-| `outlinePanel.goToFirst` | outlinePanel.goToFirst | Keybinding actions | Keybinding action |
-| `outlinePanel.goToLast` | outlinePanel.goToLast | Keybinding actions | Keybinding action |
-| `outlinePanel.moveDown` | outlinePanel.moveDown | Keybinding actions | Keybinding action |
-| `outlinePanel.moveUp` | outlinePanel.moveUp | Keybinding actions | Keybinding action |
-| `outlinePanel.pageDown` | outlinePanel.pageDown | Keybinding actions | Keybinding action |
-| `outlinePanel.pageUp` | outlinePanel.pageUp | Keybinding actions | Keybinding action |
-| `outlinePanel.select` | outlinePanel.select | Keybinding actions | Keybinding action |
-| `outlinePanel.toggleExpand` | outlinePanel.toggleExpand | Keybinding actions | Keybinding action |
-| `pane.addPanel` | Add Tab | View | Yes |
-| `queryResults.export` | queryResults.export | Keybinding actions | Keybinding action |
-| `queryResults.goToFirst` | queryResults.goToFirst | Keybinding actions | Keybinding action |
-| `queryResults.goToLast` | queryResults.goToLast | Keybinding actions | Keybinding action |
-| `queryResults.moveDown` | queryResults.moveDown | Keybinding actions | Keybinding action |
-| `queryResults.moveLeft` | queryResults.moveLeft | Keybinding actions | Keybinding action |
-| `queryResults.moveRight` | queryResults.moveRight | Keybinding actions | Keybinding action |
-| `queryResults.moveUp` | queryResults.moveUp | Keybinding actions | Keybinding action |
-| `queryResults.pageDown` | queryResults.pageDown | Keybinding actions | Keybinding action |
-| `queryResults.pageUp` | queryResults.pageUp | Keybinding actions | Keybinding action |
-| `queryResults.refresh` | queryResults.refresh | Keybinding actions | Keybinding action |
-| `queryResults.showDetails` | queryResults.showDetails | Keybinding actions | Keybinding action |
-| `queryResults.sort` | queryResults.sort | Keybinding actions | Keybinding action |
-| `queryResults.toggleViewMode` | queryResults.toggleViewMode | Keybinding actions | Keybinding action |
-| `quit` | quit | Keybinding actions | Keybinding action |
-| `search.find` | Find | Search | Yes |
-| `search.findInFiles` | Find in Files | Search | Yes |
-| `search.findNext` | Find Next | Search | Yes |
-| `search.findPrevious` | Find Previous | Search | Yes |
-| `search.replace` | Find and Replace | Search | Yes |
-| `secrets.manage` | Manage Secrets | Secrets | Yes |
-| `session.open` | Open Session... | Session | Yes |
-| `session.save` | Save Session | Session | Yes |
-| `session.saveAs` | Save Session As... | Session | Yes |
-| `sidebar.addFileTree` | Sidebar: Add Explorer | Workbench | Yes |
-| `sidebar.addGitPanel` | Sidebar: Add Source Control | Workbench | Yes |
-| `sidebar.addOutline` | Sidebar: Add Outline | Workbench | Yes |
-| `sidebar.addTimeline` | Sidebar: Add Timeline | Workbench | Yes |
-| `terminal.close` | Close Bottom Terminal Tab | Terminal | Yes |
-| `terminal.focus` | Focus Bottom Terminal | Terminal | Yes |
-| `terminal.interrupt` | Interrupt Terminal | Terminal | Yes |
-| `terminal.new` | Open Bottom Terminal Tab | Terminal | Yes |
-| `terminal.newInPane` | Open Terminal Tab in Main Pane | Terminal | Yes |
-| `terminal.next` | terminal.next | Keybinding actions | Keybinding action |
-| `terminal.nextTab` | Next Bottom Terminal Tab | Terminal | Yes |
-| `terminal.previous` | terminal.previous | Keybinding actions | Keybinding action |
-| `terminal.previousTab` | Previous Bottom Terminal Tab | Terminal | Yes |
-| `theme.next` | Next Theme | Preferences | Yes |
-| `theme.previous` | Previous Theme | Preferences | Yes |
-| `theme.select` | Color Theme | Preferences | Yes |
-| `theme.toggleDarkMode` | Toggle Dark Mode | Preferences | Yes |
-| `timelinePanel.copyHash` | timelinePanel.copyHash | Keybinding actions | Keybinding action |
-| `timelinePanel.goToFirst` | timelinePanel.goToFirst | Keybinding actions | Keybinding action |
-| `timelinePanel.goToLast` | timelinePanel.goToLast | Keybinding actions | Keybinding action |
-| `timelinePanel.moveDown` | timelinePanel.moveDown | Keybinding actions | Keybinding action |
-| `timelinePanel.moveUp` | timelinePanel.moveUp | Keybinding actions | Keybinding action |
-| `timelinePanel.openFileAtCommit` | timelinePanel.openFileAtCommit | Keybinding actions | Keybinding action |
-| `timelinePanel.pageDown` | timelinePanel.pageDown | Keybinding actions | Keybinding action |
-| `timelinePanel.pageUp` | timelinePanel.pageUp | Keybinding actions | Keybinding action |
-| `timelinePanel.toggleMode` | timelinePanel.toggleMode | Keybinding actions | Keybinding action |
-| `timelinePanel.viewDiff` | timelinePanel.viewDiff | Keybinding actions | Keybinding action |
-| `view.closePane` | Close Main Pane | View | Yes |
-| `view.focusEditor` | Focus Main Pane | View | Yes |
-| `view.focusFileTree` | Focus File Explorer | View | Yes |
-| `view.focusTerminal` | Focus Bottom Terminal | View | Yes |
-| `view.splitHorizontal` | Split Main Pane Down | View | Yes |
-| `view.splitVertical` | Split Main Pane Right | View | Yes |
-| `view.toggleSidebar` | view.toggleSidebar | Keybinding actions | Keybinding action |
-| `view.toggleTerminal` | view.toggleTerminal | Keybinding actions | Keybinding action |
-| `workbench.agentsMenu` | workbench.agentsMenu | Keybinding actions | Keybinding action |
-| `workbench.commandPalette` | Command Palette | View | Yes |
-| `workbench.documentInfo` | workbench.documentInfo | Keybinding actions | Keybinding action |
-| `workbench.focusAgentsSidebar` | Focus Agents Sidebar | View | Yes |
-| `workbench.focusBottomDock` | Focus Bottom Dock | View | Yes |
-| `workbench.focusEditor1` | Focus First Main Pane | View | Yes |
-| `workbench.focusEditor2` | Focus Second Main Pane | View | Yes |
-| `workbench.focusEditor3` | Focus Third Main Pane | View | Yes |
-| `workbench.focusExplorer` | workbench.focusExplorer | Keybinding actions | Keybinding action |
-| `workbench.focusMainRegion` | Focus Main Region | View | Yes |
-| `workbench.focusNextPane` | Focus Next Main Pane | View | Yes |
-| `workbench.focusNextRegion` | Focus Next Workbench Region | View | Yes |
-| `workbench.focusOutline` | workbench.focusOutline | Keybinding actions | Keybinding action |
-| `workbench.focusPaneDown` | workbench.focusPaneDown | Keybinding actions | Keybinding action |
-| `workbench.focusPaneLeft` | workbench.focusPaneLeft | Keybinding actions | Keybinding action |
-| `workbench.focusPaneRight` | workbench.focusPaneRight | Keybinding actions | Keybinding action |
-| `workbench.focusPaneUp` | workbench.focusPaneUp | Keybinding actions | Keybinding action |
-| `workbench.focusPreviousPane` | Focus Previous Main Pane | View | Yes |
-| `workbench.focusPreviousRegion` | Focus Previous Workbench Region | View | Yes |
-| `workbench.focusTerminal` | workbench.focusTerminal | Keybinding actions | Keybinding action |
-| `workbench.focusTimeline` | workbench.focusTimeline | Keybinding actions | Keybinding action |
-| `workbench.focusWorkspaceSidebar` | Focus Workspace Sidebar | View | Yes |
-| `workbench.moveAgentsSidebarLeft` | View: Move Agents Sidebar Left | View | Yes |
-| `workbench.moveAgentsSidebarRight` | View: Move Agents Sidebar Right | View | Yes |
-| `workbench.moveSidebarLeft` | Move Sidebar Left | View | Yes |
-| `workbench.moveSidebarRight` | Move Sidebar Right | View | Yes |
-| `workbench.openKeybindings` | Open Keyboard Shortcuts | Preferences | Yes |
-| `workbench.openSettings` | Open Settings | Preferences | Yes |
-| `workbench.quickOpen` | Quick Open | View | Yes |
-| `workbench.quit` | Quit | Application | Yes |
-| `workbench.resetRegionSizes` | Reset Workbench Region Sizes | View | Yes |
-| `workbench.resizeDown` | Move Focused Region Boundary Down | View | Yes |
-| `workbench.resizeLeft` | Move Focused Region Boundary Left | View | Yes |
-| `workbench.resizeRight` | Move Focused Region Boundary Right | View | Yes |
-| `workbench.resizeUp` | Move Focused Region Boundary Up | View | Yes |
-| `workbench.restart` | Restart Tide | Workbench | Yes |
-| `workbench.restartAndRebuild` | Restart and Rebuild Tide (source checkout) | Workbench | Yes |
-| `workbench.saveSession` | workbench.saveSession | Keybinding actions | Keybinding action |
-| `workbench.selectTheme` | Select Color Theme | Preferences | Yes |
-| `workbench.sidebarMenu` | workbench.sidebarMenu | Keybinding actions | Keybinding action |
-| `workbench.statusHistory` | Workbench: Status History | Workbench | Yes |
-| `workbench.toggleAgentsSidebar` | View: Toggle Agents Sidebar | View | Yes |
-| `workbench.toggleSidebar` | Toggle Sidebar | View | Yes |
-| `workbench.toggleTerminal` | Toggle Bottom Terminal | View | Yes |
-| `workbench.toggleWordWrap` | Toggle Word Wrap | View | Yes |
+### AI
 
-## Compatibility aliases
+| Command | Keys | ID |
+| --- | --- | --- |
+| AI CLI: New... | — | `aiCli.new` |
+| AI CLI: Open Session... | `Ctrl+Shift+J`, `Ctrl+Alt+A` | `aiCli.openSession` |
+| AI CLI: Refresh Sessions | — | `aiCli.refreshSessions` |
+| AI CLI: Toggle | `Ctrl+Shift+I` | `aiCli.toggle` |
+| Agents: Archive Selected Session... | — | `agents.archiveSession` |
+| Agents: Delete Selected Session... | — | `agents.deleteSession` |
+| Agents: New Session... | — | `agents.newSession` |
+| Agents: Open Session... | `Ctrl+Shift+J`, `Ctrl+Alt+A` | `agents.openSession` |
+| Agents: Refresh Sessions | — | `agents.refreshSessions` |
+| Agents: Rename Selected Session... | — | `agents.renameSession` |
+| Agents: Toggle Sidebar | — | `agents.togglePanel` |
 
-Aliases route to the same handler. Existing user bindings can retain these IDs.
+### AI CLI
 
-| Alias | Canonical command |
+| Command | Keys | ID |
+| --- | --- | --- |
+| Agents: Associate Previous Workspace... | — | `agents.associateWorkspace` |
+
+### Application
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Quit | `Ctrl+Q` | `workbench.quit` |
+
+### Database
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Browse Schema | — | `database.browseSchema` |
+| Complete SQL | `Ctrl+Space` | `database.complete` |
+| Connect to Database | `Ctrl+Shift+C` | `database.connect` |
+| Delete Connection | — | `database.deleteConnection` |
+| Describe Table | — | `database.describeTable` |
+| Disconnect | — | `database.disconnect` |
+| Edit Connection... | — | `database.editConnection` |
+| Execute Query | `Ctrl+R`, `Ctrl+Enter` | `database.executeQuery` |
+| Execute Selection | — | `database.executeSelection` |
+| Export Results | — | `database.exportResults` |
+| New Connection... | — | `database.newConnection` |
+| New Query | — | `database.newQuery` |
+| Query History | — | `database.viewHistory` |
+| Test Connection | — | `database.testConnection` |
+
+### Edit
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Add Selection to Next Match | `Ctrl+D` | `edit.selectNextMatch` |
+| Copy | `Ctrl+C` | `edit.copy` |
+| Cut | `Ctrl+X` | `edit.cut` |
+| Paste | `Ctrl+V` | `edit.paste` |
+| Redo | `Ctrl+Shift+Z`, `Ctrl+Y` | `edit.redo` |
+| Select All | `Ctrl+A` | `edit.selectAll` |
+| Select All Occurrences | `Ctrl+Shift+L` | `edit.selectAllOccurrences` |
+| Undo | `Ctrl+Z` | `edit.undo` |
+
+### Editor
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Add Cursor Above | `Ctrl+Alt+Up` | `editor.addCursorAbove` |
+| Add Cursor Below | `Ctrl+Alt+Down` | `editor.addCursorBelow` |
+| Add Line Comment | — | `editor.commentLine` |
+| Clear Cursors | `Esc` | `editor.clearCursors` |
+| Duplicate Line | `Ctrl+Alt+D` | `editor.duplicateLine` |
+| Duplicate Selection | `Ctrl+Shift+D` | `editor.duplicateSelection` |
+| Fold | `Ctrl+Shift+[` | `editor.fold` |
+| Fold All | — | `editor.foldAll` |
+| Format Document | — | `editor.formatDocument` |
+| Remove Line Comment | — | `editor.uncommentLine` |
+| Rename Symbol | — | `lsp.rename` |
+| Select Line | `Ctrl+L` | `editor.selectLine` |
+| Show Code Actions | `Ctrl+.` | `lsp.codeActions` |
+| Show Hover | `Ctrl+I` | `lsp.showHover` |
+| Toggle Line Comment | `Ctrl+/` | `editor.toggleComment` |
+| Trigger Completion | `Ctrl+Space` | `lsp.triggerCompletion` |
+| Trigger Signature Help | `Ctrl+Shift+Space` | `lsp.triggerSignatureHelp` |
+| Unfold | `Ctrl+Shift+]` | `editor.unfold` |
+| Unfold All | — | `editor.unfoldAll` |
+
+### File
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Close All | — | `file.closeAll` |
+| Close Tab | `Ctrl+W` | `file.close` |
+| New File | `Ctrl+N` | `file.new` |
+| Open File... | `Ctrl+O` | `file.open` |
+| Overwrite File on Disk | — | `file.overwrite` |
+| Revert File | — | `file.reload` |
+| Save | `Ctrl+S` | `file.save` |
+| Save All | — | `file.saveAll` |
+| Save As... | `Ctrl+Shift+S`, `Ctrl+Alt+S` | `file.saveAs` |
+
+### Git
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Abort Merge | — | `git.abortMerge` |
+| Apply Stash | — | `git.stashApply` |
+| Checkout... | — | `git.checkout` |
+| Commit | — | `git.commit` |
+| Create Branch... | — | `git.createBranch` |
+| Delete Branch... | — | `git.deleteBranch` |
+| Drop Stash | — | `git.stashDrop` |
+| Fetch | — | `git.fetch` |
+| Focus Git Panel | `Ctrl+Shift+G`, `Ctrl+Alt+G` | `git.focusPanel` |
+| List Branches | — | `git.branches` |
+| List Stashes | — | `git.stashList` |
+| List Tags | — | `git.tags` |
+| Manage Remotes | — | `git.remotes` |
+| Merge Branch... | — | `git.merge` |
+| Pop Stash | — | `git.stashPop` |
+| Pull | — | `git.pull` |
+| Push | — | `git.push` |
+| Refresh | — | `git.refresh` |
+| Rename Branch... | — | `git.renameBranch` |
+| Show Status | — | `git.status` |
+| Stage All Changes | — | `git.stageAll` |
+| Stage Changes | — | `git.stage` |
+| Stash | — | `git.stash` |
+| Switch Branch... | — | `git.switchBranch` |
+| Toggle Blame | — | `git.blame` |
+| Unstage All | — | `git.unstageAll` |
+| Unstage Changes | — | `git.unstage` |
+| View Active File Diff | — | `git.openFileDiff` |
+| View Diff | — | `git.diff` |
+| View File History | — | `git.logFile` |
+| View Log | — | `git.log` |
+| View Staged Changes | — | `git.viewStagedChanges` |
+| View Staged Diff | — | `git.diffStaged` |
+
+### Go
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Find All References | — | `lsp.findReferences` |
+| Go to Definition | `Ctrl+Shift+K` | `lsp.goToDefinition` |
+| Go to Line... | `Ctrl+G` | `editor.gotoLine` |
+| Go to Next Problem | — | `lsp.nextDiagnostic` |
+| Go to Previous Problem | — | `lsp.previousDiagnostic` |
+| Go to Symbol in Editor... | `Ctrl+R` | `editor.gotoSymbol` |
+| Go to Symbol in Workspace... | `Ctrl+Shift+R` | `editor.gotoWorkspaceSymbol` |
+
+### Help
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Help: AI CLI Agents | — | `help.agents` |
+| Help: About Tide | — | `help.about` |
+| Help: All Commands | — | `help.commands` |
+| Help: Editor and Language Servers | — | `help.editor` |
+| Help: Getting Started | — | `help.gettingStarted` |
+| Help: Git | — | `help.git` |
+| Help: Keyboard Shortcuts | — | `help.keyboardShortcuts` |
+| Help: Online Documentation | — | `help.documentation` |
+| Help: PostgreSQL | — | `help.database` |
+| Help: Report an Issue | — | `help.reportIssue` |
+| Help: Settings Reference | — | `help.settings` |
+| Help: Terminals | — | `help.terminal` |
+| Help: Themes and Customization | — | `help.themes` |
+| Help: Troubleshooting | — | `help.troubleshooting` |
+| Help: Welcome | — | `help.welcome` |
+| Help: Workbench and Panes | — | `help.workbench` |
+
+### Preferences
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Color Theme | `Ctrl+Alt+R` | `theme.select` |
+| Next Theme | — | `theme.next` |
+| Open Keyboard Shortcuts | `Ctrl+Shift+,`, `Ctrl+Alt+K` | `workbench.openKeybindings` |
+| Open Settings | `Ctrl+,`, `Ctrl+Alt+O` | `workbench.openSettings` |
+| Previous Theme | — | `theme.previous` |
+| Select Color Theme | `Ctrl+Alt+R` | `workbench.selectTheme` |
+| Toggle Dark Mode | — | `theme.toggleDarkMode` |
+
+### Search
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Find | `Ctrl+F` | `search.find` |
+| Find Next | `F3` | `search.findNext` |
+| Find Previous | `Shift+F3` | `search.findPrevious` |
+| Find and Replace | `Ctrl+H` | `search.replace` |
+| Find in Files | `Ctrl+Shift+F`, `Ctrl+Alt+F` | `search.findInFiles` |
+
+### Secrets
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Manage Secrets | — | `secrets.manage` |
+
+### Session
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Open Session... | — | `session.open` |
+| Save Session | — | `session.save` |
+| Save Session As... | — | `session.saveAs` |
+
+### Terminal
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Close Bottom Terminal Tab | — | `terminal.close` |
+| Focus Bottom Terminal | — | `terminal.focus` |
+| Interrupt Terminal | — | `terminal.interrupt` |
+| Next Bottom Terminal Tab | — | `terminal.nextTab` |
+| Open Bottom Terminal Tab | `` Ctrl+Shift+` ``, `Ctrl+Alt+T` | `terminal.new` |
+| Open Terminal Tab in Main Pane | `Ctrl+Shift+T`, `Ctrl+Alt+M` | `terminal.newInPane` |
+| Previous Bottom Terminal Tab | — | `terminal.previousTab` |
+
+### View
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Add Tab | `Ctrl+Shift+A` | `pane.addPanel` |
+| Close Main Pane | — | `view.closePane` |
+| Command Palette | `Ctrl+K`, `Ctrl+Shift+P` | `workbench.commandPalette` |
+| Focus Agents Sidebar | — | `workbench.focusAgentsSidebar` |
+| Focus Bottom Dock | — | `workbench.focusBottomDock` |
+| Focus Bottom Terminal | — | `view.focusTerminal` |
+| Focus File Explorer | `Ctrl+Alt+E` | `view.focusFileTree` |
+| Focus First Main Pane | `Ctrl+1`, `Alt+1` | `workbench.focusEditor1` |
+| Focus Main Pane | — | `view.focusEditor` |
+| Focus Main Region | — | `workbench.focusMainRegion` |
+| Focus Next Main Pane | `Ctrl+]`, `F7` | `workbench.focusNextPane` |
+| Focus Next Workbench Region | `F6`, `Ctrl+Alt+]` | `workbench.focusNextRegion` |
+| Focus Previous Main Pane | `Ctrl+[`, `F8` | `workbench.focusPreviousPane` |
+| Focus Previous Workbench Region | `Shift+F6`, `Ctrl+Alt+[` | `workbench.focusPreviousRegion` |
+| Focus Second Main Pane | `Ctrl+2`, `Alt+2` | `workbench.focusEditor2` |
+| Focus Third Main Pane | `Ctrl+3`, `Alt+3` | `workbench.focusEditor3` |
+| Focus Workspace Sidebar | — | `workbench.focusWorkspaceSidebar` |
+| Move Active Tab to Main Pane... | — | `editor.moveTabToPane` |
+| Move Active Tab to Next Main Pane | — | `editor.moveTabToNextPane` |
+| Move Active Tab to Previous Main Pane | — | `editor.moveTabToPreviousPane` |
+| Move Focused Region Boundary Down | — | `workbench.resizeDown` |
+| Move Focused Region Boundary Left | — | `workbench.resizeLeft` |
+| Move Focused Region Boundary Right | — | `workbench.resizeRight` |
+| Move Focused Region Boundary Up | — | `workbench.resizeUp` |
+| Move Sidebar Left | — | `workbench.moveSidebarLeft` |
+| Move Sidebar Right | — | `workbench.moveSidebarRight` |
+| Next Tab | `Ctrl+Tab`, `Ctrl+PageDown` | `editor.nextTab` |
+| Previous Tab | `Ctrl+Shift+Tab`, `Ctrl+PageUp` | `editor.previousTab` |
+| Quick Open | `Ctrl+P` | `workbench.quickOpen` |
+| Reset Workbench Region Sizes | — | `workbench.resetRegionSizes` |
+| Show Problems | — | `lsp.showDiagnostics` |
+| Split Main Pane Down | `Ctrl+Shift+\`, `Ctrl+Alt+H` | `view.splitHorizontal` |
+| Split Main Pane Right | `Ctrl+\` | `view.splitVertical` |
+| Toggle Bottom Terminal | `` Ctrl+` `` | `workbench.toggleTerminal` |
+| Toggle Sidebar | `Ctrl+Shift+B`, `Ctrl+B` | `workbench.toggleSidebar` |
+| Toggle Word Wrap | — | `workbench.toggleWordWrap` |
+| View: Move Agents Sidebar Left | — | `workbench.moveAgentsSidebarLeft` |
+| View: Move Agents Sidebar Right | — | `workbench.moveAgentsSidebarRight` |
+| View: Toggle Agents Sidebar | — | `workbench.toggleAgentsSidebar` |
+
+### Workbench
+
+| Command | Keys | ID |
+| --- | --- | --- |
+| Database: Add Row | — | `database.addRow` |
+| Editor: Switch Tab | — | `editor.switchTab` |
+| Editor: Switch Tab Across Panes | — | `editor.switchTabAllPanes` |
+| Restart Tide | — | `workbench.restart` |
+| Restart and Rebuild Tide (source checkout) | — | `workbench.restartAndRebuild` |
+| Sidebar: Add Explorer | — | `sidebar.addFileTree` |
+| Sidebar: Add Outline | — | `sidebar.addOutline` |
+| Sidebar: Add Source Control | — | `sidebar.addGitPanel` |
+| Sidebar: Add Timeline | — | `sidebar.addTimeline` |
+| Workbench: Status History | — | `workbench.statusHistory` |
+
+## Keybinding actions
+
+These actions have no palette entry; they act on a focused panel and are reached through keys.
+
+| Action | Keys | ID |
+| --- | --- | --- |
+| Focus outline | `Ctrl+Alt+U` | `workbench.focusOutline` |
+| Focus timeline | `Ctrl+Alt+L` | `workbench.focusTimeline` |
+| Toggle sidebar | — | `view.toggleSidebar` |
+| Toggle terminal | — | `view.toggleTerminal` |
+| Focus pane left | `Alt+Left`, `Ctrl+Alt+Left` | `workbench.focusPaneLeft` |
+| Focus pane right | `Alt+Right`, `Ctrl+Alt+Right` | `workbench.focusPaneRight` |
+| Focus pane up | `Ctrl+Alt+Up`, `Alt+Up` | `workbench.focusPaneUp` |
+| Focus pane down | `Ctrl+Alt+Down`, `Alt+Down` | `workbench.focusPaneDown` |
+| Document info | — | `workbench.documentInfo` |
+| Sidebar menu | — | `workbench.sidebarMenu` |
+| Agents menu | — | `workbench.agentsMenu` |
+| View changes | — | `git.viewChanges` |
+| Quit | — | `quit` |
+| Save session | — | `workbench.saveSession` |
+| Move down | `Down`, `j` | `fileTree.moveDown` |
+| Move up | `Up`, `k` | `fileTree.moveUp` |
+| Go to first | `Home` | `fileTree.goToFirst` |
+| Go to last | `End` | `fileTree.goToLast` |
+| Page down | `PageDown` | `fileTree.pageDown` |
+| Page up | `PageUp` | `fileTree.pageUp` |
+| Expand | `Right`, `l` | `fileTree.expand` |
+| Collapse | `Left`, `h` | `fileTree.collapse` |
+| Open | `Enter`, `Space` | `fileTree.open` |
+| Refresh | — | `fileTree.refresh` |
+| New file | `n` | `fileTree.newFile` |
+| New folder | `Shift+N` | `fileTree.newFolder` |
+| Rename | `r`, `F2` | `fileTree.rename` |
+| Delete | `d`, `Delete` | `fileTree.delete` |
+| Move down | `Down`, `j` | `gitPanel.moveDown` |
+| Move up | `Up`, `k` | `gitPanel.moveUp` |
+| Stage | `s` | `gitPanel.stage` |
+| Stage all | `Shift+S` | `gitPanel.stageAll` |
+| Unstage | `u` | `gitPanel.unstage` |
+| Commit | `c` | `gitPanel.commit` |
+| Refresh | `r` | `gitPanel.refresh` |
+| Open diff | `Enter` | `gitPanel.openDiff` |
+| Open file | `o` | `gitPanel.openFile` |
+| Toggle section | `Space` | `gitPanel.toggleSection` |
+| Move down | `Down`, `j` | `queryResults.moveDown` |
+| Move up | `Up`, `k` | `queryResults.moveUp` |
+| Page down | `PageDown` | `queryResults.pageDown` |
+| Page up | `PageUp` | `queryResults.pageUp` |
+| Go to first | `Home` | `queryResults.goToFirst` |
+| Go to last | `End` | `queryResults.goToLast` |
+| Export | `e` | `queryResults.export` |
+| Refresh | `r`, `F5` | `queryResults.refresh` |
+| Show details | `Enter` | `queryResults.showDetails` |
+| Move left | `Left`, `h` | `queryResults.moveLeft` |
+| Move right | `Right`, `l` | `queryResults.moveRight` |
+| Sort | `s` | `queryResults.sort` |
+| Toggle view mode | `Tab` | `queryResults.toggleViewMode` |
+| Move down | `Down`, `j` | `outlinePanel.moveDown` |
+| Move up | `Up`, `k` | `outlinePanel.moveUp` |
+| Page down | `PageDown` | `outlinePanel.pageDown` |
+| Page up | `PageUp` | `outlinePanel.pageUp` |
+| Go to first | `Home` | `outlinePanel.goToFirst` |
+| Go to last | `End` | `outlinePanel.goToLast` |
+| Select | `Enter` | `outlinePanel.select` |
+| Expand | `Right`, `l` | `outlinePanel.expand` |
+| Collapse | `Left`, `h` | `outlinePanel.collapse` |
+| Toggle expand | `Space` | `outlinePanel.toggleExpand` |
+| Move down | `Down`, `j` | `timelinePanel.moveDown` |
+| Move up | `Up`, `k` | `timelinePanel.moveUp` |
+| Page down | `PageDown` | `timelinePanel.pageDown` |
+| Page up | `PageUp` | `timelinePanel.pageUp` |
+| Go to first | `Home`, `g` | `timelinePanel.goToFirst` |
+| Go to last | `End`, `Shift+G` | `timelinePanel.goToLast` |
+| View diff | `Enter` | `timelinePanel.viewDiff` |
+| Open file at commit | `o` | `timelinePanel.openFileAtCommit` |
+| Copy hash | `y` | `timelinePanel.copyHash` |
+| Toggle mode | `Tab` | `timelinePanel.toggleMode` |
+| Discard | `d` | `gitPanel.discard` |
+
+## Alternative IDs
+
+These IDs run the same command as another ID. Existing keybindings can keep using them.
+
+| Alias | Runs |
 | --- | --- |
 | `aiCli.new` | `agents.newSession` |
 | `aiCli.openSession` | `agents.openSession` |
 | `aiCli.refreshSessions` | `agents.refreshSessions` |
-| `terminal.focus` | `workbench.focusTerminal` |
 | `terminal.nextTab` | `terminal.next` |
 | `terminal.previousTab` | `terminal.previous` |
+| `terminal.focus` | `workbench.focusTerminal` |
+| `view.focusTerminal` | `workbench.focusTerminal` |
 | `theme.select` | `workbench.selectTheme` |
 | `view.focusEditor` | `workbench.focusMainRegion` |
 | `view.focusFileTree` | `workbench.focusExplorer` |
-| `view.focusTerminal` | `workbench.focusTerminal` |
 | `workbench.toggleAgentsSidebar` | `agents.togglePanel` |
-
-Generated from the compiled Rust runtime for Tide 0.10.0. Regenerate with `cargo xtask generate-rust-reference --write`; CI verifies with `--check`.
