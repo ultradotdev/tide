@@ -138,3 +138,24 @@ fn edited_keybindings_apply_and_persist() {
     let persisted = std::fs::read_to_string(&app.paths.keybindings_file).unwrap();
     assert!(persisted.contains("ctrl+alt+k"));
 }
+
+#[test]
+fn an_unset_minimap_setting_follows_the_catalog_default() {
+    let (home, mut app) = test_app();
+    let mut values = app.settings.as_map().clone();
+    values.remove("editor.minimap.enabled");
+    app.settings = Settings::new(values);
+    let file = home.path().join("workspace/minimap.txt");
+    std::fs::write(&file, "minimap\n".repeat(50)).unwrap();
+    app.open_file(&file);
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let default = crate::catalog::settings()
+        .get("editor.minimap.enabled")
+        .and_then(serde_json::Value::as_bool);
+    assert_eq!(
+        Some(app.workbench.active_editor().unwrap().minimap),
+        default
+    );
+    assert_eq!(Some(app.build_session().ui.minimap_enabled), default);
+}

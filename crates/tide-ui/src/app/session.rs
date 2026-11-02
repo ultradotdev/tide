@@ -337,7 +337,7 @@ impl App {
                 } else {
                     "files".to_owned()
                 },
-                minimap_enabled: self.setting_bool("editor.minimap.enabled", false),
+                minimap_enabled: self.setting_bool("editor.minimap.enabled", true),
                 sidebar_accordion_expanded: self.accordion.expanded_ids(),
                 focused_region: Some(focused_region.to_owned()),
                 extra: BTreeMap::from([

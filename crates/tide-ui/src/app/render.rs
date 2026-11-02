@@ -709,6 +709,7 @@ impl App {
             .get("editor.lineNumbers")
             .and_then(serde_json::Value::as_str)
             == Some("relative");
+        let minimap = self.setting_bool("editor.minimap.enabled", true);
         let Some(tab) = self
             .workbench
             .pane_mut(id)
@@ -732,11 +733,7 @@ impl App {
                 .get("lsp.diagnostics.underlineErrors")
                 .and_then(serde_json::Value::as_bool)
                 != Some(false);
-            editor.minimap = self
-                .settings
-                .get("editor.minimap.enabled")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false);
+            editor.minimap = minimap;
             editor.auto_indent = self
                 .settings
                 .get("editor.autoIndent")
