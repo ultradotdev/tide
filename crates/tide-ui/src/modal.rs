@@ -92,6 +92,8 @@ pub enum ConfirmAction {
     CloseAllTerminals,
     /// The Replace in Files preview's generation.
     ReplaceInFiles(u64),
+    /// A saved session's file name.
+    DeleteSession(String),
 }
 
 impl ConfirmAction {
@@ -133,6 +135,8 @@ pub enum ModalKind {
     SchemaTables,
     QueryHistory,
     SessionPicker,
+    /// Picks a saved session to delete.
+    SessionDeletePicker,
     CodeActions,
     Info,
     SaveAs,
@@ -443,6 +447,7 @@ impl ModalBase {
                 | ModalKind::SchemaTables
                 | ModalKind::QueryHistory
                 | ModalKind::SessionPicker
+                | ModalKind::SessionDeletePicker
                 | ModalKind::CodeActions
         )
     }
@@ -522,7 +527,7 @@ impl ModalBase {
             ModalKind::RowInsert => (96, 24),
             ModalKind::SchemaTables => (70, 22),
             ModalKind::QueryHistory => (70, 22),
-            ModalKind::SessionPicker => (60, 20),
+            ModalKind::SessionPicker | ModalKind::SessionDeletePicker => (60, 20),
             ModalKind::CodeActions => (60, 20),
             ModalKind::Info => (60, 8),
             ModalKind::SaveAs => (70, 25),
@@ -649,6 +654,7 @@ impl ModalBase {
                     ConfirmAction::DeleteConnection(_)
                     | ConfirmAction::DeleteRow(_)
                     | ConfirmAction::DeletePath(_)
+                    | ConfirmAction::DeleteSession(_)
                     | ConfirmAction::DeleteAiSession { archive: false, .. },
                 ) => "Delete [Y]",
                 ModalKind::Confirm(ConfirmAction::DeleteAiSession { archive: true, .. }) => {
@@ -681,6 +687,7 @@ impl ModalBase {
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
                 ModalKind::Settings | ModalKind::Keybindings => "Edit",
+                ModalKind::SessionDeletePicker => "Delete…",
                 ModalKind::Prompt(_) | ModalKind::Find => "Submit",
                 _ => "Open",
             };
@@ -1371,6 +1378,7 @@ pub enum Submitted {
         filter: String,
     },
     Session(String),
+    DeleteSession(String),
     CodeAction(usize),
     Setting(String),
     Keybinding(String),
@@ -1439,6 +1447,7 @@ impl Submitted {
             ModalKind::ConnectionPicker => owned().map(Self::DatabaseConnection),
             ModalKind::QueryHistory => owned().map(Self::HistoryEntry),
             ModalKind::SessionPicker => owned().map(Self::Session),
+            ModalKind::SessionDeletePicker => owned().map(Self::DeleteSession),
             ModalKind::CodeActions => value
                 .and_then(|value| value.parse().ok())
                 .map(Self::CodeAction),

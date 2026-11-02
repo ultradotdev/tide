@@ -286,6 +286,8 @@ commands! {
     SearchFindPrevious = "search.findPrevious",
     SessionSaveAs = "session.saveAs",
     SessionOpen = "session.open",
+    SessionList = "session.list",
+    SessionDelete = "session.delete",
     HelpWelcome = "help.welcome",
     HelpGettingStarted = "help.gettingStarted",
     HelpWorkbench = "help.workbench",

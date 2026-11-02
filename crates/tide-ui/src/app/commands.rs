@@ -311,6 +311,8 @@ impl App {
                 ));
             }
             Command::SessionOpen => self.open_session_picker(),
+            Command::SessionList => self.list_workspace_sessions(false),
+            Command::SessionDelete => self.list_workspace_sessions(true),
             Command::OutlinePanelMoveDown => self.outline_key(KeyCode::Down),
             Command::OutlinePanelMoveUp => self.outline_key(KeyCode::Up),
             Command::OutlinePanelPageDown => self.outline_key(KeyCode::PageDown),

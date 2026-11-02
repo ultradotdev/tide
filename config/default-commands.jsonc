@@ -203,6 +203,8 @@
   "session.save": { "label": "Save Session", "category": "Session" },
   "session.saveAs": { "label": "Save Session As...", "category": "Session" },
   "session.open": { "label": "Open Session...", "category": "Session" },
+  "session.list": { "label": "List Sessions for This Workspace...", "category": "Session", "description": "Pick a named session saved for this workspace to open" },
+  "session.delete": { "label": "Delete Session...", "category": "Session", "description": "Delete a named session saved for this workspace after confirmation" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Theme Commands

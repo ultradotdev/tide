@@ -256,3 +256,80 @@ fn editor_and_sql_view_state_round_trip_without_changing_shared_write_guards() {
     assert_eq!(sql.view_mode, 2);
     assert!(app.accordion.sections.iter().all(|s| !s.expanded));
 }
+
+fn choose_session(app: &mut App, name: &str) {
+    let base = app.overlay.as_mut().expect("a session picker").base_mut();
+    let index = base
+        .items
+        .iter()
+        .position(|item| item.value == name)
+        .unwrap_or_else(|| panic!("{name} is not listed"));
+    base.selected = base.filtered.iter().position(|i| *i == index).unwrap();
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    app.settle();
+}
+
+#[test]
+fn session_list_opens_this_workspaces_sessions_and_delete_explains_the_one_in_use() {
+    let (_home, mut app) = test_app();
+    app.settle();
+    app.execute_command(Command::SessionList);
+    app.settle();
+    assert!(app.overlay.is_none());
+    assert!(app.status.contains("no named sessions"), "{}", app.status);
+    app.save_session_as("Alpha");
+    app.save_session_as("Beta");
+
+    app.execute_command(Command::SessionList);
+    app.settle();
+    let picker = app.overlay.as_ref().expect("the session list");
+    assert_eq!(*picker.kind(), ModalKind::SessionPicker);
+    let items = &picker.base().items;
+    assert_eq!(items.len(), 2);
+    let beta = items.iter().find(|item| item.value == "beta").unwrap();
+    assert!(beta.current && beta.detail.contains("in use"), "{beta:?}");
+    choose_session(&mut app, "alpha");
+    assert_eq!(app.session_name.as_deref(), Some("alpha"));
+
+    app.execute_command(Command::SessionDelete);
+    app.settle();
+    choose_session(&mut app, "alpha");
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(message.contains("in use"), "{message}");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert_eq!(app.session_name, None);
+    assert!(!app.session_store.named_session_path("alpha").exists());
+    assert!(app.status.contains("recovery session"), "{}", app.status);
+
+    app.execute_command(Command::SessionDelete);
+    app.settle();
+    choose_session(&mut app, "beta");
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(!message.contains("in use"), "{message}");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert!(
+        app.session_store.named_session_path("beta").exists(),
+        "cancel keeps it"
+    );
+    app.execute_command(Command::SessionDelete);
+    app.settle();
+    choose_session(&mut app, "beta");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    app.execute_command(Command::SessionList);
+    app.settle();
+    assert!(app.status.contains("no named sessions"), "{}", app.status);
+}

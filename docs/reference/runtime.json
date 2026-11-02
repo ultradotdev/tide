@@ -1614,6 +1614,22 @@
       "paletteVisible": true
     },
     {
+      "canonical": "session.delete",
+      "category": "Session",
+      "description": "Delete a named session saved for this workspace after confirmation",
+      "id": "session.delete",
+      "label": "Delete Session...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "session.list",
+      "category": "Session",
+      "description": "Pick a named session saved for this workspace to open",
+      "id": "session.list",
+      "label": "List Sessions for This Workspace...",
+      "paletteVisible": true
+    },
+    {
       "canonical": "session.open",
       "category": "Session",
       "description": null,

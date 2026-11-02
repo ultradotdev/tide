@@ -252,6 +252,8 @@ impl App {
             ) => {}
             Submitted::AgentWorkspace(path) => self.associate_agent_workspace(&path),
             Submitted::Session(name) => self.open_named_session(&name),
+            Submitted::DeleteSession(name) => self.confirm_delete_session(&name),
+            Submitted::Confirm(ConfirmAction::DeleteSession(name)) => self.delete_session(&name),
             Submitted::Setting(key) => {
                 let current = self
                     .settings

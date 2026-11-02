@@ -6,6 +6,17 @@ use sha2::{Digest, Sha256};
 
 use tide_config::{Paths, SessionState};
 
+/// A named session saved for this workspace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SavedSession {
+    /// The file name, which opens and deletes it.
+    pub name: String,
+    /// The name it was saved under.
+    pub title: String,
+    pub saved_millis: Option<u128>,
+    pub documents: usize,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct LastSession {
     #[serde(rename = "sessionId")]
@@ -80,6 +91,64 @@ impl SessionStore {
             }
         }
         names.into_iter().collect()
+    }
+
+    /// Named sessions saved for this workspace, newest first. Each file is read only as far
+    /// as its summary; a file that does not parse is listed as unreadable.
+    pub fn workspace_sessions(&self) -> Vec<SavedSession> {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Summary {
+            workspace_root: String,
+            #[serde(default)]
+            session_name: Option<String>,
+            #[serde(default)]
+            timestamp: String,
+            #[serde(default)]
+            documents: Vec<serde::de::IgnoredAny>,
+        }
+        let mut sessions = self
+            .named_sessions()
+            .into_iter()
+            .filter_map(|name| {
+                let bytes = std::fs::read(self.named_session_path(&name)).ok()?;
+                let summary = serde_json::from_slice::<Summary>(&bytes).ok()?;
+                (Path::new(&summary.workspace_root) == self.workspace).then(|| SavedSession {
+                    title: summary.session_name.unwrap_or_else(|| name.clone()),
+                    name,
+                    saved_millis: summary.timestamp.parse().ok(),
+                    documents: summary.documents.len(),
+                })
+            })
+            .collect::<Vec<_>>();
+        sessions.sort_by_key(|session| std::cmp::Reverse(session.saved_millis));
+        sessions
+    }
+
+    /// Whether `a` and `b` name the same saved session file.
+    #[must_use]
+    pub fn same_name(a: &str, b: &str) -> bool {
+        sanitize_name(a) == sanitize_name(b)
+    }
+
+    /// Deletes a named session with its backup. A last-session record that pointed at it is
+    /// dropped too, so the next start restores this workspace's recovery session instead.
+    pub fn delete_named(&self, name: &str) -> Result<()> {
+        let path = self.named_session_path(name);
+        match std::fs::remove_file(&path) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+        for extra in [path.with_extension("json.bak"), path.with_extension("lock")] {
+            let _ = std::fs::remove_file(extra);
+        }
+        crate::lock(&self.observed).insert(path, None);
+        let last = read_last_optional(&self.last_session_file()).ok().flatten();
+        if last.is_some_and(|last| last.session_id == format!("named-{}", sanitize_name(name))) {
+            let _ = std::fs::remove_file(self.last_session_file());
+        }
+        Ok(())
     }
 
     pub fn load_named(&self, name: &str) -> Result<Option<SessionState>> {
@@ -346,6 +415,40 @@ mod tests {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, "{ broken").unwrap();
         assert!(store.load_last().is_err());
+    }
+
+    #[test]
+    fn lists_this_workspaces_sessions_and_deletes_them_with_their_last_session_record() {
+        let (_home, store) = store();
+        let other_root = store.workspace.with_file_name("other");
+        std::fs::create_dir_all(&other_root).unwrap();
+        let other = SessionStore::new(store.paths.clone(), other_root);
+        let mut session = fixture();
+        session.workspace_root = store.workspace().display().to_string();
+        session.timestamp = "1000".into();
+        store.save(&session, Some("Older")).unwrap();
+        session.timestamp = "2000".into();
+        session.session_name = Some("Review Work".into());
+        store.save(&session, Some("Review Work")).unwrap();
+        let mut elsewhere = fixture();
+        elsewhere.workspace_root = other.workspace().display().to_string();
+        other.save(&elsewhere, Some("Elsewhere")).unwrap();
+
+        let listed = store.workspace_sessions();
+        let names = listed.iter().map(|s| s.name.as_str()).collect::<Vec<_>>();
+        assert_eq!(names, ["review-work", "older"]);
+        assert_eq!(listed[0].title, "Review Work");
+        assert_eq!(listed[0].saved_millis, Some(2000));
+        assert!(SessionStore::same_name("Review Work", "review-work"));
+
+        // The last save named "Review Work", so deleting it drops that record too.
+        store.delete_named("review-work").unwrap();
+        assert!(!store.named_session_path("review-work").exists());
+        assert_eq!(store.workspace_sessions().len(), 1);
+        assert_eq!(store.load_last().unwrap(), None);
+        // A deleted name can be saved again without a conflict.
+        store.save(&session, Some("Review Work")).unwrap();
+        assert!(other.named_session_path("elsewhere").exists());
     }
 
     #[test]

@@ -283,6 +283,12 @@ pub enum AppEvent {
         query: String,
         items: Vec<ModalItem>,
     },
+    /// Named sessions saved for this workspace, for listing or deleting.
+    SavedSessions {
+        generation: u64,
+        delete: bool,
+        sessions: Vec<crate::session_store::SavedSession>,
+    },
     /// The preview of a Replace in Files.
     ReplacePlanned {
         generation: u64,
@@ -405,6 +411,7 @@ pub struct App {
     session_write_blocked: bool,
     /// No snapshot is written until the user saves or opens a session.
     session_ephemeral: bool,
+    sessions_generation: u64,
     events_tx: tokio::sync::mpsc::Sender<AppEvent>,
     events_rx: Option<tokio::sync::mpsc::Receiver<AppEvent>>,
     watcher: Option<notify::RecommendedWatcher>,
@@ -572,6 +579,7 @@ impl App {
             session_store,
             session_write_blocked: false,
             session_ephemeral: config.ephemeral_session,
+            sessions_generation: 0,
             events_tx,
             events_rx: Some(events_rx),
             watcher: None,
@@ -856,6 +864,15 @@ impl App {
                     base.hints = None;
                     base.refilter();
                     self.set_status(format!("{count} match(es) for {query}"));
+                }
+            }
+            AppEvent::SavedSessions {
+                generation,
+                delete,
+                sessions,
+            } => {
+                if generation == self.sessions_generation {
+                    self.show_workspace_sessions(delete, &sessions);
                 }
             }
             AppEvent::ReplacePlanned { generation, result } => {

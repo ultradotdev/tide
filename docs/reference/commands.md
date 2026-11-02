@@ -222,6 +222,8 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 
 | Command | Keys | ID |
 | --- | --- | --- |
+| Delete Session... | — | `session.delete` |
+| List Sessions for This Workspace... | — | `session.list` |
 | Open Session... | — | `session.open` |
 | Save Session | — | `session.save` |
 | Save Session As... | — | `session.saveAs` |

@@ -42,6 +42,104 @@ impl App {
         self.overlay = Some(modal::session_picker(items));
     }
 
+    /// Lists the named sessions saved for this workspace, to open or to delete, once they
+    /// have been read in the background.
+    pub(super) fn list_workspace_sessions(&mut self, delete: bool) {
+        self.sessions_generation = self.sessions_generation.wrapping_add(1);
+        let generation = self.sessions_generation;
+        let store = self.session_store.clone();
+        let sender = self.events_tx.clone();
+        self.jobs.spawn_blocking(move || {
+            let sessions = store.workspace_sessions();
+            let _ = sender.blocking_send(AppEvent::SavedSessions {
+                generation,
+                delete,
+                sessions,
+            });
+        });
+    }
+
+    pub(super) fn show_workspace_sessions(
+        &mut self,
+        delete: bool,
+        sessions: &[crate::session_store::SavedSession],
+    ) {
+        if sessions.is_empty() {
+            self.set_status("Sessions: no named sessions are saved for this workspace");
+            return;
+        }
+        if self.overlay.is_some() {
+            return;
+        }
+        let now = timestamp_millis();
+        let items = sessions
+            .iter()
+            .map(|session| {
+                let current = self
+                    .session_name
+                    .as_deref()
+                    .is_some_and(|name| SessionStore::same_name(name, &session.name));
+                let mut detail = Vec::new();
+                if current {
+                    detail.push("in use".to_owned());
+                }
+                if let Some(saved) = session.saved_millis {
+                    detail.push(format!("saved {}", age(now.saturating_sub(saved))));
+                }
+                detail.push(format!("{} file(s)", session.documents));
+                ModalItem::new(&session.title, detail.join(" · "), &session.name).current(current)
+            })
+            .collect();
+        self.overlay = Some(if delete {
+            modal::picker(ModalKind::SessionDeletePicker, "Delete Session", items)
+        } else {
+            modal::picker(
+                ModalKind::SessionPicker,
+                "Sessions for This Workspace",
+                items,
+            )
+        });
+    }
+
+    pub(super) fn confirm_delete_session(&mut self, name: &str) {
+        let current = self
+            .session_name
+            .as_deref()
+            .is_some_and(|session| SessionStore::same_name(session, name));
+        let message = if current {
+            format!(
+                "Delete the saved session {name}? It is the session in use: the workbench stays as it is, and from now on it is saved as this workspace's recovery session instead."
+            )
+        } else {
+            format!("Delete the saved session {name}? This cannot be undone.")
+        };
+        self.overlay = Some(modal::confirm(
+            ConfirmAction::DeleteSession(name.to_owned()),
+            "Delete Session",
+            &message,
+        ));
+    }
+
+    pub(super) fn delete_session(&mut self, name: &str) {
+        if let Err(error) = self.session_store.delete_named(name) {
+            self.set_status(format!("Session: delete failed: {error:#}"));
+            return;
+        }
+        if self
+            .session_name
+            .as_deref()
+            .is_some_and(|session| SessionStore::same_name(session, name))
+        {
+            self.session_name = None;
+            self.mark_session_dirty();
+            self.set_status(format!(
+                "Session: deleted {name}; this workspace's recovery session is saved instead"
+            ));
+        } else {
+            self.set_status(format!("Session: deleted {name}"));
+        }
+    }
+
     pub(super) fn open_named_session(&mut self, name: &str) {
         if self.has_dirty_tabs() {
             self.overlay = Some(modal::confirm(
@@ -851,5 +949,16 @@ pub(super) fn convert_session_layout(
         direction,
         children,
         ratios,
+    }
+}
+
+/// How long ago `millis` was, coarsely.
+fn age(millis: u128) -> String {
+    let minutes = millis / 60_000;
+    match minutes {
+        0 => "just now".to_owned(),
+        1..=59 => format!("{minutes} min ago"),
+        60..=1439 => format!("{} h ago", minutes / 60),
+        _ => format!("{} d ago", minutes / 1440),
     }
 }
