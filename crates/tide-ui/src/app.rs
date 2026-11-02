@@ -547,7 +547,7 @@ impl App {
             save_as_form: None,
             git,
             jobs: config.jobs,
-            status: "Tide 0.1 — Phase 1".to_owned(),
+            status: String::new(),
             should_quit: false,
             restart: None,
             layout: LayoutState::default(),

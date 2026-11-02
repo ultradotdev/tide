@@ -1206,7 +1206,7 @@ impl GitController {
                         editor.hunk_edit = Some(crate::editor::HunkEdit { root, diff, hunk });
                         ui.workbench.insert_tab_focused(Tab::Editor(editor));
                         ui.mark_session_dirty();
-                        ui.status("Edit hunk; Ctrl+S saves using tui.diffViewer.editMode; Save As keeps a copy");
+                        ui.status("Edit hunk; Save applies it using tui.diffViewer.editMode; Save As keeps a copy");
                     }
                     Err(error) => ui.status(format!("Cannot edit hunk: {error:#}")),
                 }

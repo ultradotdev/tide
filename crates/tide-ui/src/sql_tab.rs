@@ -645,11 +645,12 @@ impl SqlTab {
     /// Lays out and draws the tab into `area`.
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, view: &EditorView<'_>) {
         self.layout(area, view);
-        self.render(frame, view);
+        self.render(frame, view, None);
     }
 
     /// Draws the tab where the last [`Self::layout`] placed it.
-    pub fn render(&self, frame: &mut Frame, view: &EditorView<'_>) {
+    /// `run_key` is the live key for Execute Query, shown before the first run.
+    pub fn render(&self, frame: &mut Frame, view: &EditorView<'_>, run_key: Option<&str>) {
         let (palette, focused) = (view.palette, view.focused);
         self.editor.render(
             frame,
@@ -704,9 +705,14 @@ impl SqlTab {
         }
         let Some(result) = &self.result else {
             frame.render_widget(
-                Paragraph::new("Ctrl+R / F5 run query · choose a connection first")
-                    .wrap(ratatui::widgets::Wrap { trim: false })
-                    .style(Style::default().fg(palette.description)),
+                Paragraph::new(match run_key {
+                    Some(key) => format!("{key} runs the query · choose a connection first"),
+                    None => {
+                        "Run Execute Query from the palette · choose a connection first".to_owned()
+                    }
+                })
+                .wrap(ratatui::widgets::Wrap { trim: false })
+                .style(Style::default().fg(palette.description)),
                 body,
             );
             return;
