@@ -72,6 +72,9 @@ pub enum ConfirmAction {
     ReloadFile,
     OverwriteFile,
     ExportResults(std::path::PathBuf),
+    /// The terminal's unique serial.
+    KillTerminal(u64),
+    CloseAllTerminals,
 }
 
 impl ConfirmAction {
@@ -644,6 +647,8 @@ impl ModalBase {
                 ModalKind::Confirm(ConfirmAction::RunSql(_)) => "Run [Y]",
                 ModalKind::Confirm(ConfirmAction::ClearQueryHistory(_)) => "Clear [Y]",
                 ModalKind::Confirm(ConfirmAction::SwitchSession(_)) => "Switch [Y]",
+                ModalKind::Confirm(ConfirmAction::KillTerminal(_)) => "Kill [Y]",
+                ModalKind::Confirm(ConfirmAction::CloseAllTerminals) => "Close [Y]",
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
                 ModalKind::Settings | ModalKind::Keybindings => "Edit",

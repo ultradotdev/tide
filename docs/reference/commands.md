@@ -214,13 +214,18 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 
 | Command | Keys | ID |
 | --- | --- | --- |
+| Clear Terminal | `Ctrl+Shift+K` | `terminal.clear` |
+| Close All Terminals | — | `terminal.closeAll` |
 | Close Bottom Terminal Tab | — | `terminal.close` |
 | Focus Bottom Terminal | — | `terminal.focus` |
 | Interrupt Terminal | — | `terminal.interrupt` |
+| Kill Terminal | — | `terminal.kill` |
 | Next Bottom Terminal Tab | — | `terminal.nextTab` |
 | Open Bottom Terminal Tab | `` Ctrl+Shift+` ``, `Ctrl+Alt+T` | `terminal.new` |
 | Open Terminal Tab in Main Pane | `Ctrl+Shift+T`, `Ctrl+Alt+M` | `terminal.newInPane` |
 | Previous Bottom Terminal Tab | — | `terminal.previousTab` |
+| Scroll Terminal to Bottom | `Ctrl+Shift+End` | `terminal.scrollToBottom` |
+| Scroll Terminal to Top | `Ctrl+Shift+Home` | `terminal.scrollToTop` |
 
 ### View
 

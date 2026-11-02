@@ -145,6 +145,14 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | --- | --- | --- |
 | `Esc` | Clear Cursors | `editor.clearCursors` |
 
+### Terminal
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Cmd+K`, `Ctrl+Shift+K` | Clear Terminal | `terminal.clear` |
+| `Ctrl+Shift+Home` | Scroll Terminal to Top | `terminal.scrollToTop` |
+| `Ctrl+Shift+End` | Scroll Terminal to Bottom | `terminal.scrollToBottom` |
+
 ### Source Control
 
 | Keys | Action | Command |

@@ -1542,11 +1542,27 @@
       "paletteVisible": true
     },
     {
+      "canonical": "terminal.clear",
+      "category": "Terminal",
+      "description": "Clear the scrollback and screen of the focused or bottom terminal without typing into the shell",
+      "id": "terminal.clear",
+      "label": "Clear Terminal",
+      "paletteVisible": true
+    },
+    {
       "canonical": "terminal.close",
       "category": "Terminal",
       "description": null,
       "id": "terminal.close",
       "label": "Close Bottom Terminal Tab",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "terminal.closeAll",
+      "category": "Terminal",
+      "description": "Close bottom and pane terminals, asking first while a program is running; agent sessions stay open",
+      "id": "terminal.closeAll",
+      "label": "Close All Terminals",
       "paletteVisible": true
     },
     {
@@ -1563,6 +1579,14 @@
       "description": null,
       "id": "terminal.interrupt",
       "label": "Interrupt Terminal",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "terminal.kill",
+      "category": "Terminal",
+      "description": "Stop every process in the terminal, asking first while a program is running",
+      "id": "terminal.kill",
+      "label": "Kill Terminal",
       "paletteVisible": true
     },
     {
@@ -1611,6 +1635,22 @@
       "description": null,
       "id": "terminal.previousTab",
       "label": "Previous Bottom Terminal Tab",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "terminal.scrollToBottom",
+      "category": "Terminal",
+      "description": "Return to the live screen",
+      "id": "terminal.scrollToBottom",
+      "label": "Scroll Terminal to Bottom",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "terminal.scrollToTop",
+      "category": "Terminal",
+      "description": "Show the oldest scrollback",
+      "id": "terminal.scrollToTop",
+      "label": "Scroll Terminal to Top",
       "paletteVisible": true
     },
     {
@@ -2569,12 +2609,22 @@
       "key": "ctrl+shift+d"
     },
     {
+      "command": "terminal.scrollToBottom",
+      "key": "ctrl+shift+end",
+      "when": "terminalFocus"
+    },
+    {
       "command": "search.findInFiles",
       "key": "ctrl+shift+f"
     },
     {
       "command": "git.focusPanel",
       "key": "ctrl+shift+g"
+    },
+    {
+      "command": "terminal.scrollToTop",
+      "key": "ctrl+shift+home",
+      "when": "terminalFocus"
     },
     {
       "command": "aiCli.toggle",
@@ -2587,6 +2637,11 @@
     {
       "command": "lsp.goToDefinition",
       "key": "ctrl+shift+k"
+    },
+    {
+      "command": "terminal.clear",
+      "key": "ctrl+shift+k",
+      "when": "terminalFocus"
     },
     {
       "command": "edit.selectAllOccurrences",
@@ -2910,6 +2965,11 @@
     {
       "command": "search.replace",
       "key": "meta+h"
+    },
+    {
+      "command": "terminal.clear",
+      "key": "meta+k",
+      "when": "terminalFocus"
     },
     {
       "command": "editor.selectLine",

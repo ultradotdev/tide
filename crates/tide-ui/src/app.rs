@@ -84,6 +84,7 @@ mod panes;
 mod preferences;
 mod render;
 mod session;
+mod terminals;
 
 pub(crate) use self::files::resolve_path;
 use self::files::{collect_files, write_file_atomic};

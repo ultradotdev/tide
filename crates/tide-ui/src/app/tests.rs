@@ -28,6 +28,7 @@ mod panes;
 mod preferences;
 mod render;
 mod session;
+mod terminals;
 
 pub(super) fn submit_save_path(app: &mut App, path: &Path) {
     assert_eq!(*app.overlay.as_ref().unwrap().kind(), ModalKind::SaveAs);

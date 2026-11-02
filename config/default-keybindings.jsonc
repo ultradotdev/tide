@@ -101,6 +101,10 @@
   // Terminal
   { "key": "ctrl+shift+`", "command": "terminal.new" }, // Open bottom terminal tab
   { "key": "ctrl+shift+t", "command": "terminal.newInPane" }, // Open terminal tab in main pane
+  { "key": "meta+k", "command": "terminal.clear", "when": "terminalFocus" }, // Clear terminal (macOS, like iTerm's Cmd+K)
+  { "key": "ctrl+shift+k", "command": "terminal.clear", "when": "terminalFocus" }, // Clear terminal
+  { "key": "ctrl+shift+home", "command": "terminal.scrollToTop", "when": "terminalFocus" }, // Scroll terminal to top
+  { "key": "ctrl+shift+end", "command": "terminal.scrollToBottom", "when": "terminalFocus" }, // Scroll terminal to bottom
 
   // Git
   { "key": "ctrl+shift+g", "command": "git.focusPanel" }, // Focus git panel

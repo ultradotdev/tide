@@ -407,6 +407,8 @@ impl App {
                 self.switch_named_session(&name)
             }
             Submitted::Confirm(ConfirmAction::QuitDirty) => self.finish_quit(),
+            Submitted::Confirm(ConfirmAction::KillTerminal(serial)) => self.kill_terminal(serial),
+            Submitted::Confirm(ConfirmAction::CloseAllTerminals) => self.close_all_terminals(),
         }
     }
 

@@ -117,6 +117,11 @@
   "terminal.focus": { "label": "Focus Bottom Terminal", "category": "Terminal" },
   "terminal.nextTab": { "label": "Next Bottom Terminal Tab", "category": "Terminal" },
   "terminal.previousTab": { "label": "Previous Bottom Terminal Tab", "category": "Terminal" },
+  "terminal.clear": { "label": "Clear Terminal", "category": "Terminal", "description": "Clear the scrollback and screen of the focused or bottom terminal without typing into the shell" },
+  "terminal.kill": { "label": "Kill Terminal", "category": "Terminal", "description": "Stop every process in the terminal, asking first while a program is running" },
+  "terminal.scrollToTop": { "label": "Scroll Terminal to Top", "category": "Terminal", "description": "Show the oldest scrollback" },
+  "terminal.scrollToBottom": { "label": "Scroll Terminal to Bottom", "category": "Terminal", "description": "Return to the live screen" },
+  "terminal.closeAll": { "label": "Close All Terminals", "category": "Terminal", "description": "Close bottom and pane terminals, asking first while a program is running; agent sessions stay open" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Git Commands
