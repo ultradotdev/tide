@@ -293,7 +293,7 @@ fn the_start_screen_shows_the_live_keys() {
 }
 
 #[test]
-fn check_for_updates_runs_only_on_demand_and_shows_the_install_specific_step() {
+fn check_for_updates_shows_the_install_specific_step() {
     static CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let (_home, mut app) = test_app();
     app.latest_release = |url| {
@@ -305,7 +305,7 @@ fn check_for_updates_runs_only_on_demand_and_shows_the_install_specific_step() {
     assert_eq!(
         CALLS.load(std::sync::atomic::Ordering::SeqCst),
         0,
-        "startup never checks"
+        "building the app never checks; the run loop starts the daily check"
     );
     app.install = crate::help::Install::Homebrew {
         formula: "tide".into(),
@@ -336,4 +336,83 @@ fn check_for_updates_runs_only_on_demand_and_shows_the_install_specific_step() {
         app.status,
         "Update check failed: could not reach GitHub: offline"
     );
+}
+
+#[test]
+fn the_automatic_check_runs_at_most_daily_and_only_reports_a_newer_release() {
+    static CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let calls = || CALLS.load(std::sync::atomic::Ordering::SeqCst);
+    let (_home, mut app) = test_app();
+    app.latest_release = |_| {
+        CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Box::pin(async { Ok("v999.0.0".to_owned()) })
+    };
+    app.settle();
+    app.set_status("");
+    app.check_for_updates_automatically();
+    app.settle();
+    assert_eq!(calls(), 1);
+    assert!(
+        app.overlay.is_none(),
+        "the daily check never opens a dialog"
+    );
+    assert_eq!(
+        app.status,
+        "Tide 999.0.0 is available; run “Help: Check for Updates” for the update step"
+    );
+    assert!(crate::help::update_check_marker(&app.paths).exists());
+
+    app.check_for_updates_automatically();
+    app.settle();
+    assert_eq!(calls(), 1, "a second start the same day does not ask again");
+
+    let marker = crate::help::update_check_marker(&app.paths);
+    std::fs::write(&marker, "0").unwrap();
+    app.settings
+        .set("update.checkAutomatically", serde_json::json!(false));
+    app.check_for_updates_automatically();
+    app.settle();
+    assert_eq!(calls(), 1, "the setting turns the check off");
+
+    app.settings
+        .set("update.checkAutomatically", serde_json::json!(true));
+    app.latest_release = |_| {
+        CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Box::pin(async { Ok(format!("v{}", env!("CARGO_PKG_VERSION"))) })
+    };
+    app.set_status("unchanged");
+    app.check_for_updates_automatically();
+    app.settle();
+    assert_eq!(calls(), 2);
+    assert_eq!(app.status, "unchanged", "an up-to-date result says nothing");
+
+    std::fs::write(&marker, "0").unwrap();
+    app.latest_release = |_| Box::pin(async { Err("could not reach GitHub: offline".to_owned()) });
+    app.check_for_updates_automatically();
+    app.settle();
+    assert_eq!(app.status, "unchanged", "a failed daily check stays quiet");
+    assert!(
+        !crate::help::update_check_due(&app.paths, std::time::SystemTime::now()),
+        "a failed check still waits a day before retrying"
+    );
+}
+
+#[test]
+fn the_update_check_is_due_after_a_day_or_when_its_record_is_unusable() {
+    let (_home, app) = test_app();
+    let marker = crate::help::update_check_marker(&app.paths);
+    let now = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_800_000_000);
+    let due = || crate::help::update_check_due(&app.paths, now);
+    assert!(due(), "never checked");
+    std::fs::create_dir_all(marker.parent().unwrap()).unwrap();
+    for (recorded, expected) in [
+        ("1799999000", false),
+        ("1799913601", false),
+        ("1799913600", true),
+        ("1800000500", true),
+        ("not a time", true),
+    ] {
+        std::fs::write(&marker, recorded).unwrap();
+        assert_eq!(due(), expected, "{recorded}");
+    }
 }

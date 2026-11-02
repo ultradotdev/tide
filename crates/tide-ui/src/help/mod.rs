@@ -167,6 +167,47 @@ pub(crate) fn record_welcome(paths: &tide_config::Paths) {
     }
 }
 
+/// How often the automatic update check may ask GitHub.
+pub const UPDATE_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(24 * 60 * 60);
+
+/// The file recording when the automatic update check last asked, in Unix seconds.
+#[must_use]
+pub fn update_check_marker(paths: &tide_config::Paths) -> PathBuf {
+    paths.state_dir.join("update-check")
+}
+
+fn unix_seconds(time: std::time::SystemTime) -> u64 {
+    time.duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
+}
+
+/// Whether the automatic check is due at `now`: never checked, a day has passed, or the
+/// recorded time is unreadable or in the future (a clock that moved back).
+#[must_use]
+pub fn update_check_due(paths: &tide_config::Paths, now: std::time::SystemTime) -> bool {
+    let Some(last) = std::fs::read_to_string(update_check_marker(paths))
+        .ok()
+        .and_then(|text| text.trim().parse::<u64>().ok())
+    else {
+        return true;
+    };
+    let now = unix_seconds(now);
+    last > now || now - last >= UPDATE_CHECK_INTERVAL.as_secs()
+}
+
+/// Records an automatic check at `now`. An unwritable state directory only means the next
+/// start checks again.
+pub(crate) fn record_update_check(paths: &tide_config::Paths, now: std::time::SystemTime) {
+    let marker = update_check_marker(paths);
+    let written = marker
+        .parent()
+        .map_or(Ok(()), std::fs::create_dir_all)
+        .and_then(|()| std::fs::write(&marker, unix_seconds(now).to_string()));
+    if let Err(error) = written {
+        tracing::warn!(%error, "could not record the update check");
+    }
+}
+
 pub(crate) fn product(key: &str) -> String {
     tide_config::builtin::product()[key]
         .as_str()

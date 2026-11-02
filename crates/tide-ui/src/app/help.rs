@@ -67,21 +67,48 @@ impl App {
         }
     }
 
-    /// Checks GitHub for a newer release. Only this command touches the network.
-    pub(super) fn check_for_updates(&mut self) {
+    /// Checks GitHub for a newer release: Help: Check for Updates, and the daily check.
+    fn fetch_latest_release(&mut self, automatic: bool) {
         let fetch = self.latest_release;
         let sender = self.events_tx.clone();
-        self.set_status("Checking for updates…");
         self.jobs.spawn(async move {
             let result = fetch(crate::help::latest_release_url()).await;
-            let _ = sender.send(AppEvent::LatestRelease(result)).await;
+            let _ = sender
+                .send(AppEvent::LatestRelease(result, automatic))
+                .await;
         });
     }
 
-    pub(super) fn show_latest_release(&mut self, result: Result<String, String>) {
+    pub(super) fn check_for_updates(&mut self) {
+        self.set_status("Checking for updates…");
+        self.fetch_latest_release(false);
+    }
+
+    /// The startup check: at most once a day, unless `update.checkAutomatically` is off.
+    /// The attempt is recorded before the request, so an offline start does not retry.
+    pub fn check_for_updates_automatically(&mut self) {
+        if !self.setting_bool("update.checkAutomatically", true)
+            || !crate::help::update_check_due(&self.paths, std::time::SystemTime::now())
+        {
+            return;
+        }
+        crate::help::record_update_check(&self.paths, std::time::SystemTime::now());
+        self.fetch_latest_release(true);
+    }
+
+    pub(super) fn show_latest_release(&mut self, result: Result<String, String>, automatic: bool) {
         let current = env!("CARGO_PKG_VERSION");
         match result {
+            Err(error) if automatic => tracing::debug!(%error, "automatic update check failed"),
             Err(error) => self.set_status(format!("Update check failed: {error}")),
+            Ok(latest) if automatic => {
+                if crate::help::is_newer(&latest, current) {
+                    self.set_status(format!(
+                        "Tide {} is available; run “Help: Check for Updates” for the update step",
+                        latest.trim_start_matches('v')
+                    ));
+                }
+            }
             Ok(latest) if crate::help::is_newer(&latest, current) => {
                 let latest = latest.trim_start_matches('v');
                 let message = format!(

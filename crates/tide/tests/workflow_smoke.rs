@@ -33,6 +33,7 @@ impl Fixture {
             ("TERM".into(), "xterm-256color".into()),
             ("PATH".into(), "/usr/bin:/bin".into()),
             ("HOME".into(), self.home.path().display().to_string()),
+            ("TIDE_NO_UPDATE_CHECK".into(), "1".into()),
         ];
         for kind in ["CONFIG", "DATA", "STATE", "CACHE"] {
             config.env.push((

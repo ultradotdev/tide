@@ -1,7 +1,7 @@
 <!-- Generated from crates/tide-ui/src/help/pages/getting-started.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Getting Started
 
-Tide 0.11.0 runs as a native Rust executable on macOS and Linux. Signed releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
+Tide 0.11.1 runs as a native Rust executable on macOS and Linux. Signed releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
 
 Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64).
 
@@ -14,7 +14,7 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 
 Updates and uninstalls keep your settings, keybindings, sessions and connections; only `tide --uninstall --purge` removes them.
 
-**Help: Check for Updates** asks GitHub for the latest release and, when it is newer, shows the update step for this installation. Tide never checks on its own.
+**Help: Check for Updates** asks GitHub for the latest release and, when it is newer, shows the update step for this installation. Tide also makes the same request at most once a day when it starts, and says in the status bar when a newer release is out. Set `update.checkAutomatically` to `false` to turn that off, or set `TIDE_NO_UPDATE_CHECK=1` in the environment.
 
 ## Install with Homebrew
 
@@ -33,7 +33,7 @@ curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.
 `install.sh` is published with every release and covered by its `SHA256SUMS` and GitHub build attestation. Without `--version` it installs GitHub's latest release, found through the `https://github.com/ultradotdev/tide/releases/latest` redirect rather than the rate-limited API. To install a specific version, name it explicitly:
 
 ```sh
-curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.11.0/install.sh | sh -s -- --version 0.11.0
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.11.1/install.sh | sh -s -- --version 0.11.1
 ```
 
 The script downloads the archive and `SHA256SUMS`, verifies the checksum, and on macOS also verifies the notarization receipt and the executable's Developer ID signature, team and notarization ticket with `codesign`. When an authenticated GitHub CLI is present it verifies the archive's GitHub build attestation; `TIDE_REQUIRE_ATTESTATION=1` makes that check mandatory. It then smoke-tests the executable and activates it in the managed store described below. Add `--add-to-path` to append `~/.local/bin` to your zsh or bash startup file.

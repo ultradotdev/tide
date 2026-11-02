@@ -102,6 +102,12 @@ Tide starts from its built-in defaults and applies your settings file, `~/.confi
 | `lsp.signatureHelp.enabled` | Show function signature help | `true` | `true` or `false` |
 | `lsp.triggerCharacters` | Characters that trigger completion | `".:/<@("` | Text |
 
+### Other
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `update.checkAutomatically` | Check GitHub for a newer release at most once a day at startup, and say so in the status bar; Help: Check for Updates works either way | `true` | `true` or `false` |
+
 ## Language server overrides
 
 `lsp.servers` is not in the Settings list; add it to `~/.config/tide/settings.jsonc` by hand. Each key is a language ID (`typescript`, `javascript`, `typescriptreact`, `javascriptreact`, `rust`, `python`, `go`, `ruby`, `c`, `cpp`, `json`, `html`, `css` or `sql`). The value is the server to start, `{ "command": "...", "args": [...] }`, or `null` to turn off language-server features for that language:

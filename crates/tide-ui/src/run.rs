@@ -160,6 +160,10 @@ pub async fn run(mut app: App) -> Result<()> {
         .take_event_receiver()
         .expect("app background receiver is available");
     let mut pacer = TickPacer::new(Instant::now());
+    // Packagers and test harnesses turn the daily check off without touching settings.
+    if std::env::var_os("TIDE_NO_UPDATE_CHECK").is_none() {
+        app.check_for_updates_automatically();
+    }
     let mut output_armed = true;
 
     let result = guard_panics(&mut app, async |app: &mut App| -> Result<()> {

@@ -50,6 +50,7 @@ fn sgr_mouse_expands_the_explorer_and_opens_a_file() {
     config.env = vec![
         ("TERM".into(), "xterm-256color".into()),
         ("HOME".into(), home.path().display().to_string()),
+        ("TIDE_NO_UPDATE_CHECK".into(), "1".into()),
     ];
     for kind in ["CONFIG", "DATA", "STATE", "CACHE"] {
         config.env.push((

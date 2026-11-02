@@ -24,6 +24,9 @@
   "workbench.colorTheme": "ultra-dusk", // Color theme name
   "workbench.startupEditor": "welcomeOnFirstRun", // Opening Welcome: "welcomeOnFirstRun" (the first start without a file or session), "welcome" (every such start) or "none"
 
+  // Updates
+  "update.checkAutomatically": true, // Check GitHub for a newer release at most once a day at startup, and say so in the status bar; Help: Check for Updates works either way
+
   // TUI Sidebar
   "tui.sidebar.width": 36, // Sidebar width in characters
   "tui.sidebar.visible": true, // Sidebar visibility

@@ -4069,6 +4069,12 @@
         "type": "string"
       }
     },
+    "update.checkAutomatically": {
+      "default": true,
+      "rule": {
+        "type": "boolean"
+      }
+    },
     "workbench.colorTheme": {
       "default": "ultra-dusk",
       "rule": {
@@ -4142,5 +4148,5 @@
       "name": "Ultra Dusk"
     }
   ],
-  "version": "0.11.0"
+  "version": "0.11.1"
 }
