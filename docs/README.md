@@ -2,6 +2,7 @@
 
 This documentation describes Tide 0.10.0. Public archives are still unpublished.
 
+- [Welcome tour](welcome.md)
 - [Getting started and installation](getting-started.md)
 - [Workbench and panes](features/workbench.md)
 - [Editor and language servers](features/editor.md)
@@ -15,4 +16,4 @@ This documentation describes Tide 0.10.0. Public archives are still unpublished.
 - [Architecture](architecture/overview.md), [keybindings](architecture/keybindings.md), [rendering](architecture/rendering.md)
 - [0.10.0 release notes](v0.10.0.md)
 
-Maintainers regenerate references from the compiled Rust catalog.
+The guides above, except the release notes, theme authoring and architecture pages, are rendered from the same templates as Tide's in-app Help pages (`crates/tide-ui/src/help/pages`), using the default keybindings and settings. Inside Tide, run any `Help:` command from the command palette to read them with your own keys and settings. Maintainers regenerate them with `cargo xtask generate-rust-reference --write`; CI fails when they are stale.

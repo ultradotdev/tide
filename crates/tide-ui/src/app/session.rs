@@ -191,7 +191,7 @@ impl App {
                             pane_id: format!("pane-{pane_id}"),
                             tab_order: saturating_u32(order),
                             is_active_in_pane: pane.active == order,
-                            unsaved_content: (editor.is_dirty() || editor.path().is_none()).then(|| editor.document.text()),
+                            unsaved_content: (editor.help.is_none() && (editor.is_dirty() || editor.path().is_none())).then(|| editor.document.text()),
                             undo_history: None,
                             extra: {
                                 let mut extra=BTreeMap::new();
@@ -199,6 +199,7 @@ impl App {
                                 if let Some(hash)=editor.saved_disk_hash() {extra.insert("rustDiskHash".into(),serde_json::Value::String(hash));}
                                 if let Some(edit)=&editor.hunk_edit {extra.insert("rustHunkEdit".into(),serde_json::json!({"root":edit.root,"diff":*edit.diff,"hunk":edit.hunk}));}
                                 if let Some(history)=&editor.historical {extra.insert("rustHistory".into(),serde_json::json!(history));}
+                                if let Some(page)=editor.help {extra.insert("rustHelp".into(),serde_json::json!(page.id));}
                                 extra
                             },
                         });
@@ -337,7 +338,7 @@ impl App {
                 } else {
                     "files".to_owned()
                 },
-                minimap_enabled: self.setting_bool("editor.minimap.enabled", false),
+                minimap_enabled: self.setting_bool("editor.minimap.enabled", true),
                 sidebar_accordion_expanded: self.accordion.expanded_ids(),
                 focused_region: Some(focused_region.to_owned()),
                 extra: BTreeMap::from([
@@ -390,7 +391,21 @@ impl App {
                 .copied()
                 .unwrap_or_else(|| panes.keys().next().copied().unwrap_or(0));
             let path = (!document.file_path.is_empty()).then(|| PathBuf::from(&document.file_path));
-            let mut editor = if let Some(content) = &document.unsaved_content {
+            let help = document
+                .extra
+                .get("rustHelp")
+                .and_then(serde_json::Value::as_str)
+                .and_then(crate::help::page);
+            let mut editor = if let Some(page) = help {
+                // Help pages are rendered again, so they show the current bindings.
+                let mut editor = self.help_editor(page);
+                editor.scroll_top = (document.scroll_top as usize).min(editor.document.len_lines());
+                editor.document.set_cursor(Position::new(
+                    document.cursor_line as usize,
+                    document.cursor_column as usize,
+                ));
+                editor
+            } else if let Some(content) = &document.unsaved_content {
                 let mut editor = self.documents.from_content(path, content);
                 editor.restore_recovery(
                     document

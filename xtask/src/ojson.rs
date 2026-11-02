@@ -100,13 +100,6 @@ impl Json {
         }
     }
 
-    /// `JSON.stringify(value)`.
-    pub fn compact(&self) -> String {
-        let mut output = String::new();
-        self.write(&mut output, None, 0);
-        output
-    }
-
     /// `JSON.stringify(value, null, 2)`.
     pub fn pretty(&self) -> String {
         let mut output = String::new();
@@ -406,10 +399,6 @@ mod tests {
             value.pretty(),
             "{\n  \"z\": 1,\n  \"a\": [\n    1.5,\n    true,\n    null,\n    {}\n  ],\n  \"e\": [],\n  \"s\": \"tab\\there\\u0001\"\n}"
         );
-        assert_eq!(
-            value.compact(),
-            r#"{"z":1,"a":[1.5,true,null,{}],"e":[],"s":"tab\there\u0001"}"#
-        );
     }
 
     #[test]
@@ -417,7 +406,10 @@ mod tests {
         let mut value = Json::parse(r#"{"a":1,"b":2}"#).unwrap();
         value.set("a", Json::Bool(false));
         value.set("c", Json::Null);
-        assert_eq!(value.compact(), r#"{"a":false,"b":2,"c":null}"#);
+        assert_eq!(
+            value.pretty(),
+            "{\n  \"a\": false,\n  \"b\": 2,\n  \"c\": null\n}"
+        );
     }
 
     #[test]

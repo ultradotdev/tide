@@ -59,7 +59,7 @@ fn sgr_mouse_expands_the_explorer_and_opens_a_file() {
     }
     let mut session = PtySession::spawn(config).unwrap();
     let mut screen = TerminalEmulator::new(100, 30, 0);
-    let snapshot = wait_for(&session, &mut screen, "Ctrl+P");
+    let snapshot = wait_for(&session, &mut screen, "Welcome");
     click_text(&mut session, &snapshot, "src");
     let snapshot = wait_for(&session, &mut screen, "inner.txt");
     click_text(&mut session, &snapshot, "inner.txt");

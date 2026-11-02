@@ -7,6 +7,8 @@ use crate::{CommandInfo, Keybinding, Settings};
 const SETTINGS_JSONC: &str = include_str!("../../../config/default-settings.jsonc");
 const KEYBINDINGS_JSONC: &str = include_str!("../../../config/default-keybindings.jsonc");
 const COMMANDS_JSONC: &str = include_str!("../../../config/default-commands.jsonc");
+const PRODUCT_JSON: &str = include_str!("../../../config/product.json");
+const RELEASE_JSON: &str = include_str!("../../../config/release.json");
 
 const THEME_JSON: &[(&str, &str)] = &[
     (
@@ -65,6 +67,28 @@ pub fn settings() -> Settings {
     crate::parse_jsonc(SETTINGS_JSONC).expect("built-in settings must parse")
 }
 
+/// Each built-in setting's description: the trailing comment on its line in the JSONC authority.
+pub fn setting_descriptions() -> BTreeMap<String, String> {
+    SETTINGS_JSONC
+        .lines()
+        .filter_map(|line| {
+            let key = line.trim_start().strip_prefix('"')?.split_once("\":")?.0;
+            let (_, comment) = line.split_once(" // ")?;
+            Some((key.to_owned(), comment.trim().to_owned()))
+        })
+        .collect()
+}
+
+/// Product identity and links from `config/product.json`.
+pub fn product() -> serde_json::Value {
+    crate::parse_jsonc(PRODUCT_JSON).expect("product metadata must parse")
+}
+
+/// Release metadata, including install commands, from `config/release.json`.
+pub fn release() -> serde_json::Value {
+    crate::parse_jsonc(RELEASE_JSON).expect("release metadata must parse")
+}
+
 /// Built-in keybindings, parsed from the checked-in JSONC authority.
 pub fn keybindings() -> Vec<Keybinding> {
     crate::parse_jsonc(KEYBINDINGS_JSONC).expect("built-in keybindings must parse")
@@ -108,9 +132,21 @@ mod tests {
 
     #[test]
     fn embedded_catalogs_have_their_expected_sizes() {
-        assert_eq!(settings().len(), 48);
+        assert_eq!(settings().len(), 52);
         assert_eq!(keybindings().len(), 189);
-        assert_eq!(commands().len(), 160);
+        assert_eq!(commands().len(), 176);
         assert_eq!(themes().len(), 13);
+    }
+
+    #[test]
+    fn every_built_in_setting_has_a_description() {
+        let descriptions = setting_descriptions();
+        for (key, _) in settings().iter() {
+            assert!(
+                descriptions.get(key).is_some_and(|text| !text.is_empty()),
+                "{key} has no description"
+            );
+        }
+        assert_eq!(descriptions["editor.tabSize"], "Number of spaces per tab");
     }
 }

@@ -1,227 +1,249 @@
+<!-- Generated from crates/tide-ui/src/help/pages/keyboard-shortcuts.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Keyboard Shortcuts
 
-These are the compiled Rust defaults, including terminal-safe alternatives. User bindings belong in `keybindings.jsonc` under the Tide configuration directory.
+These are Tide's default keys: the built-in bindings and the terminal-safe alternates Tide adds for keys that some terminals cannot send. Your own bindings go in `~/.config/tide/keybindings.jsonc`; inside Tide, **Help: Keyboard Shortcuts** lists the keys with yours included. Change a key with `Ctrl+Shift+,` or `Ctrl+Alt+K`; [Themes and Customization](../features/themes.md) explains the file format.
 
-Context-specific matches take precedence over unconditional bindings. Within the same context, the last matching entry wins. An empty command or a command beginning with `-` explicitly removes a binding. Some terminal emulators cannot transmit Ctrl+Shift or Cmd combinations; use a listed terminal-safe alternative such as `ctrl+k` for the command palette.
+How a key is resolved:
 
-| Keys | Action | Command ID | Context |
-| --- | --- | --- | --- |
-| `alt+1` | Focus First Main Pane | `workbench.focusEditor1` | Any |
-| `alt+2` | Focus Second Main Pane | `workbench.focusEditor2` | Any |
-| `alt+3` | Focus Third Main Pane | `workbench.focusEditor3` | Any |
-| `alt+down` | workbench.focusPaneDown | `workbench.focusPaneDown` | Any |
-| `alt+left` | workbench.focusPaneLeft | `workbench.focusPaneLeft` | Any |
-| `alt+right` | workbench.focusPaneRight | `workbench.focusPaneRight` | Any |
-| `alt+up` | workbench.focusPaneUp | `workbench.focusPaneUp` | Any |
-| `ctrl+alt+[` | Focus Previous Workbench Region | `workbench.focusPreviousRegion` | Any |
-| `ctrl+alt+]` | Focus Next Workbench Region | `workbench.focusNextRegion` | Any |
-| `ctrl+alt+a` | Agents: Open Session... | `agents.openSession` | Any |
-| `ctrl+alt+down` | Add Cursor Below | `editor.addCursorBelow` | Any |
-| `ctrl+alt+down` | workbench.focusPaneDown | `workbench.focusPaneDown` | `!editorFocus` |
-| `ctrl+alt+left` | workbench.focusPaneLeft | `workbench.focusPaneLeft` | Any |
-| `ctrl+alt+right` | workbench.focusPaneRight | `workbench.focusPaneRight` | Any |
-| `ctrl+alt+up` | Add Cursor Above | `editor.addCursorAbove` | Any |
-| `ctrl+alt+up` | workbench.focusPaneUp | `workbench.focusPaneUp` | `!editorFocus` |
-| `ctrl+alt+b` | Toggle Sidebar | `workbench.toggleSidebar` | Any |
-| `ctrl+alt+d` | Duplicate Line | `editor.duplicateLine` | Any |
-| `ctrl+alt+e` | workbench.focusExplorer | `workbench.focusExplorer` | Any |
-| `ctrl+alt+f` | Find in Files | `search.findInFiles` | Any |
-| `ctrl+alt+g` | Focus Git Panel | `git.focusPanel` | Any |
-| `ctrl+alt+h` | Split Main Pane Down | `view.splitHorizontal` | Any |
-| `ctrl+alt+k` | Open Keyboard Shortcuts | `workbench.openKeybindings` | Any |
-| `ctrl+alt+l` | workbench.focusTimeline | `workbench.focusTimeline` | Any |
-| `ctrl+alt+m` | Open Terminal Tab in Main Pane | `terminal.newInPane` | Any |
-| `ctrl+alt+o` | Open Settings | `workbench.openSettings` | Any |
-| `ctrl+alt+r` | Select Color Theme | `workbench.selectTheme` | Any |
-| `ctrl+alt+s` | Save As... | `file.saveAs` | Any |
-| `ctrl+alt+t` | Open Bottom Terminal Tab | `terminal.new` | Any |
-| `ctrl+alt+u` | workbench.focusOutline | `workbench.focusOutline` | Any |
-| `meta+alt+left` | Previous Tab | `editor.previousTab` | Any |
-| `meta+alt+right` | Next Tab | `editor.nextTab` | Any |
-| `ArrowDown` | fileTree.moveDown | `fileTree.moveDown` | `fileTreeFocus` |
-| `ArrowDown` | gitPanel.moveDown | `gitPanel.moveDown` | `gitPanelFocus` |
-| `ArrowDown` | outlinePanel.moveDown | `outlinePanel.moveDown` | `outlinePanelFocus` |
-| `ArrowDown` | queryResults.moveDown | `queryResults.moveDown` | `queryResultsFocus` |
-| `ArrowDown` | timelinePanel.moveDown | `timelinePanel.moveDown` | `timelinePanelFocus` |
-| `ArrowLeft` | fileTree.collapse | `fileTree.collapse` | `fileTreeFocus` |
-| `ArrowLeft` | outlinePanel.collapse | `outlinePanel.collapse` | `outlinePanelFocus` |
-| `ArrowLeft` | queryResults.moveLeft | `queryResults.moveLeft` | `queryResultsFocus` |
-| `ArrowRight` | fileTree.expand | `fileTree.expand` | `fileTreeFocus` |
-| `ArrowRight` | outlinePanel.expand | `outlinePanel.expand` | `outlinePanelFocus` |
-| `ArrowRight` | queryResults.moveRight | `queryResults.moveRight` | `queryResultsFocus` |
-| `ArrowUp` | fileTree.moveUp | `fileTree.moveUp` | `fileTreeFocus` |
-| `ArrowUp` | gitPanel.moveUp | `gitPanel.moveUp` | `gitPanelFocus` |
-| `ArrowUp` | outlinePanel.moveUp | `outlinePanel.moveUp` | `outlinePanelFocus` |
-| `ArrowUp` | queryResults.moveUp | `queryResults.moveUp` | `queryResultsFocus` |
-| `ArrowUp` | timelinePanel.moveUp | `timelinePanel.moveUp` | `timelinePanelFocus` |
-| `c` | gitPanel.commit | `gitPanel.commit` | `gitPanelFocus` |
-| `ctrl+,` | Open Settings | `workbench.openSettings` | Any |
-| `ctrl+.` | Show Code Actions | `lsp.codeActions` | `editorFocus` |
-| `ctrl+/` | Toggle Line Comment | `editor.toggleComment` | Any |
-| `ctrl+1` | Focus First Main Pane | `workbench.focusEditor1` | Any |
-| `ctrl+2` | Focus Second Main Pane | `workbench.focusEditor2` | Any |
-| `ctrl+3` | Focus Third Main Pane | `workbench.focusEditor3` | Any |
-| `ctrl+[` | Focus Previous Main Pane | `workbench.focusPreviousPane` | Any |
-| `ctrl+\` | Split Main Pane Right | `view.splitVertical` | Any |
-| `ctrl+]` | Focus Next Main Pane | `workbench.focusNextPane` | Any |
-| `ctrl+\`` | Toggle Bottom Terminal | `workbench.toggleTerminal` | Any |
-| `ctrl+a` | Select All | `edit.selectAll` | Any |
-| `ctrl+b` | Toggle Sidebar | `workbench.toggleSidebar` | Any |
-| `ctrl+c` | Copy | `edit.copy` | Any |
-| `ctrl+d` | Add Selection to Next Match | `edit.selectNextMatch` | Any |
-| `ctrl+e` | Command Palette | `workbench.commandPalette` | Any |
-| `ctrl+enter` | Execute Query | `database.executeQuery` | `sqlEditorFocus` |
-| `ctrl+f` | Find | `search.find` | Any |
-| `ctrl+g` | Go to Line... | `editor.gotoLine` | Any |
-| `ctrl+h` | Find and Replace | `search.replace` | Any |
-| `ctrl+i` | Show Hover | `lsp.showHover` | Any |
-| `ctrl+k` | Command Palette | `workbench.commandPalette` | Any |
-| `ctrl+l` | Select Line | `editor.selectLine` | Any |
-| `ctrl+n` | New File | `file.new` | Any |
-| `ctrl+o` | Open File... | `file.open` | Any |
-| `ctrl+p` | Quick Open | `workbench.quickOpen` | Any |
-| `ctrl+pagedown` | Next Tab | `editor.nextTab` | Any |
-| `ctrl+pageup` | Previous Tab | `editor.previousTab` | Any |
-| `ctrl+q` | Quit | `workbench.quit` | Any |
-| `ctrl+r` | Go to Symbol in Editor... | `editor.gotoSymbol` | Any |
-| `ctrl+r` | Execute Query | `database.executeQuery` | `sqlEditorFocus` |
-| `ctrl+s` | Save | `file.save` | Any |
-| `ctrl+shift+,` | Open Keyboard Shortcuts | `workbench.openKeybindings` | Any |
-| `ctrl+shift+[` | Fold | `editor.fold` | Any |
-| `ctrl+shift+\` | Split Main Pane Down | `view.splitHorizontal` | Any |
-| `ctrl+shift+]` | Unfold | `editor.unfold` | Any |
-| `ctrl+shift+\`` | Open Bottom Terminal Tab | `terminal.new` | Any |
-| `ctrl+shift+a` | Add Tab | `pane.addPanel` | Any |
-| `ctrl+shift+b` | Toggle Sidebar | `workbench.toggleSidebar` | Any |
-| `ctrl+shift+c` | Connect to Database | `database.connect` | `sqlEditorFocus` |
-| `ctrl+shift+d` | Duplicate Selection | `editor.duplicateSelection` | Any |
-| `ctrl+shift+f` | Find in Files | `search.findInFiles` | Any |
-| `ctrl+shift+g` | Focus Git Panel | `git.focusPanel` | Any |
-| `ctrl+shift+i` | AI CLI: Toggle | `aiCli.toggle` | Any |
-| `ctrl+shift+j` | Agents: Open Session... | `agents.openSession` | Any |
-| `ctrl+shift+k` | Go to Definition | `lsp.goToDefinition` | Any |
-| `ctrl+shift+l` | Select All Occurrences | `edit.selectAllOccurrences` | Any |
-| `ctrl+shift+p` | Command Palette | `workbench.commandPalette` | Any |
-| `ctrl+shift+r` | Go to Symbol in Workspace... | `editor.gotoWorkspaceSymbol` | Any |
-| `ctrl+shift+s` | Save As... | `file.saveAs` | Any |
-| `ctrl+shift+space` | Trigger Signature Help | `lsp.triggerSignatureHelp` | Any |
-| `ctrl+shift+t` | Open Terminal Tab in Main Pane | `terminal.newInPane` | Any |
-| `ctrl+shift+tab` | Previous Tab | `editor.previousTab` | Any |
-| `ctrl+shift+z` | Redo | `edit.redo` | Any |
-| `ctrl+space` | Trigger Completion | `lsp.triggerCompletion` | Any |
-| `ctrl+space` | Complete SQL | `database.complete` | `sqlEditorFocus` |
-| `ctrl+t` | Command Palette | `workbench.commandPalette` | Any |
-| `ctrl+tab` | Next Tab | `editor.nextTab` | Any |
-| `ctrl+v` | Paste | `edit.paste` | Any |
-| `ctrl+w` | Close Tab | `file.close` | Any |
-| `ctrl+x` | Cut | `edit.cut` | Any |
-| `ctrl+y` | Redo | `edit.redo` | Any |
-| `ctrl+z` | Undo | `edit.undo` | Any |
-| `d` | fileTree.delete | `fileTree.delete` | `fileTreeFocus` |
-| `d` | gitPanel.discard | `gitPanel.discard` | `gitPanelFocus` |
-| `Delete` | fileTree.delete | `fileTree.delete` | `fileTreeFocus` |
-| `e` | queryResults.export | `queryResults.export` | `queryResultsFocus` |
-| `End` | fileTree.goToLast | `fileTree.goToLast` | `fileTreeFocus` |
-| `End` | outlinePanel.goToLast | `outlinePanel.goToLast` | `outlinePanelFocus` |
-| `End` | queryResults.goToLast | `queryResults.goToLast` | `queryResultsFocus` |
-| `End` | timelinePanel.goToLast | `timelinePanel.goToLast` | `timelinePanelFocus` |
-| `Enter` | fileTree.open | `fileTree.open` | `fileTreeFocus` |
-| `Enter` | gitPanel.openDiff | `gitPanel.openDiff` | `gitPanelFocus` |
-| `Enter` | outlinePanel.select | `outlinePanel.select` | `outlinePanelFocus` |
-| `Enter` | queryResults.showDetails | `queryResults.showDetails` | `queryResultsFocus` |
-| `Enter` | timelinePanel.viewDiff | `timelinePanel.viewDiff` | `timelinePanelFocus` |
-| `escape` | Clear Cursors | `editor.clearCursors` | `editorHasMultipleCursors` |
-| `f1` | Command Palette | `workbench.commandPalette` | Any |
-| `F2` | fileTree.rename | `fileTree.rename` | `fileTreeFocus` |
-| `f3` | Find Next | `search.findNext` | Any |
-| `F5` | queryResults.refresh | `queryResults.refresh` | `queryResultsFocus` |
-| `F5` | Execute Query | `database.executeQuery` | `sqlEditorFocus` |
-| `f6` | Focus Next Workbench Region | `workbench.focusNextRegion` | Any |
-| `f7` | Focus Next Main Pane | `workbench.focusNextPane` | Any |
-| `f8` | Focus Previous Main Pane | `workbench.focusPreviousPane` | Any |
-| `g` | timelinePanel.goToFirst | `timelinePanel.goToFirst` | `timelinePanelFocus` |
-| `h` | fileTree.collapse | `fileTree.collapse` | `fileTreeFocus` |
-| `h` | outlinePanel.collapse | `outlinePanel.collapse` | `outlinePanelFocus` |
-| `h` | queryResults.moveLeft | `queryResults.moveLeft` | `queryResultsFocus` |
-| `Home` | fileTree.goToFirst | `fileTree.goToFirst` | `fileTreeFocus` |
-| `Home` | outlinePanel.goToFirst | `outlinePanel.goToFirst` | `outlinePanelFocus` |
-| `Home` | queryResults.goToFirst | `queryResults.goToFirst` | `queryResultsFocus` |
-| `Home` | timelinePanel.goToFirst | `timelinePanel.goToFirst` | `timelinePanelFocus` |
-| `j` | fileTree.moveDown | `fileTree.moveDown` | `fileTreeFocus` |
-| `j` | gitPanel.moveDown | `gitPanel.moveDown` | `gitPanelFocus` |
-| `j` | outlinePanel.moveDown | `outlinePanel.moveDown` | `outlinePanelFocus` |
-| `j` | queryResults.moveDown | `queryResults.moveDown` | `queryResultsFocus` |
-| `j` | timelinePanel.moveDown | `timelinePanel.moveDown` | `timelinePanelFocus` |
-| `k` | fileTree.moveUp | `fileTree.moveUp` | `fileTreeFocus` |
-| `k` | gitPanel.moveUp | `gitPanel.moveUp` | `gitPanelFocus` |
-| `k` | outlinePanel.moveUp | `outlinePanel.moveUp` | `outlinePanelFocus` |
-| `k` | queryResults.moveUp | `queryResults.moveUp` | `queryResultsFocus` |
-| `k` | timelinePanel.moveUp | `timelinePanel.moveUp` | `timelinePanelFocus` |
-| `l` | fileTree.expand | `fileTree.expand` | `fileTreeFocus` |
-| `l` | outlinePanel.expand | `outlinePanel.expand` | `outlinePanelFocus` |
-| `l` | queryResults.moveRight | `queryResults.moveRight` | `queryResultsFocus` |
-| `meta+,` | Open Settings | `workbench.openSettings` | Any |
-| `meta+/` | Toggle Line Comment | `editor.toggleComment` | Any |
-| `meta+[` | Focus Previous Main Pane | `workbench.focusPreviousPane` | Any |
-| `meta+\` | Split Main Pane Right | `view.splitVertical` | Any |
-| `meta+]` | Focus Next Main Pane | `workbench.focusNextPane` | Any |
-| `meta+a` | Select All | `edit.selectAll` | Any |
-| `meta+c` | Copy | `edit.copy` | Any |
-| `meta+d` | Add Selection to Next Match | `edit.selectNextMatch` | Any |
-| `meta+e` | Command Palette | `workbench.commandPalette` | Any |
-| `meta+f` | Find | `search.find` | Any |
-| `meta+h` | Find and Replace | `search.replace` | Any |
-| `meta+l` | Select Line | `editor.selectLine` | Any |
-| `meta+n` | New File | `file.new` | Any |
-| `meta+o` | Open File... | `file.open` | Any |
-| `meta+p` | Quick Open | `workbench.quickOpen` | Any |
-| `meta+q` | Quit | `workbench.quit` | Any |
-| `meta+r` | Go to Symbol in Editor... | `editor.gotoSymbol` | Any |
-| `meta+s` | Save | `file.save` | Any |
-| `shift+meta+[` | Focus Previous Workbench Region | `workbench.focusPreviousRegion` | Any |
-| `shift+meta+\` | Split Main Pane Down | `view.splitHorizontal` | Any |
-| `shift+meta+]` | Focus Next Workbench Region | `workbench.focusNextRegion` | Any |
-| `shift+meta+a` | Add Tab | `pane.addPanel` | Any |
-| `shift+meta+f` | Find in Files | `search.findInFiles` | Any |
-| `shift+meta+i` | AI CLI: Toggle | `aiCli.toggle` | Any |
-| `shift+meta+j` | Agents: Open Session... | `agents.openSession` | Any |
-| `shift+meta+p` | Command Palette | `workbench.commandPalette` | Any |
-| `shift+meta+r` | Go to Symbol in Workspace... | `editor.gotoWorkspaceSymbol` | Any |
-| `shift+meta+s` | Save As... | `file.saveAs` | Any |
-| `shift+meta+z` | Redo | `edit.redo` | Any |
-| `meta+v` | Paste | `edit.paste` | Any |
-| `meta+w` | Close Tab | `file.close` | Any |
-| `meta+x` | Cut | `edit.cut` | Any |
-| `meta+z` | Undo | `edit.undo` | Any |
-| `n` | fileTree.newFile | `fileTree.newFile` | `fileTreeFocus` |
-| `o` | gitPanel.openFile | `gitPanel.openFile` | `gitPanelFocus` |
-| `o` | timelinePanel.openFileAtCommit | `timelinePanel.openFileAtCommit` | `timelinePanelFocus` |
-| `PageDown` | fileTree.pageDown | `fileTree.pageDown` | `fileTreeFocus` |
-| `PageDown` | outlinePanel.pageDown | `outlinePanel.pageDown` | `outlinePanelFocus` |
-| `PageDown` | queryResults.pageDown | `queryResults.pageDown` | `queryResultsFocus` |
-| `PageDown` | timelinePanel.pageDown | `timelinePanel.pageDown` | `timelinePanelFocus` |
-| `PageUp` | fileTree.pageUp | `fileTree.pageUp` | `fileTreeFocus` |
-| `PageUp` | outlinePanel.pageUp | `outlinePanel.pageUp` | `outlinePanelFocus` |
-| `PageUp` | queryResults.pageUp | `queryResults.pageUp` | `queryResultsFocus` |
-| `PageUp` | timelinePanel.pageUp | `timelinePanel.pageUp` | `timelinePanelFocus` |
-| `r` | fileTree.rename | `fileTree.rename` | `fileTreeFocus` |
-| `r` | gitPanel.refresh | `gitPanel.refresh` | `gitPanelFocus` |
-| `r` | queryResults.refresh | `queryResults.refresh` | `queryResultsFocus` |
-| `s` | gitPanel.stage | `gitPanel.stage` | `gitPanelFocus` |
-| `s` | queryResults.sort | `queryResults.sort` | `queryResultsFocus` |
-| `shift+f3` | Find Previous | `search.findPrevious` | Any |
-| `shift+f6` | Focus Previous Workbench Region | `workbench.focusPreviousRegion` | Any |
-| `shift+g` | timelinePanel.goToLast | `timelinePanel.goToLast` | `timelinePanelFocus` |
-| `shift+n` | fileTree.newFolder | `fileTree.newFolder` | `fileTreeFocus` |
-| `shift+s` | gitPanel.stageAll | `gitPanel.stageAll` | `gitPanelFocus` |
-| ` ` | fileTree.open | `fileTree.open` | `fileTreeFocus` |
-| ` ` | gitPanel.toggleSection | `gitPanel.toggleSection` | `gitPanelFocus` |
-| ` ` | outlinePanel.toggleExpand | `outlinePanel.toggleExpand` | `outlinePanelFocus` |
-| `Tab` | queryResults.toggleViewMode | `queryResults.toggleViewMode` | `queryResultsFocus` |
-| `Tab` | timelinePanel.toggleMode | `timelinePanel.toggleMode` | `timelinePanelFocus` |
-| `u` | gitPanel.unstage | `gitPanel.unstage` | `gitPanelFocus` |
-| `y` | timelinePanel.copyHash | `timelinePanel.copyHash` | `timelinePanelFocus` |
+- A binding with a `when` context, such as `gitPanelFocus`, wins over a global binding for the same key while that context is active.
+- For the same key and context, the last entry wins, so your entries replace the defaults.
+- A command of `""` or `-<command>` removes a key.
+- While a terminal has focus, the shell keeps `Ctrl+A`, `Ctrl+C`, `Ctrl+D`, `Ctrl+E`, `Ctrl+K`, `Ctrl+L`, `Ctrl+R`, `Ctrl+U`, `Ctrl+V`, `Ctrl+W`, `Ctrl+Y`, `Ctrl+Z`, `Ctrl+Space` and `Ctrl+\`. Other workbench keys still reach Tide.
 
-Modal buttons, list navigation and editor input also have controls local to their surfaces. See the feature guides for Find/Replace options, database results and pane navigation.
+Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so Tide adds Ctrl+Alt and function-key alternates for many commands. When a key does not arrive, run the command from the palette with `Ctrl+K` or `Ctrl+Shift+P`. Lists, dialogs, the find bar, diff tabs and the Agents sidebar also have keys of their own, described in each feature guide.
 
-Generated from the compiled Rust runtime for Tide 0.10.0. Regenerate with `cargo xtask generate-rust-reference --write`; CI verifies with `--check`.
+## All keys
+
+### File
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+S`, `Cmd+S` | Save | `file.save` |
+| `Ctrl+Shift+S`, `Shift+Cmd+S`, `Ctrl+Alt+S` | Save As... | `file.saveAs` |
+| `Ctrl+O`, `Cmd+O` | Open File... | `file.open` |
+| `Ctrl+N`, `Cmd+N` | New File | `file.new` |
+| `Ctrl+W`, `Cmd+W` | Close Tab | `file.close` |
+
+### View
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Tab`, `Ctrl+PageDown`, `Alt+Cmd+Right` | Next Tab | `editor.nextTab` |
+| `Ctrl+Shift+Tab`, `Ctrl+PageUp`, `Alt+Cmd+Left` | Previous Tab | `editor.previousTab` |
+| `Ctrl+P`, `Cmd+P` | Quick Open | `workbench.quickOpen` |
+| `Ctrl+K`, `Ctrl+Shift+P`, `Shift+Cmd+P`, `F1`, `Ctrl+T`, `Ctrl+E`, `Cmd+E` | Command Palette | `workbench.commandPalette` |
+| `F6`, `Shift+Cmd+]`, `Ctrl+Alt+]` | Focus Next Workbench Region | `workbench.focusNextRegion` |
+| `Shift+F6`, `Shift+Cmd+[`, `Ctrl+Alt+[` | Focus Previous Workbench Region | `workbench.focusPreviousRegion` |
+| `Ctrl+Shift+A`, `Shift+Cmd+A` | Add Tab | `pane.addPanel` |
+| `Ctrl+]`, `Cmd+]`, `F7` | Focus Next Main Pane | `workbench.focusNextPane` |
+| `Ctrl+[`, `Cmd+[`, `F8` | Focus Previous Main Pane | `workbench.focusPreviousPane` |
+| `Ctrl+Shift+B`, `Ctrl+B`, `Ctrl+Alt+B` | Toggle Sidebar | `workbench.toggleSidebar` |
+| `` Ctrl+` `` | Toggle Bottom Terminal | `workbench.toggleTerminal` |
+| `Ctrl+\`, `Cmd+\` | Split Main Pane Right | `view.splitVertical` |
+| `Ctrl+Shift+\`, `Shift+Cmd+\`, `Ctrl+Alt+H` | Split Main Pane Down | `view.splitHorizontal` |
+| `Ctrl+1`, `Alt+1` | Focus First Main Pane | `workbench.focusEditor1` |
+| `Ctrl+2`, `Alt+2` | Focus Second Main Pane | `workbench.focusEditor2` |
+| `Ctrl+3`, `Alt+3` | Focus Third Main Pane | `workbench.focusEditor3` |
+| `Ctrl+Alt+E` | Focus File Explorer | `workbench.focusExplorer` |
+
+### Edit
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Z`, `Cmd+Z` | Undo | `edit.undo` |
+| `Ctrl+Shift+Z`, `Shift+Cmd+Z`, `Ctrl+Y` | Redo | `edit.redo` |
+| `Ctrl+C`, `Cmd+C` | Copy | `edit.copy` |
+| `Ctrl+X`, `Cmd+X` | Cut | `edit.cut` |
+| `Ctrl+V`, `Cmd+V` | Paste | `edit.paste` |
+| `Ctrl+A`, `Cmd+A` | Select All | `edit.selectAll` |
+| `Ctrl+D`, `Cmd+D` | Add Selection to Next Match | `edit.selectNextMatch` |
+| `Ctrl+Shift+L` | Select All Occurrences | `edit.selectAllOccurrences` |
+
+### Editor
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Alt+Up` | Add Cursor Above | `editor.addCursorAbove` |
+| `Ctrl+Alt+Down` | Add Cursor Below | `editor.addCursorBelow` |
+| `Ctrl+L`, `Cmd+L` | Select Line | `editor.selectLine` |
+| `Ctrl+Shift+D` | Duplicate Selection | `editor.duplicateSelection` |
+| `Ctrl+Shift+[` | Fold | `editor.fold` |
+| `Ctrl+Shift+]` | Unfold | `editor.unfold` |
+| `Ctrl+/`, `Cmd+/` | Toggle Line Comment | `editor.toggleComment` |
+| `Ctrl+I` | Show Hover | `lsp.showHover` |
+| `Ctrl+Space` | Trigger Completion | `lsp.triggerCompletion` |
+| `Ctrl+Shift+Space` | Trigger Signature Help | `lsp.triggerSignatureHelp` |
+| `Ctrl+Alt+D` | Duplicate Line | `editor.duplicateLine` |
+
+### Search
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+F`, `Cmd+F` | Find | `search.find` |
+| `Ctrl+H`, `Cmd+H` | Find and Replace | `search.replace` |
+| `Ctrl+Shift+F`, `Shift+Cmd+F`, `Ctrl+Alt+F` | Find in Files | `search.findInFiles` |
+| `F3` | Find Next | `search.findNext` |
+| `Shift+F3` | Find Previous | `search.findPrevious` |
+
+### Go
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+G` | Go to Line... | `editor.gotoLine` |
+| `Ctrl+R`, `Cmd+R` | Go to Symbol in Editor... | `editor.gotoSymbol` |
+| `Ctrl+Shift+R`, `Shift+Cmd+R` | Go to Symbol in Workspace... | `editor.gotoWorkspaceSymbol` |
+| `Ctrl+Shift+K` | Go to Definition | `lsp.goToDefinition` |
+
+### Terminal
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `` Ctrl+Shift+` ``, `Ctrl+Alt+T` | Open Bottom Terminal Tab | `terminal.new` |
+| `Ctrl+Shift+T`, `Ctrl+Alt+M` | Open Terminal Tab in Main Pane | `terminal.newInPane` |
+
+### Git
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Shift+G`, `Ctrl+Alt+G` | Focus Git Panel | `git.focusPanel` |
+
+### AI
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Shift+I`, `Shift+Cmd+I` | AI CLI: Toggle | `aiCli.toggle` |
+| `Ctrl+Shift+J`, `Shift+Cmd+J`, `Ctrl+Alt+A` | Agents: Open Session... | `agents.openSession` |
+
+### Application
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Q`, `Cmd+Q` | Quit | `workbench.quit` |
+
+### Preferences
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+,`, `Cmd+,`, `Ctrl+Alt+O` | Open Settings | `workbench.openSettings` |
+| `Ctrl+Shift+,`, `Ctrl+Alt+K` | Open Keyboard Shortcuts | `workbench.openKeybindings` |
+| `Ctrl+Alt+R` | Select Color Theme | `workbench.selectTheme` |
+
+### Other actions
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Alt+U` | Focus outline | `workbench.focusOutline` |
+| `Ctrl+Alt+L` | Focus timeline | `workbench.focusTimeline` |
+| `Alt+Right`, `Ctrl+Alt+Right` | Focus pane right | `workbench.focusPaneRight` |
+| `Alt+Left`, `Ctrl+Alt+Left` | Focus pane left | `workbench.focusPaneLeft` |
+| `Alt+Up` | Focus pane up | `workbench.focusPaneUp` |
+| `Alt+Down` | Focus pane down | `workbench.focusPaneDown` |
+
+### Editor with multiple cursors
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Esc` | Clear Cursors | `editor.clearCursors` |
+
+### Source Control
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `s` | Stage | `gitPanel.stage` |
+| `Shift+S` | Stage all | `gitPanel.stageAll` |
+| `u` | Unstage | `gitPanel.unstage` |
+| `d` | Discard | `gitPanel.discard` |
+| `Enter` | Open diff | `gitPanel.openDiff` |
+| `o` | Open file | `gitPanel.openFile` |
+| `r` | Refresh | `gitPanel.refresh` |
+| `c` | Commit | `gitPanel.commit` |
+| `Space` | Toggle section | `gitPanel.toggleSection` |
+| `Up`, `k` | Move up | `gitPanel.moveUp` |
+| `Down`, `j` | Move down | `gitPanel.moveDown` |
+
+### Explorer
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Up`, `k` | Move up | `fileTree.moveUp` |
+| `Down`, `j` | Move down | `fileTree.moveDown` |
+| `Right`, `l` | Expand | `fileTree.expand` |
+| `Left`, `h` | Collapse | `fileTree.collapse` |
+| `Enter`, `Space` | Open | `fileTree.open` |
+| `n` | New file | `fileTree.newFile` |
+| `Shift+N` | New folder | `fileTree.newFolder` |
+| `r`, `F2` | Rename | `fileTree.rename` |
+| `d`, `Delete` | Delete | `fileTree.delete` |
+| `Home` | Go to first | `fileTree.goToFirst` |
+| `End` | Go to last | `fileTree.goToLast` |
+| `PageUp` | Page up | `fileTree.pageUp` |
+| `PageDown` | Page down | `fileTree.pageDown` |
+
+### Outline
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Up`, `k` | Move up | `outlinePanel.moveUp` |
+| `Down`, `j` | Move down | `outlinePanel.moveDown` |
+| `Right`, `l` | Expand | `outlinePanel.expand` |
+| `Left`, `h` | Collapse | `outlinePanel.collapse` |
+| `Space` | Toggle expand | `outlinePanel.toggleExpand` |
+| `Enter` | Select | `outlinePanel.select` |
+| `PageUp` | Page up | `outlinePanel.pageUp` |
+| `PageDown` | Page down | `outlinePanel.pageDown` |
+| `Home` | Go to first | `outlinePanel.goToFirst` |
+| `End` | Go to last | `outlinePanel.goToLast` |
+
+### Timeline
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Up`, `k` | Move up | `timelinePanel.moveUp` |
+| `Down`, `j` | Move down | `timelinePanel.moveDown` |
+| `PageUp` | Page up | `timelinePanel.pageUp` |
+| `PageDown` | Page down | `timelinePanel.pageDown` |
+| `Home`, `g` | Go to first | `timelinePanel.goToFirst` |
+| `End`, `Shift+G` | Go to last | `timelinePanel.goToLast` |
+| `Enter` | View diff | `timelinePanel.viewDiff` |
+| `o` | Open file at commit | `timelinePanel.openFileAtCommit` |
+| `Tab` | Toggle mode | `timelinePanel.toggleMode` |
+| `y` | Copy hash | `timelinePanel.copyHash` |
+
+### Query results
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Up`, `k` | Move up | `queryResults.moveUp` |
+| `Down`, `j` | Move down | `queryResults.moveDown` |
+| `Left`, `h` | Move left | `queryResults.moveLeft` |
+| `Right`, `l` | Move right | `queryResults.moveRight` |
+| `PageUp` | Page up | `queryResults.pageUp` |
+| `PageDown` | Page down | `queryResults.pageDown` |
+| `Home` | Go to first | `queryResults.goToFirst` |
+| `End` | Go to last | `queryResults.goToLast` |
+| `Enter` | Show details | `queryResults.showDetails` |
+| `r`, `F5` | Refresh | `queryResults.refresh` |
+| `e` | Export | `queryResults.export` |
+| `s` | Sort | `queryResults.sort` |
+| `Tab` | Toggle view mode | `queryResults.toggleViewMode` |
+
+### SQL editor
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+R`, `Ctrl+Enter`, `F5` | Execute Query | `database.executeQuery` |
+| `Ctrl+Shift+C` | Connect to Database | `database.connect` |
+| `Ctrl+Space` | Complete SQL | `database.complete` |
+
+### While editing
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+.` | Show Code Actions | `lsp.codeActions` |
+
+### Outside the editor
+
+| Keys | Action | Command |
+| --- | --- | --- |
+| `Ctrl+Alt+Up` | Focus pane up | `workbench.focusPaneUp` |
+| `Ctrl+Alt+Down` | Focus pane down | `workbench.focusPaneDown` |

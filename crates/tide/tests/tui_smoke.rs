@@ -35,12 +35,12 @@ fn tui_starts_and_exits_on_quit() {
     let mut output = Vec::new();
     while Instant::now() < ready_deadline {
         output.extend(session.read_for(Duration::from_millis(25)));
-        if String::from_utf8_lossy(&output).contains("Ctrl+P") {
+        if String::from_utf8_lossy(&output).contains("Welcome") {
             break;
         }
     }
     assert!(
-        String::from_utf8_lossy(&output).contains("Ctrl+P"),
+        String::from_utf8_lossy(&output).contains("Welcome"),
         "TUI did not render its ready frame; output: {:?}",
         String::from_utf8_lossy(&output)
     );

@@ -1,27 +1,59 @@
+<!-- Generated from crates/tide-ui/src/help/pages/postgresql.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # PostgreSQL Workspace
 
-Tide's SQL tabs combine an editor with results beneath it. Connections, schema discovery, history, favorites and eligible row changes are available through the database commands.
+A SQL tab is an editor with its results below it. Connections, schema browsing, query history, favorites and row edits are all in the command palette under Database.
 
-## Connections and safety
+## Connections
 
-Choose New Connection from the palette. The form supports host, port, database, username, password, TLS and read-only mode. Saved records refer to the secret service instead of embedding passwords. The service uses an available platform keychain, read-only environment values, or an unlocked encrypted-file provider.
+Run **New Connection...**. The form takes a name, host, port, database, user name, password, TLS mode (disable, prefer or require) with an optional CA certificate, read-only mode, timeouts, and a scope:
 
-New connections default to read-only. Tide adds client-side mutation checks and requests PostgreSQL read-only session behavior. Use a database role without write privileges when authorization must hold across clients. Writable connections still require confirmation for conservatively classified destructive, broad, mixed or unknown operations.
+- **Global** connections are saved in `~/.config/tide/connections.json`.
+- **Project** connections are saved in `.tide/connections.json` inside the workspace. They cannot store a password.
 
-TLS modes preserve their configured verification policy. Validate a server's certificate authority and hostname for verified connections; encryption without identity verification is a different guarantee.
+Passwords never go into the connection file. They are kept by the secret service: the macOS Keychain or Linux `secret-tool` when available, read-only `TIDE_SECRET_<KEY>` environment variables, or an encrypted file at `~/.local/share/tide/secrets.enc` that you unlock with **Manage Secrets** or `TIDE_MASTER_PASSWORD`.
 
-## Query and schema workflow
+**Edit Connection...**, **Test Connection**, **Delete Connection** and **Disconnect** manage saved connections.
 
-Open New Query and select a connection. `Ctrl+R` executes SQL in that editor. Database completion offers schema-aware items. Browse Schema opens schemas, tables/views and columns, with actions to inspect definitions or open a query for an object. Missing connections and service errors are shown explicitly.
+## Safety
+
+New connections are **read-only**. Tide sets PostgreSQL's read-only transaction mode, runs each query in a read-only transaction, and allows one read statement per run. For a guarantee that holds in every client, also connect as a role without write privileges. On a writable connection, statements that look destructive, broad, mixed or unknown ask for confirmation first.
+
+TLS `require` and `prefer` verify the server certificate against the system roots plus your CA certificate; `prefer` falls back to an unencrypted connection with a warning when the server has no TLS.
+
+## Queries
+
+“New Query” from the command palette (`Ctrl+K`) opens a SQL tab using the current tab's connection, or the first saved one. In the SQL editor:
+
+| To | Press |
+| --- | --- |
+| Run the whole query | `Ctrl+R` or `Ctrl+Enter` |
+| Run only the selection | “Execute Selection” from the command palette (`Ctrl+K`) |
+| Choose the connection | `Ctrl+Shift+C` |
+| Complete table and column names | `Ctrl+Space` |
+
+**Browse Schema** walks schemas, tables, views and columns and can open a query for an object; **Describe Table** shows a table's definition.
 
 ## Results
 
-Results occupy the lower portion of the SQL tab. Click a column header to sort it; selecting it again reverses the direction. Keyboard result commands remain available from the palette and generated shortcut reference. Row details expose the selected record, and export writes the displayed result data to an explicit destination.
+Results fill the lower part of the tab. Click a column header to sort: ascending, descending, then unsorted.
 
-Update, delete and add-row workflows require a supported table identity, suitable metadata and a writable connection. Typed fields and primary-key identity are checked before a mutation. The confirmation retains the connection and row authority; an arbitrary query result does not imply an editable table. Review the target and action before confirming.
+| With the results focused | Press |
+| --- | --- |
+| Move between rows and columns | Arrow keys or `h` `j` `k` `l` |
+| Row details | `Enter` |
+| Sort by the selected column | `s` |
+| Switch the result view | `Tab` |
+| Run the query again | `r` or `F5` |
+| Export as CSV | `e` |
+
+Export writes the whole result as CSV, in its original row order, to a path you choose (relative paths are inside the workspace); it asks before overwriting a file.
+
+Updating, deleting and adding rows (**Database: Add Row**) need a writable connection and a result that maps to one table with a primary key. Field types and the key are checked before anything changes, and each change is confirmed.
 
 ## History and favorites
 
-Query History can view or insert saved SQL without executing it, explicitly execute a chosen entry, toggle favorites, filter by connection and clear the selected scope. History is stored under Tide's data root and can be disabled with `session.databaseQueryHistory`.
+**Query History** lists earlier queries, including failed ones, with passwords redacted. Enter opens the entry in a new SQL tab on its connection without running it. In the history list, `Alt+F` toggles a favorite, `Alt+O` shows only favorites, `Alt+C` limits the list to the active connection, and `Alt+D` clears the listed entries after asking.
 
-Treat query history and exported data as sensitive. Avoid putting passwords in SQL or sharing unredacted logs. See [configuration](../reference/configuration.md) and [generated commands](../reference/commands.md).
+History is kept under `~/.local/share/tide/database/query-history`; turn it off with `session.databaseQueryHistory` (`true`). Treat history and exported results as sensitive, and avoid putting passwords in SQL.
+
+See [Settings Reference](../reference/configuration.md) and [All Commands](../reference/commands.md).

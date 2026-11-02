@@ -1,81 +1,139 @@
-# Configuration and Storage
+<!-- Generated from crates/tide-ui/src/help/pages/settings.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
+# Settings and Storage
 
-Tide loads embedded defaults and then user `settings.jsonc`. Supported settings are validated by the runtime. Other keys are kept in the file but have no effect.
+Tide starts from its built-in defaults and applies your settings file, `~/.config/tide/settings.jsonc`, on top. Open the Settings list with `Ctrl+,` or `Ctrl+Alt+O` to change a value; Tide checks it, saves the file and applies most changes immediately. You can also edit the file by hand and restart Tide. Invalid values fall back to the default, and keys Tide does not recognize are kept in the file but ignored.
 
-| Category | Default root | Contents |
-| --- | --- | --- |
-| Configuration | `$XDG_CONFIG_HOME/tide` or `~/.config/tide` | Settings, keybindings, themes, saved connections |
-| Data | `$XDG_DATA_HOME/tide` or `~/.local/share/tide` | Encrypted secrets and database history |
-| State | `$XDG_STATE_HOME/tide` or `~/.local/state/tide` | Sessions, recovery and logs |
-| Cache | `$XDG_CACHE_HOME/tide` or `~/.cache/tide` | Rebuildable application data |
-| Workspace | `<workspace>/.tide` | Project-scoped database connection records |
+## All settings
 
-XDG overrides must be absolute. See [getting started](../getting-started.md) for how installation, updates and uninstall treat these directories.
+### Editor
 
-## Supported settings
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `editor.autoIndent` | Auto-indent mode: "none", "keep", or "full" | `"full"` | `none`, `keep`, `full` |
+| `editor.diagnostics.curlyUnderline` | Use squiggly underlines for errors (requires modern terminal) | `true` | `true` or `false` |
+| `editor.insertSpaces` | Use spaces instead of tabs | `true` | `true` or `false` |
+| `editor.lineNumbers` | Line numbers: "on", "off", "relative" | `"on"` | `on`, `off`, `relative` |
+| `editor.minimap.enabled` | Show the minimap | `true` | `true` or `false` |
+| `editor.tabSize` | Number of spaces per tab | `2` | 1–16 |
+| `editor.undoHistoryLimit` | Maximum undo actions per document | `1000` | 10–10000 |
+| `editor.wordWrap` | Word wrap: "off", "on", "wordWrapColumn", "bounded" | `"on"` | `off`, `on`, `bounded`, `wordWrapColumn` |
+| `editor.wordWrapColumn` | Wrap column for "wordWrapColumn" and "bounded" word wrap (10-1000) | `80` | 10–1000 |
 
-Open Settings from the command palette. Values below come from the same defaults and constraints used by the workbench. An empty terminal shell selects the user's normal shell. Theme names must match a built-in or loaded user theme.
+### Files
 
-| Key | Default | Accepted value |
-| --- | --- | --- |
-| `ai.autoStartCli` | `true` | boolean |
-| `ai.cli.defaultProvider` | `"claude-code"` | string; `claude-code`, `codex`, `gemini`, `antigravity`, `opencode` |
-| `ai.cli.workspaceAliases` | `[]` | array; up to 1000 absolute workspace paths |
-| `editor.autoIndent` | `"full"` | string; `none`, `keep`, `full` |
-| `editor.diagnostics.curlyUnderline` | `true` | boolean |
-| `editor.insertSpaces` | `true` | boolean |
-| `editor.lineNumbers` | `"on"` | string; `on`, `off`, `relative` |
-| `editor.minimap.enabled` | `true` | boolean |
-| `editor.tabSize` | `2` | integer; 1–16 |
-| `editor.undoHistoryLimit` | `1000` | integer; 10–10000 |
-| `editor.wordWrap` | `"on"` | string; `off`, `on`, `bounded`, `wordWrapColumn` |
-| `editor.wordWrapColumn` | `80` | integer; 10–1000 |
-| `files.exclude` | `{"**/.DS_Store":true,"**/.git":true,"**/node_modules":true}` | object; up to 1000 keys; boolean values |
-| `files.watchFiles` | `"onFocus"` | string; `onFocus`, `always`, `off` |
-| `git.inlineDiff.contextLines` | `3` | integer; 0–10 |
-| `git.inlineDiff.maxHeight` | `15` | integer; 3–100 |
-| `lsp.completionDebounceMs` | `250` | integer; 0–5000 |
-| `lsp.diagnostics.enabled` | `true` | boolean |
-| `lsp.diagnostics.showInGutter` | `true` | boolean |
-| `lsp.diagnostics.underlineErrors` | `true` | boolean |
-| `lsp.enabled` | `true` | boolean |
-| `lsp.hover.enabled` | `true` | boolean |
-| `lsp.signatureHelp.display` | `"popup"` | string; `popup`, `inline`, `statusBar` |
-| `lsp.signatureHelp.enabled` | `true` | boolean |
-| `lsp.triggerCharacters` | `".:/<@("` | string; up to 1024 characters |
-| `session.autoSave` | `true` | boolean |
-| `session.autoSaveInterval` | `30000` | integer; 1000–3600000 |
-| `session.databaseQueryHistory` | `true` | boolean |
-| `session.restoreOnStartup` | `true` | boolean |
-| `terminal.shell` | `""` | string; up to 1024 characters |
-| `tui.agentsSidebar.visible` | `true` | boolean |
-| `tui.agentsSidebar.width` | `36` | integer; 24–200 |
-| `tui.diffViewer.autoRefresh` | `true` | boolean |
-| `tui.diffViewer.editMode` | `"stage-modified"` | string; `stage-modified`, `direct-write` |
-| `tui.diffViewer.showDiagnostics` | `true` | boolean |
-| `tui.filePicker.maxFiles` | `10000` | integer; 100–100000 |
-| `tui.fileTree.showGitStatus` | `true` | boolean |
-| `tui.iconStyle` | `"nerd"` | string; `nerd`, `ascii` |
-| `tui.mainRegion.minimumWidth` | `56` | integer; 24–200 |
-| `tui.outline.autoFollow` | `true` | boolean |
-| `tui.outline.collapsedOnStartup` | `true` | boolean |
-| `tui.sidebar.location` | `"left"` | string; `left`, `right` |
-| `tui.sidebar.visible` | `true` | boolean |
-| `tui.sidebar.width` | `36` | integer; 12–200 |
-| `tui.tabBar.scrollAmount` | `1` | integer; 1–10 |
-| `tui.terminal.height` | `10` | integer; 3–200 |
-| `tui.terminal.scrollback` | `1000` | integer; 0–100000 |
-| `tui.timeline.collapsedOnStartup` | `true` | boolean |
-| `tui.timeline.commitCount` | `50` | integer; 10–500 |
-| `tui.timeline.mode` | `"file"` | string; `file`, `repo` |
-| `workbench.colorTheme` | `"ultra-dusk"` | string; up to 1024 characters |
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `files.exclude` | Patterns to exclude from file tree | `{"**/.DS_Store":true,"**/.git":true,"**/node_modules":true}` | Glob pattern → `true` or `false` |
+| `files.watchFiles` | Watch for external changes: "onFocus", "always", "off" | `"onFocus"` | `onFocus`, `always`, `off` |
 
-## Keybindings
+### Workbench
 
-User keybindings are JSONC entries with `key`, `command`, and an optional `when` context. Matching key/context entries replace defaults; new entries append. Command IDs and supported defaults are listed in the [keyboard reference](keyboard-shortcuts.md).
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `workbench.colorTheme` | Color theme name | `"ultra-dusk"` | Text |
+| `workbench.startupEditor` | Opening Welcome: "welcomeOnFirstRun" (the first start without a file or session), "welcome" (every such start) or "none" | `"welcomeOnFirstRun"` | `welcomeOnFirstRun`, `welcome`, `none` |
+
+### Layout and panels
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `tui.agentsSidebar.visible` | Agents sidebar visibility | `true` | `true` or `false` |
+| `tui.agentsSidebar.width` | Agents sidebar width in characters (24-200) | `36` | 24–200 |
+| `tui.diffViewer.autoRefresh` | Auto-refresh diff when file changes | `true` | `true` or `false` |
+| `tui.diffViewer.editMode` | Edit save mode: "stage-modified" or "direct-write" | `"stage-modified"` | `stage-modified`, `direct-write` |
+| `tui.diffViewer.showDiagnostics` | Show diagnostics in diff viewer | `true` | `true` or `false` |
+| `tui.filePicker.maxFiles` | Maximum number of files to show in file picker | `10000` | 100–100000 |
+| `tui.fileTree.showGitStatus` | Show git status colors on files in file tree | `true` | `true` or `false` |
+| `tui.iconStyle` | Icon style: "nerd" (Nerd Font glyphs, width-1, default) or "ascii" (no icons, for terminals without a Nerd Font) | `"nerd"` | `nerd`, `ascii` |
+| `tui.mainRegion.minimumWidth` | Minimum main-region width retained before the sidebar responsively collapses (24-200 columns) | `56` | 24–200 |
+| `tui.outline.autoFollow` | Auto-follow cursor position in outline | `true` | `true` or `false` |
+| `tui.outline.collapsedOnStartup` | Collapse outline panel on startup | `true` | `true` or `false` |
+| `tui.sidebar.location` | Sidebar position: "left", "right" | `"left"` | `left`, `right` |
+| `tui.sidebar.visible` | Sidebar visibility | `true` | `true` or `false` |
+| `tui.sidebar.width` | Sidebar width in characters | `36` | 12–200 |
+| `tui.tabBar.scrollAmount` | Number of tabs to scroll when using scroll buttons | `1` | 1–10 |
+| `tui.terminal.height` | Bottom terminal dock height in rows | `10` | 3–200 |
+| `tui.terminal.scrollback` | Terminal scrollback buffer size in lines | `1000` | 0–100000 |
+| `tui.timeline.collapsedOnStartup` | Collapse timeline panel on startup | `true` | `true` or `false` |
+| `tui.timeline.commitCount` | Number of commits to show in timeline | `50` | 10–500 |
+| `tui.timeline.mode` | Timeline mode: "file" (current file) or "repo" (all commits) | `"file"` | `file`, `repo` |
+
+### Terminal
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `terminal.shell` | Shell program for new terminals; empty uses $SHELL, then /bin/sh | `""` | Text |
+
+### Git
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `git.inlineDiff.contextLines` | Context lines in inline diffs | `3` | 0–10 |
+| `git.inlineDiff.maxHeight` | Max height of inline diff expander in lines | `15` | 3–100 |
+
+### AI CLI agents
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `ai.autoStartCli` | Start the external AI CLI automatically when its pane receives focus | `true` | `true` or `false` |
+| `ai.cli.defaultProvider` | Default registered external AI CLI provider | `"claude-code"` | `claude-code`, `codex`, `gemini`, `antigravity`, `opencode` |
+| `ai.cli.workspaceAliases` | Earlier absolute workspace paths whose agent sessions belong to this workspace | `[]` | List of absolute paths |
+
+### Sessions
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `session.autoSave` | Auto-save session state | `true` | `true` or `false` |
+| `session.autoSaveInterval` | Auto-save interval in milliseconds | `30000` | 1000–3600000 |
+| `session.databaseQueryHistory` | Record database queries and failures in local history | `true` | `true` or `false` |
+| `session.restoreOnStartup` | Restore previous session on startup | `true` | `true` or `false` |
+
+### Language servers
+
+| Setting | Description | Default | Accepted values |
+| --- | --- | --- | --- |
+| `lsp.completionDebounceMs` | Delay before triggering completion (ms) | `250` | 0–5000 |
+| `lsp.diagnostics.enabled` | Show diagnostics (errors, warnings) | `true` | `true` or `false` |
+| `lsp.diagnostics.showInGutter` | Show diagnostic icons in gutter | `true` | `true` or `false` |
+| `lsp.diagnostics.underlineErrors` | Underline errors in editor | `true` | `true` or `false` |
+| `lsp.enabled` | Enable language server features | `true` | `true` or `false` |
+| `lsp.hover.enabled` | Show hover information | `true` | `true` or `false` |
+| `lsp.signatureHelp.display` | Signature display: "popup", "inline", "statusBar" | `"popup"` | `popup`, `inline`, `statusBar` |
+| `lsp.signatureHelp.enabled` | Show function signature help | `true` | `true` or `false` |
+| `lsp.triggerCharacters` | Characters that trigger completion | `".:/<@("` | Text |
+
+## Language server overrides
+
+`lsp.servers` is not in the Settings list; add it to `~/.config/tide/settings.jsonc` by hand. Each key is a language ID (`typescript`, `javascript`, `typescriptreact`, `javascriptreact`, `rust`, `python`, `go`, `ruby`, `c`, `cpp`, `json`, `html`, `css` or `sql`). The value is the server to start, `{ "command": "...", "args": [...] }`, or `null` to turn off language-server features for that language:
+
+```jsonc
+{
+  "lsp.servers": {
+    "python": { "command": "pyright-langserver", "args": ["--stdio"] },
+    "sql": null
+  }
+}
+```
+
+Languages you leave out use the defaults listed in [Editor and Language Servers](../features/editor.md).
+
+## Where Tide keeps your files
+
+| What | Default location |
+| --- | --- |
+| Settings | `~/.config/tide/settings.jsonc` |
+| Keybindings | `~/.config/tide/keybindings.jsonc` |
+| User themes | `~/.config/tide/themes` |
+| Global database connections | `~/.config/tide/connections.json` |
+| Encrypted secrets | `~/.local/share/tide/secrets.enc` |
+| Query history | `~/.local/share/tide/database/query-history` |
+| Sessions | `~/.local/state/tide/sessions` |
+| Debug log (with `--debug`) | `~/.local/state/tide/logs/debug.log` |
+| Cache | `~/.cache/tide` |
+| Project database connections | `<workspace>/.tide/connections.json` |
+
+The configuration, data, state and cache roots follow `$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_STATE_HOME` and `$XDG_CACHE_HOME` when they are set to absolute paths, and otherwise `~/.config`, `~/.local/share`, `~/.local/state` and `~/.cache`. Tide creates them readable only by you.
 
 ## Permissions and removal
 
-Tide creates its application storage roots with owner-only permissions. Managed installation leaves settings, sessions, credentials and history intact. Purging that data requires explicit confirmation. Project directories and external providers' native session stores are not purged by Tide.
-
-Generated from the compiled Rust runtime for Tide 0.10.0. Regenerate with `cargo xtask generate-rust-reference --write`; CI verifies with `--check`.
+Installing, updating and uninstalling Tide leave all of these files in place. `tide --uninstall --purge` removes Tide's own roots after asking; project `.tide` directories and the agents' own session stores are never removed by Tide. See [Getting Started](../getting-started.md).

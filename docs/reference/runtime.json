@@ -1030,6 +1030,134 @@
       "paletteVisible": false
     },
     {
+      "canonical": "help.about",
+      "category": "Help",
+      "description": "Version, license, installation and links",
+      "id": "help.about",
+      "label": "Help: About Tide",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.agents",
+      "category": "Help",
+      "description": null,
+      "id": "help.agents",
+      "label": "Help: AI CLI Agents",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.commands",
+      "category": "Help",
+      "description": null,
+      "id": "help.commands",
+      "label": "Help: All Commands",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.database",
+      "category": "Help",
+      "description": null,
+      "id": "help.database",
+      "label": "Help: PostgreSQL",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.documentation",
+      "category": "Help",
+      "description": "Open the documentation in your browser",
+      "id": "help.documentation",
+      "label": "Help: Online Documentation",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.editor",
+      "category": "Help",
+      "description": null,
+      "id": "help.editor",
+      "label": "Help: Editor and Language Servers",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.gettingStarted",
+      "category": "Help",
+      "description": "Install, update, uninstall and first steps",
+      "id": "help.gettingStarted",
+      "label": "Help: Getting Started",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.git",
+      "category": "Help",
+      "description": null,
+      "id": "help.git",
+      "label": "Help: Git",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.keyboardShortcuts",
+      "category": "Help",
+      "description": "Every active keybinding, including your own",
+      "id": "help.keyboardShortcuts",
+      "label": "Help: Keyboard Shortcuts",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.reportIssue",
+      "category": "Help",
+      "description": "Open a new GitHub issue with version and platform filled in",
+      "id": "help.reportIssue",
+      "label": "Help: Report an Issue",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.settings",
+      "category": "Help",
+      "description": "Every setting with its default and current value",
+      "id": "help.settings",
+      "label": "Help: Settings Reference",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.terminal",
+      "category": "Help",
+      "description": null,
+      "id": "help.terminal",
+      "label": "Help: Terminals",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.themes",
+      "category": "Help",
+      "description": null,
+      "id": "help.themes",
+      "label": "Help: Themes and Customization",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.troubleshooting",
+      "category": "Help",
+      "description": null,
+      "id": "help.troubleshooting",
+      "label": "Help: Troubleshooting",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.welcome",
+      "category": "Help",
+      "description": "Open the Welcome guide, built from your keybindings and settings",
+      "id": "help.welcome",
+      "label": "Help: Welcome",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "help.workbench",
+      "category": "Help",
+      "description": null,
+      "id": "help.workbench",
+      "label": "Help: Workbench and Panes",
+      "paletteVisible": true
+    },
+    {
       "canonical": "lsp.codeActions",
       "category": "Editor",
       "description": null,
@@ -3405,6 +3533,17 @@
       "default": "ultra-dusk",
       "rule": {
         "maxLength": 1024,
+        "type": "string"
+      }
+    },
+    "workbench.startupEditor": {
+      "default": "welcomeOnFirstRun",
+      "rule": {
+        "enum": [
+          "welcomeOnFirstRun",
+          "welcome",
+          "none"
+        ],
         "type": "string"
       }
     }

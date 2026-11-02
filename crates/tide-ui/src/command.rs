@@ -265,6 +265,22 @@ commands! {
     SearchFindPrevious = "search.findPrevious",
     SessionSaveAs = "session.saveAs",
     SessionOpen = "session.open",
+    HelpWelcome = "help.welcome",
+    HelpGettingStarted = "help.gettingStarted",
+    HelpWorkbench = "help.workbench",
+    HelpEditor = "help.editor",
+    HelpGit = "help.git",
+    HelpTerminal = "help.terminal",
+    HelpDatabase = "help.database",
+    HelpAgents = "help.agents",
+    HelpThemes = "help.themes",
+    HelpKeyboardShortcuts = "help.keyboardShortcuts",
+    HelpCommands = "help.commands",
+    HelpSettings = "help.settings",
+    HelpTroubleshooting = "help.troubleshooting",
+    HelpAbout = "help.about",
+    HelpDocumentation = "help.documentation",
+    HelpReportIssue = "help.reportIssue",
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]

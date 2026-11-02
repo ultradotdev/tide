@@ -15,6 +15,7 @@ pub mod editor;
 pub mod file_tree;
 mod git_jobs;
 pub mod git_panel;
+pub mod help;
 mod jobs;
 pub mod modal;
 pub mod palette;

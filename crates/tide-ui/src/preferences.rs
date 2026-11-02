@@ -28,6 +28,7 @@ pub const SUPPORTED: &[&str] = &[
     "editor.wordWrap",
     "editor.wordWrapColumn",
     "workbench.colorTheme",
+    "workbench.startupEditor",
     "tui.sidebar.width",
     "tui.sidebar.visible",
     "tui.sidebar.location",
@@ -124,6 +125,7 @@ fn constraints(key: &str) -> ((u64, u64), &'static [&'static str]) {
         "editor.wordWrap" => &["off", "on", "bounded", "wordWrapColumn"],
         "tui.sidebar.location" => &["left", "right"],
         "tui.iconStyle" => &["nerd", "ascii"],
+        "workbench.startupEditor" => &["welcomeOnFirstRun", "welcome", "none"],
         "tui.diffViewer.editMode" => &["stage-modified", "direct-write"],
         _ => &[],
     };

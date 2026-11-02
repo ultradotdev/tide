@@ -226,5 +226,25 @@
   // ─────────────────────────────────────────────────────────────────────────────
   // Secrets Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "secrets.manage": { "label": "Manage Secrets", "category": "Secrets" }
+  "secrets.manage": { "label": "Manage Secrets", "category": "Secrets" },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Help Commands
+  // ─────────────────────────────────────────────────────────────────────────────
+  "help.welcome": { "label": "Help: Welcome", "category": "Help", "description": "Open the Welcome guide, built from your keybindings and settings" },
+  "help.gettingStarted": { "label": "Help: Getting Started", "category": "Help", "description": "Install, update, uninstall and first steps" },
+  "help.workbench": { "label": "Help: Workbench and Panes", "category": "Help" },
+  "help.editor": { "label": "Help: Editor and Language Servers", "category": "Help" },
+  "help.git": { "label": "Help: Git", "category": "Help" },
+  "help.terminal": { "label": "Help: Terminals", "category": "Help" },
+  "help.database": { "label": "Help: PostgreSQL", "category": "Help" },
+  "help.agents": { "label": "Help: AI CLI Agents", "category": "Help" },
+  "help.themes": { "label": "Help: Themes and Customization", "category": "Help" },
+  "help.keyboardShortcuts": { "label": "Help: Keyboard Shortcuts", "category": "Help", "description": "Every active keybinding, including your own" },
+  "help.commands": { "label": "Help: All Commands", "category": "Help" },
+  "help.settings": { "label": "Help: Settings Reference", "category": "Help", "description": "Every setting with its default and current value" },
+  "help.troubleshooting": { "label": "Help: Troubleshooting", "category": "Help" },
+  "help.about": { "label": "Help: About Tide", "category": "Help", "description": "Version, license, installation and links" },
+  "help.documentation": { "label": "Help: Online Documentation", "category": "Help", "description": "Open the documentation in your browser" },
+  "help.reportIssue": { "label": "Help: Report an Issue", "category": "Help", "description": "Open a new GitHub issue with version and platform filled in" }
 }

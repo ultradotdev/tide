@@ -5,6 +5,13 @@ fn main() -> anyhow::Result<()> {
             print!("{}", tide_services::syntax::embedded_syntax_notices());
             return Ok(());
         }
+        Some("--help-docs") => {
+            let docs = tide_ui::help::static_docs()
+                .into_iter()
+                .collect::<std::collections::BTreeMap<_, _>>();
+            println!("{}", serde_json::to_string_pretty(&docs)?);
+            return Ok(());
+        }
         None => {}
         Some(_) => anyhow::bail!("Unknown reference export option"),
     }

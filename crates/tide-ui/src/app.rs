@@ -75,6 +75,7 @@ macro_rules! with_ui {
 mod commands;
 mod editing;
 mod files;
+mod help;
 mod input;
 mod layout;
 mod mouse;
@@ -86,7 +87,7 @@ mod session;
 
 pub(crate) use self::files::resolve_path;
 use self::files::{collect_files, write_file_atomic};
-pub(crate) use self::input::canonical_key;
+pub(crate) use self::input::{TERMINAL_CONTROL_KEYS, canonical_key};
 use self::layout::{AgentsLayout, Divider, DockLayout, MainItem, Painted, PaneLayout};
 pub(crate) use self::layout::{LayoutState, PointerState};
 
@@ -249,6 +250,8 @@ pub struct AppConfig {
     pub paths: Option<Paths>,
     pub jobs: Jobs,
     pub agent_discovery: AgentDiscovery,
+    /// How this executable was installed, for the help pages' update instructions.
+    pub install: crate::help::Install,
 }
 
 #[derive(Debug)]
@@ -344,6 +347,11 @@ pub struct App {
     pub workspace: PathBuf,
     pub settings: Settings,
     pub keybindings: Vec<Keybinding>,
+    /// The entries from the user's keybindings file, which help pages list first.
+    user_keybindings: Vec<Keybinding>,
+    install: crate::help::Install,
+    /// Opens a URL in the desktop browser; tests substitute a recorder.
+    url_opener: fn(&str) -> Result<(), String>,
     pub themes: ThemeCatalog,
     pub commands: BTreeMap<String, CommandInfo>,
     pub palette: Palette,
@@ -460,11 +468,13 @@ impl App {
         }
 
         let mut keybindings = tide_config::builtin::keybindings();
+        let mut user_keybindings = Vec::new();
         if paths.keybindings_file.exists()
             && let Some(user) = tide_config::load_jsonc::<Vec<Keybinding>>(&paths.keybindings_file)
                 .inspect_err(|error| tracing::warn!(%error, "user keybindings were not loaded"))
                 .ok()
         {
+            user_keybindings.clone_from(&user);
             for binding in user {
                 let canonical = canonical_key(&binding.key);
                 if let Some(existing) = keybindings.iter_mut().find(|existing| {
@@ -502,6 +512,9 @@ impl App {
             workspace: config.workspace,
             settings,
             keybindings,
+            user_keybindings,
+            install: config.install,
+            url_opener: crate::help::open_url,
             themes,
             commands,
             palette,
@@ -627,8 +640,23 @@ impl App {
             false
         };
         if !had_session {
+            let mode = app
+                .settings
+                .get("workbench.startupEditor")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            let first_run =
+                mode == "welcomeOnFirstRun" && !crate::help::welcome_marker(&app.paths).exists();
             if let Some(file) = config.initial_file {
                 app.open_file(file);
+                if first_run {
+                    app.set_status("New to Tide? Run “Help: Welcome” from the command palette");
+                }
+            } else if first_run || mode == "welcome" {
+                app.open_help(
+                    crate::help::for_command(Command::HelpWelcome).expect("Welcome page"),
+                );
+                crate::help::record_welcome(&app.paths);
             } else {
                 app.workbench.insert_tab_focused(Tab::Welcome);
             }

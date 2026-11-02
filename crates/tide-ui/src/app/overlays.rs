@@ -439,6 +439,9 @@ impl App {
     }
 
     pub(super) fn open_save_as_prompt(&mut self) {
+        if self.refuse_help_save() {
+            return;
+        }
         let initial = self
             .workbench
             .active_editor()

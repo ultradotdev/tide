@@ -1,29 +1,61 @@
-# Themes
+<!-- Generated from crates/tide-ui/src/help/pages/themes.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
+# Themes and Customization
 
-Tide uses one semantic theme catalog for workbench roles, syntax rules, and terminal ANSI palettes. Fresh installs select Ultra Dusk.
+One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk.
 
-## Built-in themes
+## Choose a theme
 
-1. Ultra Dusk
-2. Catppuccin Frappé
-3. Catppuccin Latte
-4. Catppuccin Macchiato
-5. Catppuccin Mocha
-6. One Dark
-7. Dracula
-8. Nord
-9. Tokyo Night
-10. Gruvbox Dark
-11. Solarized Dark
-12. Solarized Light
-13. Rosé Pine
+| To | Press |
+| --- | --- |
+| Pick a theme from a list | `Ctrl+Alt+R` |
+| Next / previous theme | “Next Theme” from the command palette (`Ctrl+K`) / “Previous Theme” from the command palette (`Ctrl+K`) |
+| Switch between light and dark | “Toggle Dark Mode” from the command palette (`Ctrl+K`) |
 
-The external palettes are mapped into Tide's semantic roles with attribution and pinned provenance. Syntax mappings retain each upstream theme family's own color intent rather than sharing a generic template.
+The change applies immediately and is saved as `workbench.colorTheme` in `~/.config/tide/settings.jsonc`. Next and previous go through the themes in ID order; switching between light and dark picks the first theme of the other type.
 
-## Select a theme
+| Theme | ID | Type |
+| --- | --- | --- |
+| Catppuccin Frappé | `catppuccin-frappe` | dark |
+| Catppuccin Latte | `catppuccin-latte` | light |
+| Catppuccin Macchiato | `catppuccin-macchiato` | dark |
+| Catppuccin Mocha | `catppuccin-mocha` | dark |
+| Dracula | `dracula` | dark |
+| Gruvbox Dark | `gruvbox-dark` | dark |
+| Nord | `nord` | dark |
+| One Dark | `one-dark` | dark |
+| Rosé Pine | `rose-pine` | dark |
+| Solarized Dark | `solarized-dark` | dark |
+| Solarized Light | `solarized-light` | light |
+| Tokyo Night | `tokyo-night` | dark |
+| Ultra Dusk | `ultra-dusk` | dark |
 
-Open Settings, search for `workbench.colorTheme`, and choose a theme. Switching themes updates workbench surfaces and syntax highlighting without restarting or flashing a default palette.
+The bundled palettes from other projects keep their attribution and pinned provenance; see [theme attribution](../THEME_ATTRIBUTION.md).
 
-## User themes
+## Your own themes
 
-User themes live under the Tide configuration root. Incomplete themes receive deterministic fallback roles and bounded diagnostics. See [Theme authoring](../THEME_AUTHORING.md) for the role contract and [Theme attribution](../THEME_ATTRIBUTION.md) for bundled licenses.
+Put `.json` or `.jsonc` theme files in `~/.config/tide/themes` and restart Tide; the file name without its extension is the theme's ID (letters, digits, `-` and `_`). A file with a built-in theme's ID replaces that theme. A file that cannot be loaded is skipped and the built-in themes stay as they are; run Tide with `--debug` to see why in `~/.local/state/tide/logs/debug.log`. The [theme authoring guide](../THEME_AUTHORING.md) describes the format and every color role.
+
+## Settings
+
+Run `Ctrl+,` or `Ctrl+Alt+O` to browse and change settings, or edit `~/.config/tide/settings.jsonc` directly; Tide reads it at startup and rewrites it when you change a setting in the app. Values that fail validation fall back to their defaults, and keys Tide does not know are kept but ignored. [Settings Reference](../reference/configuration.md) lists every setting with its default and current value.
+
+## Keybindings
+
+`Ctrl+Shift+,` or `Ctrl+Alt+K` lists the active keys and changes the one you pick. Your own bindings are kept in `~/.config/tide/keybindings.jsonc` as a JSON list:
+
+```jsonc
+[
+  // Add a key for a command.
+  { "key": "ctrl+alt+p", "command": "workbench.commandPalette" },
+  // Bind a key only while a panel has focus.
+  { "key": "x", "command": "gitPanel.discard", "when": "gitPanelFocus" },
+  // Remove a default binding.
+  { "key": "ctrl+e", "command": "-workbench.commandPalette" }
+]
+```
+
+An entry with the same key and `when` context as a default replaces it; other entries are added. A command of `""` or `-<command>` removes the key. Context bindings win over global ones for the same key. Restart Tide after editing the file by hand. [Keyboard Shortcuts](../reference/keyboard-shortcuts.md) lists every key and command ID, and [All Commands](../reference/commands.md) lists the commands.
+
+## Startup
+
+`workbench.startupEditor` (`welcomeOnFirstRun`) decides when the Welcome guide opens on its own: `welcomeOnFirstRun` the first time Tide starts without a file or restored session, `welcome` every time it does, and `none` never. `session.restoreOnStartup` (`true`) reopens the last session for the folder.

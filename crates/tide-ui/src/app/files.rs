@@ -458,6 +458,9 @@ impl App {
             with_ui!(self, |ui| self.git.save_hunk_edit(ui));
             return;
         }
+        if self.refuse_help_save() {
+            return;
+        }
         let Some(editor) = self.workbench.active_editor_mut() else {
             self.set_status("No editor is active");
             return;
@@ -485,6 +488,22 @@ impl App {
             }
             Err(error) => self.set_status(format!("Save failed: {error}")),
         }
+    }
+
+    /// Help pages are rendered, not files: saving one only explains that.
+    pub(super) fn refuse_help_save(&mut self) -> bool {
+        let Some(page) = self
+            .workbench
+            .active_editor()
+            .and_then(|editor| editor.help)
+        else {
+            return false;
+        };
+        self.set_status(format!(
+            "{} is read-only; select text and copy it to keep a part",
+            page.title
+        ));
+        true
     }
 
     pub(super) fn save_all(&mut self) {

@@ -1,8 +1,18 @@
+<!-- Generated from crates/tide-ui/src/help/pages/getting-started.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Getting Started
 
 Tide 0.10.0 runs as a native Rust executable on macOS and Linux. Public binary downloads are not published yet; the Homebrew and install-script commands below work once the release is published on GitHub. Until then, build from your source checkout.
 
 Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64).
+
+## Your installation
+
+- **Homebrew:** Update with `brew upgrade tide` and uninstall with `brew uninstall tide`. Homebrew owns this copy, so `tide --uninstall` refuses and names the `brew` command to use instead.
+- **Install script:** Update by running the install command again: `curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh`. Uninstall with `tide --uninstall`; add `--purge` to remove your settings and data as well.
+- **Managed install from source** (`./install-from-source.sh`): Update by pulling the latest source and running `./install-from-source.sh` again from the checkout; `./install.sh --rollback` returns to the previous build. Uninstall with `tide --uninstall`.
+- **Source build** (`./target/release/tide`): Update with `git pull` and then `cargo build --locked --release -p tide` in the checkout. To remove it, delete the build; nothing else was installed.
+
+Updates and uninstalls keep your settings, keybindings, sessions and connections; only `tide --uninstall --purge` removes them.
 
 ## Install with Homebrew
 
@@ -77,7 +87,7 @@ Repeat the same local install command with a newly built executable. Local paylo
 
 ## Your data
 
-Settings, keybindings, themes, sessions, connections, query history and the encrypted secrets store live in the configuration, data and state roots listed in the [configuration reference](reference/configuration.md). Installation, updates, rollback and uninstall never modify them; only `tide --uninstall --purge` removes them.
+Settings, keybindings, themes, sessions, connections, query history and the encrypted secrets store live in the configuration, data and state directories listed in [Settings Reference](reference/configuration.md): settings in `~/.config/tide/settings.jsonc`, keybindings in `~/.config/tide/keybindings.jsonc` and sessions under `~/.local/state/tide/sessions`. Installation, updates, rollback and uninstall never modify them; only `tide --uninstall --purge` removes them.
 
 ## Uninstall
 
@@ -90,8 +100,11 @@ tide --uninstall --purge --yes
 
 Normal removal keeps user data. Purge asks before removal and deletes only Tide's configured user roots. Project `.tide` directories and external providers' native stores remain. Run uninstall through the managed launcher; an arbitrary source executable cannot remove an installation it does not own. For a Homebrew installation use `brew uninstall tide`; Homebrew does not remove Tide's user data roots.
 
-## First use
+## First steps
 
-Open a folder, use `Ctrl+P` for Quick Open and `Ctrl+K` for the command palette. Save with `Ctrl+S`. `F6` cycles workbench regions. Use pane menus to split, add tabs, or collapse surrounding regions. Dialogs wrap their text; ordinary dialogs dismiss on outside click, while an unresolved save/discard decision remains explicit.
+1. Start Tide in a project: `tide .` opens the current directory, `tide path/to/file` opens a file in its folder, and `tide` alone opens the directory you are in. The last session for that folder is restored while `session.restoreOnStartup` is on; `--no-session` starts fresh for one run and `--session <name>` opens a named session.
+2. Open files with `Ctrl+P` or from the Explorer, and run any command from the palette with `Ctrl+K` or `Ctrl+Shift+P`.
+3. Save with `Ctrl+S`. `F6` or `Ctrl+Alt+]` cycles the workbench regions, `Ctrl+\` splits a pane, and `Ctrl+Shift+A` adds a tab.
+4. Dialogs wrap their text and their buttons work from the keyboard or the mouse. Clicking outside closes ordinary pickers; confirmations, Save As and forms stay open until you choose.
 
-See [workbench controls](features/workbench.md), [keyboard shortcuts](reference/keyboard-shortcuts.md) and [troubleshooting](troubleshooting.md).
+[Welcome](welcome.md) gives a tour of everything else. See also [Workbench and Panes](features/workbench.md), [Keyboard Shortcuts](reference/keyboard-shortcuts.md) and [Troubleshooting](troubleshooting.md).
