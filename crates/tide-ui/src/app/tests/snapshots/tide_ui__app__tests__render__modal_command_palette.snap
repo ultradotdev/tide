@@ -12,21 +12,21 @@ No files · . hidden · Enter expand/│Tide
                               │>                                                         │
                               │──────────────────────────────────────────────────────────│.
                               │ Agents: Archive Selected Session...                    AI│
-                              │ Agents: Associate Previous Workspace...            AI CLI│
+                              │ Agents: Associate Previous Workspace...                AI│
                               │ Agents: Delete Selected Session...                     AI│
                               │ Agents: New Session...                                 AI│
                               │ Agents: Open Session...                                AI│
                               │ Agents: Refresh Sessions                               AI│
                               │ Agents: Rename Selected Session...                     AI│
                               │ Agents: Toggle Sidebar                                 AI│
-                              │ AI CLI: New...                                         AI│
-Enter open · ←/→ folders · . h│ AI CLI: Open Session...                                AI│
- ▼ Source Control             │ AI CLI: Refresh Sessions                               AI│
- no repository                │ AI CLI: Toggle                                         AI│
-                              │ Database: Add Row                               Workbench│
-                              │ Browse Schema                                    Database│
+                              │ Add Row                                          Database│
+Enter open · ←/→ folders · . h│ Browse Schema                                    Database│
+ ▼ Source Control             │ Complete SQL                                     Database│
+ no repository                │ Connect to Database                              Database│
+                              │ Delete Connection                                Database│
+                              │ Describe Table                                   Database│
                               │                   Open   Cancel [Esc]                    │
-                              │Enter open   Esc cancel                          217 items│
+                              │Enter open   Esc cancel                          270 items│
                               └──────────────────────────────────────────────────────────┘
                                    │
                                    │

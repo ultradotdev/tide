@@ -103,7 +103,7 @@ fn unknown_placeholders_commands_and_settings_are_reported() {
         command: Command::HelpAbout,
         title: "Probe",
         doc: None,
-        template: "{{key:no.such}} {{label:fileTree.moveUp}} {{setting:editor.fontSize}} {{nope}} {{version:1}} {{path:home}} {{help:missing}} {{key:file.save",
+        template: "{{key:no.such}} {{label:workbench.notACommand}} {{setting:editor.fontSize}} {{nope}} {{version:1}} {{path:home}} {{help:missing}} {{key:file.save",
     };
     let keybindings = default_keybindings();
     let commands = crate::catalog::commands();

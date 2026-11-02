@@ -430,9 +430,7 @@ impl App {
     }
 
     pub(super) fn open_command_palette(&mut self) {
-        let commands = self
-            .commands
-            .iter()
+        let commands = crate::catalog::palette_commands(&self.commands)
             .map(|(id, info)| (id.clone(), info.clone()))
             .collect::<Vec<_>>();
         self.overlay = Some(modal::command_palette(command_items(&commands)));

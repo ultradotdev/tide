@@ -18,9 +18,10 @@ pub fn reference_catalog() -> Value {
     let commands = ids
         .into_iter()
         .map(|id| {
-            let info = metadata.get(id);
             let canonical = command_aliases::canonical(id);
-            json!({"id":id, "canonical":canonical, "paletteVisible":info.is_some(),
+            let info = metadata.get(id).or_else(|| metadata.get(canonical));
+            let visible = catalog::palette_commands(&metadata).any(|(listed, _)| listed == id);
+            json!({"id":id, "canonical":canonical, "paletteVisible":visible,
             "label":info.map_or(id, |info| info.label.as_str()),
             "category":info.map_or("Keybinding actions", |info| info.category.as_str()),
             "description":info.and_then(|info| info.description.as_deref())})

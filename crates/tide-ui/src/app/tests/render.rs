@@ -137,7 +137,6 @@ fn word_wrap_renders_continuations_without_changing_content() {
         content
     );
     assert!(app.workbench.active_editor().unwrap().word_wrap_enabled());
-    assert!(!command_supported("workbench.toggleMinimap"));
 }
 
 #[test]

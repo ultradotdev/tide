@@ -128,7 +128,7 @@ fn git_groups_edit_modes_history_and_recovery_preserve_versions() {
     assert!(history.is_dirty());
     assert_eq!(std::fs::read_to_string(&copy).unwrap(), "one\ntwo\n");
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "ONE\ntwo\n");
-    app.execute_command(Command::GitOpenFileDiff);
+    app.execute_command(Command::GitDiff);
     app.settle();
 }
 
@@ -471,6 +471,7 @@ fn space_in_source_control_collapses_the_selected_group_not_the_section() {
     );
     assert_eq!(app.git.panel.collapsed.len(), 1);
     assert!(app.git.panel.rows.len() < rows);
+}
 
 /// Runs Git for test setup; panics with its stderr when it fails.
 fn git_in(root: &Path, args: &[&str]) -> String {

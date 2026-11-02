@@ -59,9 +59,7 @@ commands! {
     WorkbenchCommandPalette = "workbench.commandPalette",
     WorkbenchQuickOpen = "workbench.quickOpen",
     WorkbenchToggleSidebar = "workbench.toggleSidebar",
-    ViewToggleSidebar = "view.toggleSidebar",
     WorkbenchToggleTerminal = "workbench.toggleTerminal",
-    ViewToggleTerminal = "view.toggleTerminal",
     WorkbenchFocusNextRegion = "workbench.focusNextRegion",
     WorkbenchFocusPreviousRegion = "workbench.focusPreviousRegion",
     WorkbenchFocusNextPane = "workbench.focusNextPane",
@@ -128,8 +126,6 @@ commands! {
     EditorDuplicateSelection = "editor.duplicateSelection",
     GitFocusPanel = "git.focusPanel",
     GitDiff = "git.diff",
-    GitOpenFileDiff = "git.openFileDiff",
-    GitViewStagedChanges = "git.viewStagedChanges",
     GitStashApply = "git.stashApply",
     GitStashPop = "git.stashPop",
     GitStashDrop = "git.stashDrop",
@@ -142,7 +138,6 @@ commands! {
     GitStageAll = "git.stageAll",
     GitUnstage = "git.unstage",
     GitCommit = "git.commit",
-    GitViewChanges = "git.viewChanges",
     GitDiffStaged = "git.diffStaged",
     GitLog = "git.log",
     GitLogFile = "git.logFile",
@@ -188,9 +183,7 @@ commands! {
     TerminalScrollToBottom = "terminal.scrollToBottom",
     TerminalCloseAll = "terminal.closeAll",
     WorkbenchQuit = "workbench.quit",
-    Quit = "quit",
     SessionSave = "session.save",
-    WorkbenchSaveSession = "workbench.saveSession",
     AgentsOpenSession = "agents.openSession",
     AgentsAssociateWorkspace = "agents.associateWorkspace",
     AgentsNewSession = "agents.newSession",
@@ -232,10 +225,7 @@ commands! {
     GitPanelMoveDown = "gitPanel.moveDown",
     GitPanelMoveUp = "gitPanel.moveUp",
     GitPanelStage = "gitPanel.stage",
-    GitPanelStageAll = "gitPanel.stageAll",
     GitPanelUnstage = "gitPanel.unstage",
-    GitPanelCommit = "gitPanel.commit",
-    GitPanelRefresh = "gitPanel.refresh",
     GitPanelOpenDiff = "gitPanel.openDiff",
     GitPanelOpenFile = "gitPanel.openFile",
     GitPanelToggleSection = "gitPanel.toggleSection",
@@ -245,7 +235,6 @@ commands! {
     QueryResultsPageUp = "queryResults.pageUp",
     QueryResultsGoToFirst = "queryResults.goToFirst",
     QueryResultsGoToLast = "queryResults.goToLast",
-    QueryResultsExport = "queryResults.export",
     QueryResultsRefresh = "queryResults.refresh",
     QueryResultsShowDetails = "queryResults.showDetails",
     QueryResultsMoveLeft = "queryResults.moveLeft",
@@ -273,7 +262,6 @@ commands! {
     TimelinePanelCopyHash = "timelinePanel.copyHash",
     TimelinePanelToggleMode = "timelinePanel.toggleMode",
     GitPanelDiscard = "gitPanel.discard",
-    AiCliToggle = "aiCli.toggle",
     EditorToggleComment = "editor.toggleComment",
     EditorFold = "editor.fold",
     EditorFoldAll = "editor.foldAll",
@@ -359,19 +347,8 @@ mod tests {
     }
 
     #[test]
-    fn every_alias_is_a_catalog_command() {
-        let catalog = crate::catalog::commands();
-        for (alias, _) in crate::command_aliases::ALIASES {
-            assert!(
-                catalog.contains_key(*alias),
-                "{alias} is not in the catalog"
-            );
-        }
-    }
-
-    #[test]
     fn unknown_ids_are_rejected() {
-        for id in ["", "__unbound__", "workbench.toggleMinimap"] {
+        for id in ["", "__unbound__", "workbench.notACommand"] {
             assert_eq!(id.parse::<Command>(), Err(UnknownCommand(id.to_owned())));
         }
     }

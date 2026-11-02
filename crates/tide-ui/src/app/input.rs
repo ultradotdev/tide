@@ -818,22 +818,30 @@ impl App {
     }
 
     pub(super) fn outline_key(&mut self, code: KeyCode) {
-        self.focus_sidebar_section(2, true);
-        self.handle_outline_key(KeyEvent::new(code, KeyModifiers::NONE));
+        if self.reveal_outline() {
+            self.handle_outline_key(KeyEvent::new(code, KeyModifiers::NONE));
+        }
     }
 
     pub(super) fn timeline_key(&mut self, code: KeyCode) {
-        self.focus_sidebar_section(3, true);
-        with_ui!(self, |ui| self
-            .git
-            .handle_timeline_key(KeyEvent::new(code, KeyModifiers::NONE), ui));
+        if self.reveal_timeline("move through it") {
+            with_ui!(self, |ui| self
+                .git
+                .handle_timeline_key(KeyEvent::new(code, KeyModifiers::NONE), ui));
+        }
     }
 
     pub(super) fn git_panel_key(&mut self, code: KeyCode) {
-        self.focus_sidebar_section(1, true);
-        with_ui!(self, |ui| self
-            .git
-            .handle_key(KeyEvent::new(code, KeyModifiers::NONE), ui));
+        if !self.reveal_panel(SectionId::SourceControl, "move through changes") {
+            return;
+        }
+        if self.git.has_changes() {
+            with_ui!(self, |ui| self
+                .git
+                .handle_key(KeyEvent::new(code, KeyModifiers::NONE), ui));
+        } else {
+            self.set_status("Source Control has no changes to select");
+        }
     }
 }
 

@@ -329,6 +329,17 @@ impl GitController {
         }
     }
 
+    /// Whether the Source Control panel has a changed file selected.
+    pub fn has_selected_file(&mut self) -> bool {
+        self.sync_panel();
+        self.panel.file().is_some()
+    }
+
+    /// Whether the Source Control panel lists any change.
+    pub fn has_changes(&self) -> bool {
+        !self.state.changed().is_empty()
+    }
+
     pub fn toggle_panel_group(&mut self) {
         self.panel
             .toggle(self.state.snapshot.as_ref(), self.state.revision);

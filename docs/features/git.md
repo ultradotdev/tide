@@ -50,7 +50,7 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Checkout... | — | `git.checkout` |
 | Cherry-Pick Commit... | — | `git.cherryPick` |
 | Clean Untracked Files... | — | `git.clean` |
-| Commit | — | `git.commit` |
+| Commit | `c` | `git.commit` |
 | Commit (Amend)... | — | `git.commitAmend` |
 | Continue Rebase | — | `git.continueRebase` |
 | Continue Rebase, Cherry-Pick or Revert | — | `git.continue` |
@@ -75,23 +75,21 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Push | — | `git.push` |
 | Push (Force with Lease) | — | `git.pushForce` |
 | Rebase Branch... | — | `git.rebase` |
-| Refresh | — | `git.refresh` |
+| Refresh | `r` | `git.refresh` |
 | Rename Branch... | — | `git.renameBranch` |
 | Reset to Commit... | — | `git.reset` |
 | Revert Commit... | — | `git.revert` |
 | Show Status | — | `git.status` |
-| Stage All Changes | — | `git.stageAll` |
+| Stage All Changes | `Shift+S` | `git.stageAll` |
 | Stage Changes | — | `git.stage` |
 | Stash | — | `git.stash` |
 | Switch Branch... | — | `git.switchBranch` |
 | Toggle Blame | — | `git.blame` |
 | Unstage All | — | `git.unstageAll` |
 | Unstage Changes | — | `git.unstage` |
-| View Active File Diff | — | `git.openFileDiff` |
 | View Diff | — | `git.diff` |
 | View File History | — | `git.logFile` |
 | View Log | — | `git.log` |
-| View Staged Changes | — | `git.viewStagedChanges` |
 | View Staged Diff | — | `git.diffStaged` |
 
 Branch switching, checkout and **List Branches** open the same branch picker. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.

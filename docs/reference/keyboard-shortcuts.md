@@ -44,7 +44,13 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+1`, `Alt+1` | Focus First Main Pane | `workbench.focusEditor1` |
 | `Ctrl+2`, `Alt+2` | Focus Second Main Pane | `workbench.focusEditor2` |
 | `Ctrl+3`, `Alt+3` | Focus Third Main Pane | `workbench.focusEditor3` |
-| `Ctrl+Alt+E` | Focus File Explorer | `workbench.focusExplorer` |
+| `Ctrl+Alt+E` | Focus Explorer | `workbench.focusExplorer` |
+| `Ctrl+Alt+U` | Focus Outline | `workbench.focusOutline` |
+| `Ctrl+Alt+L` | Focus Timeline | `workbench.focusTimeline` |
+| `Alt+Right`, `Ctrl+Alt+Right` | Focus Pane to the Right | `workbench.focusPaneRight` |
+| `Alt+Left`, `Ctrl+Alt+Left` | Focus Pane to the Left | `workbench.focusPaneLeft` |
+| `Alt+Up` | Focus Pane Above | `workbench.focusPaneUp` |
+| `Alt+Down` | Focus Pane Below | `workbench.focusPaneDown` |
 
 ### Edit
 
@@ -112,7 +118,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `Ctrl+Shift+I`, `Shift+Cmd+I` | AI CLI: Toggle | `aiCli.toggle` |
+| `Ctrl+Shift+I`, `Shift+Cmd+I` | Agents: New Session... | `agents.newSession` |
 | `Ctrl+Shift+J`, `Shift+Cmd+J`, `Ctrl+Alt+A` | Agents: Open Session... | `agents.openSession` |
 
 ### Application
@@ -128,17 +134,6 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+,`, `Cmd+,`, `Ctrl+Alt+O` | Open Settings | `workbench.openSettings` |
 | `Ctrl+Shift+,`, `Ctrl+Alt+K` | Open Keyboard Shortcuts | `workbench.openKeybindings` |
 | `Ctrl+Alt+R` | Select Color Theme | `workbench.selectTheme` |
-
-### Other actions
-
-| Keys | Action | Command |
-| --- | --- | --- |
-| `Ctrl+Alt+U` | Focus outline | `workbench.focusOutline` |
-| `Ctrl+Alt+L` | Focus timeline | `workbench.focusTimeline` |
-| `Alt+Right`, `Ctrl+Alt+Right` | Focus pane right | `workbench.focusPaneRight` |
-| `Alt+Left`, `Ctrl+Alt+Left` | Focus pane left | `workbench.focusPaneLeft` |
-| `Alt+Up` | Focus pane up | `workbench.focusPaneUp` |
-| `Alt+Down` | Focus pane down | `workbench.focusPaneDown` |
 
 ### Editor with multiple cursors
 
@@ -158,83 +153,83 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `s` | Stage | `gitPanel.stage` |
-| `Shift+S` | Stage all | `gitPanel.stageAll` |
-| `u` | Unstage | `gitPanel.unstage` |
-| `d` | Discard | `gitPanel.discard` |
-| `Enter` | Open diff | `gitPanel.openDiff` |
-| `o` | Open file | `gitPanel.openFile` |
-| `r` | Refresh | `gitPanel.refresh` |
-| `c` | Commit | `gitPanel.commit` |
-| `Space` | Toggle section | `gitPanel.toggleSection` |
-| `Up`, `k` | Move up | `gitPanel.moveUp` |
-| `Down`, `j` | Move down | `gitPanel.moveDown` |
+| `s` | Source Control: Stage Selected File | `gitPanel.stage` |
+| `Shift+S` | Stage All Changes | `git.stageAll` |
+| `u` | Source Control: Unstage Selected File | `gitPanel.unstage` |
+| `d` | Source Control: Discard Selected Changes... | `gitPanel.discard` |
+| `Enter` | Source Control: Open Selected Diff | `gitPanel.openDiff` |
+| `o` | Source Control: Open Selected File | `gitPanel.openFile` |
+| `r` | Refresh | `git.refresh` |
+| `c` | Commit | `git.commit` |
+| `Space` | Source Control: Collapse or Expand Group | `gitPanel.toggleSection` |
+| `Up`, `k` | Source Control: Select Previous | `gitPanel.moveUp` |
+| `Down`, `j` | Source Control: Select Next | `gitPanel.moveDown` |
 
 ### Explorer
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `Up`, `k` | Move up | `fileTree.moveUp` |
-| `Down`, `j` | Move down | `fileTree.moveDown` |
-| `Right`, `l` | Expand | `fileTree.expand` |
-| `Left`, `h` | Collapse | `fileTree.collapse` |
-| `Enter`, `Space` | Open | `fileTree.open` |
-| `n` | New file | `fileTree.newFile` |
-| `Shift+N` | New folder | `fileTree.newFolder` |
-| `r`, `F2` | Rename | `fileTree.rename` |
-| `d`, `Delete` | Delete | `fileTree.delete` |
-| `Home` | Go to first | `fileTree.goToFirst` |
-| `End` | Go to last | `fileTree.goToLast` |
-| `PageUp` | Page up | `fileTree.pageUp` |
-| `PageDown` | Page down | `fileTree.pageDown` |
+| `Up`, `k` | Explorer: Select Previous | `fileTree.moveUp` |
+| `Down`, `j` | Explorer: Select Next | `fileTree.moveDown` |
+| `Right`, `l` | Explorer: Expand Folder | `fileTree.expand` |
+| `Left`, `h` | Explorer: Collapse Folder | `fileTree.collapse` |
+| `Enter`, `Space` | Explorer: Open Selected | `fileTree.open` |
+| `n` | Explorer: New File... | `fileTree.newFile` |
+| `Shift+N` | Explorer: New Folder... | `fileTree.newFolder` |
+| `r`, `F2` | Explorer: Rename... | `fileTree.rename` |
+| `d`, `Delete` | Explorer: Delete... | `fileTree.delete` |
+| `Home` | Explorer: Select First | `fileTree.goToFirst` |
+| `End` | Explorer: Select Last | `fileTree.goToLast` |
+| `PageUp` | Explorer: Page Up | `fileTree.pageUp` |
+| `PageDown` | Explorer: Page Down | `fileTree.pageDown` |
 
 ### Outline
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `Up`, `k` | Move up | `outlinePanel.moveUp` |
-| `Down`, `j` | Move down | `outlinePanel.moveDown` |
-| `Right`, `l` | Expand | `outlinePanel.expand` |
-| `Left`, `h` | Collapse | `outlinePanel.collapse` |
-| `Space` | Toggle expand | `outlinePanel.toggleExpand` |
-| `Enter` | Select | `outlinePanel.select` |
-| `PageUp` | Page up | `outlinePanel.pageUp` |
-| `PageDown` | Page down | `outlinePanel.pageDown` |
-| `Home` | Go to first | `outlinePanel.goToFirst` |
-| `End` | Go to last | `outlinePanel.goToLast` |
+| `Up`, `k` | Outline: Select Previous | `outlinePanel.moveUp` |
+| `Down`, `j` | Outline: Select Next | `outlinePanel.moveDown` |
+| `Right`, `l` | Outline: Expand Selected | `outlinePanel.expand` |
+| `Left`, `h` | Outline: Collapse Selected | `outlinePanel.collapse` |
+| `Space` | Outline: Toggle Selected | `outlinePanel.toggleExpand` |
+| `Enter` | Outline: Go to Selected Symbol | `outlinePanel.select` |
+| `PageUp` | Outline: Page Up | `outlinePanel.pageUp` |
+| `PageDown` | Outline: Page Down | `outlinePanel.pageDown` |
+| `Home` | Outline: Select First | `outlinePanel.goToFirst` |
+| `End` | Outline: Select Last | `outlinePanel.goToLast` |
 
 ### Timeline
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `Up`, `k` | Move up | `timelinePanel.moveUp` |
-| `Down`, `j` | Move down | `timelinePanel.moveDown` |
-| `PageUp` | Page up | `timelinePanel.pageUp` |
-| `PageDown` | Page down | `timelinePanel.pageDown` |
-| `Home`, `g` | Go to first | `timelinePanel.goToFirst` |
-| `End`, `Shift+G` | Go to last | `timelinePanel.goToLast` |
-| `Enter` | View diff | `timelinePanel.viewDiff` |
-| `o` | Open file at commit | `timelinePanel.openFileAtCommit` |
-| `Tab` | Toggle mode | `timelinePanel.toggleMode` |
-| `y` | Copy hash | `timelinePanel.copyHash` |
+| `Up`, `k` | Timeline: Select Previous | `timelinePanel.moveUp` |
+| `Down`, `j` | Timeline: Select Next | `timelinePanel.moveDown` |
+| `PageUp` | Timeline: Page Up | `timelinePanel.pageUp` |
+| `PageDown` | Timeline: Page Down | `timelinePanel.pageDown` |
+| `Home`, `g` | Timeline: Select First | `timelinePanel.goToFirst` |
+| `End`, `Shift+G` | Timeline: Select Last | `timelinePanel.goToLast` |
+| `Enter` | Timeline: View Selected Commit's Diff | `timelinePanel.viewDiff` |
+| `o` | Timeline: Open File at Selected Commit | `timelinePanel.openFileAtCommit` |
+| `Tab` | Timeline: Toggle File or Repository History | `timelinePanel.toggleMode` |
+| `y` | Timeline: Copy Selected Commit Hash | `timelinePanel.copyHash` |
 
 ### Query results
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `Up`, `k` | Move up | `queryResults.moveUp` |
-| `Down`, `j` | Move down | `queryResults.moveDown` |
-| `Left`, `h` | Move left | `queryResults.moveLeft` |
-| `Right`, `l` | Move right | `queryResults.moveRight` |
-| `PageUp` | Page up | `queryResults.pageUp` |
-| `PageDown` | Page down | `queryResults.pageDown` |
-| `Home` | Go to first | `queryResults.goToFirst` |
-| `End` | Go to last | `queryResults.goToLast` |
-| `Enter` | Show details | `queryResults.showDetails` |
-| `r`, `F5` | Refresh | `queryResults.refresh` |
-| `e` | Export | `queryResults.export` |
-| `s` | Sort | `queryResults.sort` |
-| `Tab` | Toggle view mode | `queryResults.toggleViewMode` |
+| `Up`, `k` | Query Results: Previous Row | `queryResults.moveUp` |
+| `Down`, `j` | Query Results: Next Row | `queryResults.moveDown` |
+| `Left`, `h` | Query Results: Previous Column | `queryResults.moveLeft` |
+| `Right`, `l` | Query Results: Next Column | `queryResults.moveRight` |
+| `PageUp` | Query Results: Page Up | `queryResults.pageUp` |
+| `PageDown` | Query Results: Page Down | `queryResults.pageDown` |
+| `Home` | Query Results: First Row | `queryResults.goToFirst` |
+| `End` | Query Results: Last Row | `queryResults.goToLast` |
+| `Enter` | Query Results: Show Row Details | `queryResults.showDetails` |
+| `r`, `F5` | Query Results: Run Query Again | `queryResults.refresh` |
+| `e` | Export Results | `database.exportResults` |
+| `s` | Query Results: Sort by Selected Column | `queryResults.sort` |
+| `Tab` | Query Results: Toggle View Mode | `queryResults.toggleViewMode` |
 
 ### SQL editor
 
@@ -254,5 +249,5 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 
 | Keys | Action | Command |
 | --- | --- | --- |
-| `Ctrl+Alt+Up` | Focus pane up | `workbench.focusPaneUp` |
-| `Ctrl+Alt+Down` | Focus pane down | `workbench.focusPaneDown` |
+| `Ctrl+Alt+Up` | Focus Pane Above | `workbench.focusPaneUp` |
+| `Ctrl+Alt+Down` | Focus Pane Below | `workbench.focusPaneDown` |
