@@ -722,6 +722,9 @@ impl LspClient {
                     "completion": { "completionItem": { "snippetSupport": false } },
                     "hover": { "contentFormat": ["plaintext", "markdown"] },
                     "definition": {},
+                    "declaration": {},
+                    "typeDefinition": {},
+                    "implementation": {},
                     "documentSymbol": {},
                     "references": {},
                     "rename": {},
@@ -1015,9 +1018,35 @@ impl LspClient {
     }
 
     pub async fn definition(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/definition", uri, position)
+            .await
+    }
+
+    pub async fn declaration(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/declaration", uri, position)
+            .await
+    }
+
+    pub async fn type_definition(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/typeDefinition", uri, position)
+            .await
+    }
+
+    pub async fn implementation(&self, uri: &str, position: Position) -> Result<Vec<Location>> {
+        self.locations("textDocument/implementation", uri, position)
+            .await
+    }
+
+    /// A position request whose reply is a location, a list of locations or links.
+    async fn locations(
+        &self,
+        method: &str,
+        uri: &str,
+        position: Position,
+    ) -> Result<Vec<Location>> {
         let value = self
             .request(
-                "textDocument/definition",
+                method,
                 json!({ "textDocument": { "uri": uri }, "position": position }),
             )
             .await?;
@@ -1365,6 +1394,26 @@ impl LspRegistry {
         .map_err(|error| LspError::Task(error.to_string()))?
     }
 
+    /// Shuts down the server for `config` if it is running and forgets its restart
+    /// backoff, so the next request starts a fresh server. True when one was running.
+    pub async fn stop(&self, config: &ServerConfig, root: &Path) -> bool {
+        let slot = self
+            .slots
+            .lock()
+            .unwrap()
+            .remove(&ServerKey::new(config, root));
+        let Some(slot) = slot else {
+            return false;
+        };
+        let client = slot.lock().await.client.take();
+        if let Some(client) = client {
+            client.shutdown().await;
+            true
+        } else {
+            false
+        }
+    }
+
     /// The running client for `config`, without starting one.
     pub async fn running(&self, config: &ServerConfig, root: &Path) -> Option<Arc<LspClient>> {
         let slot = self
@@ -1542,8 +1591,18 @@ pub fn parse_locations(value: &Value) -> Vec<Location> {
     values
         .into_iter()
         .filter_map(|location| {
-            let uri = location.get("uri")?.as_str()?.to_owned();
-            let range = serde_json::from_value::<Range>(location.get("range")?.clone()).ok()?;
+            // A LocationLink names its target and the range to select in it.
+            let (uri, range) = match location.get("targetUri") {
+                Some(uri) => (
+                    uri,
+                    location
+                        .get("targetSelectionRange")
+                        .or_else(|| location.get("targetRange"))?,
+                ),
+                None => (location.get("uri")?, location.get("range")?),
+            };
+            let uri = uri.as_str()?.to_owned();
+            let range = serde_json::from_value::<Range>(range.clone()).ok()?;
             Some(Location { uri, range })
         })
         .collect()
@@ -1947,6 +2006,24 @@ mod tests {
             );
         }
         assert_eq!(default_servers().len(), DEFAULT_SERVERS.len());
+    }
+
+    #[test]
+    fn parses_locations_and_location_links() {
+        let range =
+            json!({"start": {"line": 4, "character": 2}, "end": {"line": 4, "character": 6}});
+        let locations = parse_locations(&json!([
+            {"uri": "file:///a.rs", "range": range},
+            {"targetUri": "file:///b.rs", "targetRange": {"start": {"line": 1, "character": 0}, "end": {"line": 9, "character": 0}}, "targetSelectionRange": range},
+        ]));
+        assert_eq!(locations.len(), 2);
+        assert_eq!(locations[1].uri, "file:///b.rs");
+        assert_eq!(locations[1].range.start.line, 4);
+        assert_eq!(
+            parse_locations(&json!({"uri": "file:///c.rs", "range": range})).len(),
+            1
+        );
+        assert!(parse_locations(&Value::Null).is_empty());
     }
 
     #[test]

@@ -267,8 +267,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "3b0e809c7530410b8d6c5cdd59cac1bfa5dcd9aad219bee73ba0c00416387a3d",
-    "lastVerifiedGitFingerprint": "e5cf23dc492b46903354dda582b1c5f83adb4cf0",
+    "contentHash": "f7dacf6c6c295eb67211e1ca73fe9279af9e05a659a1c1c4e78f86367841830c",
+    "lastVerifiedGitFingerprint": "8da4163207fb8541f6592d9f49e3dfd01239a563",
     "inputFiles": [
       "config/product.json",
       "config/release.json",

@@ -239,6 +239,7 @@
 
   // LSP
   { "key": "ctrl+shift+k", "command": "lsp.goToDefinition" }, // Go to definition
+  { "key": "ctrl+f12", "command": "lsp.goToImplementation", "when": "editorFocus" }, // Go to implementation
   { "key": "ctrl+i", "command": "lsp.showHover" }, // Show hover info (type info, docs)
   { "key": "ctrl+space", "command": "lsp.triggerCompletion" }, // Trigger autocomplete
   { "key": "ctrl+shift+space", "command": "lsp.triggerSignatureHelp" }, // Show signature help

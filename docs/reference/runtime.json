@@ -1522,11 +1522,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "lsp.goToDeclaration",
+      "category": "Go",
+      "description": "Go to the symbol's declaration, choosing when the server returns several",
+      "id": "lsp.goToDeclaration",
+      "label": "Go to Declaration",
+      "paletteVisible": true
+    },
+    {
       "canonical": "lsp.goToDefinition",
       "category": "Go",
       "description": null,
       "id": "lsp.goToDefinition",
       "label": "Go to Definition",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "lsp.goToImplementation",
+      "category": "Go",
+      "description": "Go to the symbol's implementations, choosing when there are several",
+      "id": "lsp.goToImplementation",
+      "label": "Go to Implementation",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "lsp.goToTypeDefinition",
+      "category": "Go",
+      "description": "Go to the definition of the symbol's type, choosing when the server returns several",
+      "id": "lsp.goToTypeDefinition",
+      "label": "Go to Type Definition",
       "paletteVisible": true
     },
     {
@@ -1551,6 +1575,14 @@
       "description": null,
       "id": "lsp.rename",
       "label": "Rename Symbol",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "lsp.restartServer",
+      "category": "Editor",
+      "description": "Restart the active file's language server and reopen its documents",
+      "id": "lsp.restartServer",
+      "label": "Restart Language Server",
       "paletteVisible": true
     },
     {
@@ -2930,6 +2962,11 @@
     {
       "command": "search.find",
       "key": "ctrl+f"
+    },
+    {
+      "command": "lsp.goToImplementation",
+      "key": "ctrl+f12",
+      "when": "editorFocus"
     },
     {
       "command": "editor.gotoLine",

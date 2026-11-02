@@ -196,6 +196,12 @@ impl App {
             Submitted::Command(command) => self.execute_command(command),
             Submitted::OpenFile(path) => self.open_file(path),
             Submitted::SearchResult { path, line } => {
+                // Language-server pickers name files by URI.
+                let path = if path.starts_with("file:") {
+                    tide_lsp::uri_to_path(&path).unwrap_or_else(|| PathBuf::from(&path))
+                } else {
+                    PathBuf::from(path)
+                };
                 self.open_file(path);
                 if let Some(line) = line
                     && let Some(editor) = self.workbench.active_editor_mut()

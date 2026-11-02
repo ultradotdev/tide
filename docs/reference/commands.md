@@ -97,6 +97,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Format Selection | — | `editor.formatSelection` |
 | Remove Line Comment | — | `editor.uncommentLine` |
 | Rename Symbol | — | `lsp.rename` |
+| Restart Language Server | — | `lsp.restartServer` |
 | Select Line | `Ctrl+L` | `editor.selectLine` |
 | Show Code Actions | `Ctrl+.` | `lsp.codeActions` |
 | Show Hover | `Ctrl+I` | `lsp.showHover` |
@@ -208,12 +209,15 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Command | Keys | ID |
 | --- | --- | --- |
 | Find All References | — | `lsp.findReferences` |
+| Go to Declaration | — | `lsp.goToDeclaration` |
 | Go to Definition | `Ctrl+Shift+K` | `lsp.goToDefinition` |
+| Go to Implementation | `Ctrl+F12` | `lsp.goToImplementation` |
 | Go to Line... | `Ctrl+G` | `editor.gotoLine` |
 | Go to Next Problem | — | `lsp.nextDiagnostic` |
 | Go to Previous Problem | — | `lsp.previousDiagnostic` |
 | Go to Symbol in Editor... | `Ctrl+R` | `editor.gotoSymbol` |
 | Go to Symbol in Workspace... | `Ctrl+Shift+R` | `editor.gotoWorkspaceSymbol` |
+| Go to Type Definition | — | `lsp.goToTypeDefinition` |
 
 ### Help
 

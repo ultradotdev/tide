@@ -291,6 +291,10 @@
   // ─────────────────────────────────────────────────────────────────────────────
   "lsp.showHover": { "label": "Show Hover", "category": "Editor" },
   "lsp.goToDefinition": { "label": "Go to Definition", "category": "Go" },
+  "lsp.goToDeclaration": { "label": "Go to Declaration", "category": "Go", "description": "Go to the symbol's declaration, choosing when the server returns several" },
+  "lsp.goToTypeDefinition": { "label": "Go to Type Definition", "category": "Go", "description": "Go to the definition of the symbol's type, choosing when the server returns several" },
+  "lsp.goToImplementation": { "label": "Go to Implementation", "category": "Go", "description": "Go to the symbol's implementations, choosing when there are several" },
+  "lsp.restartServer": { "label": "Restart Language Server", "category": "Editor", "description": "Restart the active file's language server and reopen its documents" },
   "lsp.findReferences": { "label": "Find All References", "category": "Go" },
   "lsp.rename": { "label": "Rename Symbol", "category": "Editor" },
   "lsp.codeActions": { "label": "Show Code Actions", "category": "Editor" },

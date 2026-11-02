@@ -152,6 +152,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | `Ctrl+Shift+Down` | Move Line Down | `edit.moveLinesDown` |
 | `Shift+Cmd+K` | Delete Line | `edit.deleteLine` |
 | `Alt+Shift+A` | Toggle Block Comment | `editor.toggleBlockComment` |
+| `Ctrl+F12` | Go to Implementation | `lsp.goToImplementation` |
 | `Ctrl+.` | Show Code Actions | `lsp.codeActions` |
 
 ### Terminal
