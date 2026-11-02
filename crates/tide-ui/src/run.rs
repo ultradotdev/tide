@@ -112,9 +112,11 @@ pub(crate) async fn guard_panics<T>(app: &mut App, work: impl AsyncFnOnce(&mut A
     let outcome = AssertUnwindSafe(work(&mut *app)).catch_unwind().await;
     outcome.unwrap_or_else(|panic| {
         // State may be mid-update; a failing snapshot must not replace the original panic.
-        let saved = std::panic::catch_unwind(AssertUnwindSafe(|| app.save_session()));
-        if matches!(saved, Ok(Ok(()))) {
+        let saved = std::panic::catch_unwind(AssertUnwindSafe(|| app.save_recovery()));
+        if matches!(saved, Ok(Ok(true))) {
             eprintln!("Tide crashed; unsaved edits were kept in the session recovery snapshot.");
+        } else if matches!(saved, Ok(Ok(false))) {
+            eprintln!("Tide crashed; it was started with --no-session, so no recovery snapshot was written.");
         } else {
             eprintln!("Tide crashed and the session recovery snapshot could not be written.");
         }

@@ -247,6 +247,8 @@ pub struct AppConfig {
     pub initial_file: Option<PathBuf>,
     pub session_name: Option<String>,
     pub restore_session: bool,
+    /// `--no-session`: leave the saved session alone until the user saves one.
+    pub ephemeral_session: bool,
     pub paths: Option<Paths>,
     pub jobs: Jobs,
     pub agent_discovery: AgentDiscovery,
@@ -389,6 +391,8 @@ pub struct App {
     pub session_name: Option<String>,
     session_store: SessionStore,
     session_write_blocked: bool,
+    /// No snapshot is written until the user saves or opens a session.
+    session_ephemeral: bool,
     events_tx: tokio::sync::mpsc::Sender<AppEvent>,
     events_rx: Option<tokio::sync::mpsc::Receiver<AppEvent>>,
     watcher: Option<notify::RecommendedWatcher>,
@@ -551,6 +555,7 @@ impl App {
             session_name: config.session_name.clone(),
             session_store,
             session_write_blocked: false,
+            session_ephemeral: config.ephemeral_session,
             events_tx,
             events_rx: Some(events_rx),
             watcher: None,

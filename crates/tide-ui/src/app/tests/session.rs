@@ -110,6 +110,7 @@ fn session_restore_reopens_dirty_documents() {
         initial_file: None,
         session_name: None,
         restore_session: true,
+        ephemeral_session: false,
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
@@ -118,6 +119,51 @@ fn session_restore_reopens_dirty_documents() {
     .unwrap();
     let editor = restored.workbench.active_editor().unwrap();
     assert!(editor.document.text().starts_with("draft"));
+}
+
+#[test]
+fn no_session_leaves_the_saved_session_alone_until_the_user_saves() {
+    let (_home, mut app) = test_app();
+    app.new_file();
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("kept");
+    app.save_session().unwrap();
+    let saved_path = app.session_store.workspace_session_path();
+    let saved = std::fs::read(&saved_path).unwrap();
+    let paths = app.paths.clone();
+    let workspace = app.workspace.clone();
+    drop(app);
+
+    let mut fresh = App::new(AppConfig {
+        workspace,
+        initial_file: None,
+        session_name: None,
+        restore_session: false,
+        ephemeral_session: true,
+        paths: Some(paths),
+        jobs: Jobs::manual(),
+        agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
+    })
+    .unwrap();
+    fresh.new_file();
+    fresh
+        .workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("scratch");
+    fresh.mark_session_dirty();
+    fresh.autosave_session().unwrap();
+    assert!(!fresh.save_recovery().unwrap());
+    fresh.finish_quit();
+    assert!(fresh.should_quit);
+    assert_eq!(std::fs::read(&saved_path).unwrap(), saved);
+
+    fresh.execute_command(Command::SessionSave);
+    assert_eq!(fresh.status, "Session saved");
+    assert_ne!(std::fs::read(&saved_path).unwrap(), saved);
 }
 
 #[test]

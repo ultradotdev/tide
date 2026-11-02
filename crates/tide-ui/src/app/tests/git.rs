@@ -283,6 +283,7 @@ async fn startup_defers_git_status_to_the_background_queue() {
         initial_file: None,
         session_name: None,
         restore_session: false,
+        ephemeral_session: false,
         paths: Some(Paths::from_env(home.path(), |_| None)),
         jobs: Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: no_agents,

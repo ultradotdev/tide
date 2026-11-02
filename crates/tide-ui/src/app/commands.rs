@@ -446,7 +446,7 @@ impl App {
             | Command::HelpAbout
             | Command::HelpDocumentation
             | Command::HelpReportIssue => self.run_help(command),
-            Command::WorkbenchSaveSession | Command::SessionSave => match self.save_session() {
+            Command::WorkbenchSaveSession | Command::SessionSave => match self.adopt_session() {
                 Ok(()) => self.set_status("Session saved"),
                 Err(error) => self.set_status(format!("Session save failed: {error:#}")),
             },

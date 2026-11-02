@@ -9,6 +9,7 @@ fn launch(home: &Path, initial_file: Option<PathBuf>, restore_session: bool) -> 
         initial_file,
         session_name: None,
         restore_session,
+        ephemeral_session: false,
         paths: Some(Paths::from_env(home, |_| None)),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,

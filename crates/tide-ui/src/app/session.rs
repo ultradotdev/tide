@@ -5,6 +5,9 @@ use num_traits::ToPrimitive;
 impl App {
     /// Builds the recovery snapshot here and writes it on a blocking thread.
     pub(super) fn autosave_session(&mut self) -> Result<()> {
+        if self.session_ephemeral {
+            return Ok(());
+        }
         if self.session_write_blocked {
             return self.save_session();
         }
@@ -54,7 +57,7 @@ impl App {
     pub(super) fn switch_named_session(&mut self, name: &str) {
         match self.session_store.load_named(name) {
             Ok(Some(loaded)) => {
-                if let Err(error) = self.save_session() {
+                if let Err(error) = self.save_recovery() {
                     self.set_status(format!("Session switch blocked: {error:#}"));
                     return;
                 }
@@ -63,6 +66,7 @@ impl App {
                 self.documents = DocumentRegistry::default();
                 self.dock = DockState::new();
                 self.session_name = Some(name.to_owned());
+                self.session_ephemeral = false;
                 match self.restore_session(loaded) {
                     Ok(()) => {
                         self.session_dirty = false;
@@ -82,7 +86,7 @@ impl App {
             return;
         }
         self.session_name = Some(name.to_owned());
-        match self.save_session() {
+        match self.adopt_session() {
             Ok(()) => self.set_status(format!("Session: saved {name}")),
             Err(error) => self.set_status(format!("Session save failed: {error:#}")),
         }
@@ -109,6 +113,8 @@ impl App {
                         .any(|t| matches!(t,Tab::Sql(sql) if !sql.row_edits.is_empty()))
                 }) {
                     "Quit and discard unsaved database row edits? Query buffers remain in session recovery."
+                } else if self.session_ephemeral {
+                    "Save changes before quitting? Started with --no-session, so Discard keeps no recovery copy."
                 } else {
                     "Save changes before quitting? Discard keeps a recovery copy."
                 },
@@ -119,8 +125,8 @@ impl App {
     }
 
     pub(super) fn finish_quit(&mut self) {
-        match self.save_session() {
-            Ok(()) => {
+        match self.save_recovery() {
+            Ok(_) => {
                 self.workbench.kill_terminals();
                 self.should_quit = true;
             }
@@ -129,6 +135,21 @@ impl App {
                 self.set_status(format!("Quit blocked: recovery snapshot failed: {error:#}"))
             }
         }
+    }
+
+    /// Saves the session on the user's request, which ends `--no-session` mode.
+    pub(super) fn adopt_session(&mut self) -> Result<()> {
+        self.session_ephemeral = false;
+        self.save_session()
+    }
+
+    /// The snapshot written on quit, session switch and crash. `--no-session`
+    /// writes none, so the folder's saved session is left as it was.
+    pub(crate) fn save_recovery(&mut self) -> Result<bool> {
+        if self.session_ephemeral {
+            return Ok(false);
+        }
+        self.save_session().map(|()| true)
     }
 
     pub(crate) fn save_session(&mut self) -> Result<()> {
