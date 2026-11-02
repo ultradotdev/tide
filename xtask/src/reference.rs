@@ -283,7 +283,7 @@ mod tests {
       "keybindings":[{"key":"ctrl+k","command":"a.run"},{"key":"f1","command":"unknown","when":"editorFocus"}],
       "settings":{"editor.tabSize":{"default":4,"rule":{"type":"integer","minimum":1,"maximum":16}},
                   "theme":{"default":"Ultra Dusk","rule":{"type":"string","enum":["a","b"],"maxLength":64}}},
-      "preservedSettings":[],"externalCliProviders":[],"themes":[]}"#;
+      "externalCliProviders":[],"themes":[]}"#;
 
     #[test]
     fn renders_commands_aliases_bindings_and_rules() {

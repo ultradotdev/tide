@@ -115,6 +115,11 @@ async fn main() -> Result<()> {
             .keys()
             .filter(|id| !tide_ui::command_supported(id))
             .collect::<Vec<_>>();
+        let unsupported_settings = settings
+            .iter()
+            .map(|(key, _)| key.as_str())
+            .filter(|key| !tide_ui::setting_supported(key))
+            .collect::<Vec<_>>();
         println!(
             "catalogs: {} settings, {} keybindings, {} commands, {} themes",
             settings.len(),
@@ -132,13 +137,22 @@ async fn main() -> Result<()> {
             commands.len() - unrouted_commands.len(),
             unrouted_commands.len()
         );
+        println!(
+            "catalog settings: {} supported, {} unsupported",
+            settings.len() - unsupported_settings.len(),
+            unsupported_settings.len()
+        );
         for command in &unrouted_bindings {
             eprintln!("keybinding references an unsupported command: {command}");
         }
         for command in &unrouted_commands {
             eprintln!("command catalog lists an unsupported command: {command}");
         }
-        let problems = unrouted_bindings.len() + unrouted_commands.len();
+        for key in &unsupported_settings {
+            eprintln!("settings catalog lists an unsupported setting: {key}");
+        }
+        let problems =
+            unrouted_bindings.len() + unrouted_commands.len() + unsupported_settings.len();
         if problems > 0 {
             anyhow::bail!("{problems} catalog entries are unresolved");
         }

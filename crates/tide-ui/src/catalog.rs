@@ -160,9 +160,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_catalog_command_is_routed() {
+    fn every_catalog_entry_has_a_runtime_consumer() {
         for id in commands().keys() {
             assert!(crate::app::command_supported(id), "{id} is not routed");
+        }
+        let settings = settings();
+        for (key, value) in settings.iter() {
+            crate::preferences::validate(key, value)
+                .unwrap_or_else(|error| panic!("{key}: {error}"));
+        }
+        for key in crate::preferences::SUPPORTED {
+            assert!(settings.get(key).is_some(), "{key} has no default");
         }
     }
 

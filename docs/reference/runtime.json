@@ -3010,33 +3010,6 @@
       "when": "timelinePanelFocus"
     }
   ],
-  "preservedSettings": [
-    "editor.autoClosingBrackets",
-    "editor.cursorBlinkRate",
-    "editor.folding",
-    "editor.fontSize",
-    "editor.minimap.maxColumn",
-    "editor.minimap.showSlider",
-    "editor.minimap.side",
-    "editor.minimap.width",
-    "editor.mouseWheelScrollSensitivity",
-    "editor.renderWhitespace",
-    "editor.scrollBeyondLastLine",
-    "files.autoSave",
-    "git.diffContextLines",
-    "git.panel.location",
-    "git.panel.openOnStartup",
-    "git.statusInterval",
-    "lsp.diagnostics.delay",
-    "session.save.cursorPositions",
-    "session.save.foldState",
-    "session.save.openFiles",
-    "session.save.scrollPositions",
-    "session.save.uiLayout",
-    "session.save.unsavedContent",
-    "tui.sidebar.focusedBackground",
-    "workbench.startupEditor"
-  ],
   "schemaVersion": 2,
   "settings": {
     "ai.autoStartCli": {

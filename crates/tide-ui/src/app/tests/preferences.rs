@@ -67,6 +67,47 @@ fn settings_validate_apply_persist_and_hide_excluded_or_ignored_controls() {
 }
 
 #[test]
+fn unknown_user_settings_load_without_controls_and_survive_saves() {
+    let home = tempfile::tempdir().unwrap();
+    let workspace = home.path().join("workspace");
+    std::fs::create_dir_all(&workspace).unwrap();
+    let paths = Paths::from_env(home.path(), |_| None);
+    std::fs::create_dir_all(paths.settings_file.parent().unwrap()).unwrap();
+    std::fs::write(
+        &paths.settings_file,
+        r#"{ "editor.fontSize": 18, "editor.tabSize": 3 }"#,
+    )
+    .unwrap();
+    let mut app = App::new(AppConfig {
+        workspace,
+        paths: Some(paths),
+        initial_file: None,
+        session_name: None,
+        restore_session: false,
+        jobs: Jobs::manual(),
+        agent_discovery: no_agents,
+    })
+    .unwrap();
+    assert_eq!(app.tab_size(), 3);
+    app.open_settings();
+    assert!(
+        !app.overlay
+            .as_ref()
+            .unwrap()
+            .base()
+            .items
+            .iter()
+            .any(|item| item.value == "editor.fontSize")
+    );
+    app.overlay = None;
+    app.update_setting("editor.tabSize", "4");
+    let persisted: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&app.paths.settings_file).unwrap()).unwrap();
+    assert_eq!(persisted["editor.fontSize"], 18);
+    assert_eq!(persisted["editor.tabSize"], 4);
+}
+
+#[test]
 fn edited_settings_apply_and_persist() {
     let (_home, mut app) = test_app();
     app.update_setting("editor.tabSize", "4");

@@ -45,11 +45,6 @@ pub fn reference_catalog() -> Value {
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let preserved = settings
-        .iter()
-        .filter(|(key, _)| !preferences::supported(key))
-        .map(|(key, _)| key)
-        .collect::<Vec<_>>();
     let aliases = command_aliases::ALIASES
         .iter()
         .copied()
@@ -58,7 +53,7 @@ pub fn reference_catalog() -> Value {
     let themes = tide_config::builtin::themes();
     json!({"schemaVersion":2, "implementation":"rust", "version":env!("CARGO_PKG_VERSION"),
         "commands":commands, "aliases":aliases, "keybindings":bindings,
-        "settings":supported_settings, "preservedSettings":preserved,
+        "settings":supported_settings,
         "externalCliProviders":providers,
         "themes":themes.iter().map(|theme| json!({"id":theme.id,"name":theme.name})).collect::<Vec<_>>()})
 }
