@@ -200,7 +200,7 @@ fn live_pages_show_this_machine() {
     );
     assert!(welcome.contains("| Claude Code | `claude` | Not found | `TIDE_CLAUDE_PATH` |"));
     assert!(welcome.contains("installed with **Homebrew**"));
-    assert!(welcome.contains("`brew upgrade tide-nightly`"));
+    assert!(welcome.contains("`brew update && brew upgrade tide-nightly`"));
     assert!(welcome.contains("**Help: Git**"));
     let source = Install::Source {
         executable: "/home/someone/src/tide/target/release/tide".into(),
@@ -289,7 +289,7 @@ fn update_instructions_follow_the_install_method() {
         formula: "ultradotdev/tap/tide".into(),
     });
     assert!(
-        homebrew.contains("brew upgrade ultradotdev/tap/tide"),
+        homebrew.contains("brew update && brew upgrade ultradotdev/tap/tide"),
         "{homebrew}"
     );
     let script = super::update_instruction(&Install::Managed { local: false });

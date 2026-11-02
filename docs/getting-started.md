@@ -7,7 +7,7 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 
 ## Your installation
 
-- **Homebrew:** Update with `brew upgrade tide` and uninstall with `brew uninstall tide`. Homebrew owns this copy, so `tide --uninstall` refuses and names the `brew` command to use instead.
+- **Homebrew:** Update with `brew update && brew upgrade tide` and uninstall with `brew uninstall tide`. Homebrew owns this copy, so `tide --uninstall` refuses and names the `brew` command to use instead.
 - **Install script:** Update by running the install command again: `curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.sh | sh`. Uninstall with `tide --uninstall`; add `--purge` to remove your settings and data as well.
 - **Managed install from source** (`./install-from-source.sh`): Update by pulling the latest source and running `./install-from-source.sh` again from the checkout; `./install.sh --rollback` returns to the previous build. Uninstall with `tide --uninstall`.
 - **Source build** (`./target/release/tide`): Update with `git pull` and then `cargo build --locked --release -p tide` in the checkout. To remove it, delete the build; nothing else was installed.
@@ -22,7 +22,7 @@ Updates and uninstalls keep your settings, keybindings, sessions and connections
 brew install ultradotdev/tap/tide
 ```
 
-The formula in the `ultradotdev/homebrew-tap` tap installs the prebuilt release archive for your platform; on macOS that executable is Developer ID signed and notarized. Update with `brew upgrade tide` and remove with `brew uninstall tide`. Homebrew owns that copy: run from it, `tide --uninstall` and the managed-install commands refuse and name the `brew` command to use instead.
+The formula in the `ultradotdev/homebrew-tap` tap installs the prebuilt release archive for your platform; on macOS that executable is Developer ID signed and notarized. Update with `brew update && brew upgrade tide` and remove with `brew uninstall tide`. Homebrew owns that copy: run from it, `tide --uninstall` and the managed-install commands refuse and name the `brew` command to use instead.
 
 ## Install with the install script
 

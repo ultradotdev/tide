@@ -137,7 +137,7 @@
     "homebrewUpgrade": {
       "status": "available",
       "commands": [
-        "brew upgrade tide"
+        "brew update && brew upgrade tide"
       ]
     },
     "homebrewUninstall": {
