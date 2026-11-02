@@ -2,7 +2,7 @@
 
 Open the command palette with `ctrl+k`. Enhanced terminal key reporting also enables the bindings listed in the [keyboard reference](keyboard-shortcuts.md).
 
-The table includes supported command IDs and compatibility aliases. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
+The table lists every routed command ID and compatibility alias. “Keybinding action” means the command is routed but has no standalone palette entry. Provider-specific launch entries appear when the corresponding external CLI is detected.
 
 | Command ID | Label | Category | Palette |
 | --- | --- | --- | --- |

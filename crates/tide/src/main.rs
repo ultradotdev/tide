@@ -103,15 +103,18 @@ async fn main() -> Result<()> {
         let keybindings = tide_config::builtin::keybindings();
         let commands = tide_config::builtin::commands();
         let themes = tide_config::builtin::themes();
-        let mut missing = std::collections::BTreeSet::new();
-        let mut supported = std::collections::BTreeSet::new();
-        for binding in &keybindings {
-            if tide_ui::command_supported(&binding.command) {
-                supported.insert(binding.command.clone());
-            } else {
-                missing.insert(binding.command.clone());
-            }
-        }
+        let bound = keybindings
+            .iter()
+            .map(|binding| binding.command.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+        let unrouted_bindings = bound
+            .iter()
+            .filter(|id| !tide_ui::command_supported(id))
+            .collect::<Vec<_>>();
+        let unrouted_commands = commands
+            .keys()
+            .filter(|id| !tide_ui::command_supported(id))
+            .collect::<Vec<_>>();
         println!(
             "catalogs: {} settings, {} keybindings, {} commands, {} themes",
             settings.len(),
@@ -121,17 +124,23 @@ async fn main() -> Result<()> {
         );
         println!(
             "keybinding commands: {} supported, {} unresolved",
-            supported.len(),
-            missing.len()
+            bound.len() - unrouted_bindings.len(),
+            unrouted_bindings.len()
         );
-        if !missing.is_empty() {
-            for command in missing.iter().take(20) {
-                eprintln!("keybinding references an unsupported command: {command}");
-            }
-            anyhow::bail!(
-                "{} keybinding command reference(s) are unresolved",
-                missing.len()
-            );
+        println!(
+            "catalog commands: {} supported, {} unresolved",
+            commands.len() - unrouted_commands.len(),
+            unrouted_commands.len()
+        );
+        for command in &unrouted_bindings {
+            eprintln!("keybinding references an unsupported command: {command}");
+        }
+        for command in &unrouted_commands {
+            eprintln!("command catalog lists an unsupported command: {command}");
+        }
+        let problems = unrouted_bindings.len() + unrouted_commands.len();
+        if problems > 0 {
+            anyhow::bail!("{problems} catalog entries are unresolved");
         }
         return Ok(());
     }

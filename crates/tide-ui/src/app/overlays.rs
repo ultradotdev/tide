@@ -411,13 +411,12 @@ impl App {
     }
 
     pub(super) fn open_command_palette(&mut self) {
-        let implemented = self
+        let commands = self
             .commands
             .iter()
-            .filter(|(id, _)| command_supported(id))
             .map(|(id, info)| (id.clone(), info.clone()))
             .collect::<Vec<_>>();
-        self.overlay = Some(modal::command_palette(command_items(&implemented)));
+        self.overlay = Some(modal::command_palette(command_items(&commands)));
     }
 
     pub(super) fn open_quick_open(&mut self) {
