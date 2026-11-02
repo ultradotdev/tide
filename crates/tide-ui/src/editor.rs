@@ -538,6 +538,8 @@ pub struct EditorState {
     pub inline_area: Rect,
     pub hunk_edit: Option<HunkEdit>,
     pub historical: Option<(PathBuf, String)>,
+    /// The help page this read-only, path-less buffer renders.
+    pub help: Option<&'static crate::help::Page>,
     pub document: DocumentHandle,
     pub scroll_top: usize,
     pub scroll_left: usize,
@@ -588,6 +590,7 @@ impl Clone for EditorState {
             inline_area: Rect::default(),
             hunk_edit: self.hunk_edit.clone(),
             historical: self.historical.clone(),
+            help: self.help,
             document: self.document.fork_view(),
             scroll_top: self.scroll_top,
             scroll_left: self.scroll_left,
@@ -657,6 +660,7 @@ impl EditorState {
             inline_area: Rect::default(),
             hunk_edit: None,
             historical: None,
+            help: None,
             document: DocumentHandle::new(Document::new("")),
             scroll_top: 0,
             scroll_left: 0,
@@ -695,6 +699,18 @@ impl EditorState {
     pub fn scratch(content: &str, language: &str) -> Self {
         let mut state = Self::from_content(None, content);
         state.language_extension = language.to_owned();
+        state
+    }
+
+    /// A read-only Markdown buffer showing a rendered help page.
+    #[must_use]
+    pub fn help(page: &'static crate::help::Page, text: &str) -> Self {
+        let mut state = Self::scratch(text, "md");
+        state
+            .document
+            .with_mut(|document| document.set_read_only(true));
+        state.document.mark_clean();
+        state.help = Some(page);
         state
     }
 
@@ -737,6 +753,7 @@ impl EditorState {
             inline_area: Rect::default(),
             hunk_edit: None,
             historical: None,
+            help: None,
             scroll_top: 0,
             scroll_left: 0,
             language_extension,
@@ -779,6 +796,9 @@ impl EditorState {
         self.cursor_screen
     }
     pub fn title(&self) -> String {
+        if let Some(page) = self.help {
+            return page.title.to_owned();
+        }
         if let Some(edit) = &self.hunk_edit {
             return format!("Edit hunk: {}", edit.diff.path);
         }
@@ -853,6 +873,7 @@ impl EditorState {
     }
 
     pub fn save(&mut self) -> std::io::Result<()> {
+        self.refuse_help()?;
         if self.historical.is_some() {
             return Err(std::io::Error::other(
                 "Historical file is read-only; use Save As to create a copy",
@@ -917,6 +938,7 @@ impl EditorState {
     /// Save even if the file changed on disk. Used only after explicit user
     /// confirmation in the reload/overwrite flow.
     pub fn save_force(&mut self) -> std::io::Result<()> {
+        self.refuse_help()?;
         if self.historical.is_some() {
             return Err(std::io::Error::other(
                 "Historical files are read-only; use Save As",
@@ -950,7 +972,18 @@ impl EditorState {
         self.path = Some(path);
     }
 
+    fn refuse_help(&self) -> std::io::Result<()> {
+        match self.help {
+            Some(page) => Err(std::io::Error::other(format!(
+                "{} is a read-only help page",
+                page.title
+            ))),
+            None => Ok(()),
+        }
+    }
+
     fn save_as_inner(&mut self, path: PathBuf, overwrite: bool) -> std::io::Result<()> {
+        self.refuse_help()?;
         let path = document_path(&path);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;

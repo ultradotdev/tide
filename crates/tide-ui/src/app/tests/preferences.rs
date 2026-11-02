@@ -59,6 +59,7 @@ fn settings_validate_apply_persist_and_hide_excluded_or_ignored_controls() {
         restore_session: false,
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
     })
     .unwrap();
     assert_eq!(restored.themes.selected_id(), chosen);
@@ -86,6 +87,7 @@ fn unknown_user_settings_load_without_controls_and_survive_saves() {
         restore_session: false,
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
     })
     .unwrap();
     assert_eq!(app.tab_size(), 3);

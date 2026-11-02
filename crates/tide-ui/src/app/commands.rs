@@ -430,6 +430,22 @@ impl App {
             Command::AgentsTogglePanel => self.toggle_agents(),
             Command::SecretsManage => self.with_db(|db, ui| db.manage_secrets(ui)),
             Command::WorkbenchQuit | Command::Quit => self.quit(),
+            Command::HelpWelcome
+            | Command::HelpGettingStarted
+            | Command::HelpWorkbench
+            | Command::HelpEditor
+            | Command::HelpGit
+            | Command::HelpTerminal
+            | Command::HelpDatabase
+            | Command::HelpAgents
+            | Command::HelpThemes
+            | Command::HelpKeyboardShortcuts
+            | Command::HelpCommands
+            | Command::HelpSettings
+            | Command::HelpTroubleshooting
+            | Command::HelpAbout
+            | Command::HelpDocumentation
+            | Command::HelpReportIssue => self.run_help(command),
             Command::WorkbenchSaveSession | Command::SessionSave => match self.save_session() {
                 Ok(()) => self.set_status("Session saved"),
                 Err(error) => self.set_status(format!("Session save failed: {error:#}")),

@@ -88,7 +88,24 @@ impl App {
         if edit_key && self.overlay.as_ref().is_some_and(|o| o.is_popup()) {
             self.overlay = None;
         }
+        let typing = edit_key
+            || (key.modifiers.is_empty() && matches!(key.code, KeyCode::Enter | KeyCode::Tab));
+        let help = self
+            .workbench
+            .active_editor()
+            .and_then(|editor| editor.help);
+        let help = help.filter(|_| typing && self.overlay.is_none() && self.focus == Focus::Main);
         self.handle_key(key);
+        if let Some(page) = help
+            && self.overlay.is_none()
+            && self
+                .workbench
+                .active_editor()
+                .and_then(|editor| editor.help)
+                .is_some()
+        {
+            self.set_status(format!("{} is read-only", page.title));
+        }
         if let (Some((document, revision, position)), Some(editor)) =
             (before, self.workbench.active_editor())
             && document.same_view(&editor.document)
@@ -182,11 +199,11 @@ impl App {
             return false;
         }
         if let KeyCode::Char(ch) = key.code {
-            // Standard shell line-editing/control keys stay with the child.
-            return matches!(
-                ch.to_ascii_lowercase(),
-                'a' | 'c' | 'd' | 'e' | 'k' | 'l' | 'r' | 'u' | 'v' | 'w' | 'y' | 'z' | ' ' | '\\'
-            );
+            let name = match ch.to_ascii_lowercase() {
+                ' ' => "space".to_owned(),
+                other => other.to_string(),
+            };
+            return TERMINAL_CONTROL_KEYS.contains(&name.as_str());
         }
         false
     }
@@ -939,6 +956,12 @@ impl<'a> WhenParser<'a> {
         Some((self.context)(token))
     }
 }
+
+/// Standard shell line-editing and control keys: with Ctrl alone they go to a focused
+/// terminal's child process instead of workbench bindings.
+pub(crate) const TERMINAL_CONTROL_KEYS: &[&str] = &[
+    "a", "c", "d", "e", "k", "l", "r", "u", "v", "w", "y", "z", "space", "\\",
+];
 
 pub(crate) fn canonical_key(key: &str) -> String {
     if key == " " {

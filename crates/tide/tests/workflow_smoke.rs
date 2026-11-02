@@ -1306,3 +1306,52 @@ fn terminal_save_before_quit_waits_for_draft_save_as_and_persists_the_file() {
         "SAVED_DRAFT_FIXTURE"
     );
 }
+
+#[test]
+fn welcome_opens_once_and_help_follows_the_palette_and_user_keys() {
+    let fixture = Fixture::new();
+    let mut session = PtySession::spawn(fixture.config(&fixture.workspace)).unwrap();
+    let mut screen = TerminalEmulator::new(120, 40, 1000);
+    wait_screen(&session, &mut screen, |s| {
+        s.text().contains("# Welcome to Tide")
+    });
+    session.write(&[0x0b]).unwrap();
+    wait_screen(&session, &mut screen, |s| {
+        s.text().contains("Command Palette")
+    });
+    session.write(b"Help: Git").unwrap();
+    wait_screen(&session, &mut screen, |s| s.text().contains("Help: Git"));
+    session.write(b"\r").unwrap();
+    wait_screen(&session, &mut screen, |s| {
+        s.text().contains("# Git Workflows") && tab_bar_text(s).contains("Help: Git")
+    });
+    session.write(b"x").unwrap();
+    wait_screen(&session, &mut screen, |s| {
+        s.text().contains("Help: Git is read-only")
+    });
+    quit(&mut session);
+    assert!(
+        fixture
+            .home
+            .path()
+            .join("STATE/tide/welcome-shown")
+            .is_file()
+    );
+
+    std::fs::write(
+        fixture.home.path().join("CONFIG/tide/keybindings.jsonc"),
+        r#"[{ "key": "ctrl+alt+w", "command": "help.welcome" }]"#,
+    )
+    .unwrap();
+    let mut session = PtySession::spawn(fixture.config(&fixture.workspace)).unwrap();
+    let mut screen = TerminalEmulator::new(120, 40, 1000);
+    let start = wait_screen(&session, &mut screen, |s| {
+        s.text().contains("Ctrl+Alt+W opens the Welcome guide")
+    });
+    assert!(!start.text().contains("# Welcome to Tide"));
+    session.write(b"\x1b\x17").unwrap();
+    wait_screen(&session, &mut screen, |s| {
+        s.text().contains("# Welcome to Tide") && s.text().contains("`Ctrl+Alt+W`")
+    });
+    quit(&mut session);
+}

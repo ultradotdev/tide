@@ -286,6 +286,7 @@ async fn startup_defers_git_status_to_the_background_queue() {
         paths: Some(Paths::from_env(home.path(), |_| None)),
         jobs: Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
     })
     .unwrap();
     assert!(app.git.state.snapshot.is_none());

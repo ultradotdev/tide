@@ -283,6 +283,50 @@ fn homebrew_formula(executable: &Path) -> Option<String> {
     }
 }
 
+/// How the running executable was installed, for the help pages. This reads the
+/// release manifest but does not hash the payload, so it stays cheap at startup.
+pub fn detect() -> tide_ui::help::Install {
+    use tide_ui::help::Install;
+    let Some(executable) = std::env::current_exe()
+        .ok()
+        .and_then(|path| std::fs::canonicalize(path).ok())
+    else {
+        return Install::Unknown { executable: None };
+    };
+    classify(executable)
+}
+
+fn classify(executable: PathBuf) -> tide_ui::help::Install {
+    use tide_ui::help::Install;
+    if let Some(formula) = homebrew_formula(&executable) {
+        return Install::Homebrew { formula };
+    }
+    let directory = executable.parent().unwrap_or(Path::new("/"));
+    let manifest = std::fs::read(directory.join("VERSION.json"))
+        .ok()
+        .filter(|bytes| bytes.len() <= 65536)
+        .and_then(|bytes| serde_json::from_slice::<Manifest>(&bytes).ok())
+        .filter(|manifest| manifest.product == "Tide" && manifest.implementation == "rust");
+    if let Some(manifest) = manifest {
+        return Install::Managed {
+            local: manifest.local,
+        };
+    }
+    let built = directory
+        .file_name()
+        .is_some_and(|name| name == "debug" || name == "release")
+        && directory
+            .ancestors()
+            .any(|ancestor| ancestor.join("Cargo.lock").is_file());
+    if built {
+        Install::Source { executable }
+    } else {
+        Install::Unknown {
+            executable: Some(executable),
+        }
+    }
+}
+
 /// Managed-installation commands that a package manager's copy must not run.
 #[derive(Clone, Copy, Debug)]
 pub enum ManagedCommand {
@@ -723,6 +767,45 @@ mod tests {
             );
         }
     }
+    #[test]
+    fn installs_are_classified_for_the_help_pages() {
+        use tide_ui::help::Install;
+        let root = tempfile::tempdir().unwrap();
+        let root = root.path().canonicalize().unwrap();
+        assert_eq!(
+            classify(PathBuf::from("/opt/homebrew/Cellar/tide/0.10.0/bin/tide")),
+            Install::Homebrew {
+                formula: "tide".into()
+            }
+        );
+        let release = root.join("lib/tide/releases/0.10.0-local");
+        std::fs::create_dir_all(&release).unwrap();
+        std::fs::write(
+            release.join("VERSION.json"),
+            r#"{"schemaVersion":2,"product":"Tide","version":"0.10.0","sourceCommit":"local","target":"t","platform":"p","architecture":"a","prerelease":false,"implementation":"rust","local":true,"payloads":[]}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            classify(release.join("tide")),
+            Install::Managed { local: true }
+        );
+        let checkout = root.join("checkout");
+        std::fs::create_dir_all(checkout.join("target/release")).unwrap();
+        std::fs::write(checkout.join("Cargo.lock"), "").unwrap();
+        let built = checkout.join("target/release/tide");
+        assert_eq!(
+            classify(built.clone()),
+            Install::Source { executable: built }
+        );
+        let elsewhere = root.join("bin/tide");
+        assert_eq!(
+            classify(elsewhere.clone()),
+            Install::Unknown {
+                executable: Some(elsewhere)
+            }
+        );
+    }
+
     #[test]
     fn homebrew_installs_are_left_to_brew() {
         let keg = Path::new("/opt/homebrew/Cellar/tide/0.10.0/bin/tide");

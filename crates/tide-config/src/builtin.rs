@@ -7,6 +7,8 @@ use crate::{CommandInfo, Keybinding, Settings};
 const SETTINGS_JSONC: &str = include_str!("../../../config/default-settings.jsonc");
 const KEYBINDINGS_JSONC: &str = include_str!("../../../config/default-keybindings.jsonc");
 const COMMANDS_JSONC: &str = include_str!("../../../config/default-commands.jsonc");
+const PRODUCT_JSON: &str = include_str!("../../../config/product.json");
+const RELEASE_JSON: &str = include_str!("../../../config/release.json");
 
 const THEME_JSON: &[(&str, &str)] = &[
     (
@@ -77,6 +79,16 @@ pub fn setting_descriptions() -> BTreeMap<String, String> {
         .collect()
 }
 
+/// Product identity and links from `config/product.json`.
+pub fn product() -> serde_json::Value {
+    crate::parse_jsonc(PRODUCT_JSON).expect("product metadata must parse")
+}
+
+/// Release metadata, including install commands, from `config/release.json`.
+pub fn release() -> serde_json::Value {
+    crate::parse_jsonc(RELEASE_JSON).expect("release metadata must parse")
+}
+
 /// Built-in keybindings, parsed from the checked-in JSONC authority.
 pub fn keybindings() -> Vec<Keybinding> {
     crate::parse_jsonc(KEYBINDINGS_JSONC).expect("built-in keybindings must parse")
@@ -122,7 +134,7 @@ mod tests {
     fn embedded_catalogs_have_their_expected_sizes() {
         assert_eq!(settings().len(), 52);
         assert_eq!(keybindings().len(), 189);
-        assert_eq!(commands().len(), 160);
+        assert_eq!(commands().len(), 176);
         assert_eq!(themes().len(), 13);
     }
 

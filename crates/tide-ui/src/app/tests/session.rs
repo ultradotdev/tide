@@ -113,6 +113,7 @@ fn session_restore_reopens_dirty_documents() {
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
     })
     .unwrap();
     let editor = restored.workbench.active_editor().unwrap();

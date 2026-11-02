@@ -20,6 +20,7 @@ mod db;
 mod editing;
 mod files;
 mod git;
+mod help;
 mod input;
 mod lsp;
 mod overlays;
@@ -73,6 +74,11 @@ pub(super) fn no_agents(_: &Path, _: &(dyn Fn(ProviderDiscovery) + Sync)) -> Dis
     DiscoveryReport::default()
 }
 
+/// Marks Welcome as already shown, so a test starts from the plain start screen.
+pub(super) fn welcome_seen(paths: &Paths) {
+    crate::help::record_welcome(paths);
+}
+
 /// An app whose background work waits for [`App::settle`] and starts no language servers.
 pub(super) fn test_app() -> (tempfile::TempDir, App) {
     let (home, mut app) = test_app_with(Jobs::manual());
@@ -98,6 +104,7 @@ pub(super) fn test_app_with(jobs: Jobs) -> (tempfile::TempDir, App) {
     let workspace = home.path().join("workspace");
     std::fs::create_dir_all(&workspace).unwrap();
     let paths = Paths::from_env(home.path(), |_| None);
+    welcome_seen(&paths);
     let app = App::new(AppConfig {
         workspace,
         initial_file: None,
@@ -106,6 +113,7 @@ pub(super) fn test_app_with(jobs: Jobs) -> (tempfile::TempDir, App) {
         paths: Some(paths),
         jobs,
         agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
     })
     .unwrap();
     (home, app)
@@ -142,6 +150,7 @@ pub(super) fn pinned_workbench(
     std::fs::write(workspace.join("src/main.ts"), "const answer = 42;\n").unwrap();
     std::fs::write(workspace.join("README.md"), "# Tide\n").unwrap();
     let paths = Paths::from_env(home.path(), |_| None);
+    welcome_seen(&paths);
     std::fs::create_dir_all(paths.settings_file.parent().unwrap()).unwrap();
     let settings = serde_json::json!({ "lsp.servers": no_language_servers() });
     std::fs::write(&paths.settings_file, settings.to_string()).unwrap();
@@ -153,6 +162,7 @@ pub(super) fn pinned_workbench(
         paths: Some(paths),
         jobs: Jobs::manual(),
         agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
     })
     .unwrap();
     app.settle();

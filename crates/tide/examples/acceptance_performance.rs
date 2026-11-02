@@ -66,6 +66,7 @@ async fn main() {
         paths: Some(paths),
         jobs: tide_ui::Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: tide_ui::discover_agent_sessions,
+        install: tide_ui::help::Install::Unknown { executable: None },
     })
     .unwrap();
     // Measure rendering and hosted terminals independently of whichever

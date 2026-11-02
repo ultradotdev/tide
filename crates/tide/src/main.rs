@@ -220,6 +220,7 @@ async fn main() -> Result<()> {
         paths: None,
         jobs: tide_ui::Jobs::runtime(tokio::runtime::Handle::current()),
         agent_discovery: tide_ui::discover_agent_sessions,
+        install: install::detect(),
     })?;
     tide_ui::run(app).await
 }

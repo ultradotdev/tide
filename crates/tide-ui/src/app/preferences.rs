@@ -150,6 +150,8 @@ impl App {
                 || canonical_key(&binding.key) == canonical_key(new_key))
                 && binding.when == replacement.when)
         });
+        self.user_keybindings.push(removed.clone());
+        self.user_keybindings.push(replacement.clone());
         self.keybindings.push(removed);
         self.keybindings.push(replacement);
         let text = serde_json::to_string_pretty(&self.keybindings).unwrap_or_default();

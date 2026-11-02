@@ -733,7 +733,7 @@ impl App {
                 .get("lsp.diagnostics.underlineErrors")
                 .and_then(serde_json::Value::as_bool)
                 != Some(false);
-            editor.minimap = minimap;
+            editor.minimap = minimap && editor.help.is_none();
             editor.auto_indent = self
                 .settings
                 .get("editor.autoIndent")
@@ -753,8 +753,8 @@ impl App {
                 .unwrap_or(15)
                 .clamp(3, 100) as u16;
             editor.configure_editing(tab_size, insert_spaces, relative);
-            editor.set_word_wrap(word_wrap);
-            editor.set_wrap_column(wrap_column);
+            editor.set_word_wrap(word_wrap || editor.help.is_some());
+            editor.set_wrap_column(wrap_column.filter(|_| editor.help.is_none()));
         }
         let view = EditorView {
             palette: self.palette,
@@ -812,8 +812,11 @@ impl App {
         };
         if pane.tabs.is_empty() {
             frame.render_widget(
-                Paragraph::new("No open tabs — Ctrl+P to quick open")
-                    .style(Style::default().fg(self.palette.muted)),
+                Paragraph::new(self.key_hint(Command::WorkbenchQuickOpen).map_or_else(
+                    || "No open tabs".to_owned(),
+                    |key| format!("No open tabs — {key} to quick open"),
+                ))
+                .style(Style::default().fg(self.palette.muted)),
                 content_area,
             );
             return;
@@ -876,7 +879,7 @@ impl App {
                     ));
                 }
             }
-            Tab::Welcome => render_welcome(frame, content_area, self.palette),
+            Tab::Welcome => render_welcome(frame, content_area, self.palette, &self.start_hints()),
         }
     }
 
@@ -1569,8 +1572,51 @@ pub(super) fn outline_items(editor: &EditorState) -> Vec<(usize, String)> {
     items
 }
 
-pub(super) fn render_welcome(frame: &mut Frame, area: Rect, palette: Palette) {
-    let lines = vec![
+impl App {
+    /// The most useful key for `command` from the live keymap.
+    pub(super) fn key_hint(&self, command: Command) -> Option<String> {
+        crate::help::primary_key(&self.keybindings, &self.user_keybindings, command.as_str())
+    }
+
+    /// The start screen's shortcut hints, from the live keymap.
+    pub(super) fn start_hints(&self) -> Vec<String> {
+        let pairs = [
+            (Command::WorkbenchQuickOpen, "quick open"),
+            (Command::WorkbenchCommandPalette, "commands"),
+            (Command::WorkbenchToggleTerminal, "terminal"),
+            (Command::ViewSplitVertical, "split pane"),
+        ]
+        .into_iter()
+        .filter_map(|(command, label)| Some(format!("{}  {label}", self.key_hint(command)?)))
+        .collect::<Vec<_>>();
+        let width = pairs
+            .iter()
+            .map(|pair| display_width(pair))
+            .max()
+            .unwrap_or(0)
+            + 4;
+        let mut lines = pairs
+            .chunks(2)
+            .map(|row| match row {
+                [left, right] => format!(
+                    "{left}{}{right}",
+                    " ".repeat(width.saturating_sub(display_width(left)))
+                ),
+                [only] => only.clone(),
+                _ => String::new(),
+            })
+            .collect::<Vec<_>>();
+        lines.push(String::new());
+        lines.push(match self.key_hint(Command::HelpWelcome) {
+            Some(key) => format!("New here? {key} opens the Welcome guide."),
+            None => "New here? Run “Help: Welcome” from the command palette.".to_owned(),
+        });
+        lines
+    }
+}
+
+pub(super) fn render_welcome(frame: &mut Frame, area: Rect, palette: Palette, hints: &[String]) {
+    let mut lines = vec![
         Line::from(Span::styled(
             "Tide",
             Style::default()
@@ -1583,15 +1629,13 @@ pub(super) fn render_welcome(frame: &mut Frame, area: Rect, palette: Palette) {
             Style::default().fg(palette.foreground),
         )),
         Line::raw(""),
-        Line::from(Span::styled(
-            "Ctrl+P  quick open    Ctrl+K  commands",
-            Style::default().fg(palette.muted),
-        )),
-        Line::from(Span::styled(
-            "Ctrl+`  terminal      Ctrl+\\  split pane",
-            Style::default().fg(palette.muted),
-        )),
     ];
+    lines.extend(hints.iter().map(|hint| {
+        Line::from(Span::styled(
+            hint.clone(),
+            Style::default().fg(palette.muted),
+        ))
+    }));
     frame.render_widget(Paragraph::new(lines), area);
 }
 
