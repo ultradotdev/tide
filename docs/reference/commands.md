@@ -108,24 +108,39 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Command | Keys | ID |
 | --- | --- | --- |
 | Abort Merge | — | `git.abortMerge` |
+| Abort Rebase | — | `git.abortRebase` |
 | Apply Stash | — | `git.stashApply` |
 | Checkout... | — | `git.checkout` |
+| Cherry-Pick Commit... | — | `git.cherryPick` |
+| Clean Untracked Files... | — | `git.clean` |
 | Commit | — | `git.commit` |
+| Commit (Amend)... | — | `git.commitAmend` |
+| Continue Rebase | — | `git.continueRebase` |
 | Create Branch... | — | `git.createBranch` |
+| Create Tag... | — | `git.createTag` |
 | Delete Branch... | — | `git.deleteBranch` |
+| Discard All Changes | — | `git.discardAll` |
+| Discard Changes in Active File | — | `git.discard` |
 | Drop Stash | — | `git.stashDrop` |
 | Fetch | — | `git.fetch` |
+| Fetch All Remotes | — | `git.fetchAll` |
 | Focus Git Panel | `Ctrl+Shift+G`, `Ctrl+Alt+G` | `git.focusPanel` |
 | List Branches | — | `git.branches` |
 | List Stashes | — | `git.stashList` |
 | List Tags | — | `git.tags` |
 | Manage Remotes | — | `git.remotes` |
 | Merge Branch... | — | `git.merge` |
+| Open Conflicted File... | — | `git.conflicts` |
 | Pop Stash | — | `git.stashPop` |
 | Pull | — | `git.pull` |
+| Pull (Rebase) | — | `git.pullRebase` |
 | Push | — | `git.push` |
+| Push (Force with Lease) | — | `git.pushForce` |
+| Rebase Branch... | — | `git.rebase` |
 | Refresh | — | `git.refresh` |
 | Rename Branch... | — | `git.renameBranch` |
+| Reset to Commit... | — | `git.reset` |
+| Revert Commit... | — | `git.revert` |
 | Show Status | — | `git.status` |
 | Stage All Changes | — | `git.stageAll` |
 | Stage Changes | — | `git.stage` |

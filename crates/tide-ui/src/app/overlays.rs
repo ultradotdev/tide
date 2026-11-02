@@ -238,11 +238,16 @@ impl App {
                 PromptAction::Commit
                 | PromptAction::CreateBranch
                 | PromptAction::RenameBranch(_)
-                | PromptAction::StashMessage,
+                | PromptAction::StashMessage
+                | PromptAction::CreateTag
+                | PromptAction::TagMessage(_)
+                | PromptAction::CommitAmend { .. },
                 _,
             )
             | Submitted::Confirm(
-                ConfirmAction::GitCommand(_) | ConfirmAction::DiscardGitChange(_),
+                ConfirmAction::GitCommand(_)
+                | ConfirmAction::DiscardGitChange(_)
+                | ConfirmAction::DiscardAllGitChanges(_),
             ) => {}
             Submitted::AgentWorkspace(path) => self.associate_agent_workspace(&path),
             Submitted::Session(name) => self.open_named_session(&name),

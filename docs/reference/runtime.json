@@ -678,6 +678,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.abortRebase",
+      "category": "Git",
+      "description": "Abort the paused rebase and restore the branch",
+      "id": "git.abortRebase",
+      "label": "Abort Rebase",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.blame",
       "category": "Git",
       "description": "Show line-by-line blame",
@@ -702,6 +710,22 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.cherryPick",
+      "category": "Git",
+      "description": "Apply a commit from another branch to the current branch",
+      "id": "git.cherryPick",
+      "label": "Cherry-Pick Commit...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.clean",
+      "category": "Git",
+      "description": "Delete untracked files after listing them; ignored files are kept",
+      "id": "git.clean",
+      "label": "Clean Untracked Files...",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.commit",
       "category": "Git",
       "description": "Commit staged changes",
@@ -710,11 +734,43 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.commitAmend",
+      "category": "Git",
+      "description": "Rewrite the last commit with the staged changes and an edited message",
+      "id": "git.commitAmend",
+      "label": "Commit (Amend)...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.conflicts",
+      "category": "Git",
+      "description": "Pick a file with merge conflicts to open",
+      "id": "git.conflicts",
+      "label": "Open Conflicted File...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.continueRebase",
+      "category": "Git",
+      "description": "Continue the paused rebase after resolving and staging conflicts",
+      "id": "git.continueRebase",
+      "label": "Continue Rebase",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.createBranch",
       "category": "Git",
       "description": "Create a new branch",
       "id": "git.createBranch",
       "label": "Create Branch...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.createTag",
+      "category": "Git",
+      "description": "Tag the current commit; a message makes it an annotated tag",
+      "id": "git.createTag",
+      "label": "Create Tag...",
       "paletteVisible": true
     },
     {
@@ -742,11 +798,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.discard",
+      "category": "Git",
+      "description": "Discard unstaged changes in the active file after confirmation",
+      "id": "git.discard",
+      "label": "Discard Changes in Active File",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.discardAll",
+      "category": "Git",
+      "description": "Discard unstaged changes in every tracked file after confirmation; untracked files are kept",
+      "id": "git.discardAll",
+      "label": "Discard All Changes",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.fetch",
       "category": "Git",
       "description": "Fetch from remote",
       "id": "git.fetch",
       "label": "Fetch",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.fetchAll",
+      "category": "Git",
+      "description": "Fetch from every remote",
+      "id": "git.fetchAll",
+      "label": "Fetch All Remotes",
       "paletteVisible": true
     },
     {
@@ -798,11 +878,35 @@
       "paletteVisible": true
     },
     {
+      "canonical": "git.pullRebase",
+      "category": "Git",
+      "description": "Pull and replay local commits on top of the upstream",
+      "id": "git.pullRebase",
+      "label": "Pull (Rebase)",
+      "paletteVisible": true
+    },
+    {
       "canonical": "git.push",
       "category": "Git",
       "description": "Push to remote",
       "id": "git.push",
       "label": "Push",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.pushForce",
+      "category": "Git",
+      "description": "Replace the remote branch with local history after confirmation, unless it has unfetched commits",
+      "id": "git.pushForce",
+      "label": "Push (Force with Lease)",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.rebase",
+      "category": "Git",
+      "description": "Rebase the current branch onto another branch",
+      "id": "git.rebase",
+      "label": "Rebase Branch...",
       "paletteVisible": true
     },
     {
@@ -827,6 +931,22 @@
       "description": "Rename current branch",
       "id": "git.renameBranch",
       "label": "Rename Branch...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.reset",
+      "category": "Git",
+      "description": "Move the current branch to a commit, keeping changes (soft, mixed) or discarding them (hard)",
+      "id": "git.reset",
+      "label": "Reset to Commit...",
+      "paletteVisible": true
+    },
+    {
+      "canonical": "git.revert",
+      "category": "Git",
+      "description": "Add a commit that undoes a commit",
+      "id": "git.revert",
+      "label": "Revert Commit...",
       "paletteVisible": true
     },
     {

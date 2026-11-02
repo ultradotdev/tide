@@ -157,6 +157,21 @@
   "git.checkout": { "label": "Checkout...", "category": "Git", "description": "Checkout a commit or branch" },
   "git.focusPanel": { "label": "Focus Git Panel", "category": "Git" },
   "git.refresh": { "label": "Refresh", "category": "Git", "description": "Refresh git status" },
+  "git.discard": { "label": "Discard Changes in Active File", "category": "Git", "description": "Discard unstaged changes in the active file after confirmation" },
+  "git.discardAll": { "label": "Discard All Changes", "category": "Git", "description": "Discard unstaged changes in every tracked file after confirmation; untracked files are kept" },
+  "git.clean": { "label": "Clean Untracked Files...", "category": "Git", "description": "Delete untracked files after listing them; ignored files are kept" },
+  "git.commitAmend": { "label": "Commit (Amend)...", "category": "Git", "description": "Rewrite the last commit with the staged changes and an edited message" },
+  "git.pullRebase": { "label": "Pull (Rebase)", "category": "Git", "description": "Pull and replay local commits on top of the upstream" },
+  "git.fetchAll": { "label": "Fetch All Remotes", "category": "Git", "description": "Fetch from every remote" },
+  "git.pushForce": { "label": "Push (Force with Lease)", "category": "Git", "description": "Replace the remote branch with local history after confirmation, unless it has unfetched commits" },
+  "git.rebase": { "label": "Rebase Branch...", "category": "Git", "description": "Rebase the current branch onto another branch" },
+  "git.continueRebase": { "label": "Continue Rebase", "category": "Git", "description": "Continue the paused rebase after resolving and staging conflicts" },
+  "git.abortRebase": { "label": "Abort Rebase", "category": "Git", "description": "Abort the paused rebase and restore the branch" },
+  "git.conflicts": { "label": "Open Conflicted File...", "category": "Git", "description": "Pick a file with merge conflicts to open" },
+  "git.cherryPick": { "label": "Cherry-Pick Commit...", "category": "Git", "description": "Apply a commit from another branch to the current branch" },
+  "git.revert": { "label": "Revert Commit...", "category": "Git", "description": "Add a commit that undoes a commit" },
+  "git.reset": { "label": "Reset to Commit...", "category": "Git", "description": "Move the current branch to a commit, keeping changes (soft, mixed) or discarding them (hard)" },
+  "git.createTag": { "label": "Create Tag...", "category": "Git", "description": "Tag the current commit; a message makes it an annotated tag" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // AI Commands

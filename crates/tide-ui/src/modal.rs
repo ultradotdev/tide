@@ -42,6 +42,16 @@ pub enum PromptAction {
     EditSetting(String),
     EditKeybinding(String),
     RenameAgent(String, String),
+    CreateTag,
+    /// The new tag's name.
+    TagMessage(String),
+    /// Rewrites the last commit; `message` is its current message and `upstream` names the
+    /// upstream branch that already contains it.
+    CommitAmend {
+        commit: String,
+        message: String,
+        upstream: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,6 +73,8 @@ pub enum ConfirmAction {
     DeleteConnection(String),
     DeletePath(std::path::PathBuf),
     DiscardGitChange(String),
+    /// Unstaged changes in these tracked paths.
+    DiscardAllGitChanges(Vec<String>),
     GitCommand(Vec<String>),
     DeleteAiSession {
         provider: String,
@@ -648,6 +660,17 @@ impl ModalBase {
                 ModalKind::Confirm(ConfirmAction::ClearQueryHistory(_)) => "Clear [Y]",
                 ModalKind::Confirm(ConfirmAction::SwitchSession(_)) => "Switch [Y]",
                 ModalKind::Confirm(ConfirmAction::KillTerminal(_)) => "Kill [Y]",
+                ModalKind::Confirm(ConfirmAction::GitCommand(ref args)) => {
+                    match args.iter().map(String::as_str).collect::<Vec<_>>()[..] {
+                        ["push", ..] => "Push [Y]",
+                        ["reset", ..] => "Reset [Y]",
+                        ["clean", ..] => "Delete [Y]",
+                        ["rebase", "--abort"] => "Abort [Y]",
+                        ["rebase", ..] => "Rebase [Y]",
+                        ["commit", "--amend", ..] => "Amend [Y]",
+                        _ => "Discard [Y]",
+                    }
+                }
                 ModalKind::Confirm(ConfirmAction::CloseAllTerminals) => "Close [Y]",
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
@@ -2668,12 +2691,17 @@ impl Modal for GitChoiceModal {
     }
 }
 pub fn git_choice(action: &str, items: Vec<ModalItem>) -> Box<dyn Modal> {
+    let title = match action {
+        "rebase" => "Rebase Onto Branch".to_owned(),
+        "cherryPick" => "Cherry-Pick Commit".to_owned(),
+        "revert" => "Revert Commit".to_owned(),
+        "reset" => "Reset Current Branch To".to_owned(),
+        "resetMode" => "Reset Mode".to_owned(),
+        "conflicts" => "Conflicted Files".to_owned(),
+        _ => format!("Git: {action}"),
+    };
     Box::new(GitChoiceModal {
-        base: ModalBase::new(
-            ModalKind::GitChoice(action.to_owned()),
-            format!("Git: {action}"),
-            items,
-        ),
+        base: ModalBase::new(ModalKind::GitChoice(action.to_owned()), title, items),
     })
 }
 
