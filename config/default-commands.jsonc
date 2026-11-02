@@ -160,10 +160,9 @@
   // ─────────────────────────────────────────────────────────────────────────────
   // Git Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "git.status": { "label": "Show Status", "category": "Git", "description": "Show git status" },
-  "git.stage": { "label": "Stage Changes", "category": "Git", "description": "Stage current file" },
+  "git.stage": { "label": "Stage Active File", "category": "Git", "description": "Stage the changes in the active file" },
   "git.stageAll": { "label": "Stage All Changes", "category": "Git", "description": "Stage all changes" },
-  "git.unstage": { "label": "Unstage Changes", "category": "Git", "description": "Unstage current file" },
+  "git.unstage": { "label": "Unstage Active File", "category": "Git", "description": "Unstage the active file's staged changes" },
   "git.unstageAll": { "label": "Unstage All", "category": "Git", "description": "Unstage all changes" },
   "git.commit": { "label": "Commit", "category": "Git", "description": "Commit staged changes" },
   "git.push": { "label": "Push", "category": "Git", "description": "Push to remote" },
@@ -179,7 +178,6 @@
   "git.blame": { "label": "Toggle Blame", "category": "Git", "description": "Show line-by-line blame" },
   "git.diff": { "label": "View Diff", "category": "Git", "description": "Show diff for file" },
   "git.diffStaged": { "label": "View Staged Diff", "category": "Git", "description": "Show staged changes" },
-  "git.branches": { "label": "List Branches", "category": "Git", "description": "Show all branches" },
   "git.createBranch": { "label": "Create Branch...", "category": "Git", "description": "Create a new branch" },
   "git.switchBranch": { "label": "Switch Branch...", "category": "Git", "description": "Switch to another branch" },
   "git.deleteBranch": { "label": "Delete Branch...", "category": "Git", "description": "Delete a branch" },
@@ -188,7 +186,6 @@
   "git.abortMerge": { "label": "Abort Merge", "category": "Git", "description": "Abort current merge" },
   "git.remotes": { "label": "Manage Remotes", "category": "Git", "description": "View and manage remotes" },
   "git.tags": { "label": "List Tags", "category": "Git", "description": "Show all tags" },
-  "git.checkout": { "label": "Checkout...", "category": "Git", "description": "Checkout a commit or branch" },
   "git.focusPanel": { "label": "Focus Git Panel", "category": "Git" },
   "git.refresh": { "label": "Refresh", "category": "Git", "description": "Refresh git status" },
   "git.discard": { "label": "Discard Changes in Active File", "category": "Git", "description": "Discard unstaged changes in the active file after confirmation" },

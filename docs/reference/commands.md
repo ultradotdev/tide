@@ -159,7 +159,6 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Abort Merge, Rebase, Cherry-Pick or Revert | — | `git.abort` |
 | Abort Rebase | — | `git.abortRebase` |
 | Apply Stash | — | `git.stashApply` |
-| Checkout... | — | `git.checkout` |
 | Cherry-Pick Commit... | — | `git.cherryPick` |
 | Clean Untracked Files... | — | `git.clean` |
 | Commit | `c` | `git.commit` |
@@ -175,7 +174,6 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Fetch | — | `git.fetch` |
 | Fetch All Remotes | — | `git.fetchAll` |
 | Focus Git Panel | `Ctrl+Shift+G`, `Ctrl+Alt+G` | `git.focusPanel` |
-| List Branches | — | `git.branches` |
 | List Stashes | — | `git.stashList` |
 | List Tags | — | `git.tags` |
 | Manage Remotes | — | `git.remotes` |
@@ -191,14 +189,13 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Rename Branch... | — | `git.renameBranch` |
 | Reset to Commit... | — | `git.reset` |
 | Revert Commit... | — | `git.revert` |
-| Show Status | — | `git.status` |
+| Stage Active File | — | `git.stage` |
 | Stage All Changes | `Shift+S` | `git.stageAll` |
-| Stage Changes | — | `git.stage` |
 | Stash | — | `git.stash` |
 | Switch Branch... | — | `git.switchBranch` |
 | Toggle Blame | — | `git.blame` |
+| Unstage Active File | — | `git.unstage` |
 | Unstage All | — | `git.unstageAll` |
-| Unstage Changes | — | `git.unstage` |
 | View Diff | — | `git.diff` |
 | View File History | — | `git.logFile` |
 | View Log | — | `git.log` |
@@ -433,4 +430,7 @@ These IDs run the same command as another ID. Existing keybindings can keep usin
 | `gitPanel.stageAll` | `git.stageAll` |
 | `gitPanel.commit` | `git.commit` |
 | `gitPanel.refresh` | `git.refresh` |
+| `git.branches` | `git.switchBranch` |
+| `git.checkout` | `git.switchBranch` |
+| `git.status` | `git.focusPanel` |
 | `queryResults.export` | `database.exportResults` |

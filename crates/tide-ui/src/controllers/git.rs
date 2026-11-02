@@ -1093,6 +1093,33 @@ impl GitController {
         changes
     }
 
+    /// Stages (or unstages) the active file, so the palette can act on the file
+    /// being edited; the Source Control panel's commands act on its selection.
+    pub fn stage_active(&mut self, ui: &mut Ui<'_>, stage: bool) {
+        let verb = if stage { "stage" } else { "unstage" };
+        let Some(path) = self.active_path(ui.workspace, ui.workbench) else {
+            ui.status(format!("Git: open a file to {verb} it"));
+            return;
+        };
+        let Some(changes) = self.changes(ui) else {
+            return;
+        };
+        let change = changes.iter().find(|change| change.path == path);
+        if change.is_some_and(|change| change.lossy_path) {
+            ui.status("Git: this path is not valid UTF-8; use a terminal");
+            return;
+        }
+        if stage && change.and_then(|change| change.worktree).is_none() {
+            ui.status(format!("Git: {path} has no unstaged changes"));
+        } else if !stage && change.and_then(|change| change.index).is_none() {
+            ui.status(format!("Git: {path} has no staged changes"));
+        } else if stage {
+            self.run(&["add", "--", &path], ui);
+        } else {
+            self.run(&["reset", "HEAD", "--", &path], ui);
+        }
+    }
+
     /// Discards the unstaged changes in the active file, after confirmation.
     pub fn discard_active(&mut self, ui: &mut Ui<'_>) {
         let Some(path) = self.active_path(ui.workspace, ui.workbench) else {

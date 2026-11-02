@@ -4,7 +4,10 @@
     "aiCli.openSession": "agents.openSession",
     "aiCli.refreshSessions": "agents.refreshSessions",
     "aiCli.toggle": "agents.newSession",
+    "git.branches": "git.switchBranch",
+    "git.checkout": "git.switchBranch",
     "git.openFileDiff": "git.diff",
+    "git.status": "git.focusPanel",
     "git.viewChanges": "gitPanel.openDiff",
     "git.viewStagedChanges": "git.diffStaged",
     "gitPanel.commit": "git.commit",
@@ -906,20 +909,20 @@
       "paletteVisible": true
     },
     {
-      "canonical": "git.branches",
+      "canonical": "git.switchBranch",
       "category": "Git",
-      "description": "Show all branches",
+      "description": "Switch to another branch",
       "id": "git.branches",
-      "label": "List Branches",
-      "paletteVisible": true
+      "label": "Switch Branch...",
+      "paletteVisible": false
     },
     {
-      "canonical": "git.checkout",
+      "canonical": "git.switchBranch",
       "category": "Git",
-      "description": "Checkout a commit or branch",
+      "description": "Switch to another branch",
       "id": "git.checkout",
-      "label": "Checkout...",
-      "paletteVisible": true
+      "label": "Switch Branch...",
+      "paletteVisible": false
     },
     {
       "canonical": "git.cherryPick",
@@ -1172,9 +1175,9 @@
     {
       "canonical": "git.stage",
       "category": "Git",
-      "description": "Stage current file",
+      "description": "Stage the changes in the active file",
       "id": "git.stage",
-      "label": "Stage Changes",
+      "label": "Stage Active File",
       "paletteVisible": true
     },
     {
@@ -1226,12 +1229,12 @@
       "paletteVisible": true
     },
     {
-      "canonical": "git.status",
+      "canonical": "git.focusPanel",
       "category": "Git",
-      "description": "Show git status",
+      "description": null,
       "id": "git.status",
-      "label": "Show Status",
-      "paletteVisible": true
+      "label": "Focus Git Panel",
+      "paletteVisible": false
     },
     {
       "canonical": "git.switchBranch",
@@ -1252,9 +1255,9 @@
     {
       "canonical": "git.unstage",
       "category": "Git",
-      "description": "Unstage current file",
+      "description": "Unstage the active file's staged changes",
       "id": "git.unstage",
-      "label": "Unstage Changes",
+      "label": "Unstage Active File",
       "paletteVisible": true
     },
     {

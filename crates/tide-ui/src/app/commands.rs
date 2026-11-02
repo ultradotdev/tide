@@ -212,15 +212,15 @@ impl App {
             Command::GitRefresh => with_ui!(self, |ui| self
                 .git
                 .request_refresh(Some("Git status refreshed".into()), ui)),
-            Command::GitStage => with_ui!(self, |ui| self.git.stage_selected(ui)),
+            Command::GitStage => with_ui!(self, |ui| self.git.stage_active(ui, true)),
             Command::GitStageAll => with_ui!(self, |ui| self.git.stage_all(ui)),
-            Command::GitUnstage => with_ui!(self, |ui| self.git.unstage_selected(ui)),
+            Command::GitUnstage => with_ui!(self, |ui| self.git.stage_active(ui, false)),
             Command::GitCommit => with_ui!(self, |ui| self.git.open_commit_prompt(ui)),
             Command::GitDiffStaged => with_ui!(self, |ui| self.git.open_staged_diff(ui)),
             Command::GitLog => with_ui!(self, |ui| self.git.open_log(None, ui)),
             Command::GitLogFile => with_ui!(self, |ui| self.git.open_selected_log(ui)),
             Command::GitBlame => with_ui!(self, |ui| self.git.open_blame(ui)),
-            Command::GitBranches | Command::GitCheckout | Command::GitSwitchBranch => {
+            Command::GitSwitchBranch => {
                 with_ui!(self, |ui| self.git.open_branch_picker(ui))
             }
             Command::GitCreateBranch => {
@@ -260,7 +260,6 @@ impl App {
             Command::GitFetch => with_ui!(self, |ui| self.git.run(&["fetch"], ui)),
             Command::GitPull => with_ui!(self, |ui| self.git.run(&["pull"], ui)),
             Command::GitPush => with_ui!(self, |ui| self.git.run(&["push"], ui)),
-            Command::GitStatus => with_ui!(self, |ui| self.git.refresh(ui)),
             Command::GitDiscard => with_ui!(self, |ui| self.git.discard_active(ui)),
             Command::GitDiscardAll => with_ui!(self, |ui| self.git.confirm_discard_all(ui)),
             Command::GitCommitAmend => with_ui!(self, |ui| self.git.prepare_amend(ui)),

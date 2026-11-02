@@ -991,7 +991,7 @@ impl App {
                         " {} ",
                         truncate_to_width(branch, (area.width as usize / 8).clamp(6, 24))
                     ),
-                    Command::GitBranches,
+                    Command::GitSwitchBranch,
                 ));
             }
             if let Some((ahead, behind)) = git.ahead_behind {

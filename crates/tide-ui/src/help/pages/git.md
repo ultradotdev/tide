@@ -42,7 +42,7 @@ Timeline lists commits for the active file, or for the whole repository after {{
 
 {{commands:Git}}
 
-Branch switching, checkout and **{{label:git.branches}}** open the same branch picker. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.
+**{{label:git.switchBranch}}** opens the branch picker; clicking the branch in the status bar opens it too. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.
 
 **{{label:git.discard}}** and **{{label:git.discardAll}}** throw away unstaged changes after asking; staged changes and untracked files are kept. **{{label:git.clean}}** lists the untracked files it would delete before deleting them and never removes ignored files.
 

@@ -25,6 +25,9 @@ pub const ALIASES: &[(&str, &str)] = &[
     ("gitPanel.stageAll", "git.stageAll"),
     ("gitPanel.commit", "git.commit"),
     ("gitPanel.refresh", "git.refresh"),
+    ("git.branches", "git.switchBranch"),
+    ("git.checkout", "git.switchBranch"),
+    ("git.status", "git.focusPanel"),
     ("queryResults.export", "database.exportResults"),
 ];
 

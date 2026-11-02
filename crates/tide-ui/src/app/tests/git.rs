@@ -956,3 +956,47 @@ fn continue_and_abort_finish_stopped_cherry_picks_and_reverts() {
     assert!(git_in(&app.workspace, &["log", "--format=%s", "-n", "1"]).starts_with("Revert"));
     assert_eq!(in_progress(&app), None);
 }
+
+#[test]
+fn stage_and_unstage_act_on_the_active_file() {
+    let (_home, mut app) = test_app();
+    let root = app.workspace.clone();
+    git_in(&root, &["init", "-q"]);
+    git_in(&root, &["config", "user.email", "tide@example.test"]);
+    git_in(&root, &["config", "user.name", "Tide Test"]);
+    std::fs::write(root.join("a.txt"), "one\n").unwrap();
+    std::fs::write(root.join("b.txt"), "one\n").unwrap();
+    git_in(&root, &["add", "."]);
+    git_in(&root, &["commit", "-q", "-m", "initial"]);
+    std::fs::write(root.join("a.txt"), "two\n").unwrap();
+    std::fs::write(root.join("b.txt"), "two\n").unwrap();
+    app.open_file(&root.join("a.txt"));
+    with_ui!(app, |ui| app.git.refresh(ui));
+    app.settle();
+
+    app.execute_command(Command::GitStage);
+    app.settle();
+    assert_eq!(
+        git_in(&root, &["diff", "--cached", "--name-only"]).trim(),
+        "a.txt"
+    );
+
+    app.execute_command(Command::GitStage);
+    app.settle();
+    assert_eq!(app.status, "Git: a.txt has no unstaged changes");
+
+    app.execute_command(Command::GitUnstage);
+    app.settle();
+    assert_eq!(
+        git_in(&root, &["diff", "--cached", "--name-only"]).trim(),
+        ""
+    );
+    assert_eq!(
+        "git.checkout".parse::<Command>().unwrap(),
+        Command::GitSwitchBranch
+    );
+    assert_eq!(
+        "git.status".parse::<Command>().unwrap(),
+        Command::GitFocusPanel
+    );
+}

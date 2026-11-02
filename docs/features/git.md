@@ -47,7 +47,6 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Abort Merge, Rebase, Cherry-Pick or Revert | — | `git.abort` |
 | Abort Rebase | — | `git.abortRebase` |
 | Apply Stash | — | `git.stashApply` |
-| Checkout... | — | `git.checkout` |
 | Cherry-Pick Commit... | — | `git.cherryPick` |
 | Clean Untracked Files... | — | `git.clean` |
 | Commit | `c` | `git.commit` |
@@ -63,7 +62,6 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Fetch | — | `git.fetch` |
 | Fetch All Remotes | — | `git.fetchAll` |
 | Focus Git Panel | `Ctrl+Shift+G`, `Ctrl+Alt+G` | `git.focusPanel` |
-| List Branches | — | `git.branches` |
 | List Stashes | — | `git.stashList` |
 | List Tags | — | `git.tags` |
 | Manage Remotes | — | `git.remotes` |
@@ -79,20 +77,19 @@ Timeline lists commits for the active file, or for the whole repository after `T
 | Rename Branch... | — | `git.renameBranch` |
 | Reset to Commit... | — | `git.reset` |
 | Revert Commit... | — | `git.revert` |
-| Show Status | — | `git.status` |
+| Stage Active File | — | `git.stage` |
 | Stage All Changes | `Shift+S` | `git.stageAll` |
-| Stage Changes | — | `git.stage` |
 | Stash | — | `git.stash` |
 | Switch Branch... | — | `git.switchBranch` |
 | Toggle Blame | — | `git.blame` |
+| Unstage Active File | — | `git.unstage` |
 | Unstage All | — | `git.unstageAll` |
-| Unstage Changes | — | `git.unstage` |
 | View Diff | — | `git.diff` |
 | View File History | — | `git.logFile` |
 | View Log | — | `git.log` |
 | View Staged Diff | — | `git.diffStaged` |
 
-Branch switching, checkout and **List Branches** open the same branch picker. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.
+**Switch Branch...** opens the branch picker; clicking the branch in the status bar opens it too. Remotes and tags open read-only output tabs, and blame opens the selected file's blame in a tab. Aborting a merge and discarding changes ask for confirmation first.
 
 **Discard Changes in Active File** and **Discard All Changes** throw away unstaged changes after asking; staged changes and untracked files are kept. **Clean Untracked Files...** lists the untracked files it would delete before deleting them and never removes ignored files.
 
