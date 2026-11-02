@@ -84,16 +84,19 @@
       ],
       "properties": {
         "tag": {
-          "const": "v0.10.0"
+          "type": "string",
+          "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
         },
         "tagPattern": {
           "const": "v*"
         },
         "title": {
-          "const": "Tide v0.10.0"
+          "type": "string",
+          "pattern": "^Tide v[0-9]+\\.[0-9]+\\.[0-9]+$"
         },
         "notesPath": {
-          "const": "docs/v0.10.0.md"
+          "type": "string",
+          "pattern": "^docs/v[0-9]+\\.[0-9]+\\.[0-9]+\\.md$"
         },
         "manualRunsMayPublish": {
           "const": false

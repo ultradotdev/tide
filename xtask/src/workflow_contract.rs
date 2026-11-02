@@ -163,7 +163,7 @@ pub fn validate_context(
 mod tests {
     use super::*;
     use crate::release::tests::head_commit;
-    use crate::util::repo_root;
+    use crate::util::{VERSION, repo_root};
 
     fn context(event: &str, r#ref: &str, actor: &str) -> WorkflowContext {
         WorkflowContext {
@@ -193,7 +193,7 @@ mod tests {
                 .include
                 .iter()
                 .chain(&linux.include)
-                .all(|item| item.filename.starts_with("tide-v0.10.0-"))
+                .all(|item| item.filename.starts_with(&format!("tide-v{VERSION}-")))
         );
         let json = serde_json::to_value(&macos).unwrap();
         assert_eq!(json["include"][0]["minimumOS"], "14.0");
@@ -208,7 +208,7 @@ mod tests {
         )
         .unwrap();
         assert!(!decision.publish);
-        assert_eq!(decision.tag, "v0.10.0");
+        assert_eq!(decision.tag, format!("v{VERSION}"));
         let json = serde_json::to_value(&decision).unwrap();
         assert_eq!(json["publish"], false);
         assert_eq!(json["homebrewTap"], "ultradotdev/homebrew-tap");
@@ -218,26 +218,26 @@ mod tests {
     fn publication_requires_the_exact_owner_created_tag_context() {
         let wrong_tag = validate_context(
             &repo_root(),
-            &context("push", "refs/tags/v0.10.1", "thekeith"),
+            &context("push", "refs/tags/v0.0.0", "thekeith"),
         )
         .unwrap_err();
-        assert!(wrong_tag.to_string().contains("Only v0.10.0"));
+        assert!(wrong_tag.to_string().contains(&format!("Only v{VERSION}")));
         let wrong_actor = validate_context(
             &repo_root(),
-            &context("push", "refs/tags/v0.10.0", "someone-else"),
+            &context("push", &format!("refs/tags/v{VERSION}"), "someone-else"),
         )
         .unwrap_err();
         assert!(wrong_actor.to_string().contains("actor"));
         assert_eq!(
             validate_context(
                 &repo_root(),
-                &context("push", "refs/tags/v0.10.0", "thekeith")
+                &context("push", &format!("refs/tags/v{VERSION}"), "thekeith")
             )
             .unwrap(),
             PublicationDecision {
                 publish: true,
-                tag: "v0.10.0".into(),
-                title: "Tide v0.10.0".into(),
+                tag: format!("v{VERSION}"),
+                title: format!("Tide v{VERSION}"),
                 homebrew_tap: "ultradotdev/homebrew-tap".into(),
             }
         );

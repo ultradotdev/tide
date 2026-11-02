@@ -167,7 +167,7 @@ jobs:
       - name: Upload assembled release assets
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: tide-v0.10.0-assets-${{ github.sha }}
+          name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: ${{ runner.temp }}/release
           if-no-files-found: error
           retention-days: 14
@@ -184,7 +184,7 @@ jobs:
       - name: Download assembled release assets
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: tide-v0.10.0-assets-${{ github.sha }}
+          name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: release
       - name: Attest final archives and installers from checksums
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
@@ -205,7 +205,7 @@ jobs:
       - name: Download assembled release assets
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: tide-v0.10.0-assets-${{ github.sha }}
+          name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: release
       - name: Refuse non-owner or existing publication
         env:
@@ -230,13 +230,13 @@ jobs:
           gh release create "$EXPECTED_TAG"
           --verify-tag
           --title "$EXPECTED_TITLE"
-          --notes-file docs/v0.10.0.md
-          release/tide-v0.10.0-darwin-arm64.zip
-          release/tide-v0.10.0-darwin-arm64.notarization.json
-          release/tide-v0.10.0-darwin-x64.zip
-          release/tide-v0.10.0-darwin-x64.notarization.json
-          release/tide-v0.10.0-linux-arm64.tar.gz
-          release/tide-v0.10.0-linux-x64.tar.gz
+          --notes-file "docs/${EXPECTED_TAG}.md"
+          "release/tide-${EXPECTED_TAG}-darwin-arm64.zip"
+          "release/tide-${EXPECTED_TAG}-darwin-arm64.notarization.json"
+          "release/tide-${EXPECTED_TAG}-darwin-x64.zip"
+          "release/tide-${EXPECTED_TAG}-darwin-x64.notarization.json"
+          "release/tide-${EXPECTED_TAG}-linux-arm64.tar.gz"
+          "release/tide-${EXPECTED_TAG}-linux-x64.tar.gz"
           release/install.sh
           release/uninstall.sh
           release/SHA256SUMS
@@ -260,7 +260,7 @@ jobs:
       - name: Download assembled release assets
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: tide-v0.10.0-assets-${{ github.sha }}
+          name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: ${{ runner.temp }}/assembled
       - name: Download published checksums
         env:

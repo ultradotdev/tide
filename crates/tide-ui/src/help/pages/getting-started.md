@@ -27,7 +27,7 @@ curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.
 `install.sh` is published with every release and covered by its `SHA256SUMS` and GitHub build attestation. Without `--version` it installs GitHub's latest release, found through the `https://github.com/ultradotdev/tide/releases/latest` redirect rather than the rate-limited API. To install a specific version, name it explicitly:
 
 ```sh
-curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.10.0/install.sh | sh -s -- --version 0.10.0
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v{{version}}/install.sh | sh -s -- --version {{version}}
 ```
 
 The script downloads the archive and `SHA256SUMS`, verifies the checksum, and on macOS also verifies the notarization receipt and the executable's Developer ID signature, team and notarization ticket with `codesign`. When an authenticated GitHub CLI is present it verifies the archive's GitHub build attestation; `TIDE_REQUIRE_ATTESTATION=1` makes that check mandatory. It then smoke-tests the executable and activates it in the managed store described below. Add `--add-to-path` to append `~/.local/bin` to your zsh or bash startup file.

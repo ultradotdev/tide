@@ -26,11 +26,22 @@ pub fn verify_release_artifacts(root: &Path, list: bool, scenario: Option<&str>)
         (
             "release-tag-version-contract",
             Box::new(|| {
-                ensure!(version == "0.10.0", "Product version drifted");
-                ensure!(contract.policy.tag == "v0.10.0", "Release tag drifted");
+                let expected = crate::util::VERSION;
                 ensure!(
-                    contract.policy.title == "Tide v0.10.0",
+                    version == expected,
+                    "Product version {version} does not match Cargo.toml {expected}"
+                );
+                ensure!(
+                    contract.policy.tag == format!("v{expected}"),
+                    "Release tag drifted"
+                );
+                ensure!(
+                    contract.policy.title == format!("Tide v{expected}"),
                     "Release title drifted"
+                );
+                ensure!(
+                    contract.policy.notes_path == format!("docs/v{expected}.md"),
+                    "Release notes path drifted"
                 );
                 Ok(())
             }),

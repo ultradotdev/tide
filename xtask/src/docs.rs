@@ -167,7 +167,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
     require(
         product.str_at(&["name"]) == "Tide"
             && product.str_at(&["binary"]) == "tide"
-            && version == "0.10.0",
+            && version == crate::util::VERSION,
         "Product identity drifted",
     );
     require(
@@ -349,7 +349,7 @@ pub fn verify_tide_identity(root: &Path) -> Result<()> {
     let version = product.str_at(&["version"]);
     if product.str_at(&["name"]) != "Tide"
         || product.str_at(&["binary"]) != "tide"
-        || version != "0.10.0"
+        || version != crate::util::VERSION
         || reference.str_at(&["version"]) != version
         || reference.str_at(&["implementation"]) != "rust"
     {

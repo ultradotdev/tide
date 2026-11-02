@@ -1195,7 +1195,7 @@ mod tests {
         )
         .unwrap();
         let cdhash = "c".repeat(40);
-        let stem = "tide-v0.10.0-darwin-arm64";
+        let stem = format!("tide-v{}-darwin-arm64", crate::util::VERSION);
         let archive_name = format!("{stem}.zip");
         let commit = head.clone();
         let mut recorder = RecordingRunner::new(move |argv, _| {
@@ -1218,7 +1218,7 @@ mod tests {
             } else if joined.contains("show -s") {
                 stdout("1767225600\n")
             } else if joined.ends_with("--version") {
-                stdout("Tide 0.10.0\n")
+                stdout(&format!("Tide {}\n", crate::util::VERSION))
             } else {
                 stdout("")
             })

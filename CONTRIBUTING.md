@@ -1,6 +1,6 @@
 # Contributing to Tide
 
-Tide 0.10.0 is a Rust workspace. The executable is in `crates/tide`; UI coordination is in `crates/tide-ui`. See the [architecture overview](docs/architecture/overview.md).
+Tide is a Rust workspace. The executable is in `crates/tide`; UI coordination is in `crates/tide-ui`. See the [architecture overview](docs/architecture/overview.md).
 
 Report bugs and request features through [GitHub issues](https://github.com/ultradotdev/tide/issues), and open pull requests against `main`. Report vulnerabilities privately as described in the [security policy](SECURITY.md).
 
@@ -64,9 +64,18 @@ After publication, the release workflow's `Release / Homebrew tap` job updates t
 - the `ultradotdev/homebrew-tap` repository with an initial commit on its default branch;
 - a `HOMEBREW_TAP_TOKEN` secret on the `release` environment: a fine-grained personal access token whose resource owner is `ultradotdev`, with repository access limited to `ultradotdev/homebrew-tap` and the **Contents: Read and write** permission (Metadata: read is implied). The job's own `GITHUB_TOKEN` stays read-only.
 
-Because the job uses the `release` environment, the owner approves it after approving publication. Check a generated formula locally with `cargo xtask homebrew-formula --version 0.10.0 --checksums SHA256SUMS --output tide.rb` and `brew style tide.rb` (a Homebrew developer command: it turns on Homebrew's developer mode); `--download-base-url file:///…` points it at locally packaged archives.
+Because the job uses the `release` environment, the owner approves it after approving publication. Check a generated formula locally with `cargo xtask homebrew-formula --version <version> --checksums SHA256SUMS --output tide.rb` and `brew style tide.rb` (a Homebrew developer command: it turns on Homebrew's developer mode); `--download-base-url file:///…` points it at locally packaged archives.
 
 Changes should include a concrete trigger, resulting behavior, relevant checks and any remaining limitation. Keep screenshots synthetic and free of personal files, session names and credentials. CI scans the history for secrets with Gitleaks and rejects tracked files that contain machine-specific absolute paths (`cargo xtask verify-portable-paths`). Read the [security policy](SECURITY.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Cutting a release
+
+The workspace `Cargo.toml` version is the release version. To prepare release `X.Y.Z`:
+
+1. Set `X.Y.Z` in `Cargo.toml` and `config/product.json`, and `vX.Y.Z` in `config/release.json` (`releasePolicy.tag`, `title`, `notesPath` and the artifact filenames). Run `cargo update -w` to refresh `Cargo.lock`.
+2. Write `docs/vX.Y.Z.md`, starting with `# Tide vX.Y.Z Release Notes`, and link it from `README.md` and `docs/README.md`.
+3. Regenerate with `cargo xtask generate-rust-reference --write`, `generate-rust-notices --write` and `generate-tide-site-package --write`. `verify-release-artifacts` fails if any of these disagree with `Cargo.toml`.
+4. Merge the release pull request, then push the `vX.Y.Z` tag from `main` and approve the `release-signing` and `release` environments.
 
 ## License
 
