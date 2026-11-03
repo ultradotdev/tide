@@ -141,8 +141,43 @@ pub(crate) fn rebuild_source() -> Option<&'static std::path::Path> {
     None
 }
 
+/// Why the event loop stopped without the user quitting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Interrupted {
+    Hangup,
+    Terminated,
+    LostTerminal,
+}
+
+impl Interrupted {
+    fn describe(self) -> &'static str {
+        match self {
+            Self::Hangup => "the terminal hung up (SIGHUP)",
+            Self::Terminated => "it received SIGTERM",
+            Self::LostTerminal => "it lost its terminal",
+        }
+    }
+}
+
+/// Keeps unsaved edits in the recovery snapshot and stops, without asking.
+fn interrupt(app: &mut App, reason: Interrupted, stopped: &mut Option<(Interrupted, bool)>) {
+    let saved = match app.hang_up() {
+        Ok(saved) => saved,
+        Err(error) => {
+            tracing::error!("recovery snapshot after {}: {error:#}", reason.describe());
+            false
+        }
+    };
+    *stopped = Some((reason, saved));
+}
+
 pub async fn run(mut app: App) -> Result<()> {
     install_panic_hook();
+    // Registered before the terminal changes mode, so a hangup is never the default
+    // action (exit at once, with unsaved edits only as fresh as the last autosave).
+    let mut hangup = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?;
+    let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+    let mut stopped: Option<(Interrupted, bool)> = None;
     enable_raw_mode()?;
     let _mode_guard = TerminalModeGuard;
     OWNS_TERMINAL.set(true);
@@ -178,10 +213,28 @@ pub async fn run(mut app: App) -> Result<()> {
             let mut redraw = false;
             let deadline = tokio::time::Instant::from_std(pacer.deadline());
             tokio::select! {
+                _ = hangup.recv() => {
+                    interrupt(app, Interrupted::Hangup, &mut stopped);
+                    break;
+                }
+                _ = terminate.recv() => {
+                    interrupt(app, Interrupted::Terminated, &mut stopped);
+                    break;
+                }
                 maybe_event = events.next() => {
                     pacer.activity(Instant::now());
-                    let Some(event) = maybe_event else { break };
-                    redraw |= app.handle_event(event?);
+                    let event = match maybe_event {
+                        Some(Ok(event)) => event,
+                        Some(Err(error)) => {
+                            interrupt(app, Interrupted::LostTerminal, &mut stopped);
+                            return Err(error.into());
+                        }
+                        None => {
+                            interrupt(app, Interrupted::LostTerminal, &mut stopped);
+                            break;
+                        }
+                    };
+                    redraw |= app.handle_event(event);
                     // Handle a bounded burst together, rather than rendering once
                     // for every queued key or mouse movement.
                     for _ in 0..63 {
@@ -192,7 +245,14 @@ pub async fn run(mut app: App) -> Result<()> {
                             std::task::Poll::Ready(std::pin::Pin::new(&mut events).poll_next(cx))
                         }).await;
                         let std::task::Poll::Ready(Some(event)) = event else { break };
-                        redraw |= app.handle_event(event?);
+                        let event = match event {
+                            Ok(event) => event,
+                            Err(error) => {
+                                interrupt(app, Interrupted::LostTerminal, &mut stopped);
+                                return Err(error.into());
+                            }
+                        };
+                        redraw |= app.handle_event(event);
                         if app.should_quit() { break; }
                     }
                 }
@@ -235,6 +295,19 @@ pub async fn run(mut app: App) -> Result<()> {
     app.shutdown().await;
     drop(terminal);
     drop(_mode_guard);
+    if let Some((reason, saved)) = stopped {
+        // Usually nobody sees this after a hangup, but a SIGTERM in a live terminal does.
+        eprintln!(
+            "Tide stopped because {}. {}",
+            reason.describe(),
+            if saved {
+                "Unsaved edits were kept in the session recovery snapshot."
+            } else {
+                "No recovery snapshot was written (--no-session, or it failed)."
+            }
+        );
+        return Ok(());
+    }
     if result.is_ok()
         && let Some(rebuild) = restart
     {

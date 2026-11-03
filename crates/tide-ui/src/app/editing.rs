@@ -132,8 +132,8 @@ impl App {
             self.open_find();
             return;
         }
-        let tab_size = self.tab_size();
         if let Some(editor) = self.workbench.active_editor_mut() {
+            let tab_size = editor.tab_width();
             let cursor = editor.document.cursor();
             let from = if forward {
                 cursor.range().map_or(
@@ -215,8 +215,7 @@ impl App {
         &mut self,
         edit: impl FnOnce(&mut EditorState, usize) -> Option<String>,
     ) {
-        let tab_size = self.tab_size();
-        let insert_spaces = self.setting_bool("editor.insertSpaces", true);
+        let defaults = self.indent_defaults();
         let relative = self
             .settings
             .get("editor.lineNumbers")
@@ -233,8 +232,9 @@ impl App {
             self.set_status(format!("{title} is read-only"));
             return;
         }
-        editor.configure_editing(tab_size, insert_spaces, relative);
+        editor.configure_editing(defaults, relative);
         let revision = editor.revision();
+        let tab_size = editor.tab_width();
         let status = edit(editor, tab_size);
         if editor.revision() != revision {
             self.mark_session_dirty();

@@ -989,3 +989,215 @@ fn close_others_keeps_the_active_tab_and_asks_about_unsaved_ones() {
         "saved d.txt"
     );
 }
+
+/// Root may write any file, so permission tests only mean something for other users.
+#[cfg(unix)]
+fn running_as_root() -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let probe = dir.path().join("probe");
+    std::fs::write(&probe, "").unwrap();
+    std::fs::set_permissions(&probe, std::fs::Permissions::from_mode(0o444)).unwrap();
+    std::fs::OpenOptions::new().write(true).open(&probe).is_ok()
+}
+
+fn draw(app: &mut App) -> ratatui::Terminal<ratatui::backend::TestBackend> {
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    terminal
+}
+
+#[cfg(unix)]
+#[test]
+fn saving_a_read_only_file_asks_first_and_keeps_its_permissions() {
+    use std::os::unix::fs::PermissionsExt;
+    if running_as_root() {
+        return;
+    }
+    let (_home, mut app) = test_app();
+    let path = app.workspace.join("locked.txt");
+    std::fs::write(&path, "original\n").unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o444)).unwrap();
+    app.open_file(&path);
+    assert!(app.workbench.active_editor().unwrap().is_file_read_only());
+    let screen = crate::test_support::screen_text(&draw(&mut app));
+    assert!(screen.contains("locked.txt [RO]"), "{screen}");
+    assert!(screen.contains("Read-only"), "{screen}");
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("changed ");
+
+    // Save All and saving before closing refuse instead of asking.
+    app.save_all();
+    assert!(app.status.contains("is read-only"), "{}", app.status);
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "original\n");
+
+    // Save asks, and Cancel (the default button) leaves the file alone.
+    app.save_active();
+    let overlay = app.overlay.as_ref().unwrap();
+    assert_eq!(
+        *overlay.kind(),
+        ModalKind::Confirm(ConfirmAction::OverwriteReadOnly(path.clone()))
+    );
+    assert!(
+        overlay
+            .base()
+            .message
+            .as_deref()
+            .unwrap()
+            .contains("locked.txt is read-only. Overwrite it anyway?")
+    );
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    assert!(app.overlay.is_none());
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "original\n");
+    assert!(app.workbench.active_editor().unwrap().is_dirty());
+
+    app.save_active();
+    app.handle_modal_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        "changed original\n"
+    );
+    assert!(!app.workbench.active_editor().unwrap().is_dirty());
+    let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o444);
+    assert!(app.workbench.active_editor().unwrap().is_file_read_only());
+}
+
+#[cfg(unix)]
+#[test]
+fn a_file_in_a_read_only_folder_fails_to_save_with_a_clear_message() {
+    use std::os::unix::fs::PermissionsExt;
+    if running_as_root() {
+        return;
+    }
+    let (_home, mut app) = test_app();
+    let folder = app.workspace.join("locked");
+    std::fs::create_dir_all(&folder).unwrap();
+    let path = folder.join("notes.txt");
+    std::fs::write(&path, "original\n").unwrap();
+    app.open_file(&path);
+    std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o555)).unwrap();
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("changed ");
+    app.save_active();
+    std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(
+        app.status.contains("permission denied writing in"),
+        "{}",
+        app.status
+    );
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "original\n");
+    assert!(app.workbench.active_editor().unwrap().is_dirty());
+}
+
+#[test]
+fn indentation_follows_the_file_then_editorconfig_and_shows_in_the_status_bar() {
+    let (_home, mut app) = test_app();
+    let rust = app.workspace.join("main.rs");
+    std::fs::write(
+        &rust,
+        "fn main() {\n    if true {\n        call();\n    }\n}\n",
+    )
+    .unwrap();
+    app.open_file(&rust);
+    let screen = crate::test_support::screen_text(&draw(&mut app));
+    assert!(screen.contains("Spaces: 4"), "{screen}");
+    {
+        let editor = app.workbench.active_editor_mut().unwrap();
+        editor.document.set_cursor(Position::new(4, 1));
+    }
+    app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    app.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+    assert!(
+        app.workbench
+            .active_editor()
+            .unwrap()
+            .document
+            .text()
+            .ends_with("}\n    \n"),
+        "{:?}",
+        app.workbench.active_editor().unwrap().document.text()
+    );
+
+    // Detection off: the settings apply.
+    app.settings
+        .set("editor.detectIndentation", serde_json::Value::Bool(false));
+    let screen = crate::test_support::screen_text(&draw(&mut app));
+    assert!(screen.contains("Spaces: 2"), "{screen}");
+    app.settings
+        .set("editor.detectIndentation", serde_json::Value::Bool(true));
+
+    // An .editorconfig wins over the file's own indentation once read again.
+    std::fs::write(
+        app.workspace.join(".editorconfig"),
+        "root = true\n[*.rs]\nindent_style = tab\ntab_width = 8\n",
+    )
+    .unwrap();
+    app.reset_file_styles();
+    let screen = crate::test_support::screen_text(&draw(&mut app));
+    assert!(screen.contains("Tab Size: 8"), "{screen}");
+    app.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+    assert!(
+        app.workbench
+            .active_editor()
+            .unwrap()
+            .document
+            .text()
+            .ends_with("    \t\n")
+    );
+}
+
+#[test]
+fn editorconfig_save_rules_trim_whitespace_and_add_the_final_newline() {
+    let (_home, mut app) = test_app();
+    std::fs::write(
+        app.workspace.join(".editorconfig"),
+        "root = true\n[*]\ntrim_trailing_whitespace = true\ninsert_final_newline = true\n[*.md]\ntrim_trailing_whitespace = false\n",
+    )
+    .unwrap();
+    let text = app.workspace.join("a.txt");
+    std::fs::write(&text, "one  \ntwo\t\nthree").unwrap();
+    app.open_file(&text);
+    app.workbench.active_editor_mut().unwrap().insert_text("x");
+    app.save_active();
+    assert_eq!(app.status, "Saved a.txt");
+    assert_eq!(
+        std::fs::read_to_string(&text).unwrap(),
+        "xone\ntwo\nthree\n"
+    );
+    let editor = app.workbench.active_editor().unwrap();
+    assert!(!editor.is_dirty());
+    assert_eq!(editor.document.text(), "xone\ntwo\nthree\n");
+
+    let markdown = app.workspace.join("b.md");
+    std::fs::write(&markdown, "hard break  \nend  ").unwrap();
+    app.open_file(&markdown);
+    app.workbench.active_editor_mut().unwrap().insert_text("x");
+    app.save_active();
+    assert_eq!(
+        std::fs::read_to_string(&markdown).unwrap(),
+        "xhard break  \nend  \n"
+    );
+}
+
+#[test]
+fn a_new_file_takes_its_line_ending_from_editorconfig() {
+    let (_home, mut app) = test_app();
+    std::fs::write(
+        app.workspace.join(".editorconfig"),
+        "root = true\n[*.bat]\nend_of_line = crlf\n",
+    )
+    .unwrap();
+    let path = app.workspace.join("run.bat");
+    std::fs::write(&path, "").unwrap();
+    app.open_file(&path);
+    draw(&mut app);
+    app.workbench.active_editor_mut().unwrap().insert_text("a");
+    app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    app.save_active();
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "a\r\n");
+}

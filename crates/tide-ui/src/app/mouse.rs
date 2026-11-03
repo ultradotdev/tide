@@ -319,10 +319,10 @@ impl App {
         ) {
             if let Some((pane_id, area)) = self.pointer.editor_drag {
                 let numbers = self.show_line_numbers();
-                let tab_size = self.tab_size();
                 if let Some(pane) = self.workbench.pane_mut(pane_id)
                     && let Some(editor) = pane.tabs.get_mut(pane.active).and_then(Tab::editor_mut)
                 {
+                    let tab_size = editor.tab_width();
                     if matches!(mouse.kind, MouseEventKind::Up(_)) {
                         editor.mouse_release();
                     } else {
@@ -558,8 +558,8 @@ impl App {
             .map_or(1, |(_, _, _, _, n)| n % 3 + 1);
         self.pointer.editor_click = Some((pane, mouse.column, mouse.row, now, clicks));
         let numbers = self.show_line_numbers();
-        let tabs = self.tab_size();
         if let Some(Tab::Sql(sql)) = self.workbench.active_tab_mut() {
+            let tabs = sql.editor.tab_width();
             let action = sql.mouse(mouse.column, mouse.row, clicks);
             if !sql.results_focused {
                 let area = sql.editor_area();
@@ -585,8 +585,8 @@ impl App {
         self.focus = Focus::Main;
         self.workbench.set_focused(pane);
         let show_line_numbers = self.show_line_numbers();
-        let tab_size = self.tab_size();
         if let Some(editor) = self.workbench.active_editor_mut() {
+            let tab_size = editor.tab_width();
             let now = Instant::now();
             let clicks = self
                 .pointer

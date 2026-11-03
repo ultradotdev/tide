@@ -693,7 +693,36 @@ impl App {
             self.open_save_as_prompt();
             return;
         }
-        match editor.save() {
+        if editor.check_file_read_only()
+            && let Some(path) = editor.path().map(Path::to_path_buf)
+        {
+            let name = editor.title();
+            self.overlay = Some(modal::confirm(
+                ConfirmAction::OverwriteReadOnly(path),
+                "Read-Only File",
+                &format!(
+                    "{name} is read-only. Overwrite it anyway? The file keeps its read-only permissions."
+                ),
+            ));
+            return;
+        }
+        self.save_active_with(EditorState::save);
+    }
+
+    /// Saves over a read-only file after the user confirmed it.
+    pub(super) fn save_read_only_confirmed(&mut self, path: &Path) {
+        if self.workbench.active_editor().and_then(EditorState::path) != Some(path) {
+            self.set_status("Save canceled: the read-only file is no longer the active tab");
+            return;
+        }
+        self.save_active_with(EditorState::save_read_only);
+    }
+
+    fn save_active_with(&mut self, save: fn(&mut EditorState) -> std::io::Result<()>) {
+        let Some(editor) = self.workbench.active_editor_mut() else {
+            return;
+        };
+        match save(editor) {
             Ok(()) => {
                 let title = editor.title();
                 let saved = editor.path().map(Path::to_path_buf);
@@ -707,10 +736,22 @@ impl App {
                         .document_saved(&path, text, version, &self.settings, &self.workspace);
                 }
                 self.set_status(format!("Saved {title}"));
+                if title == ".editorconfig" {
+                    self.reset_file_styles();
+                }
                 with_ui!(self, |ui| self.lsp.refresh_outline(ui));
                 with_ui!(self, |ui| self.git.load_inline_diff(ui));
             }
             Err(error) => self.set_status(format!("Save failed: {error}")),
+        }
+    }
+
+    /// Reads `.editorconfig` files and detects indentation again for every open file.
+    pub(super) fn reset_file_styles(&mut self) {
+        for tab in self.workbench.tabs() {
+            if let Some(editor) = tab.editor() {
+                editor.document.reset_file_style();
+            }
         }
     }
 

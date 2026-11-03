@@ -69,6 +69,6 @@ Drag a region divider to resize it. Arrow buttons at the main region's top corne
 
 ## Dialogs
 
-Dialogs wrap their text and line up their buttons. Save and confirm actions and destructive discard or delete actions use distinct colors, and a destructive confirmation starts on Cancel. Keyboard selection and mouse clicks run the same action. Clicking outside closes ordinary pickers; confirmations, Save As and forms stay open until you choose.
+Dialogs wrap their text and line up their buttons. Save and confirm actions and destructive discard or delete actions use distinct colors, and a destructive confirmation starts on Cancel. Keyboard selection and mouse clicks run the same action. Clicking outside closes ordinary pickers; confirmations, Save As and forms stay open until you choose. A prompt that opens with a value, such as Go to Line or Rename, has it selected: typing replaces it, and Left, Right, Home or End keeps it so you can edit it.
 
 See {{help:keyboard-shortcuts}} for every key.

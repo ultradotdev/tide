@@ -28,11 +28,19 @@ impl App {
                 }
             }
             Command::FileOverwrite => {
-                if self.workbench.active_editor().is_some() {
+                if let Some(editor) = self.workbench.active_editor() {
+                    let message = if editor.check_file_read_only() {
+                        format!(
+                            "{} is read-only. Overwrite the file on disk with this buffer anyway?",
+                            editor.title()
+                        )
+                    } else {
+                        "Overwrite the file on disk with this buffer?".to_owned()
+                    };
                     self.overlay = Some(modal::confirm(
                         ConfirmAction::OverwriteFile,
                         "Overwrite File",
-                        "Overwrite the file on disk with this buffer?",
+                        &message,
                     ));
                 }
             }

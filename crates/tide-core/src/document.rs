@@ -57,6 +57,8 @@ pub struct Document {
     lossy: bool,
     file_path: Option<PathBuf>,
     tracked_changes: Option<Vec<(usize, usize, usize)>>,
+    /// The line ending for a document with no line breaks yet to go by.
+    default_line_ending: LineEnding,
 }
 
 impl Document {
@@ -72,6 +74,7 @@ impl Document {
             lossy: false,
             file_path: None,
             tracked_changes: None,
+            default_line_ending: LineEnding::Lf,
         }
     }
 
@@ -146,6 +149,17 @@ impl Document {
         }
     }
 
+    /// Sets the line break a document uses while it has none of its own, such as a
+    /// new file under an `.editorconfig` that asks for CRLF. Unknown values are ignored.
+    pub fn set_default_line_break(&mut self, line_break: &str) {
+        self.default_line_ending = match line_break {
+            "\r\n" => LineEnding::Crlf,
+            "\r" => LineEnding::Cr,
+            "\n" => LineEnding::Lf,
+            _ => self.default_line_ending,
+        };
+    }
+
     /// Majority line ending over the first lines, scanning a bounded prefix.
     fn detect_line_ending(&self) -> LineEnding {
         let (mut lf, mut crlf, mut cr) = (0usize, 0usize, 0usize);
@@ -175,6 +189,9 @@ impl Document {
         }
         if pending_cr {
             cr += 1;
+        }
+        if lf + crlf + cr == 0 {
+            return self.default_line_ending;
         }
         if crlf > lf && crlf >= cr {
             LineEnding::Crlf
@@ -1226,6 +1243,18 @@ mod tests {
             .expect("disjoint edits");
         assert_eq!(doc.text(), "\n\nab\n");
         assert_eq!(cursors, vec![Cursor::at(2, 0), Cursor::at(2, 1)]);
+    }
+
+    #[test]
+    fn a_document_without_line_breaks_uses_the_default() {
+        let mut doc = Document::new("one line");
+        doc.set_default_line_break("\r\n");
+        assert_eq!((doc.line_break(), doc.line_ending()), ("\r\n", "CRLF"));
+        doc.set_default_line_break("bogus");
+        assert_eq!(doc.line_break(), "\r\n");
+        let mut lf = Document::new("a\nb\n");
+        lf.set_default_line_break("\r\n");
+        assert_eq!(lf.line_break(), "\n", "the file's own line breaks win");
     }
 
     #[test]

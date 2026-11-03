@@ -1845,8 +1845,7 @@ impl DbController {
                 _ => {}
             }
         }
-        let tab_size = super::tab_size(ui.settings);
-        let spaces = ui.setting_bool("editor.insertSpaces", true);
+        let defaults = super::indent_defaults(ui.settings);
         let indent = ui
             .settings
             .get("editor.autoIndent")
@@ -1856,7 +1855,7 @@ impl DbController {
         let Some(Tab::Sql(tab)) = ui.workbench.active_tab_mut() else {
             return;
         };
-        tab.editor.configure_editing(tab_size, spaces, false);
+        tab.editor.configure_editing(defaults, false);
         tab.editor.auto_indent = indent;
         tab.editor.follow_cursor();
         match key.code {
@@ -1873,12 +1872,7 @@ impl DbController {
                 ui.mark_session_dirty();
             }
             KeyCode::Tab => {
-                let text = if spaces {
-                    " ".repeat(tab_size)
-                } else {
-                    "\t".into()
-                };
-                tab.editor.insert_text(&text);
+                tab.editor.insert_tab();
                 ui.mark_session_dirty();
             }
             KeyCode::Backspace => {
