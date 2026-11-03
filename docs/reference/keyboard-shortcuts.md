@@ -162,6 +162,7 @@ Many terminals cannot distinguish Ctrl+Shift combinations or send Cmd at all, so
 | Keys | Action | Command |
 | --- | --- | --- |
 | `Cmd+K`, `Ctrl+Shift+K` | Clear Terminal | `terminal.clear` |
+| `Cmd+C`, `Ctrl+Shift+C` | Copy Terminal Selection | `terminal.copySelection` |
 | `Ctrl+Shift+Home` | Scroll Terminal to Top | `terminal.scrollToTop` |
 | `Ctrl+Shift+End` | Scroll Terminal to Bottom | `terminal.scrollToBottom` |
 

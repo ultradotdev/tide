@@ -9,7 +9,8 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
 
 use tide_terminal::{
-    CellSnapshot, PtyConfig, PtySession, TerminalColor, TerminalEmulator, TerminalSnapshot,
+    CellSnapshot, PtyConfig, PtySession, SelectionKind, TerminalColor, TerminalEmulator,
+    TerminalSnapshot,
 };
 
 use crate::palette::Palette;
@@ -53,6 +54,17 @@ impl SpawnSpec {
     }
 }
 
+/// What a mouse event did in a terminal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TerminalMouse {
+    /// Not for this terminal; the workbench handles it.
+    Ignored,
+    /// Sent to the program, scrolled, or started or moved a selection.
+    Handled,
+    /// The button was released over a non-empty selection.
+    Selected,
+}
+
 pub struct TerminalTab {
     pub id: usize,
     /// Unique for the life of the process, unlike `id`, so a confirmation can find its tab.
@@ -71,6 +83,8 @@ pub struct TerminalTab {
     pub exited: Option<u32>,
     reported_focus: Option<bool>,
     input_error: Option<String>,
+    /// A left-button selection drag is in progress.
+    selecting: bool,
 }
 
 impl std::fmt::Debug for TerminalTab {
@@ -125,6 +139,7 @@ impl TerminalTab {
             exited: None,
             reported_focus: None,
             input_error: None,
+            selecting: false,
         })
     }
 
@@ -171,6 +186,7 @@ impl TerminalTab {
             exited: None,
             reported_focus: None,
             input_error: None,
+            selecting: false,
         })
     }
 
@@ -275,6 +291,8 @@ impl TerminalTab {
         }
         self.emulator.scroll_to_bottom();
         if let Some(bytes) = negotiated_key_to_bytes(key, self.emulator.modes()) {
+            // Typing drops the selection, as in most terminals.
+            self.emulator.clear_selection();
             self.queue_input(&bytes);
             true
         } else {
@@ -295,6 +313,7 @@ impl TerminalTab {
 
     pub fn send_paste(&mut self, text: &str) {
         self.emulator.scroll_to_bottom();
+        self.emulator.clear_selection();
         let data = if self.emulator.modes().bracketed_paste {
             format!("\x1b[200~{text}\x1b[201~")
         } else {
@@ -308,14 +327,25 @@ impl TerminalTab {
         self.queue_input(text.as_bytes());
     }
 
-    /// Shift bypasses a child's mouse protocol so scrollback remains reachable.
-    pub fn send_mouse(&mut self, area: Rect, event: MouseEvent) -> bool {
+    /// Routes a mouse event that landed in, or was captured by, this terminal drawn at
+    /// `area`. `clicks` counts quick presses in one place: two select a word, three a line.
+    ///
+    /// A program that asked for mouse input gets the events. Otherwise, or with Shift held,
+    /// the wheel scrolls the scrollback and the left button selects text.
+    pub fn send_mouse(&mut self, area: Rect, event: MouseEvent, clicks: u8) -> TerminalMouse {
+        if area.is_empty() || self.pending.is_some() {
+            return TerminalMouse::Ignored;
+        }
+        if self.selecting {
+            return self.select_mouse(area, event, clicks);
+        }
         let modes = self.emulator.modes();
         let reporting = modes.mouse_report_click || modes.mouse_drag || modes.mouse_motion;
+        let bypass = event.modifiers.contains(KeyModifiers::SHIFT);
         if matches!(
             event.kind,
             MouseEventKind::ScrollUp | MouseEventKind::ScrollDown
-        ) && (!reporting || event.modifiers.contains(KeyModifiers::SHIFT))
+        ) && (!reporting || bypass)
         {
             self.emulator
                 .scroll_display(if event.kind == MouseEventKind::ScrollUp {
@@ -323,17 +353,73 @@ impl TerminalTab {
                 } else {
                     -3
                 });
-            return true;
+            return TerminalMouse::Handled;
         }
-        if !reporting || event.modifiers.contains(KeyModifiers::SHIFT) {
-            return false;
+        if !reporting || bypass {
+            return self.select_mouse(area, event, clicks);
         }
-        let Some(bytes) = mouse_to_bytes(event, area, modes) else {
-            return false;
+        let Some(bytes) = mouse_to_bytes(clamp_to(event, area), area, modes) else {
+            return TerminalMouse::Ignored;
         };
         self.emulator.scroll_to_bottom();
         self.queue_input(&bytes);
-        true
+        TerminalMouse::Handled
+    }
+
+    fn select_mouse(&mut self, area: Rect, event: MouseEvent, clicks: u8) -> TerminalMouse {
+        let cell = |event: MouseEvent| {
+            let event = clamp_to(event, area);
+            (
+                usize::from(event.column - area.x),
+                usize::from(event.row - area.y),
+            )
+        };
+        match event.kind {
+            MouseEventKind::Down(MouseButton::Left)
+                if area.contains((event.column, event.row).into()) =>
+            {
+                let kind = match clicks {
+                    2 => SelectionKind::Words,
+                    3 => SelectionKind::Lines,
+                    _ => SelectionKind::Cells,
+                };
+                let (x, y) = cell(event);
+                self.emulator.start_selection(kind, x, y);
+                self.selecting = true;
+                TerminalMouse::Handled
+            }
+            MouseEventKind::Drag(MouseButton::Left) if self.selecting => {
+                // Dragging past the top or bottom edge scrolls a line at a time.
+                if event.row < area.y {
+                    self.emulator.scroll_display(1);
+                } else if event.row >= area.bottom() {
+                    self.emulator.scroll_display(-1);
+                }
+                let (x, y) = cell(event);
+                self.emulator.extend_selection(x, y);
+                TerminalMouse::Handled
+            }
+            MouseEventKind::Up(MouseButton::Left) if self.selecting => {
+                self.selecting = false;
+                if self.emulator.has_selection() {
+                    TerminalMouse::Selected
+                } else {
+                    TerminalMouse::Handled
+                }
+            }
+            _ => TerminalMouse::Ignored,
+        }
+    }
+
+    /// The selected text, if any.
+    #[must_use]
+    pub fn selection_text(&self) -> Option<String> {
+        self.emulator.selection_text()
+    }
+
+    /// Drops the selection; returns whether there was one.
+    pub fn clear_selection(&mut self) -> bool {
+        self.emulator.clear_selection()
     }
 
     /// Applies the theme, takes pending output and fits the terminal to `area`, where the
@@ -443,6 +529,17 @@ impl TerminalTab {
     }
 }
 
+/// Keeps a captured pointer that left the terminal on its nearest edge cell.
+fn clamp_to(mut event: MouseEvent, area: Rect) -> MouseEvent {
+    event.column = event
+        .column
+        .clamp(area.x, area.right().saturating_sub(1).max(area.x));
+    event.row = event
+        .row
+        .clamp(area.y, area.bottom().saturating_sub(1).max(area.y));
+    event
+}
+
 fn mouse_to_bytes(
     event: MouseEvent,
     area: Rect,
@@ -526,7 +623,13 @@ fn snapshot_lines(snapshot: &TerminalSnapshot, palette: Palette) -> Vec<Line<'st
             if cell.is_some_and(|cell| cell.spacer) {
                 continue;
             }
-            let style = cell_style(cell, palette);
+            let mut style = cell_style(cell, palette);
+            if snapshot
+                .selection
+                .is_some_and(|selection| selection.contains(x, y))
+            {
+                style = style.bg(palette.selection);
+            }
             let symbol = cell.map_or(" ", |cell| cell.symbol.as_str());
             if style != current_style {
                 if !current.is_empty() {
@@ -963,16 +1066,47 @@ mod tests {
             panic!("missing {needle}: {}", terminal.snapshot().text());
         };
         wait(&mut terminal, "RX1b5b");
-        assert!(terminal.send_mouse(
-            Rect::new(10, 20, 80, 24),
-            MouseEvent {
-                kind: MouseEventKind::Down(MouseButton::Left),
-                column: 12,
-                row: 23,
-                modifiers: KeyModifiers::NONE
-            }
-        ));
+        let area = Rect::new(10, 20, 80, 24);
+        let mouse = |kind, column, row, modifiers| MouseEvent {
+            kind,
+            column,
+            row,
+            modifiers,
+        };
+        assert_eq!(
+            terminal.send_mouse(
+                area,
+                mouse(
+                    MouseEventKind::Down(MouseButton::Left),
+                    12,
+                    23,
+                    KeyModifiers::NONE
+                ),
+                1
+            ),
+            TerminalMouse::Handled
+        );
         wait(&mut terminal, "1b5b3c303b333b344d");
+        // Shift selects even though the program asked for the mouse; nothing reaches it.
+        let shift = KeyModifiers::SHIFT;
+        let left = MouseButton::Left;
+        terminal.send_mouse(area, mouse(MouseEventKind::Down(left), 10, 21, shift), 1);
+        terminal.send_mouse(area, mouse(MouseEventKind::Drag(left), 15, 21, shift), 1);
+        // Letting go of Shift before the button keeps the gesture a selection.
+        assert_eq!(
+            terminal.send_mouse(
+                area,
+                mouse(MouseEventKind::Up(left), 15, 21, KeyModifiers::NONE),
+                1
+            ),
+            TerminalMouse::Selected
+        );
+        assert_eq!(terminal.selection_text().as_deref(), Some("RX1b5b"));
+        let lines = snapshot_lines(&terminal.snapshot(), Palette::ultra_dusk());
+        let selected = Palette::ultra_dusk().selection;
+        assert_eq!(lines[1].spans[0].content, "RX1b5b");
+        assert_eq!(lines[1].spans[0].style.bg, Some(selected));
+        assert_ne!(lines[1].spans[1].style.bg, Some(selected));
         terminal.emulator.feed("\x1b[?1000l\x1b[?1002l".as_bytes());
         for line in 0..80 {
             terminal

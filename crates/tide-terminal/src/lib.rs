@@ -10,7 +10,7 @@ mod keyboard;
 mod pty;
 
 pub use emulator::{
-    CellSnapshot, CellSymbol, CursorSnapshot, TerminalColor, TerminalEmulator, TerminalModes,
-    TerminalSnapshot,
+    CellSnapshot, CellSymbol, CursorSnapshot, SelectionKind, SelectionSpan, TerminalColor,
+    TerminalEmulator, TerminalModes, TerminalSnapshot,
 };
 pub use pty::{OutputSignal, PtyConfig, PtySession, TerminalError, check_terminal};

@@ -78,5 +78,7 @@ pub(crate) struct PointerState {
     pub scroll_drag: Option<(ScrollOwner, Rect)>,
     pub terminal_capture: Option<(PaneId, Rect)>,
     pub editor_click: Option<(PaneId, u16, u16, Instant, u8)>,
+    /// The last left press in a terminal, for double- and triple-click selection.
+    pub terminal_click: Option<(PaneId, u16, u16, Instant, u8)>,
     pub agent_click: Option<(String, String, u16, u16, Instant)>,
 }
