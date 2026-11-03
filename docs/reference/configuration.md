@@ -18,6 +18,7 @@ Most settings apply at once. `terminal.shell` and `tui.terminal.scrollback` appl
 | Setting | Description | Default | Accepted values |
 | --- | --- | --- | --- |
 | `editor.autoIndent` | Auto-indent mode: "none", "keep", or "full" | `"full"` | `none`, `keep`, `full` |
+| `editor.detectIndentation` | Use each file's existing indentation instead of editor.tabSize and editor.insertSpaces when it has enough to go by; an .editorconfig wins over both | `true` | `true` or `false` |
 | `editor.diagnostics.curlyUnderline` | Use squiggly underlines for errors (requires modern terminal) | `true` | `true` or `false` |
 | `editor.insertSpaces` | Use spaces instead of tabs | `true` | `true` or `false` |
 | `editor.lineNumbers` | Line numbers: "on", "off", "relative" | `"on"` | `on`, `off`, `relative` |

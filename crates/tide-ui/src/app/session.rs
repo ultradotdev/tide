@@ -259,6 +259,19 @@ impl App {
         }
     }
 
+    /// The terminal hung up (SIGHUP), Tide was asked to stop (SIGTERM), or the terminal
+    /// went away. Nobody can answer a question now, so unsaved edits go to the recovery
+    /// snapshot, as on a crash, and Tide quits. Files themselves are never written here.
+    /// Returns whether the snapshot was written.
+    pub(crate) fn hang_up(&mut self) -> Result<bool> {
+        self.restart = None;
+        self.overlay = None;
+        let saved = self.save_recovery();
+        self.workbench.kill_terminals();
+        self.should_quit = true;
+        saved
+    }
+
     /// Saves the session on the user's request, which ends `--no-session` mode.
     pub(super) fn adopt_session(&mut self) -> Result<()> {
         self.session_ephemeral = false;

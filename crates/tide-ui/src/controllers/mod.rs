@@ -82,6 +82,21 @@ impl Ui<'_> {
     }
 }
 
+/// The indentation settings every file starts from.
+pub(crate) fn indent_defaults(settings: &Settings) -> crate::editor::IndentDefaults {
+    crate::editor::IndentDefaults {
+        tab_size: tab_size(settings),
+        insert_spaces: settings
+            .get("editor.insertSpaces")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(true),
+        detect: settings
+            .get("editor.detectIndentation")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(true),
+    }
+}
+
 /// The `editor.tabSize` setting, clamped to a usable width.
 pub(crate) fn tab_size(settings: &Settings) -> usize {
     settings

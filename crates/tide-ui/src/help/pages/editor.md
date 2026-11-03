@@ -15,6 +15,12 @@ The Tide editor combines a terminal-cell-aware text model with syntax highlighti
 
 **{{label:file.saveAll}}**, **{{label:file.reload}}** and **{{label:file.overwrite}}** are in the palette. When an open file changes on disk, after a `git checkout`, a formatter or an agent's edit, a tab with no unsaved edits reloads by itself, keeping the cursor near its place; **{{label:edit.undo}}** brings back the previous text. If the tab has unsaved edits, Tide says so once and blocks saving over the newer file until you run **{{label:file.reload}}** or **{{label:file.overwrite}}**. A file deleted on disk stays open with its text. Files that are not valid UTF-8 open read-only so a save cannot corrupt them; Save As writes a copy.
 
+A file you do not have permission to write shows **Read-only** in the status bar and `[RO]` on its tab. You can still edit it, but saving asks first: confirming replaces the file's contents and keeps its read-only permissions. If the folder itself is read-only, the save fails and says so. **{{label:file.saveAll}}** and saving before closing a tab skip read-only files and list them; save each one on its own.
+
+Go to Line opens with the current line number selected, so typing a number replaces it. A line already on screen stays where it is; any other line is scrolled to the middle of the editor.
+
+If the terminal window closes, an SSH connection drops or Tide receives `SIGTERM`, Tide keeps your unsaved edits in the session recovery snapshot straight away, the same as after a crash, and quits. Your files are not written. Start Tide in the same folder again and the edits are back, still unsaved.
+
 ## Editing
 
 Undo, redo, selection, comments, folding, automatic indentation, auto-closing pairs (`()`, `[]`, `{}`, quotes and backticks), bracket matching and word wrap all work as you would expect.
@@ -39,6 +45,23 @@ To move the cursor, `Ctrl+Left` and `Ctrl+Right` (`Option+Left` and `Option+Righ
 Line commands act on every cursor and count as one undo step. More are in the palette: **{{label:edit.deleteLine}}**, **{{label:edit.joinLines}}**, **{{label:edit.transformToUppercase}}**, **{{label:edit.transformToLowercase}}** and **{{label:edit.transformToTitleCase}}** (the selection, or the word at the cursor), **{{label:editor.sortLinesAscending}}** and **{{label:editor.sortLinesDescending}}** (the selected lines, or the whole file), and **{{label:editor.trimTrailingWhitespace}}**. Help pages are read-only, so these leave them unchanged.
 
 **{{label:editor.foldAll}}**, **{{label:editor.unfoldAll}}** and **{{label:editor.foldLevel1}}** to level 3 are in the palette, and the fold arrows in the gutter respond to clicks. Folding follows indentation and multi-line brackets. Moving the caret highlights the innermost matching brackets and the lines that open and close them; brackets inside strings and comments are ignored.
+
+## Indentation and .editorconfig
+
+Tab and automatic indentation use the indentation the file already has. When a file opens, Tide looks at its first 1,000 lines: it uses tabs or spaces, whichever more lines start with, and takes the width from the most common step in indentation between neighbouring lines. A file with too little indentation to tell uses `editor.tabSize` ({{setting:editor.tabSize}}) and `editor.insertSpaces` ({{setting:editor.insertSpaces}}). Set `editor.detectIndentation` ({{setting:editor.detectIndentation}}) to `false` to use those two settings for every file. The status bar shows what the active file uses, such as `Spaces: 4` or `Tab Size: 8`.
+
+An [EditorConfig](https://editorconfig.org) file overrides both. Tide reads the `.editorconfig` files from the file's folder upward, stopping at one that says `root = true`; nearer files and later sections win. It applies these properties:
+
+| Property | Effect in Tide |
+| --- | --- |
+| `indent_style` | `tab` or `space` for Tab and automatic indentation |
+| `indent_size`, `tab_width` | The indent width, and how wide a tab character is drawn |
+| `end_of_line` | The line break for a new file or one with no line breaks yet; Tide does not convert an existing file's line breaks |
+| `insert_final_newline = true` | Adds a line break at the end of the file when you save |
+| `trim_trailing_whitespace = true` | Removes spaces and tabs at the ends of lines when you save |
+| `charset` | Not applied: Tide reads and writes UTF-8 only |
+
+Changes made on save are one undo step, so the buffer matches the file. Tide reads `.editorconfig` when it opens a file; saving an `.editorconfig` in Tide applies it to the open files.
 
 Word wrap follows `editor.wordWrap` ({{setting:editor.wordWrap}}): `off`, `on`, or `bounded` and `wordWrapColumn` at `editor.wordWrapColumn` ({{setting:editor.wordWrapColumn}}). **{{label:workbench.toggleWordWrap}}** switches it on or off until Tide restarts. The minimap beside the scrollbar follows `editor.minimap.enabled` ({{setting:editor.minimap.enabled}}) and needs an editor at least 30 columns wide; **{{label:workbench.toggleMinimap}}** shows or hides it, and the session remembers the choice.
 

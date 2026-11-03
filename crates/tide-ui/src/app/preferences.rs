@@ -387,6 +387,11 @@ impl App {
     pub(super) fn tab_size(&self) -> usize {
         crate::controllers::tab_size(&self.settings)
     }
+
+    /// `editor.tabSize`, `editor.insertSpaces` and `editor.detectIndentation`.
+    pub(super) fn indent_defaults(&self) -> crate::editor::IndentDefaults {
+        crate::controllers::indent_defaults(&self.settings)
+    }
 }
 
 /// How a changed setting reaches the running workbench.

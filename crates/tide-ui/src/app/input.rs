@@ -368,12 +368,7 @@ impl App {
             self.with_db(|db, ui| db.handle_key(key, ui));
             return;
         }
-        let tab_size = self.tab_size();
-        let insert_spaces = self
-            .settings
-            .get("editor.insertSpaces")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(true);
+        let defaults = self.indent_defaults();
         let relative = self
             .settings
             .get("editor.lineNumbers")
@@ -387,7 +382,7 @@ impl App {
             .to_owned();
         if let Some(editor) = self.workbench.active_editor_mut() {
             editor.auto_indent = auto_indent;
-            editor.configure_editing(tab_size, insert_spaces, relative);
+            editor.configure_editing(defaults, relative);
             editor.follow_cursor();
         }
         let shift = key.modifiers.contains(KeyModifiers::SHIFT);
@@ -427,7 +422,7 @@ impl App {
                     self.mark_session_dirty();
                 }
                 KeyCode::Tab if editor.selection_spans_lines() => {
-                    editor.indent_lines(false, tab_size);
+                    editor.indent_lines(false, editor.tab_width());
                     self.mark_session_dirty();
                 }
                 KeyCode::Tab => {
@@ -435,7 +430,7 @@ impl App {
                     self.mark_session_dirty();
                 }
                 KeyCode::BackTab => {
-                    editor.indent_lines(true, tab_size);
+                    editor.indent_lines(true, editor.tab_width());
                     self.mark_session_dirty();
                 }
                 KeyCode::Backspace if by_word => {

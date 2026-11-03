@@ -24,6 +24,7 @@ pub const SUPPORTED: &[&str] = &[
     "ai.cli.workspaceAliases",
     "editor.tabSize",
     "editor.insertSpaces",
+    "editor.detectIndentation",
     "editor.lineNumbers",
     "editor.wordWrap",
     "editor.wordWrapColumn",

@@ -69,6 +69,14 @@ Check the active connection, its TLS mode and the server's permissions. A server
 
 Sessions are saved under `~/.local/state/tide/sessions`. To check whether a problem comes from the saved session, start once with `--no-session`. That run leaves the saved session untouched and writes no recovery snapshot, unless you run Save Session, open a named session or restart Tide. If a session fails to load, Tide stops writing sessions for that run so the file is not overwritten.
 
+## Edits after a closed window or dropped connection
+
+When the terminal hangs up or Tide receives `SIGTERM`, it writes the recovery snapshot before quitting, so unsaved edits are kept even if they were made seconds before. Start Tide again in the same folder (with the same `--session`, if you used one) to get them back. A run started with `--no-session` keeps no snapshot. `SIGKILL` cannot be caught; after one, you have the edits from the last automatic snapshot, taken every `session.autoSaveInterval` (`30000`) milliseconds.
+
+## Indentation or saving looks wrong
+
+The status bar shows the active file's indentation. If it is not what you expect, check for an `.editorconfig` in the file's folder or above it, which wins over everything else; otherwise Tide follows the file's existing indentation, or your settings when `editor.detectIndentation` is off. A file marked **Read-only** is one you lack permission to write; Tide asks before saving over it and cannot save into a folder you cannot write.
+
 ## Reporting a problem
 
 **Help: Report an Issue** opens a new GitHub issue with your Tide version, platform and install method filled in: https://github.com/ultradotdev/tide/issues

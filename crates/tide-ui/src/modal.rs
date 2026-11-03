@@ -92,6 +92,8 @@ pub enum ConfirmAction {
     },
     ReloadFile,
     OverwriteFile,
+    /// Save the active file although its permissions make it read-only.
+    OverwriteReadOnly(std::path::PathBuf),
     ExportResults(std::path::PathBuf),
     /// The terminal's unique serial.
     KillTerminal(u64),
@@ -743,6 +745,7 @@ impl ModalBase {
                     ConfirmAction::SaveAs(_)
                     | ConfirmAction::RenamePath(_, _)
                     | ConfirmAction::OverwriteFile
+                    | ConfirmAction::OverwriteReadOnly(_)
                     | ConfirmAction::ExportResults(_),
                 ) => "Overwrite [Y]",
                 ModalKind::Confirm(ConfirmAction::ReloadFile) => "Reload [Y]",
@@ -1000,7 +1003,14 @@ impl ModalBase {
     }
 
     fn render_input(&self, frame: &mut Frame, area: Rect, palette: Palette) {
-        self.render_input_prefix(frame, area, palette, "> ");
+        if self.field_selected && matches!(self.kind, ModalKind::Prompt(_)) {
+            let mut selected = palette;
+            selected.input_bg = palette.selection_bg;
+            selected.input_fg = palette.selection_fg;
+            self.render_input_prefix(frame, area, selected, "> ");
+        } else {
+            self.render_input_prefix(frame, area, palette, "> ");
+        }
     }
     fn render_input_prefix(&self, frame: &mut Frame, area: Rect, palette: Palette, prefix: &str) {
         if area.is_empty() {
@@ -1048,6 +1058,7 @@ impl ModalBase {
         let input = self.content_layout(Block::bordered().inner(popup))[0];
         if !input.is_empty() && input.contains((x, y).into()) {
             self.actions_focused = false;
+            self.field_selected = false;
             let (_, _, start) = self.input_view(input.width as usize);
             let target = x.saturating_sub(input.x + 2) as usize;
             let value: String = self.input.chars().skip(start).collect();
@@ -2344,11 +2355,56 @@ pub struct PromptModal {
 }
 
 impl PromptModal {
+    /// A prompt filled with `initial` opens with it selected, so typing replaces it
+    /// and an arrow key starts editing it.
     #[must_use]
     pub fn new(action: PromptAction, title: &str, initial: &str) -> Self {
-        Self {
-            base: ModalBase::prompt(ModalKind::Prompt(action), title, initial),
+        let mut base = ModalBase::prompt(ModalKind::Prompt(action), title, initial);
+        base.field_selected = !initial.is_empty();
+        Self { base }
+    }
+
+    /// Applies `key` to a selected pre-filled value: typing or deleting replaces it,
+    /// and Left/Home or Right/End keep it with the cursor at that end. True when the
+    /// key needs nothing more.
+    fn replace_selection(&mut self, key: KeyEvent) -> bool {
+        if !self.base.field_selected || self.base.actions_focused {
+            return false;
         }
+        let plain = !key.modifiers.intersects(
+            KeyModifiers::CONTROL | KeyModifiers::ALT | KeyModifiers::SUPER | KeyModifiers::META,
+        );
+        match key.code {
+            KeyCode::Char(_) if plain => {
+                self.clear_selected();
+                false
+            }
+            KeyCode::Backspace | KeyCode::Delete => {
+                self.clear_selected();
+                true
+            }
+            KeyCode::Left | KeyCode::Home | KeyCode::Right | KeyCode::End => {
+                self.base.field_selected = false;
+                self.base.cursor = if matches!(key.code, KeyCode::Left | KeyCode::Home) {
+                    0
+                } else {
+                    self.base.input.chars().count()
+                };
+                true
+            }
+            KeyCode::Enter | KeyCode::Esc => false,
+            _ => {
+                self.base.field_selected = false;
+                false
+            }
+        }
+    }
+
+    fn clear_selected(&mut self) {
+        self.base.field_selected = false;
+        self.base.input.clear();
+        self.base.cursor = 0;
+        self.base.refilter();
     }
 }
 
@@ -2374,8 +2430,18 @@ impl Modal for PromptModal {
                 save: true,
             });
         }
+        if self.replace_selection(key) {
+            return ModalOutcome::None;
+        }
         let outcome = default_key(&mut self.base, key);
         resolve(self, outcome)
+    }
+
+    fn paste(&mut self, text: &str) {
+        if self.base.field_selected && !self.base.actions_focused {
+            self.clear_selected();
+        }
+        self.base.push_str(text);
     }
 }
 
@@ -2888,6 +2954,14 @@ mod tests {
         let overwrite = ModalBase::confirm(ConfirmAction::OverwriteFile, "Overwrite", "Replace?");
         assert_eq!(overwrite.action_role(0), ActionRole::Destructive);
         assert_eq!(overwrite.action_role(1), ActionRole::Neutral);
+        let read_only = ModalBase::confirm(
+            ConfirmAction::OverwriteReadOnly("a.txt".into()),
+            "Read-Only File",
+            "a.txt is read-only. Overwrite it anyway?",
+        );
+        assert_eq!(read_only.action_labels()[0], " Overwrite [Y] ");
+        assert_eq!(read_only.action_role(0), ActionRole::Destructive);
+        assert_eq!(read_only.action_index, 1, "starts on Cancel");
     }
 
     #[test]

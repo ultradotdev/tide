@@ -96,6 +96,9 @@ fn deleting_lines_removes_every_cursor_line_including_the_last() {
 fn indenting_follows_the_settings_and_tab_keys_indent_selected_lines() {
     let (_home, mut app) = edited("a\n\nb\n\tc");
     app.settings.set("editor.tabSize", serde_json::json!(4));
+    // The tab-indented last line would otherwise make detection choose tabs.
+    app.settings
+        .set("editor.detectIndentation", serde_json::Value::Bool(false));
     place(&mut app, &[((0, 0), (2, 1))]);
     run_and_undo(&mut app, Command::EditIndentLine, "    a\n\n    b\n\tc");
     let selection = cursor(&app).selection.unwrap();
