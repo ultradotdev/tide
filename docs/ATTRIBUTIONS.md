@@ -13,9 +13,9 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | Dependency | Declared license | Notice text |
 | --- | --- | --- |
 | `adler2` 2.0.1 | 0BSD OR MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [3c160092b803](#notice-3c160092b8035532532ee61cb3f8a4b8d4f3d31438db0992c0ec845bc2dd820f), [a21c914647d3](#notice-a21c914647d33e48cb4d213dfb0749dbb45491514da9d3a8ffc4763cf456217d) |
-| `aead` 0.5.2 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [b38f573d5bc8](#notice-b38f573d5bc805e32f92fa8772ad44f1330a7de85022d133b2cd3d17424f8c22) |
-| `aes` 0.8.4 | MIT OR Apache-2.0 | [33e996382660](#notice-33e996382660b2bac31ae8ec48e5dc8ddf44e52ddce0612457301404c9a29111), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
-| `aes-gcm` 0.10.3 | Apache-2.0 OR MIT | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [e90ad0f8f6fe](#notice-e90ad0f8f6fea705ccd7ff56392c6379bb51b8602dd197a567140acabda179ce) |
+| `aead` 0.6.1 | MIT OR Apache-2.0 | [1aed52f3af3d](#notice-1aed52f3af3d324c69b767f0f9effd9955c48011306f46fd388d703b8e6455bc), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
+| `aes` 0.9.4 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [fc794e17e5ea](#notice-fc794e17e5ea939c06f1fd8b390a080d28cf5161abfc21926608649a288c8674) |
+| `aes-gcm` 0.11.1 | Apache-2.0 OR MIT | [1038b7737a0a](#notice-1038b7737a0a04bd9268bbb8d17ee4e13c9bb3cf36f39da46c3a1818c798aa20), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `aho-corasick` 1.1.5 | Unlicense OR MIT | [154c1af2b38e](#notice-154c1af2b38e25e5c18613dfe352eed29b0863cb39e494007822cdeb39150ac5), [65314a6c9668](#notice-65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066), [ca2abdf69588](#notice-ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83) |
 | `alacritty_terminal` 0.26.0 | Apache-2.0 | [8657e865d760](#notice-8657e865d76079686b22eedc7bc18b13f26c2fcf6e07c3b418a06a5366049772) |
 | `allocator-api2` 0.2.21 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
@@ -55,7 +55,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `cfg_aliases` 0.2.2 | MIT | [48513346d335](#notice-48513346d335b96c01a79e3c0fe39260efd5df89157d3660dbb471d5811272f9), [bc56efd19e4d](#notice-bc56efd19e4d25377548160007fa8981b4fef31e8ad513bad4cb5f107c5e662a) |
 | `chacha20` 0.10.2 | MIT OR Apache-2.0 | [1038b7737a0a](#notice-1038b7737a0a04bd9268bbb8d17ee4e13c9bb3cf36f39da46c3a1818c798aa20), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `chrono` 0.4.45 | MIT OR Apache-2.0 | [ce4a94c006fa](#notice-ce4a94c006fa5d157d196768fdba0b21d26f58e5599e8fccfa9ea374433e4ece) |
-| `cipher` 0.4.4 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [92f01fc7ca90](#notice-92f01fc7ca904e16f13e27d4897e507b5446e42516bb7efacc4c5ed189008c31) |
+| `cipher` 0.5.2 | MIT OR Apache-2.0 | [28afb21f14a0](#notice-28afb21f14a032a5639ae9995094d1946e7c5b593eb5d1e935f0c5af5eb03e69), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `clap` 4.6.7 | MIT OR Apache-2.0 | [4498464c2864](#notice-4498464c2864825d7bb4c83e2ac4e9dbb533d49964fbf218c24f8d44ee4e87a9), [4e3938f8fe5d](#notice-4e3938f8fe5d93d3c1a148c2eea0c9941e766f86b596b2a32a3b218ef2b9ad28) |
 | `clap_builder` 4.6.7 | MIT OR Apache-2.0 | [4498464c2864](#notice-4498464c2864825d7bb4c83e2ac4e9dbb533d49964fbf218c24f8d44ee4e87a9), [4e3938f8fe5d](#notice-4e3938f8fe5d93d3c1a148c2eea0c9941e766f86b596b2a32a3b218ef2b9ad28) |
 | `clap_derive` 4.6.7 | MIT OR Apache-2.0 | [4498464c2864](#notice-4498464c2864825d7bb4c83e2ac4e9dbb533d49964fbf218c24f8d44ee4e87a9), [4e3938f8fe5d](#notice-4e3938f8fe5d93d3c1a148c2eea0c9941e766f86b596b2a32a3b218ef2b9ad28) |
@@ -70,6 +70,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `core-foundation` 0.10.1 | MIT OR Apache-2.0 | [3bfacc197ff2](#notice-3bfacc197ff245b6217891d481f11cf9be791a06baa086ba1f80c80a2273e947), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `core-foundation-sys` 0.8.7 | MIT OR Apache-2.0 | [3bfacc197ff2](#notice-3bfacc197ff245b6217891d481f11cf9be791a06baa086ba1f80c80a2273e947), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `core_detect` 1.0.0 | MIT/Apache-2.0 | [57895cdbc8fe](#notice-57895cdbc8febf233f2296b27ee98593e57f974896a4216b4a9629f5bd953f1d), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
+| `cpubits` 0.1.1 | MIT OR Apache-2.0 | [34a493355890](#notice-34a493355890ad703595a715cc2dde4524fcf11c2df8b2f28dbe6ee7ffde8826), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `cpufeatures` 0.2.17 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [6334e52844d6](#notice-6334e52844d698f528b923f406aeb5bc3a2c6da77916c3b79f1662622fcde897) |
 | `cpufeatures` 0.3.1 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [ea753cf1e3ec](#notice-ea753cf1e3ec3e02b9f8fdb7876d2a82e881209eb54fdb0df52997e3a14e40d7) |
 | `crc32fast` 1.5.3 | MIT OR Apache-2.0 | [9599127e421e](#notice-9599127e421e16595d107a20935532cdb97ff570fbb0b06ed3aa67b04d0185a2), [c5accbbd8546](#notice-c5accbbd8546e94c34aed24afe689a617627d18eed5a6c48277e48db57c23851) |
@@ -84,7 +85,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `crypto-common` 0.1.7 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [692b1604961d](#notice-692b1604961dd580cfcde8cc33d2c587f5f6349b00c449662194fb1586e850c5) |
 | `crypto-common` 0.2.2 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [dec912e37f88](#notice-dec912e37f888cf7a524f9f132c5bbb07dc13e90b026e0eab25697e74a08ddbb) |
 | `csscolorparser` 0.6.2 | MIT OR Apache-2.0 | [e7a45eedc66a](#notice-e7a45eedc66a204cf67423590b2b824b9b50fb5e328a2fba1203dd28db3d6519), [f220c5235e0f](#notice-f220c5235e0fb3103ce29f37bad4318f3ded1f9df80941b9d0ff2ed6b8b183c4) |
-| `ctr` 0.9.2 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [f3bd9e2e7745](#notice-f3bd9e2e7745e49db37c28033e4da290df8cf528aa21369d6861699804c5e5dd) |
+| `ctr` 0.10.1 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [f3bd9e2e7745](#notice-f3bd9e2e7745e49db37c28033e4da290df8cf528aa21369d6861699804c5e5dd) |
 | `ctutils` 0.4.6 | Apache-2.0 OR MIT | [44924708b169](#notice-44924708b16974ac3a1df266da789724ab84c27a875364aab7c1b2b06d54bf3f), [58d1e17ffe51](#notice-58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd) |
 | `cursor-icon` 1.2.0 | MIT OR Apache-2.0 OR Zlib | [0e4063eaaed0](#notice-0e4063eaaed0c454493ed36e8fa1fd35d3a24169c09cb51180666ff1c79bcd8d), [3d51f0acff0e](#notice-3d51f0acff0e10c9b84378d575b1cc9717e6adaf468e1f0c8947e7317ae9efa3), [bfdb1645fcb6](#notice-bfdb1645fcb60075b87520e65d8aaecfc36ee9dc283d52bd5348a5c53af5171e) |
 | `darling` 0.24.1 | MIT | [cc8f3c8ab396](#notice-cc8f3c8ab396de7fa549e3907319281cf13d0a4a456a2b0695c5b61d877dba68) |
@@ -139,7 +140,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `getrandom` 0.2.17 | MIT OR Apache-2.0 | [2f7ce0f0ada1](#notice-2f7ce0f0ada1987bb72bd83c6ea059e4dc4cac627a83ebcf73d5d17af1cf0af5), [478d530cbce7](#notice-478d530cbce79fc122b1a7c067ad706b000ef79ae914a4d060195f0f23b4a50d) |
 | `getrandom` 0.3.4 | MIT OR Apache-2.0 | [2f7ce0f0ada1](#notice-2f7ce0f0ada1987bb72bd83c6ea059e4dc4cac627a83ebcf73d5d17af1cf0af5), [73af2019a565](#notice-73af2019a565c0e6d05ae4ad97bf9c1815f75b7d559ec2c3c5abebf60444b040) |
 | `getrandom` 0.4.3 | MIT OR Apache-2.0 | [2f7ce0f0ada1](#notice-2f7ce0f0ada1987bb72bd83c6ea059e4dc4cac627a83ebcf73d5d17af1cf0af5), [94b1870d380c](#notice-94b1870d380ccf537d5bdfda2de882965c9afb814acc375cb1b47fc1a0014ee3) |
-| `ghash` 0.5.1 | Apache-2.0 OR MIT | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [fc15b628f1c4](#notice-fc15b628f1c4fccfd3c3028d99453826b49b1e3711e8c4af843223a78e5e3847) |
+| `ghash` 0.6.0 | Apache-2.0 OR MIT | [1038b7737a0a](#notice-1038b7737a0a04bd9268bbb8d17ee4e13c9bb3cf36f39da46c3a1818c798aa20), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `gix` 0.90.0 | MIT OR Apache-2.0 | [0cec06e0e55f](#notice-0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9), [21a2121221d2](#notice-21a2121221d2a35df2d8d333d00a61ed240446b6107092741ff996941acdc919) |
 | `gix-actor` 0.44.1 | MIT OR Apache-2.0 | [0cec06e0e55f](#notice-0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9), [21a2121221d2](#notice-21a2121221d2a35df2d8d333d00a61ed240446b6107092741ff996941acdc919) |
 | `gix-attributes` 0.37.1 | MIT OR Apache-2.0 | [0cec06e0e55f](#notice-0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9), [21a2121221d2](#notice-21a2121221d2a35df2d8d333d00a61ed240446b6107092741ff996941acdc919) |
@@ -203,7 +204,6 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `heapless` 0.8.0 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [8adee6e9dc6d](#notice-8adee6e9dc6ddf8867255264a06b7c30d9f5455d2a92a055ceec9290a1c1e1ed) |
 | `heck` 0.5.0 | MIT OR Apache-2.0 | [033a9383ff21](#notice-033a9383ff21d1e4811d98dd2e0081b0ba0d9c9a31d6c7ba9e63e3488479bf29), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `hex` 0.4.3 | MIT OR Apache-2.0 | [9dde4a6ad496](#notice-9dde4a6ad496606322ae0b61b70dc7123fa231be543caa0896d567e34d20fbf8), [c5accbbd8546](#notice-c5accbbd8546e94c34aed24afe689a617627d18eed5a6c48277e48db57c23851) |
-| `hmac` 0.12.1 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [9c5127ab88e8](#notice-9c5127ab88e8f55b26f7846eefbe1f582b9c2c596c65bfbb9a622b0c6f678d13) |
 | `hmac` 0.13.0 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [9c5127ab88e8](#notice-9c5127ab88e8f55b26f7846eefbe1f582b9c2c596c65bfbb9a622b0c6f678d13) |
 | `home` 0.5.12 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [3c160092b803](#notice-3c160092b8035532532ee61cb3f8a4b8d4f3d31438db0992c0ec845bc2dd820f) |
 | `http` 1.5.0 | MIT OR Apache-2.0 | [a7e117f398da](#notice-a7e117f398da45a078a0d9228454522c04a55a5093174943c2f97b0a113f0b60), [f47894ff9c86](#notice-f47894ff9c86dc7e364e3c161a13b4b7414da6192b91d0eccf0161f944f753e5) |
@@ -230,7 +230,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `indoc` 2.0.8 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
 | `inotify` 0.11.5 | ISC | [f68878c9ca61](#notice-f68878c9ca61b25d4b2c470de571cb85ce97804a62bb153607f7e0e0d2684c8a) |
 | `inotify-sys` 0.1.8 | ISC | [f68878c9ca61](#notice-f68878c9ca61b25d4b2c470de571cb85ce97804a62bb153607f7e0e0d2684c8a) |
-| `inout` 0.1.4 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [71366a4092ad](#notice-71366a4092ad07b6fc29c4aa94ceeac8b892f7a24fcdedf8df7cba8112cdc15b) |
+| `inout` 0.2.5 | MIT OR Apache-2.0 | [13ec53eb1d4d](#notice-13ec53eb1d4da14c52f193cbd1263d856ff39a7755e6d782ad2ab30e4d1154de), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `instability` 0.3.14 | MIT | [901a50d6a47b](#notice-901a50d6a47b06482bf3d294d90dc73e66b8892ff765bb3e30bc8280df03f386) |
 | `io-close` 0.3.7 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [77949ead506e](#notice-77949ead506e84e3ff5c31f784bdc17b6c4095d4102edae05dc5557ef6c61c8c), [a8eedb728769](#notice-a8eedb728769ffbdafa2a6a5826469888c5afa1c85633b4d8509a686a2d2f0a9) |
 | `ipnet` 2.12.2 | MIT OR Apache-2.0 | [66b593f9d328](#notice-66b593f9d3287f8e8f9803183f57dcea03f1e427089918cc1d600804b8420692), [c935506fff2e](#notice-c935506fff2ef821003680006758f03bd869f1ae051b11c5879a0c24b0c07ecf) |
@@ -285,7 +285,6 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `objc2-core-services` 0.3.2 | Zlib OR Apache-2.0 OR MIT | [1aa0a3422448](#notice-1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab) |
 | `objc2-system-configuration` 0.3.2 | Zlib OR Apache-2.0 OR MIT | [1aa0a3422448](#notice-1aa0a34224480ff916817aafd48263c880fe53a1d116261a7bb8c952ee0173ab) |
 | `once_cell` 1.21.4 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
-| `opaque-debug` 0.3.1 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [7873dbb4b866](#notice-7873dbb4b8660923e8fdfb93c71ee31ed8bb44bffb5851e6d6a5e62adf65adbd) |
 | `openssl-probe` 0.2.2 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [84e1bbfebd74](#notice-84e1bbfebd74e4196cfa0ea5cf58e677aa24b47c6661adbb19fb07920d089d1d) |
 | `ordered-float` 4.6.0 | MIT | [42d8a095dbff](#notice-42d8a095dbffdf17dba2e5ab859b56bf19909eace29d1ece1357e2044a7ab8f6) |
 | `palette` 0.7.7 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [7f2c621afe40](#notice-7f2c621afe40ad9e11eb97378f26820b91bb3c87f92cf045dce630b788db0e77) |
@@ -293,8 +292,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `palette_math` 0.7.7 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [7f2c621afe40](#notice-7f2c621afe40ad9e11eb97378f26820b91bb3c87f92cf045dce630b788db0e77) |
 | `parking_lot` 0.12.5 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [8d1f81ea4e87](#notice-8d1f81ea4e87111d557b185d58d996e7bcb974c19c364197fffd4e814fd9b6fa) |
 | `parking_lot_core` 0.9.12 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [8d1f81ea4e87](#notice-8d1f81ea4e87111d557b185d58d996e7bcb974c19c364197fffd4e814fd9b6fa) |
-| `password-hash` 0.5.0 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [8a87674755ce](#notice-8a87674755cec4feeaa77d7d0f55d25f0c018516fe838e2b0626fb8bc870129e) |
-| `pbkdf2` 0.12.2 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [d1fd0ccf6437](#notice-d1fd0ccf6437209aaeadbb6b91370664970f7f4b172c1029cef014c6188ab3e8) |
+| `pbkdf2` 0.13.0 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [d1fd0ccf6437](#notice-d1fd0ccf6437209aaeadbb6b91370664970f7f4b172c1029cef014c6188ab3e8) |
 | `percent-encoding` 2.3.2 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [7a8093fb4a93](#notice-7a8093fb4a93f23e2bc9081b53b6187ea14a1c9303e513184726d8cdcbfa418a) |
 | `pest` 2.9.5 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `pest_derive` 2.9.5 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
@@ -312,7 +310,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `pkg-config` 0.3.34 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [84e1bbfebd74](#notice-84e1bbfebd74e4196cfa0ea5cf58e677aa24b47c6661adbb19fb07920d089d1d) |
 | `plist` 1.10.3 | MIT | [5b0ae40d1a35](#notice-5b0ae40d1a35f7ae6591a28e44771240e6a88cb03a66c9189a45b9681639b466) |
 | `polling` 3.11.0 | Apache-2.0 OR MIT | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
-| `polyval` 0.6.2 | Apache-2.0 OR MIT | [3dad7b797447](#notice-3dad7b7974471e2c4787dc6cad7d74daf7067cbd45eee8f323c74b35733f1acc), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
+| `polyval` 0.7.3 | Apache-2.0 OR MIT | [1038b7737a0a](#notice-1038b7737a0a04bd9268bbb8d17ee4e13c9bb3cf36f39da46c3a1818c798aa20), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
 | `portable-atomic` 1.15.0 | Apache-2.0 OR MIT | [0cec06e0e55f](#notice-0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9), [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652) |
 | `portable-pty` 0.9.0 | MIT | [0f5e2ba844a4](#notice-0f5e2ba844a4557af19c2277bf6c7d4a088606d1dde4abab72f29b65dbbbc8cb) |
 | `postgres-protocol` 0.6.12 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [9dc3255fe20f](#notice-9dc3255fe20f8728fad4aeaa15851ccb2e6499ee2b172487ee583fde9a69aff9) |
@@ -349,7 +347,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `reqwest` 0.12.28 | MIT OR Apache-2.0 | [2db114247fb5](#notice-2db114247fb505b3f8913289c68c91f9e41e215e281040fcda5f34e86b66629c), [54987d63f266](#notice-54987d63f26601410d0ef10b12769e0bf0e5889a2798eea03ea786cdbc1e65a5) |
 | `ring` 0.17.14 | Apache-2.0 AND ISC | [07414b6c33f3](#notice-07414b6c33f30acfd5e0dda512e77ddbeb9f8a37290568fd056a01a0b50244c1), [edb9c6dbff46](#notice-edb9c6dbff4676b90e729ffdb6c9239076a2e01b3bb8aadf080bdc7a682296da), [f3ba8fc296a9](#notice-f3ba8fc296a970c976b1bdcaecc5939bf9757dbaecd3b4421e3e7ed29392e9b8) |
 | `ropey` 1.6.1 | MIT | [b82ad4f623c1](#notice-b82ad4f623c1869f1db482e085232eb4fc658555c1bb9cc8ef6689a67691a6ef) |
-| `rusqlite` 0.41.0 | MIT | [6061b8ea5b16](#notice-6061b8ea5b16d94a796c9837aadc73a8e72a11b3045c98d3a0712d2a0fef84ac) |
+| `rusqlite` 0.41.1 | MIT | [6061b8ea5b16](#notice-6061b8ea5b16d94a796c9837aadc73a8e72a11b3045c98d3a0712d2a0fef84ac) |
 | `rustc-hash` 2.1.3 | Apache-2.0 OR MIT | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
 | `rustc_version` 0.4.1 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [8d1f81ea4e87](#notice-8d1f81ea4e87111d557b185d58d996e7bcb974c19c364197fffd4e814fd9b6fa) |
 | `rustix` 1.1.6 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | [23823edf2631](#notice-23823edf263108ef7acbefde293225117b4784759c9c5bcd0b4966d0a1e34f55), [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [fde2a68c47d2](#notice-fde2a68c47d279384c0113efbc29bb43e263dd4cb33137c87365b0218a11d6aa) |
@@ -360,10 +358,10 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `rustls-webpki` 0.103.16 | ISC | [3ac27594ed56](#notice-3ac27594ed56fd079c95a71f8beabc498c5b997ec31e91f4a18e59a5974adb2a) |
 | `rustversion` 1.0.23 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
 | `ryu` 1.0.23 | Apache-2.0 OR BSL-1.0 | [8d8291caf1ce](#notice-8d8291caf1cee26d23acf3eb67c9f9a2d58f1c681b16a4fbe8cbfb9e3c0b5a9b), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
-| `salsa20` 0.10.2 | MIT OR Apache-2.0 | [279d3c68e611](#notice-279d3c68e6114c5fb686d00413de826269cafb26e1d708ceb299f7d3246bacd8), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
+| `salsa20` 0.11.0 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [f552c152ce85](#notice-f552c152ce859178f654e8f578499131bbe3166d62e6bf51180b006c11a72485) |
 | `same-file` 1.0.6 | Unlicense/MIT | [65314a6c9668](#notice-65314a6c96683f76f7495709bb0ddecb4eaa6fa244b28f23c4812ef8e5524066), [739620ea44ad](#notice-739620ea44ad8f99e96ea272e583b63a7d44a83a71250d7550b2544ea6b49fbf), [ca2abdf69588](#notice-ca2abdf695884c77ea4b4a5b64ca7b732d9d9dbade4eebc1c2e76c53e9e3bc83) |
 | `scopeguard` 1.2.0 | MIT OR Apache-2.0 | [1a6aa2616e74](#notice-1a6aa2616e74056910aa02ac3a764d45c1b5309eac53768153ad2119637c95cb), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
-| `scrypt` 0.11.0 | MIT OR Apache-2.0 | [07ce2f16212b](#notice-07ce2f16212bdab8e8bf9ddad7f37f1e16e2fdc57031dab901356a66348cdf00), [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018) |
+| `scrypt` 0.12.0 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [d9479c49b689](#notice-d9479c49b689a40d1a7b088366ef6432435fc7f7832a72f2bd6421f9d761023b) |
 | `security-framework` 3.7.0 | MIT OR Apache-2.0 | [37412fff76e3](#notice-37412fff76e3ad06d95d677566b2b771ad595aada257e204eaf040ca938bcb62), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `security-framework-sys` 2.17.0 | MIT OR Apache-2.0 | [37412fff76e3](#notice-37412fff76e3ad06d95d677566b2b771ad595aada257e204eaf040ca938bcb62), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `semver` 1.0.28 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
@@ -385,7 +383,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `signal-hook-registry` 1.4.8 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [aaac889d0a4a](#notice-aaac889d0a4a18753c87911502e36f2e04185d0c8bab33b42895c8bcc2570cfd) |
 | `simd-adler32` 0.3.10 | MIT | [627eff66d6c4](#notice-627eff66d6c4b984355e737e8a92b262d584865956e93a1ece6e285a083d8be9) |
 | `simdutf8` 0.1.5 | MIT OR Apache-2.0 | [0cec06e0e55f](#notice-0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9), [1847e0e06981](#notice-1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f) |
-| `similar` 2.7.0 | Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
+| `similar` 3.2.1 | Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `siphasher` 1.0.4 | MIT OR Apache-2.0 | [21a2121221d2](#notice-21a2121221d2a35df2d8d333d00a61ed240446b6107092741ff996941acdc919), [24e26e8fb783](#notice-24e26e8fb783e2db1c502733a49f69865ea6cb6245bc13ae8429796a0f5e0a48), [58d1e17ffe51](#notice-58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd) |
 | `slab` 0.4.12 | MIT | [12c7116c4425](#notice-12c7116c4425c559c9d7aed5cafbc1d4039286f17619ee2e6dd25f59728e679e) |
 | `smallvec` 1.16.4 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [7f194ae45c25](#notice-7f194ae45c2525a57443f7edabd392e8218109ee81a4bce70d385104c87c1a71) |
@@ -450,8 +448,8 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `unicode-properties` 0.1.4 | MIT/Apache-2.0 | [033a9383ff21](#notice-033a9383ff21d1e4811d98dd2e0081b0ba0d9c9a31d6c7ba9e63e3488479bf29), [20cec30ad778](#notice-20cec30ad77804372faa6c82e5a1a4be426a75e32808a159ef646c2037649071), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `unicode-segmentation` 1.13.3 | MIT OR Apache-2.0 | [033a9383ff21](#notice-033a9383ff21d1e4811d98dd2e0081b0ba0d9c9a31d6c7ba9e63e3488479bf29), [20cec30ad778](#notice-20cec30ad77804372faa6c82e5a1a4be426a75e32808a159ef646c2037649071), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `unicode-truncate` 2.0.1 | MIT OR Apache-2.0 | [20cec30ad778](#notice-20cec30ad77804372faa6c82e5a1a4be426a75e32808a159ef646c2037649071), [681732772ab1](#notice-681732772ab1af00c649367612e880654c6418fd504eeef3fd78b5775de43c59), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
-| `unicode-width` 0.2.2 | MIT OR Apache-2.0 | [033a9383ff21](#notice-033a9383ff21d1e4811d98dd2e0081b0ba0d9c9a31d6c7ba9e63e3488479bf29), [20cec30ad778](#notice-20cec30ad77804372faa6c82e5a1a4be426a75e32808a159ef646c2037649071), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
-| `universal-hash` 0.5.1 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [7cfd98aeed13](#notice-7cfd98aeed13ac52b89eb0b91cb2900f3723686a85786c317d706f0d94ae657f) |
+| `unicode-width` 0.2.3 | MIT OR Apache-2.0 | [033a9383ff21](#notice-033a9383ff21d1e4811d98dd2e0081b0ba0d9c9a31d6c7ba9e63e3488479bf29), [20cec30ad778](#notice-20cec30ad77804372faa6c82e5a1a4be426a75e32808a159ef646c2037649071), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
+| `universal-hash` 0.6.1 | MIT OR Apache-2.0 | [59013a5c8d3a](#notice-59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018), [5f934370168b](#notice-5f934370168b8ded9168a3e5527fdd3c25fe04379135646595fbf40bf2434696) |
 | `untrusted` 0.9.0 | ISC | [a1fff3442978](#notice-a1fff344297822d3e229f6943007694a29e6bede5b83349cb7c39117f4302e3c) |
 | `url` 2.5.8 | MIT OR Apache-2.0 | [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [7a8093fb4a93](#notice-7a8093fb4a93f23e2bc9081b53b6187ea14a1c9303e513184726d8cdcbfa418a) |
 | `utf8_iter` 1.0.4 | Apache-2.0 OR MIT | [58d1e17ffe51](#notice-58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd), [76c0e37c107d](#notice-76c0e37c107dd35a99628d1c9817a685668b89d1c2a465d0d898bacd7eb94475), [7dc2f6402447](#notice-7dc2f64024477c92b147ae4a93bbcef90031b33ba0de6a84bd570d59e6c0688b) |
@@ -5085,6 +5083,39 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
+<a id="notice-13ec53eb1d4da14c52f193cbd1263d856ff39a7755e6d782ad2ab30e4d1154de"></a>
+
+### 13ec53eb1d4d
+
+````text
+Copyright (c) 2022-2025 The RustCrypto Project Developers
+Copyright (c) 2022 Artyom Pavlov
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+````
+
 <a id="notice-14435fbcd271e2783f721b57b7bf4f6502c1379249a4300e0e5bb774686c2d90"></a>
 
 ### 14435fbcd271
@@ -5306,6 +5337,39 @@ that only works when you have the correct Xcode SDK available to provide the
 required `.tbd` files, which is why we choose to still use the normal SPDX
 identifiers in the crates (Xcode is required to use the crates, and when using
 Xcode you have already agreed to the Xcode license).
+````
+
+<a id="notice-1aed52f3af3d324c69b767f0f9effd9955c48011306f46fd388d703b8e6455bc"></a>
+
+### 1aed52f3af3d
+
+````text
+Copyright (c) 2019-2026 The RustCrypto Project Developers
+Copyright (c) 2019 MobileCoin, LLC
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 ````
 
 <a id="notice-1b0258c48739a24ea7c8e4e45fd32862666ea416630cdae24179b2d64ef742e3"></a>
@@ -5925,12 +5989,12 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-<a id="notice-279d3c68e6114c5fb686d00413de826269cafb26e1d708ceb299f7d3246bacd8"></a>
+<a id="notice-28afb21f14a032a5639ae9995094d1946e7c5b593eb5d1e935f0c5af5eb03e69"></a>
 
-### 279d3c68e611
+### 28afb21f14a0
 
 ````text
-Copyright (c) 2019 Eric McCorkle
+Copyright (c) 2016-2025 RustCrypto Developers
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -6592,38 +6656,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-<a id="notice-33e996382660b2bac31ae8ec48e5dc8ddf44e52ddce0612457301404c9a29111"></a>
-
-### 33e996382660
-
-````text
-Copyright (c) 2018 Artyom Pavlov
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-````
-
 <a id="notice-33ed9a8ecf556f161ec5d7e8761712f404d082bf9eeb8f6085d43517b5938be4"></a>
 
 ### 33ed9a8ecf55
@@ -6662,6 +6694,38 @@ DEALINGS IN THE SOFTWARE.
 
 ````text
 Copyright (c) 2020 Andrew D. Straw
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+````
+
+<a id="notice-34a493355890ad703595a715cc2dde4524fcf11c2df8b2f28dbe6ee7ffde8826"></a>
+
+### 34a493355890
+
+````text
+Copyright (c) 2023-2026 The RustCrypto Project Developers
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -7275,38 +7339,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 
 3. This notice may not be removed or altered from any source distribution.
-````
-
-<a id="notice-3dad7b7974471e2c4787dc6cad7d74daf7067cbd45eee8f323c74b35733f1acc"></a>
-
-### 3dad7b797447
-
-````text
-Copyright (c) 2019-2023 RustCrypto Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
 ````
 
 <a id="notice-3e1bef82aa0dfee4504ad211f7e4895153e3191db6ab179f94a7e20f990a0b67"></a>
@@ -10394,6 +10426,38 @@ have been licensed under extremely permissive terms.
 Copyright notices are retained in src/* files where relevant.
 ````
 
+<a id="notice-5f934370168b8ded9168a3e5527fdd3c25fe04379135646595fbf40bf2434696"></a>
+
+### 5f934370168b
+
+````text
+Copyright (c) 2019-2025 RustCrypto Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+````
+
 <a id="notice-5ff5253f2cb9347c4b3b1c8ecc5057c4b534ae21fab479f8ac77409bb6d6efa4"></a>
 
 ### 5ff5253f2cb9
@@ -11666,39 +11730,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-````
-
-<a id="notice-71366a4092ad07b6fc29c4aa94ceeac8b892f7a24fcdedf8df7cba8112cdc15b"></a>
-
-### 71366a4092ad
-
-````text
-Copyright (c) 2022 The RustCrypto Project Developers
-Copyright (c) 2022 Artyom Pavlov
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
 ````
 
 <a id="notice-720304e6515d46fd47647b9b7eaf3ea33e8a680788b92387141b67a12a414240"></a>
@@ -12983,38 +13014,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-<a id="notice-7873dbb4b8660923e8fdfb93c71ee31ed8bb44bffb5851e6d6a5e62adf65adbd"></a>
-
-### 7873dbb4b866
-
-````text
-Copyright (c) 2018-2024 The RustCrypto Project Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-````
-
 <a id="notice-79697635de7275c58e2f250f12e2a4addba33e919e61f127331f48068d36fd99"></a>
 
 ### 79697635de72
@@ -13151,38 +13150,6 @@ http://www.apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
 http://opensource.org/licenses/MIT>, at your option. All files in the project
 carrying such notice may not be copied, modified, or distributed except
 according to those terms.
-````
-
-<a id="notice-7cfd98aeed13ac52b89eb0b91cb2900f3723686a85786c317d706f0d94ae657f"></a>
-
-### 7cfd98aeed13
-
-````text
-Copyright (c) 2019-2020 RustCrypto Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
 ````
 
 <a id="notice-7d4bef28325e0a52a5da0c8f3b9bbb935fc552f054cbfbccc1e10d8101c3e2d0"></a>
@@ -14271,38 +14238,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-<a id="notice-8a87674755cec4feeaa77d7d0f55d25f0c018516fe838e2b0626fb8bc870129e"></a>
-
-### 8a87674755ce
-
-````text
-Copyright (c) 2020-2023 RustCrypto Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-````
-
 <a id="notice-8adee6e9dc6ddf8867255264a06b7c30d9f5455d2a92a055ceec9290a1c1e1ed"></a>
 
 ### 8adee6e9dc6d
@@ -14909,38 +14844,6 @@ limitations under the License.
 
 ````text
 Copyright (c) Ulrik Sverdrup "bluss" 2015-2023
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-````
-
-<a id="notice-92f01fc7ca904e16f13e27d4897e507b5446e42516bb7efacc4c5ed189008c31"></a>
-
-### 92f01fc7ca90
-
-````text
-Copyright (c) 2016-2020 RustCrypto Developers
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -17318,39 +17221,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ````text
 Copyright (c) 2019 The CryptoCorrosion Contributors
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-````
-
-<a id="notice-b38f573d5bc805e32f92fa8772ad44f1330a7de85022d133b2cd3d17424f8c22"></a>
-
-### b38f573d5bc8
-
-````text
-Copyright (c) 2019 The RustCrypto Project Developers
-Copyright (c) 2019 MobileCoin, LLC
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -20687,6 +20557,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
+<a id="notice-d9479c49b689a40d1a7b088366ef6432435fc7f7832a72f2bd6421f9d761023b"></a>
+
+### d9479c49b689
+
+````text
+Copyright (c) 2021-2026 The RustCrypto Project Developers
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+````
+
 <a id="notice-da6604db16c0e6f84d6f59847f236910d450d25381d272f26d1d0e6315d7c0d2"></a>
 
 ### da6604db16c0
@@ -21207,38 +21109,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-````
-
-<a id="notice-e90ad0f8f6fea705ccd7ff56392c6379bb51b8602dd197a567140acabda179ce"></a>
-
-### e90ad0f8f6fe
-
-````text
-Copyright (c) 2019 The RustCrypto Project Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
 ````
 
 <a id="notice-e915669a595b11a200873df8286561881b0e04932f6412a585db6297ba0bc97c"></a>
@@ -21890,6 +21760,39 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
+<a id="notice-f552c152ce859178f654e8f578499131bbe3166d62e6bf51180b006c11a72485"></a>
+
+### f552c152ce85
+
+````text
+Copyright (c) 2019-2026 The RustCrypto Project Developers
+Copyright (c) 2019 Eric McCorkle
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+````
+
 <a id="notice-f68878c9ca61b25d4b2c470de571cb85ce97804a62bb153607f7e0e0d2684c8a"></a>
 
 ### f68878c9ca61
@@ -21964,12 +21867,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-<a id="notice-fc15b628f1c4fccfd3c3028d99453826b49b1e3711e8c4af843223a78e5e3847"></a>
+<a id="notice-fc794e17e5ea939c06f1fd8b390a080d28cf5161abfc21926608649a288c8674"></a>
 
-### fc15b628f1c4
+### fc794e17e5ea
 
 ````text
-Copyright (c) 2019 RustCrypto Developers
+Copyright (c) 2018-2024 The RustCrypto Project Developers
+Copyright (c) 2018 Artyom Pavlov
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated

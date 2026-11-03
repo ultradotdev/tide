@@ -3811,9 +3811,12 @@ fn hash_file(path: &Path) -> Option<String> {
     use sha2::{Digest, Sha256};
     #[cfg(test)]
     HASHES.set(HASHES.get() + 1);
-    std::fs::read(path)
-        .ok()
-        .map(|bytes| format!("{:x}", Sha256::digest(bytes)))
+    std::fs::read(path).ok().map(|bytes| {
+        Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    })
 }
 
 /// Whether `path` exists but this user may not write it, by its permissions or flags.

@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: {persist-credentials: false}
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with: {toolchain: 1.97.1}
@@ -34,7 +34,7 @@ jobs:
       - run: cargo xtask generate-rust-reference --check
       - run: cargo xtask generate-tide-site-package --write
       - run: cargo xtask generate-tide-site-package --check
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-reference-${{ github.sha }}
           path: |
@@ -56,7 +56,7 @@ jobs:
           - {id: linux-x64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu}
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: {persist-credentials: false, fetch-depth: 0}
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with: {toolchain: 1.97.1}
@@ -81,7 +81,7 @@ jobs:
       - name: Record size, hash and dependency evidence
         run: cargo xtask record-rust-artifact --binary "$RUNNER_TEMP/rust-payload/tide" --artifact-directory "$RUNNER_TEMP/rust-artifacts" --target "${{ matrix.target }}" --source-commit "$GITHUB_SHA"
       - name: Upload rehearsal candidate
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rust-010-${{ matrix.id }}-${{ github.sha }}
           path: |

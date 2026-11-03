@@ -26,7 +26,7 @@ jobs:
       homebrew-tap: ${{ steps.contract.outputs.homebrew-tap }}
     steps:
       - name: Checkout exact source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
@@ -62,7 +62,7 @@ jobs:
       matrix: ${{ fromJSON(needs.preflight.outputs.macos-matrix) }}
     steps:
       - name: Checkout exact source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
@@ -97,7 +97,7 @@ jobs:
           --output-directory=${{ runner.temp }}/tide-release/final
           --source-commit=${{ github.sha }}
       - name: Upload verified workflow artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verified-${{ matrix.artifactId }}-${{ github.sha }}
           path: |
@@ -115,7 +115,7 @@ jobs:
       matrix: ${{ fromJSON(needs.preflight.outputs.linux-matrix) }}
     steps:
       - name: Checkout exact source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
@@ -132,7 +132,7 @@ jobs:
             --output-directory=${{ runner.temp }}/tide-release \
             --source-commit=${{ github.sha }}
       - name: Upload verified workflow artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verified-${{ matrix.artifactId }}-${{ github.sha }}
           path: ${{ runner.temp }}/tide-release/${{ matrix.filename }}
@@ -145,12 +145,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout exact source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: 1.97.1
       - name: Download verified platform artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: verified-*-${{ github.sha }}
           path: ${{ runner.temp }}/verified
@@ -165,7 +165,7 @@ jobs:
             --repository-root=${{ github.workspace }} \
             --assets-directory=${{ runner.temp }}/release
       - name: Upload assembled release assets
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: ${{ runner.temp }}/release
@@ -182,7 +182,7 @@ jobs:
       attestations: write
     steps:
       - name: Download assembled release assets
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: release
@@ -201,9 +201,9 @@ jobs:
       contents: write
     steps:
       - name: Checkout exact source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Download assembled release assets
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: release
@@ -251,14 +251,14 @@ jobs:
       contents: read
     steps:
       - name: Checkout exact source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: 1.97.1
       - name: Download assembled release assets
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tide-${{ needs.preflight.outputs.tag }}-assets-${{ github.sha }}
           path: ${{ runner.temp }}/assembled
@@ -272,7 +272,7 @@ jobs:
           gh release download "$EXPECTED_TAG" --pattern SHA256SUMS --dir "${{ runner.temp }}/published"
           cmp "${{ runner.temp }}/published/SHA256SUMS" "${{ runner.temp }}/assembled/SHA256SUMS"
       - name: Checkout Homebrew tap
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ needs.preflight.outputs.homebrew-tap }}
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
