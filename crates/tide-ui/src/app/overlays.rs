@@ -435,6 +435,9 @@ impl App {
                 }
             }
             Submitted::Confirm(ConfirmAction::SaveAs(path)) => self.save_as_to(path, true),
+            Submitted::Confirm(ConfirmAction::OverwriteReadOnly(path)) => {
+                self.save_read_only_confirmed(&path)
+            }
             Submitted::Confirm(ConfirmAction::RenamePath(from, to)) => {
                 self.rename_path_confirmed(&from, &to)
             }

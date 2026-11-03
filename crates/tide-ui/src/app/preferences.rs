@@ -241,6 +241,11 @@ impl App {
     pub(super) fn tab_size(&self) -> usize {
         crate::controllers::tab_size(&self.settings)
     }
+
+    /// `editor.tabSize`, `editor.insertSpaces` and `editor.detectIndentation`.
+    pub(super) fn indent_defaults(&self) -> crate::editor::IndentDefaults {
+        crate::controllers::indent_defaults(&self.settings)
+    }
 }
 
 /// Applies `edit` to the user's JSONC file at `path`, which may not exist yet. Only the

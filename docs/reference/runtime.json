@@ -3770,6 +3770,12 @@
         "type": "string"
       }
     },
+    "editor.detectIndentation": {
+      "default": true,
+      "rule": {
+        "type": "boolean"
+      }
+    },
     "editor.diagnostics.curlyUnderline": {
       "default": true,
       "rule": {

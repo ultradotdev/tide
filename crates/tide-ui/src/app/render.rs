@@ -579,7 +579,12 @@ impl App {
             (
                 pane.tabs
                     .iter()
-                    .map(|tab| (tab.title(), tab.is_dirty()))
+                    .map(|tab| match tab {
+                        Tab::Editor(editor) if editor.is_file_read_only() => {
+                            (format!("{} [RO]", tab.title()), tab.is_dirty())
+                        }
+                        _ => (tab.title(), tab.is_dirty()),
+                    })
                     .collect(),
                 pane.active,
                 crate::tab_strip::TabStripState {
@@ -634,7 +639,8 @@ impl App {
     fn layout_pane(&mut self, id: PaneId, area: Rect, layout: &mut LayoutState) {
         let focused = self.focus == Focus::Main && self.workbench.focused() == id;
         let show_line_numbers = self.show_line_numbers();
-        let tab_size = self.tab_size();
+        let mut tab_size = self.tab_size();
+        let defaults = self.indent_defaults();
         if let Some(pane) = self.workbench.pane_mut(id) {
             pane.rect = area;
         }
@@ -684,11 +690,6 @@ impl App {
                 .unwrap_or(80)
                 .clamp(1, 1000) as usize
         });
-        let insert_spaces = self
-            .settings
-            .get("editor.insertSpaces")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(true);
         let relative = self
             .settings
             .get("editor.lineNumbers")
@@ -737,7 +738,8 @@ impl App {
                 .and_then(serde_json::Value::as_u64)
                 .unwrap_or(15)
                 .clamp(3, 100) as u16;
-            editor.configure_editing(tab_size, insert_spaces, relative);
+            editor.configure_editing(defaults, relative);
+            tab_size = editor.tab_width();
             editor.set_word_wrap(word_wrap || editor.help.is_some());
             editor.set_wrap_column(wrap_column.filter(|_| editor.help.is_none()));
         }
@@ -771,7 +773,6 @@ impl App {
         } = *pane;
         let focused = self.focus == Focus::Main && self.workbench.focused() == id;
         let show_line_numbers = self.show_line_numbers();
-        let tab_size = self.tab_size();
         out.hits.push((area, HitTarget::Pane(id)));
         let [tab_row, _] =
             Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).areas(area);
@@ -812,6 +813,9 @@ impl App {
         let Some(tab) = pane.tabs.get(pane.active) else {
             return;
         };
+        let tab_size = tab
+            .editor()
+            .map_or_else(|| self.tab_size(), EditorState::tab_width);
         let view = EditorView {
             palette: self.palette,
             syntax: &self.syntax,
@@ -1031,6 +1035,8 @@ impl App {
                     " Read-only: invalid UTF-8 ".into(),
                     Command::WorkbenchDocumentInfo,
                 ));
+            } else if editor.is_file_read_only() {
+                left.push((" Read-only ".into(), Command::WorkbenchDocumentInfo));
             }
             let cursor = editor.document.cursor().position;
             let (eol, selected) = editor.document.status_metadata();
@@ -1063,14 +1069,7 @@ impl App {
             {
                 right.push((format!("LSP: {status}"), Command::LspShowDiagnostics));
             }
-            right.push((
-                if self.setting_bool("editor.insertSpaces", true) {
-                    format!("Spaces: {}", self.tab_size())
-                } else {
-                    format!("Tab Size: {}", self.tab_size())
-                },
-                Command::WorkbenchOpenSettings,
-            ));
+            right.push((editor.indent().label(), Command::WorkbenchOpenSettings));
             right.push(("UTF-8".into(), Command::WorkbenchDocumentInfo));
             right.push((eol.into(), Command::WorkbenchDocumentInfo));
         }

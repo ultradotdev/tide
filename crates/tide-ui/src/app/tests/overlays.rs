@@ -590,3 +590,87 @@ fn quick_open_and_find_in_files_skip_git_and_excluded_folders_and_rank_file_name
     assert!(!found.contains(".git/"), "{found}");
     assert!(!found.contains("node_modules"), "{found}");
 }
+
+fn type_keys(app: &mut App, text: &str) {
+    for ch in text.chars() {
+        app.handle_modal_key(KeyEvent::new(KeyCode::Char(ch), KeyModifiers::NONE));
+    }
+}
+
+fn numbered_file(app: &mut App, lines: usize) {
+    let path = app.workspace.join("long.txt");
+    let text = (1..=lines)
+        .map(|n| format!("line {n}\n"))
+        .collect::<String>();
+    std::fs::write(&path, text).unwrap();
+    app.open_file(&path);
+}
+
+fn draw_app(app: &mut App) {
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+}
+
+#[test]
+fn go_to_line_replaces_the_prefilled_number_and_centres_an_offscreen_line() {
+    let (_home, mut app) = test_app();
+    numbered_file(&mut app, 200);
+    draw_app(&mut app);
+    app.open_goto_prompt();
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "1");
+    assert!(app.overlay.as_ref().unwrap().base().field_selected);
+    type_keys(&mut app, "134");
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "134");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    draw_app(&mut app);
+    let editor = app.workbench.active_editor().unwrap();
+    assert_eq!(editor.document.cursor().position.line, 133);
+    let height = usize::from(editor.text_area().height);
+    assert!(height > 4);
+    assert_eq!(editor.scroll_top, 133 - height / 2, "centred");
+
+    // A line already on screen does not move the view.
+    let top = editor.scroll_top;
+    app.open_goto_prompt();
+    type_keys(&mut app, &(top + 3).to_string());
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    draw_app(&mut app);
+    let editor = app.workbench.active_editor().unwrap();
+    assert_eq!(editor.document.cursor().position.line, top + 2);
+    assert_eq!(editor.scroll_top, top);
+}
+
+#[test]
+fn prefilled_prompts_keep_their_value_when_you_move_into_it() {
+    let (_home, mut app) = test_app();
+    app.overlay = Some(modal::prompt(
+        PromptAction::SaveSessionName,
+        "Save Session As",
+        "work",
+    ));
+    app.handle_modal_key(KeyEvent::new(KeyCode::End, KeyModifiers::NONE));
+    type_keys(&mut app, "-2");
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "work-2");
+    app.overlay = Some(modal::prompt(
+        PromptAction::SaveSessionName,
+        "Save Session As",
+        "work",
+    ));
+    app.handle_modal_key(KeyEvent::new(KeyCode::Home, KeyModifiers::NONE));
+    type_keys(&mut app, "my ");
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "my work");
+    app.overlay = Some(modal::prompt(
+        PromptAction::SaveSessionName,
+        "Save Session As",
+        "work",
+    ));
+    app.handle_modal_key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE));
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "");
+    app.overlay = Some(modal::prompt(
+        PromptAction::SaveSessionName,
+        "Save Session As",
+        "work",
+    ));
+    app.handle_paste("pasted");
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "pasted");
+}

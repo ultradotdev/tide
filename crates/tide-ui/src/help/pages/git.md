@@ -38,6 +38,8 @@ A message you close the box on, or one whose commit fails (for example with noth
 
 A diff tab shows one file, unified by default; `v` switches to a side-by-side split. Space, Left, Right or Enter on a header collapses that file or hunk. The action bar, which you can also click, has `o` open file, `e` edit hunk, `s` stage, `u` unstage, `d` discard and `?` diagnostics. Edit hunk opens one unstaged hunk in a scratch editor; saving it applies the change as `tui.diffViewer.editMode` ({{setting:tui.diffViewer.editMode}}) says. Diffs of history are read-only.
 
+In an open file with no unsaved edits, the left edge of the gutter marks the lines that differ from the last commit: green for added lines, amber for changed lines, and a red edge where lines were deleted. Unchanged lines around a change are not marked. Click a mark to show that change inline.
+
 **{{label:git.diff}}** shows the active file's changes and **{{label:git.diffStaged}}** picks a staged file to review.
 
 ## Timeline
