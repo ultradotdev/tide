@@ -44,7 +44,7 @@ syntect = { version = "5.3", default-features = false, features = ["default-fanc
 two-face = { version = "0.5", default-features = false, features = ["syntect-fancy"] }
 gix = { version = "0.90", default-features = false, features = ["basic", "status", "blame", "worktree-mutation", "sha1", "parallel", "auto-chain-error"] }
 nucleo = "0.5"
-sha2 = "0.10"
+sha2 = "0.11"
 ignore = "0.4"
 notify = "8.2"
 regex = "1"
