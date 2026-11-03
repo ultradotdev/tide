@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "repository": "ultradotdev/tide",
   "owner": "thekeith",
-  "requiredChecks": ["CI / macOS", "CI / Linux", "CI / PostgreSQL"],
+  "requiredChecks": ["CI / macOS", "CI / Linux", "CI / PostgreSQL", "CI / Format, lint and tooling", "CI / Dependencies"],
   "expectedAccess": {
     "organizationOwners": ["thekeith"],
     "repositoryAdmins": ["thekeith"],
@@ -33,7 +33,7 @@
         { "type": "non_fast_forward" },
         { "type": "required_linear_history" },
         { "type": "pull_request", "parameters": { "requiredApprovingReviewCount": 0, "dismissStaleReviewsOnPush": false, "requireCodeOwnerReview": false, "requireLastPushApproval": false, "requiredReviewThreadResolution": true } },
-        { "type": "required_status_checks", "parameters": { "strictRequiredStatusChecksPolicy": true, "doNotEnforceOnCreate": false, "requiredStatusChecks": [{ "context": "CI / macOS" }, { "context": "CI / Linux" }, { "context": "CI / PostgreSQL" }] } }
+        { "type": "required_status_checks", "parameters": { "strictRequiredStatusChecksPolicy": true, "doNotEnforceOnCreate": false, "requiredStatusChecks": [{ "context": "CI / macOS" }, { "context": "CI / Linux" }, { "context": "CI / PostgreSQL" }, { "context": "CI / Format, lint and tooling" }, { "context": "CI / Dependencies" }] } }
       ]
     },
     {

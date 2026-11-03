@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something Tide should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The task or workflow, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you'd like it to work, including keys or commands if you have them in mind.
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: Other tools
+      description: How another editor or terminal tool handles this, if you know one that does it well.

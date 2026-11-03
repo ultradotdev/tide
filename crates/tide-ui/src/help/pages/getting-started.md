@@ -1,8 +1,8 @@
 # Getting Started
 
-Tide {{version}} runs as a native Rust executable on macOS and Linux. Signed releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
+Tide {{version}} runs as a native Rust executable on macOS and Linux. Releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
 
-Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64).
+Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64). On older or musl-based Linux distributions such as Alpine, build from source. Windows isn't supported yet; run the Linux build inside WSL.
 
 ## Your installation
 
@@ -50,6 +50,12 @@ cargo build --locked --release -p tide
 ```
 
 The release profile is the recommended interactive build. Debug builds are useful during development and can be much slower.
+
+To build and install into `~/.cargo/bin` without a checkout, install from the repository. The `tide` crate on crates.io is an unrelated project, and Tide is not published there.
+
+```sh
+cargo install --locked --git https://github.com/ultradotdev/tide tide
+```
 
 ## Managed source or local install
 
