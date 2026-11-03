@@ -6,7 +6,7 @@
     "endorsement": "Tide by Ultra.dev",
     "publisher": "Ultra.dev",
     "binary": "tide",
-    "version": "0.11.1",
+    "version": "0.12.0",
     "prerelease": false,
     "repository": "https://github.com/ultradotdev/tide",
     "homepage": "https://ultra.dev/tide",
@@ -45,7 +45,7 @@
   "artifacts": [
     {
       "id": "darwin-arm64",
-      "filename": "tide-v0.11.1-darwin-arm64.zip",
+      "filename": "tide-v0.12.0-darwin-arm64.zip",
       "platform": "darwin",
       "architecture": "arm64",
       "status": "published",
@@ -64,7 +64,7 @@
     },
     {
       "id": "darwin-x64",
-      "filename": "tide-v0.11.1-darwin-x64.zip",
+      "filename": "tide-v0.12.0-darwin-x64.zip",
       "platform": "darwin",
       "architecture": "x64",
       "status": "published",
@@ -83,7 +83,7 @@
     },
     {
       "id": "linux-arm64",
-      "filename": "tide-v0.11.1-linux-arm64.tar.gz",
+      "filename": "tide-v0.12.0-linux-arm64.tar.gz",
       "platform": "linux",
       "architecture": "arm64",
       "status": "published",
@@ -103,7 +103,7 @@
     },
     {
       "id": "linux-x64",
-      "filename": "tide-v0.11.1-linux-x64.tar.gz",
+      "filename": "tide-v0.12.0-linux-x64.tar.gz",
       "platform": "linux",
       "architecture": "x64",
       "status": "published",
@@ -267,8 +267,8 @@
     "screenshots": []
   },
   "source": {
-    "contentHash": "889f5a43370c9152004f5edcfde1df8c41cecd7daf40d6b9f4f74ce2e0b7d398",
-    "lastVerifiedGitFingerprint": "acaf714921a85133766069b6f8e518e9b1d1b7f2",
+    "contentHash": "40e946a37ee10cf0adedcab997a49610f6242c4c7206d22c9471f0209693ad78",
+    "lastVerifiedGitFingerprint": "47d69d8454557ad8dee3d8b0b5fa36e93584220b",
     "inputFiles": [
       "config/product.json",
       "config/release.json",
@@ -290,7 +290,7 @@
       "Cargo.toml",
       "Cargo.lock",
       "docs/troubleshooting.md",
-      "docs/v0.11.1.md",
+      "docs/v0.12.0.md",
       "install.sh",
       "uninstall.sh"
     ]
