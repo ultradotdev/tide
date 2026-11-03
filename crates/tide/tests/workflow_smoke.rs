@@ -931,15 +931,20 @@ fn explorer_type_icons_and_proportional_scrollbar_are_visible_and_clickable() {
         // Rail bounds come from the completed first frame. The first file
         // and icon can arrive while only the upper half has been painted.
         s.text().contains("a.ts")
-            && s.text().contains('\u{f07b}')
+            && s.text().contains('\u{f114}')
             && s.text()
                 .lines()
                 .last()
                 .is_some_and(|row| row.contains(">_"))
     });
-    for icon in ['\u{e628}', '\u{e74e}', '\u{e7a8}', '\u{e60b}', '\u{e609}'] {
+    for icon in ['\u{e628}', '\u{e74e}', '\u{e7a8}', '\u{e60b}', '\u{e73e}'] {
         assert!(snapshot.text().contains(icon), "missing icon {icon}");
     }
+    // An icon takes its file type's colour from the theme, apart from the name.
+    let (x, y) = position(&snapshot, "a.ts", None, 0);
+    let icon = snapshot.cell(x - 2, y).unwrap();
+    assert_eq!(icon.symbol.as_str(), "\u{e628}");
+    assert_ne!(icon.fg, snapshot.cell(x, y).unwrap().fg);
     let start = position(&snapshot, "Explorer", None, 0).1 + 1;
     let end = position(&snapshot, "Enter open", None, 0).1;
     let rows = (start..end)

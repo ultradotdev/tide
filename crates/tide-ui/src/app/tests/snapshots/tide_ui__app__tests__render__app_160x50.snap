@@ -1,10 +1,11 @@
 ---
 source: crates/tide-ui/src/app/tests/render.rs
+assertion_line: 287
 expression: "snapshot_app(160, 50)"
 ---
  ▼ Explorer  [2]                 ▾ │ ←  main.ts ×                                                                      ▾  → │Agents                       +  ▾
-▸  src                            │▎1   const answer = 42;                                                      ▒░         │ / Search sessions
-   README.md                      │ 2                                                                                      │ ▾ Claude Code (0)
+▸  src                            │▎1   const answer = 42;                                                      ▒░         │ / Search sessions
+   README.md                      │ 2                                                                                      │ ▾ Claude Code (0)
                                    │                                                                                        │   Not installed
                                    │                                                                                        │ ▾ Codex (0)
                                    │                                                                                        │   Not installed

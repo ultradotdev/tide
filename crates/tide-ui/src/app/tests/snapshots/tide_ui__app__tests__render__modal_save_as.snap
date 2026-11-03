@@ -1,9 +1,10 @@
 ---
 source: crates/tide-ui/src/app/tests/render.rs
+assertion_line: 319
 expression: "snapshot_modal(120, 40, |app|\n{\n    std::fs::write(app.workspace.join(\"README.md\"), \"# Tide\").unwrap();\n    app.open_save_as_prompt();\n})"
 ---
  ▼ Explorer  [1]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
-   README.md                      │Tide
+   README.md                      │Tide
                                    │
                                    │A terminal-native code editor.
                                    │

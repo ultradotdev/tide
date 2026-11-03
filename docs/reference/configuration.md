@@ -7,7 +7,7 @@ Most settings apply at once. `terminal.shell` and `tui.terminal.scrollback` appl
 
 ## Icons and colors
 
-`tui.iconStyle` (`auto`) decides whether the Explorer and the edge buttons use Nerd Font glyphs. `auto` uses them in Ghostty, kitty and WezTerm, which bundle the glyphs and show them with any font, and plain text in other terminals. Choose `nerd` if your terminal font is a Nerd Font, or `ascii` to never use them.
+`tui.iconStyle` (`auto`) decides whether the Explorer and the edge buttons use Nerd Font glyphs. `auto` uses them in Ghostty, kitty and WezTerm, which bundle the glyphs and show them with any font, and plain text in other terminals. Choose `nerd` if your terminal font is a Nerd Font, or `ascii` to never use them. Explorer icons are drawn in the theme's terminal colours by file type, for example orange for Rust, blue for TypeScript and yellow for folders, so they follow the theme you choose.
 
 `tui.colorMode` (`auto`) decides how colors are sent to the terminal. `auto` sends 24-bit color when the terminal reports it, through `COLORTERM=truecolor` or `24bit`, a `TERM` ending in `-direct`, or a terminal known to support it such as iTerm2, Ghostty, kitty, WezTerm, Alacritty or the VS Code terminal. Otherwise each color becomes the nearest of the 256-color palette, which every supported terminal shows, including Terminal.app before macOS 26. Choose `truecolor` or `256` if `auto` guesses wrong, for example inside tmux or over SSH.
 
