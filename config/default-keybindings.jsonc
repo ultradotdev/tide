@@ -114,6 +114,8 @@
   { "key": "ctrl+shift+t", "command": "terminal.newInPane" }, // Open terminal tab in main pane
   { "key": "meta+k", "command": "terminal.clear", "when": "terminalFocus" }, // Clear terminal (macOS, like iTerm's Cmd+K)
   { "key": "ctrl+shift+k", "command": "terminal.clear", "when": "terminalFocus" }, // Clear terminal
+  { "key": "meta+c", "command": "terminal.copySelection", "when": "terminalFocus" }, // Copy the terminal selection (macOS, when the terminal passes Cmd on)
+  { "key": "ctrl+shift+c", "command": "terminal.copySelection", "when": "terminalFocus" }, // Copy the terminal selection
   { "key": "ctrl+shift+home", "command": "terminal.scrollToTop", "when": "terminalFocus" }, // Scroll terminal to top
   { "key": "ctrl+shift+end", "command": "terminal.scrollToBottom", "when": "terminalFocus" }, // Scroll terminal to bottom
 

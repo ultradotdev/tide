@@ -224,6 +224,14 @@ pub async fn run(mut app: App) -> Result<()> {
                 terminal.draw(|frame| app.draw(frame))?;
                 crate::display::paint_curly(terminal.backend_mut(),&app.layout.curly_cells)?;
             }
+            // Clipboard sequences (OSC 52) go to the host terminal as they are, outside the
+            // frame, which never carries control characters.
+            let host_output = app.take_host_output();
+            if !host_output.is_empty() {
+                let backend = terminal.backend_mut();
+                backend.write_all(&host_output)?;
+                backend.flush()?;
+            }
         }
         Ok(())
     })

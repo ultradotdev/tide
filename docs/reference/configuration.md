@@ -62,6 +62,7 @@ Tide starts from its built-in defaults and applies your settings file, `~/.confi
 
 | Setting | Description | Default | Accepted values |
 | --- | --- | --- | --- |
+| `terminal.copyOnSelect` | Copy text to the clipboard as soon as it is selected with the mouse in a terminal | `true` | `true` or `false` |
 | `terminal.shell` | Shell program for new terminals; empty uses $SHELL, then /bin/sh | `""` | Text |
 
 ### Git
@@ -106,6 +107,7 @@ Tide starts from its built-in defaults and applies your settings file, `~/.confi
 
 | Setting | Description | Default | Accepted values |
 | --- | --- | --- | --- |
+| `clipboard.osc52` | Also copy through the host terminal with OSC 52: "auto" (in an SSH session, or when the system clipboard fails), "always" or "off" | `"auto"` | `auto`, `always`, `off` |
 | `update.checkAutomatically` | Check GitHub for a newer release at most once a day at startup, and say so in the status bar; Help: Check for Updates works either way | `true` | `true` or `false` |
 
 ## Language server overrides

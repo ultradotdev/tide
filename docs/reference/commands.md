@@ -311,6 +311,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Clear Terminal | `Ctrl+Shift+K` | `terminal.clear` |
 | Close All Terminals | — | `terminal.closeAll` |
 | Close Bottom Terminal Tab | — | `terminal.close` |
+| Copy Terminal Selection | `Ctrl+Shift+C` | `terminal.copySelection` |
 | Interrupt Terminal | — | `terminal.interrupt` |
 | Kill Terminal | — | `terminal.kill` |
 | Next Bottom Terminal Tab | — | `terminal.next` |
