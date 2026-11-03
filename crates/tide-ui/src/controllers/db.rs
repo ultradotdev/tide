@@ -99,6 +99,8 @@ pub(crate) struct DbController {
     history_favorites: bool,
     pub history_connection: Option<String>,
     pub secrets: Arc<SecretService>,
+    /// The libpq password file consulted when Tide has no password stored.
+    pub pgpass: Option<PathBuf>,
     jobs: Jobs,
     events: Sender<AppEvent>,
 }
@@ -141,6 +143,7 @@ impl DbController {
             history_favorites: false,
             history_connection: None,
             secrets,
+            pgpass: tide_db::pgpass_path(),
             jobs: jobs.clone(),
             events,
         }
@@ -177,11 +180,17 @@ impl DbController {
         }
     }
 
-    /// The stored password for `config`, when it has one.
-    fn password(&self, config: &ConnectionConfig) -> Option<String> {
+    /// The password for `config`: the one Tide stored for its destination, or else the
+    /// one your libpq password file (`PGPASSFILE` or `~/.pgpass`) has for it.
+    pub(crate) fn password(&self, config: &ConnectionConfig) -> Option<String> {
         self.store
             .credential_reference(config)
             .and_then(|key| self.secrets.get(key))
+            .or_else(|| {
+                self.pgpass
+                    .as_deref()
+                    .and_then(|path| tide_db::pgpass_password(path, config))
+            })
     }
 
     pub fn handle_event(&mut self, event: DbEvent, ui: &mut Ui<'_>) {
@@ -733,12 +742,9 @@ impl DbController {
             return;
         }
         if config.scope == ConnectionScope::Project {
+            // The project file is shared; its password goes to your own credentials below.
             config.project_path = Some(ui.workspace.display().to_string());
             config.password_secret = None;
-            if password.is_some() {
-                ui.status("Database: passwords require a user-owned global connection for this destination");
-                return;
-            }
         } else {
             config.project_path = None;
         }
@@ -821,7 +827,9 @@ impl DbController {
                 }
                 return;
             }
-            config.password_secret = Some(key.clone());
+            if config.scope == ConnectionScope::Global {
+                config.password_secret = Some(key.clone());
+            }
             fresh_secret = Some(key);
         }
         let saved = if existing.is_some() {
@@ -829,6 +837,17 @@ impl DbController {
         } else {
             self.store.add(config.clone()).map(|_| ())
         };
+        let saved = saved.and_then(|()| match &fresh_secret {
+            Some(key) if config.scope == ConnectionScope::Project => self
+                .store
+                .save_project_credential(&config, key)
+                .map(|replaced| {
+                    if let Some(old) = replaced {
+                        let _ = self.secrets.delete(&old);
+                    }
+                }),
+            _ => Ok(()),
+        });
         if let Err(error) = saved {
             if let Some(key) = fresh_secret {
                 let _ = self.secrets.delete(&key);
@@ -1155,15 +1174,9 @@ impl DbController {
         url.query_pairs_mut()
             .append_pair("name", &config.name)
             .append_pair("readOnly", if config.read_only { "1" } else { "0" });
-        if let Some(ssl) = &config.ssl {
-            let mode = if ssl == &serde_json::Value::Bool(false) {
-                "disable"
-            } else if ssl.as_str() == Some("prefer") {
-                "prefer"
-            } else {
-                "require"
-            };
-            url.query_pairs_mut().append_pair("sslmode", mode);
+        if config.ssl.is_some() {
+            url.query_pairs_mut()
+                .append_pair("sslmode", config.ssl_mode().as_str());
         }
         url.to_string()
     }

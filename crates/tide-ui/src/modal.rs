@@ -538,7 +538,12 @@ impl ModalBase {
                 | ModalKind::SaveAs
                 | ModalKind::ConnectionForm
                 | ModalKind::RowInsert
-                | ModalKind::Prompt(PromptAction::SaveAs | PromptAction::EditRowCell(_, _))
+                | ModalKind::Prompt(
+                    PromptAction::SaveAs
+                        | PromptAction::EditRowCell(_, _)
+                        | PromptAction::Commit
+                        | PromptAction::CommitAmend { .. }
+                )
         )
     }
 
@@ -605,6 +610,7 @@ impl ModalBase {
             ModalKind::Info => (60, 8),
             ModalKind::SaveAs => (70, 25),
             ModalKind::Prompt(PromptAction::GotoLine) => (40, 7),
+            ModalKind::Prompt(PromptAction::Commit | PromptAction::CommitAmend { .. }) => (76, 16),
             ModalKind::Prompt(_) => (50, 7),
             ModalKind::Find => (88, if self.replace_mode { 11 } else { 10 }),
             ModalKind::Confirm(_) => (50, 9),
@@ -2769,6 +2775,14 @@ pub fn save_as(initial: &str) -> Box<dyn Modal> {
 
 #[must_use]
 pub fn prompt(action: PromptAction, title: &str, initial: &str) -> Box<dyn Modal> {
+    if matches!(
+        action,
+        PromptAction::Commit | PromptAction::CommitAmend { .. }
+    ) {
+        return Box::new(crate::commit_message::CommitMessageModal::new(
+            action, title, initial,
+        ));
+    }
     Box::new(PromptModal::new(action, title, initial))
 }
 

@@ -15,6 +15,10 @@ impl App {
     }
 
     pub(super) fn copy_selection(&mut self) {
+        if self.focus_in_terminal() {
+            self.copy_terminal_selection();
+            return;
+        }
         if let Some(Tab::Sql(sql)) = self.workbench.active_tab()
             && sql.results_focused
         {
@@ -83,15 +87,44 @@ impl App {
 
     /// Copies the internal clipboard to the system clipboard off the UI
     /// thread, reporting `done` on success and "`fallback`; error" on failure.
+    ///
+    /// Following `clipboard.osc52`, the copy also goes to the host terminal with OSC 52: at
+    /// once in an SSH session or when set to `always`, and after the system clipboard fails
+    /// when set to `auto`.
     pub(super) fn export_clipboard(&mut self, done: Option<&str>, fallback: Option<&'static str>) {
+        use crate::clipboard::Osc52;
         let commands = self.clipboard_commands;
         let text = self.clipboard.clone();
         let done = done.map(str::to_owned);
-        self.run_clipboard(move || AppEvent::ClipboardWritten {
-            result: crate::clipboard::write(commands, &text),
-            done,
-            fallback,
+        let mode = Osc52::from_setting(
+            self.settings
+                .get("clipboard.osc52")
+                .and_then(serde_json::Value::as_str),
+        );
+        let sent = (mode == Osc52::Always || mode == Osc52::Auto && self.clipboard_host.remote)
+            && self.send_osc52(&text);
+        let retry = mode == Osc52::Auto && !sent;
+        self.run_clipboard(move || {
+            let result = crate::clipboard::write(commands, &text);
+            AppEvent::ClipboardWritten {
+                osc52: (retry && result.is_err()).then_some(text),
+                sent,
+                result,
+                done,
+                fallback,
+            }
         });
+    }
+
+    /// Queues `text` for the host terminal's clipboard; false when it is too large.
+    pub(super) fn send_osc52(&mut self, text: &str) -> bool {
+        match crate::clipboard::osc52(text, self.clipboard_host) {
+            Ok(bytes) => {
+                self.host_output.extend_from_slice(&bytes);
+                true
+            }
+            Err(_) => false,
+        }
     }
 
     /// Queues clipboard work so a paste never overtakes an earlier copy.

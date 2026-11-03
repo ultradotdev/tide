@@ -12,6 +12,23 @@ impl App {
         }
     }
 
+    /// Copies the selection in the focused or bottom terminal; the selection stays.
+    pub(super) fn copy_terminal_selection(&mut self) {
+        let Some(terminal) = self.target_terminal() else {
+            self.set_status("Terminal: no terminal to copy from");
+            return;
+        };
+        let Some(text) = terminal.selection_text() else {
+            self.set_status("Terminal: nothing is selected; drag across text to select it");
+            return;
+        };
+        self.clipboard = text;
+        self.export_clipboard(
+            Some("Copied terminal selection"),
+            Some("Copied inside Tide"),
+        );
+    }
+
     pub(super) fn clear_terminal(&mut self) {
         let Some(terminal) = self.target_terminal() else {
             self.set_status("Terminal: no terminal to clear");

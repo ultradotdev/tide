@@ -13,8 +13,8 @@ pub mod schema;
 
 pub use completion::{CompletionSuggestion, complete_sql};
 pub use connections::{
-    ConnectionConfig, ConnectionError, ConnectionScope, ConnectionStore, SslPreference,
-    generate_id, parse_postgres_url,
+    ConnectionConfig, ConnectionError, ConnectionScope, ConnectionStore, SavedCredential,
+    SslPreference, generate_id, parse_postgres_url, pgpass_password, pgpass_path,
 };
 pub use export::result_to_csv;
 pub use history::{QueryHistory, QueryHistoryEntry, QueryStatus};

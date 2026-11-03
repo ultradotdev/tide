@@ -207,8 +207,10 @@ impl App {
             match section.id {
                 SectionId::Explorer => self.file_tree.layout_content(section.content),
                 SectionId::SourceControl => {
-                    let [_, list] = Layout::vertical([Constraint::Length(1), Constraint::Min(1)])
-                        .areas(section.content);
+                    let header = self.git.source_control_header_rows();
+                    let [_, list] =
+                        Layout::vertical([Constraint::Length(header), Constraint::Min(1)])
+                            .areas(section.content);
                     self.git.layout_source_control(list);
                 }
                 SectionId::Outline => self.layout_outline(section.content),
@@ -970,13 +972,24 @@ impl App {
         let mut left: Vec<(String, Command)> =
             vec![(" >_ ".into(), Command::WorkbenchCommandPalette)];
         if let Some(git) = &self.git.state.snapshot {
-            if let Some(branch) = &git.branch {
+            let head = git.branch.clone().or_else(|| {
+                git.head
+                    .as_deref()
+                    .map(|head| format!("({})", crate::display::short_id(head)))
+            });
+            if let Some(head) = head {
                 left.push((
                     format!(
                         " {} ",
-                        truncate_to_width(branch, (area.width as usize / 8).clamp(6, 24))
+                        truncate_to_width(&head, (area.width as usize / 8).clamp(6, 24))
                     ),
                     Command::GitSwitchBranch,
+                ));
+            }
+            if let Some(operation) = &git.operation {
+                left.push((
+                    format!(" {} ", operation.short_label()),
+                    Command::GitFocusPanel,
                 ));
             }
             if let Some((ahead, behind)) = git.ahead_behind {

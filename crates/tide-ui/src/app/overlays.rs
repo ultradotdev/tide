@@ -172,6 +172,7 @@ impl App {
             ModalKind::Confirm(ConfirmAction::QuitDirty | ConfirmAction::QuitBusy { .. }) => {
                 self.restart = None
             }
+            ModalKind::Prompt(PromptAction::Commit) => self.git.keep_draft(overlay.input()),
             ModalKind::MoveTab => self.pending_move = None,
             ModalKind::Confirm(ConfirmAction::CloseTab { .. }) => self.pending_close = None,
             ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => self.pending_replace = None,

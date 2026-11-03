@@ -22,6 +22,14 @@ If input stalls in a release build, note the terminal emulator, window size, fil
 
 Tide asks the terminal for the kitty keyboard protocol, which kitty, Ghostty, WezTerm and foot support, and iTerm2 supports once “Report keys using CSI u” is on. Without it, Ctrl+Shift+letter arrives as plain Ctrl+letter and Ctrl+/ as Ctrl+_, and Cmd combinations never reach Tide; macOS Terminal.app is one such terminal. A terminal's own shortcuts can also take a key before Tide sees it. Function keys work everywhere: by default `F12` goes to a definition, `Shift+F12` finds references, `F2` renames and `Ctrl+F2` selects every occurrence. Use the command palette, {{key:workbench.commandPalette}}, and the terminal-safe alternatives in {{help:keyboard-shortcuts}}. While a terminal tab has focus, the shell keeps {{terminalkeys}}; open the palette there with {{terminalkey:workbench.commandPalette}}.
 
+## Copying does not reach the clipboard
+
+Tide copies with the system clipboard helper: `pbcopy` on macOS, `wl-copy` on Wayland, and `xclip` or `xsel` on X11. Over SSH that is the remote machine's clipboard, so Tide also sends each copy to your terminal with the OSC 52 escape sequence, which kitty, Ghostty, WezTerm, foot, Windows Terminal and iTerm2 turn into a local copy. iTerm2 needs “Applications in terminal may access clipboard” turned on; macOS Terminal.app does not support OSC 52. `clipboard.osc52` ({{setting:clipboard.osc52}}) chooses when Tide sends it: `auto` in an SSH session and whenever the system clipboard helper fails, `always` with every copy, or `off`.
+
+Inside tmux, add `set -g set-clipboard on` to `~/.tmux.conf` so tmux passes the copy on. Tide also sends it wrapped for tmux passthrough, which works with `set -g allow-passthrough on` instead.
+
+Tide never reads the clipboard through the terminal. To paste over SSH, use your terminal's own paste, such as Cmd+V or Ctrl+Shift+V.
+
 ## Icons or layout look wrong
 
 Nerd Font file icons show only where the glyphs are available: by default (`tui.iconStyle` set to `auto`) Tide uses them in Ghostty, kitty and WezTerm, which bundle them. If you see empty boxes, set `tui.iconStyle` to `ascii`; if your terminal font is a Nerd Font and you want the icons, set it to `nerd`. Terminal font metrics and Unicode width handling affect alignment. If a sidebar or the dock disappeared in a small window, make the window larger: Tide hides regions that do not fit and brings them back with their saved sizes.
@@ -54,7 +62,7 @@ For rollback use the same prefix as the installation. See {{help:getting-started
 
 ## PostgreSQL or credentials
 
-Check the active connection, its TLS mode and the server's permissions. A read-only database role is the real authorization boundary; Tide's read-only mode adds client checks and a read-only session. Saved passwords depend on the keychain being available or the encrypted secrets file being unlocked. Redact passwords, connection strings and sensitive query text from reports. See {{help:postgresql}}.
+Check the active connection, its TLS mode and the server's permissions. A server with a self-signed certificate needs `require`, or `verify-ca` or `verify-full` with its CA certificate; see the TLS section of {{help:postgresql}}. A read-only database role is the real authorization boundary; Tide's read-only mode adds client checks and a read-only session. Saved passwords depend on the keychain being available or the encrypted secrets file being unlocked. Redact passwords, connection strings and sensitive query text from reports. See {{help:postgresql}}.
 
 ## Session restoration
 

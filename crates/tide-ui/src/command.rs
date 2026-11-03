@@ -186,6 +186,7 @@ commands! {
     TerminalNext = "terminal.next",
     TerminalPrevious = "terminal.previous",
     TerminalClear = "terminal.clear",
+    TerminalCopySelection = "terminal.copySelection",
     TerminalKill = "terminal.kill",
     TerminalScrollToTop = "terminal.scrollToTop",
     TerminalScrollToBottom = "terminal.scrollToBottom",

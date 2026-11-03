@@ -19,6 +19,8 @@ edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
 repository = "https://github.com/ultradotdev/tide"
+# The crates.io name `tide` belongs to an unrelated project; install with `cargo install --git`.
+publish = false
 
 [workspace.dependencies]
 anyhow = "1.0"
