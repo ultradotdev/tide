@@ -1,7 +1,15 @@
 <!-- Generated from crates/tide-ui/src/help/pages/settings.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Settings and Storage
 
-Tide starts from its built-in defaults and applies your settings file, `~/.config/tide/settings.jsonc`, on top. Open the Settings list with `Ctrl+,` or `Ctrl+Alt+O` to change a value; Tide checks it, saves the file and applies most changes immediately. You can also edit the file by hand and restart Tide. Invalid values fall back to the default, and keys Tide does not recognize are kept in the file but ignored.
+Tide starts from its built-in defaults and applies your settings file, `~/.config/tide/settings.jsonc`, on top. Open the Settings list with `Ctrl+,` or `Ctrl+Alt+O` to change a value; Tide checks it, saves the file and applies it immediately. You can also edit the file by hand: Tide notices within a couple of seconds of saving and applies the changes, and the status bar says which ones wait for new terminals or a restart. If the file no longer parses, Tide lists the problem in **Configuration Problems** and keeps the settings it had until you fix it. Invalid values fall back to the default, and keys Tide does not recognize are kept in the file but ignored.
+
+Most settings apply at once. `terminal.shell` and `tui.terminal.scrollback` apply to terminals opened afterwards. `session.restoreOnStartup`, `workbench.startupEditor`, `update.checkAutomatically`, `tui.outline.collapsedOnStartup` and `tui.timeline.collapsedOnStartup` are read when Tide starts, so they take effect after a restart.
+
+## Icons and colors
+
+`tui.iconStyle` (`auto`) decides whether the Explorer and the edge buttons use Nerd Font glyphs. `auto` uses them in Ghostty, kitty and WezTerm, which bundle the glyphs and show them with any font, and plain text in other terminals. Choose `nerd` if your terminal font is a Nerd Font, or `ascii` to never use them.
+
+`tui.colorMode` (`auto`) decides how colors are sent to the terminal. `auto` sends 24-bit color when the terminal reports it, through `COLORTERM=truecolor` or `24bit`, a `TERM` ending in `-direct`, or a terminal known to support it such as iTerm2, Ghostty, kitty, WezTerm, Alacritty or the VS Code terminal. Otherwise each color becomes the nearest of the 256-color palette, which every supported terminal shows, including Terminal.app before macOS 26. Choose `truecolor` or `256` if `auto` guesses wrong, for example inside tmux or over SSH.
 
 ## All settings
 
@@ -40,12 +48,13 @@ Tide starts from its built-in defaults and applies your settings file, `~/.confi
 | --- | --- | --- | --- |
 | `tui.agentsSidebar.visible` | Agents sidebar visibility | `true` | `true` or `false` |
 | `tui.agentsSidebar.width` | Agents sidebar width in characters (24-200) | `36` | 24–200 |
+| `tui.colorMode` | Colors sent to the terminal: "auto" (24-bit color where the terminal reports it, otherwise the nearest of 256 colors), "truecolor" or "256" | `"auto"` | `auto`, `truecolor`, `256` |
 | `tui.diffViewer.autoRefresh` | Auto-refresh diff when file changes | `true` | `true` or `false` |
 | `tui.diffViewer.editMode` | Edit save mode: "stage-modified" or "direct-write" | `"stage-modified"` | `stage-modified`, `direct-write` |
 | `tui.diffViewer.showDiagnostics` | Show diagnostics in diff viewer | `true` | `true` or `false` |
 | `tui.filePicker.maxFiles` | Maximum number of files to show in file picker | `10000` | 100–100000 |
 | `tui.fileTree.showGitStatus` | Show git status colors on files in file tree | `true` | `true` or `false` |
-| `tui.iconStyle` | Icon style: "nerd" (Nerd Font glyphs, width-1, default) or "ascii" (no icons, for terminals without a Nerd Font) | `"nerd"` | `nerd`, `ascii` |
+| `tui.iconStyle` | Icon style: "auto" (Nerd Font glyphs in Ghostty, kitty and WezTerm, which bundle them; plain text elsewhere), "nerd" (always, for a terminal font that includes Nerd Font glyphs) or "ascii" (never) | `"auto"` | `auto`, `nerd`, `ascii` |
 | `tui.mainRegion.minimumWidth` | Minimum main-region width retained before the sidebar responsively collapses (24-200 columns) | `56` | 24–200 |
 | `tui.outline.autoFollow` | Auto-follow cursor position in outline | `true` | `true` or `false` |
 | `tui.outline.collapsedOnStartup` | Collapse outline panel on startup | `true` | `true` or `false` |

@@ -173,6 +173,7 @@ fn interrupt(app: &mut App, reason: Interrupted, stopped: &mut Option<(Interrupt
 
 pub async fn run(mut app: App) -> Result<()> {
     install_panic_hook();
+    app.terminal = crate::display::TerminalTraits::detect(|name| std::env::var(name).ok());
     // Registered before the terminal changes mode, so a hangup is never the default
     // action (exit at once, with unsaved edits only as fresh as the last autosave).
     let mut hangup = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())?;

@@ -183,11 +183,12 @@ pub fn run_session_action(
     }
     let args = args.iter().map(String::as_str).collect::<Vec<_>>();
     run_listing(&executable, &args, workspace)
+        .and_then(Listing::output)
         .map(|_| ())
         .map_err(|error| match error {
             ListingFailure::Unavailable => "provider is unavailable".to_owned(),
             ListingFailure::Timeout => "provider command timed out".to_owned(),
-            ListingFailure::Failed(message) => message,
+            ListingFailure::Failed(message) | ListingFailure::NeedsSignIn(message) => message,
         })
 }
 
@@ -293,6 +294,10 @@ pub struct ProviderDiscovery {
     pub state: DiscoveryState,
     pub sessions: Vec<CliSession>,
     pub error: Option<String>,
+    /// A setup step the CLI is waiting for, such as signing in. Not an error: the CLI
+    /// is installed and Tide can start it, which is how the user signs in.
+    #[serde(default)]
+    pub notice: Option<String>,
 }
 
 /// Fast, file-backed session discovery suitable for startup.
@@ -353,6 +358,7 @@ pub fn discover_all_with_updates(
                     state: DiscoveryState::Error,
                     sessions: Vec::new(),
                     error: Some("Provider discovery worker failed".into()),
+                    notice: None,
                 })
             })
             .collect::<Vec<_>>()
@@ -410,6 +416,7 @@ fn discover_provider(provider: CliProvider, home: &Path, workspace: &Path) -> Pr
                             },
                             sessions,
                             error: Some(format!("Codex native catalog: {error}")),
+                            notice: None,
                         };
                     }
                 }
@@ -430,6 +437,7 @@ fn discover_provider(provider: CliProvider, home: &Path, workspace: &Path) -> Pr
                 state: DiscoveryState::Ok,
                 sessions,
                 error: None,
+                notice: None,
             }
         }
         Err(ListingFailure::Unavailable) => ProviderDiscovery {
@@ -437,6 +445,14 @@ fn discover_provider(provider: CliProvider, home: &Path, workspace: &Path) -> Pr
             state: DiscoveryState::Unavailable,
             sessions: Vec::new(),
             error: None,
+            notice: None,
+        },
+        Err(ListingFailure::NeedsSignIn(detail)) => ProviderDiscovery {
+            provider,
+            state: DiscoveryState::Ok,
+            sessions: Vec::new(),
+            error: None,
+            notice: Some(detail),
         },
         Err(error) => ProviderDiscovery {
             provider,
@@ -448,9 +464,10 @@ fn discover_provider(provider: CliProvider, home: &Path, workspace: &Path) -> Pr
                 match error {
                     ListingFailure::Timeout => "timed out".to_owned(),
                     ListingFailure::Failed(message) => message,
-                    ListingFailure::Unavailable => unreachable!(),
+                    ListingFailure::Unavailable | ListingFailure::NeedsSignIn(_) => unreachable!(),
                 }
             )),
+            notice: None,
         },
     }
 }
@@ -499,17 +516,95 @@ pub enum ListingFailure {
     Unavailable,
     Timeout,
     Failed(String),
+    /// The CLI is installed but not signed in or configured; the CLI's own words.
+    NeedsSignIn(String),
 }
 
-fn run_listing(executable: &Path, args: &[&str], cwd: &Path) -> Result<String, ListingFailure> {
+/// What a listing command printed, and whether it succeeded.
+#[derive(Debug, Clone, Default)]
+pub struct Listing {
+    pub stdout: String,
+    pub stderr: String,
+    /// The exit status when it was not success.
+    pub failure: Option<String>,
+}
+
+impl Listing {
+    /// The output of a successful listing. A failed one is a sign-in problem when the
+    /// CLI says so, and otherwise an error.
+    pub fn output(self) -> Result<String, ListingFailure> {
+        let Some(status) = &self.failure else {
+            return Ok(self.stdout);
+        };
+        Err(self.sign_in_problem().map_or_else(
+            || ListingFailure::Failed(format!("listing exited with {status}")),
+            ListingFailure::NeedsSignIn,
+        ))
+    }
+
+    /// The line where the CLI says it needs signing in, an API key or other setup.
+    #[must_use]
+    pub fn sign_in_problem(&self) -> Option<String> {
+        const SIGNS: &[&str] = &[
+            "auth",
+            "sign in",
+            "signin",
+            "log in",
+            "login",
+            "api key",
+            "api_key",
+            "credential",
+            "not logged",
+            "unauthorized",
+            "no providers",
+            "ineligible",
+        ];
+        self.stderr
+            .lines()
+            .chain(self.stdout.lines())
+            .map(str::trim)
+            .find(|line| {
+                let line = line.to_ascii_lowercase();
+                SIGNS.iter().any(|sign| line.contains(sign))
+            })
+            .map(|line| {
+                let mut line = line.to_owned();
+                if line.len() > 300 {
+                    let end = (0..=300)
+                        .rev()
+                        .find(|index| line.is_char_boundary(*index))
+                        .unwrap_or(0);
+                    line.truncate(end);
+                    line.push('…');
+                }
+                line
+            })
+    }
+}
+
+/// Reads at most `limit` bytes from `reader` on a thread.
+fn read_on_thread(
+    reader: impl std::io::Read + Send + 'static,
+    limit: u64,
+) -> std::sync::mpsc::Receiver<std::io::Result<Vec<u8>>> {
     use std::io::Read as _;
+    let (sender, receiver) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let result = reader.take(limit).read_to_end(&mut bytes).map(|_| bytes);
+        let _ = sender.send(result);
+    });
+    receiver
+}
+
+fn run_listing(executable: &Path, args: &[&str], cwd: &Path) -> Result<Listing, ListingFailure> {
     use wait_timeout::ChildExt as _;
     let mut command = std::process::Command::new(executable);
     tide_core::process::scrub_tide_secrets(&mut command)
         .args(args)
         .current_dir(cwd)
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
         .stdin(std::process::Stdio::null());
     #[cfg(unix)]
     {
@@ -524,15 +619,11 @@ fn run_listing(executable: &Path, args: &[&str], cwd: &Path) -> Result<String, L
         .stdout
         .take()
         .ok_or_else(|| ListingFailure::Failed("missing stdout".into()))?;
-    let (sender, receiver) = std::sync::mpsc::channel();
-    std::thread::spawn(move || {
-        let mut bytes = Vec::new();
-        let result = stdout
-            .take(2 * 1024 * 1024 + 1)
-            .read_to_end(&mut bytes)
-            .map(|_| bytes);
-        let _ = sender.send(result);
-    });
+    let receiver = read_on_thread(stdout, 2 * 1024 * 1024 + 1);
+    let errors = child
+        .stderr
+        .take()
+        .map(|stderr| read_on_thread(stderr, 64 * 1024));
     let status = match child.wait_timeout(std::time::Duration::from_secs(3)) {
         Ok(Some(status)) => status,
         Ok(None) => {
@@ -544,13 +635,7 @@ fn run_listing(executable: &Path, args: &[&str], cwd: &Path) -> Result<String, L
             return Err(ListingFailure::Failed(error.to_string()));
         }
     };
-    if !status.success() {
-        let _ = child.kill();
-        let _ = child.wait();
-        return Err(ListingFailure::Failed(format!(
-            "listing exited with {status}"
-        )));
-    }
+    let failure = (!status.success()).then(|| status.to_string());
     let output = match receiver
         .recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
     {
@@ -567,7 +652,19 @@ fn run_listing(executable: &Path, args: &[&str], cwd: &Path) -> Result<String, L
             return Err(ListingFailure::Timeout);
         }
     };
-    Ok(String::from_utf8_lossy(&output).into_owned())
+    let stderr = errors
+        .and_then(|errors| {
+            errors
+                .recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
+                .ok()
+        })
+        .and_then(Result::ok)
+        .unwrap_or_default();
+    Ok(Listing {
+        stdout: String::from_utf8_lossy(&output).into_owned(),
+        stderr: String::from_utf8_lossy(&stderr).into_owned(),
+        failure,
+    })
 }
 
 fn kill_process_tree(child: &mut std::process::Child) {
@@ -589,8 +686,22 @@ pub fn discover_gemini_sessions(workspace: &Path) -> Vec<CliSession> {
 
 fn try_discover_gemini(workspace: &Path) -> Result<Vec<CliSession>, ListingFailure> {
     let executable = provider_executable(CliProvider::Gemini).ok_or(ListingFailure::Unavailable)?;
-    let output = run_listing(&executable, &["--list-sessions"], workspace)?;
-    Ok(parse_gemini_sessions(&output, workspace))
+    gemini_sessions(
+        run_listing(&executable, &["--list-sessions"], workspace)?,
+        workspace,
+    )
+}
+
+/// Gemini CLI prints "No previous sessions found for this project." for a project
+/// without sessions, then may fail to sign in; that is still an empty list.
+pub fn gemini_sessions(
+    listing: Listing,
+    workspace: &Path,
+) -> Result<Vec<CliSession>, ListingFailure> {
+    if listing.stdout.contains("No previous sessions found") {
+        return Ok(Vec::new());
+    }
+    Ok(parse_gemini_sessions(&listing.output()?, workspace))
 }
 
 pub fn discover_opencode_sessions(workspace: &Path) -> Vec<CliSession> {
@@ -600,11 +711,23 @@ pub fn discover_opencode_sessions(workspace: &Path) -> Vec<CliSession> {
 fn try_discover_opencode(workspace: &Path) -> Result<Vec<CliSession>, ListingFailure> {
     let executable =
         provider_executable(CliProvider::OpenCode).ok_or(ListingFailure::Unavailable)?;
-    let output = run_listing(
+    let listing = run_listing(
         &executable,
         &["session", "list", "--format", "json"],
         workspace,
     )?;
+    opencode_sessions(listing, workspace)
+}
+
+/// OpenCode prints nothing at all for a project without sessions.
+pub fn opencode_sessions(
+    listing: Listing,
+    workspace: &Path,
+) -> Result<Vec<CliSession>, ListingFailure> {
+    let output = listing.output()?;
+    if output.trim().is_empty() {
+        return Ok(Vec::new());
+    }
     let value = serde_json::from_str::<Value>(&output)
         .map_err(|_| ListingFailure::Failed("malformed session JSON".into()))?;
     if !value.is_array() && !value.get("sessions").is_some_and(Value::is_array) {
@@ -1172,7 +1295,76 @@ mod tests {
             dir.path(),
         )
         .unwrap();
-        assert_eq!(result.len(), 131072);
+        assert_eq!(result.stdout.len(), 131072);
+    }
+
+    #[test]
+    fn empty_listings_are_no_sessions_and_sign_in_problems_are_not_errors() {
+        let workspace = Path::new("/work");
+        let listing = |stdout: &str, stderr: &str, failure: Option<&str>| Listing {
+            stdout: stdout.to_owned(),
+            stderr: stderr.to_owned(),
+            failure: failure.map(str::to_owned),
+        };
+        assert_eq!(
+            opencode_sessions(listing("", "", None), workspace),
+            Ok(Vec::new())
+        );
+        assert_eq!(
+            opencode_sessions(listing("\n  \n", "", None), workspace),
+            Ok(Vec::new())
+        );
+        assert_eq!(
+            opencode_sessions(listing("not json", "", None), workspace),
+            Err(ListingFailure::Failed("malformed session JSON".into()))
+        );
+        assert_eq!(
+            gemini_sessions(
+                listing(
+                    "No previous sessions found for this project.",
+                    "Error authenticating: IneligibleTierError: this client is not supported",
+                    Some("exit status: 1"),
+                ),
+                workspace
+            ),
+            Ok(Vec::new())
+        );
+        assert_eq!(
+            gemini_sessions(
+                listing(
+                    "",
+                    "Please set an Auth method in your settings.json or specify GEMINI_API_KEY",
+                    Some("exit status: 1"),
+                ),
+                workspace
+            ),
+            Err(ListingFailure::NeedsSignIn(
+                "Please set an Auth method in your settings.json or specify GEMINI_API_KEY".into()
+            ))
+        );
+        assert_eq!(
+            opencode_sessions(listing("", "segfault", Some("exit status: 139")), workspace),
+            Err(ListingFailure::Failed(
+                "listing exited with exit status: 139".into()
+            ))
+        );
+    }
+
+    #[test]
+    fn a_failed_listing_keeps_what_it_printed() {
+        let dir = tempfile::tempdir().unwrap();
+        let listing = run_listing(
+            Path::new("/bin/sh"),
+            &["-c", "echo listed; echo 'Not logged in' >&2; exit 3"],
+            dir.path(),
+        )
+        .unwrap();
+        assert_eq!(listing.stdout, "listed\n");
+        assert_eq!(listing.stderr, "Not logged in\n");
+        assert_eq!(
+            listing.output(),
+            Err(ListingFailure::NeedsSignIn("Not logged in".into()))
+        );
     }
 
     #[test]

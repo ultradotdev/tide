@@ -323,6 +323,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `proc-macro2` 1.0.107 | MIT OR Apache-2.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
 | `prodash` 31.0.1 | MIT | [da730d7d44c9](#notice-da730d7d44c9b35b08add18b02c6b7955157779fbc7cc81dac5b30bae1f639d4) |
 | `psm` 0.1.24 | MIT OR Apache-2.0 | [5299390bd4b8](#notice-5299390bd4b8fa248c0e781896af7580e7ca6a77aac1af645394889353ab50e0), [85a884980abd](#notice-85a884980abd6032fc6b5439ba918ab16db9ac9051b5cf18db9c27c587df07c0) |
+| `pulldown-cmark` 0.13.6 | MIT | [bef062f5b1d5](#notice-bef062f5b1d5daaed70df06859eca2a556109195fc6f97fdb95a769875fabfef) |
 | `quick-xml` 0.42.0 | MIT | [12bfa73c9eac](#notice-12bfa73c9eacbe1e22c772b2cba1f5e3195ae9fafc7773f50493a3e6e306da01) |
 | `quinn` 0.11.12 | MIT OR Apache-2.0 | [05fa1ba3228a](#notice-05fa1ba3228aab8d2bf637f286d7579ed76256c1dab3fa955c2489b920ffeb35), [43070e2d4e53](#notice-43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1) |
 | `quinn-proto` 0.11.19 | MIT OR Apache-2.0 | [05fa1ba3228a](#notice-05fa1ba3228aab8d2bf637f286d7579ed76256c1dab3fa955c2489b920ffeb35), [43070e2d4e53](#notice-43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1) |
@@ -441,6 +442,7 @@ Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compi
 | `two-face` 0.5.2+bat-0.26.1 | MIT OR Apache-2.0 | [4f5b6a4b9b22](#notice-4f5b6a4b9b22932d739c3622ea0ee2f24144616f19b65da1c7f007cf3a02f81f), [7834f5ba36f5](#notice-7834f5ba36f5ff98140960ada22a6599562d74a4af70368bb38a09acbd720a14) |
 | `typenum` 1.20.1 | MIT OR Apache-2.0 | [516b24e051bf](#notice-516b24e051bf5630880ebbd55c40a25ce9552ebaf8970a53e8976eb70e522406), [87ebb37988ef](#notice-87ebb37988efc3285a41635c6a9fd38147e1e581b5f0556a284d5ab8fa5cdd4c), [db11fec99467](#notice-db11fec9946737df39ca3898d9cd8c10ec6f6c3a884a6802b0ad0b81b4e8f23a) |
 | `ucd-trie` 0.1.7 | MIT OR Apache-2.0 | [154c1af2b38e](#notice-154c1af2b38e25e5c18613dfe352eed29b0863cb39e494007822cdeb39150ac5), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
+| `unicase` 2.10.0 | MIT OR Apache-2.0 | [05f344491a7d](#notice-05f344491a7d18e1a3188acbddf6f921284cb192e49d16391128d453000468ff), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb) |
 | `unicode-bidi` 0.3.18 | MIT OR Apache-2.0 | [033a9383ff21](#notice-033a9383ff21d1e4811d98dd2e0081b0ba0d9c9a31d6c7ba9e63e3488479bf29), [769f80b5bcb4](#notice-769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb), [7c7940368dc9](#notice-7c7940368dc9f42d4f9f428662ee2117ec490b32de45382eab47805e1280a754) |
 | `unicode-bom` 2.0.3 | Apache-2.0 | [771e6c9f1172](#notice-771e6c9f11721b0937412fe85df813fd2c1ff089a033d3a168f3c1609421ca08) |
 | `unicode-ident` 1.0.27 | (MIT OR Apache-2.0) AND Unicode-3.0 | [30fefc3a7d6a](#notice-30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652), [361d79129578](#notice-361d7912957842f2ce61c774b14afba41ae91df84882982e6f7e749e01c07c91), [95bd3988beee](#notice-95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc) |
@@ -17773,6 +17775,34 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+````
+
+<a id="notice-bef062f5b1d5daaed70df06859eca2a556109195fc6f97fdb95a769875fabfef"></a>
+
+### bef062f5b1d5
+
+````text
+The MIT License
+
+Copyright 2015 Google Inc. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 ````
 
 <a id="notice-bfdb1645fcb60075b87520e65d8aaecfc36ee9dc283d52bd5348a5c53af5171e"></a>

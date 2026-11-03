@@ -279,3 +279,154 @@ fn an_invalid_setting_value_is_reported_at_startup() {
     assert!(message.contains("editor.tabSize"), "{message}");
     assert_eq!(app.tab_size(), 2);
 }
+
+fn write_config(path: &std::path::Path, text: &str) {
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(path, text).unwrap();
+}
+
+#[test]
+fn settings_edited_outside_tide_apply_without_a_restart() {
+    let (_home, mut app) = test_app();
+    assert!(!app.reload_config_if_changed(), "nothing changed yet");
+    let other_theme = app
+        .themes
+        .iter()
+        .map(|theme| theme.id.clone())
+        .find(|id| id != app.themes.selected_id())
+        .unwrap();
+    write_config(
+        &app.paths.settings_file,
+        &format!(
+            "{{\n  // edited by hand\n  \"editor.tabSize\": 6,\n  \"tui.sidebar.width\": 50,\n  \"workbench.colorTheme\": \"{other_theme}\"\n}}\n"
+        ),
+    );
+    assert!(app.reload_config_if_changed());
+    assert_eq!(app.tab_size(), 6);
+    assert_eq!(app.sidebar_width, 50);
+    assert_eq!(app.themes.selected_id(), other_theme);
+    assert!(
+        app.status.starts_with("Settings reloaded"),
+        "{}",
+        app.status
+    );
+    assert!(app.overlay.is_none());
+    assert!(
+        !app.reload_config_if_changed(),
+        "an unchanged file is read once"
+    );
+
+    write_config(
+        &app.paths.settings_file,
+        "{ \"terminal.shell\": \"/bin/zsh\", \"session.restoreOnStartup\": false }",
+    );
+    assert!(app.reload_config_if_changed());
+    assert!(
+        app.status
+            .contains("terminal.shell applies to new terminals")
+            && app
+                .status
+                .contains("session.restoreOnStartup takes effect after restart"),
+        "{}",
+        app.status
+    );
+    assert_eq!(
+        app.tab_size(),
+        2,
+        "removed settings return to their defaults"
+    );
+}
+
+#[test]
+fn a_broken_settings_file_is_reported_and_the_last_good_settings_stay() {
+    let (_home, mut app) = test_app();
+    write_config(&app.paths.settings_file, "{ \"editor.tabSize\": 5 }");
+    assert!(app.reload_config_if_changed());
+    write_config(&app.paths.settings_file, "{ \"editor.tabSize\": 7, oops }");
+    assert!(app.reload_config_if_changed());
+    assert_eq!(app.tab_size(), 5);
+    let overlay = app.overlay.as_ref().unwrap();
+    assert_eq!(overlay.base().title, "Configuration Problems");
+    assert!(
+        overlay
+            .base()
+            .message
+            .as_deref()
+            .unwrap()
+            .contains("Tide is using the settings it had"),
+        "{:?}",
+        overlay.base().message
+    );
+    write_config(&app.paths.settings_file, "{ \"editor.tabSize\": 7 }");
+    assert!(app.reload_config_if_changed());
+    assert_eq!(app.tab_size(), 7);
+    assert!(
+        app.overlay.is_none(),
+        "the problem report closes once fixed"
+    );
+
+    write_config(
+        &app.paths.settings_file,
+        "{ \"workbench.colorTheme\": \"no-such-theme\" }",
+    );
+    let theme = app.themes.selected_id().to_owned();
+    assert!(app.reload_config_if_changed());
+    assert_eq!(app.themes.selected_id(), theme);
+    assert!(
+        app.overlay
+            .as_ref()
+            .and_then(|overlay| overlay.base().message.clone())
+            .unwrap()
+            .contains("no-such-theme")
+    );
+}
+
+#[test]
+fn keybindings_edited_outside_tide_apply_and_tides_own_writes_are_not_reported() {
+    let (_home, mut app) = test_app();
+    write_config(
+        &app.paths.keybindings_file,
+        r#"[ { "key": "ctrl+alt+y", "command": "workbench.quickOpen" } ]"#,
+    );
+    assert!(app.reload_config_if_changed());
+    assert_eq!(
+        app.resolve_binding("ctrl+alt+y"),
+        Some(BindingAction::Run(Command::WorkbenchQuickOpen))
+    );
+    assert!(
+        app.status.contains("Keybindings reloaded"),
+        "{}",
+        app.status
+    );
+
+    write_config(&app.paths.keybindings_file, "[ { \"key\": ");
+    assert!(app.reload_config_if_changed());
+    assert_eq!(
+        app.resolve_binding("ctrl+alt+y"),
+        Some(BindingAction::Run(Command::WorkbenchQuickOpen)),
+        "a broken file keeps the keys Tide had"
+    );
+    app.overlay = None;
+    write_config(&app.paths.keybindings_file, "[]");
+    assert!(app.reload_config_if_changed());
+    assert_ne!(
+        app.resolve_binding("ctrl+alt+y"),
+        Some(BindingAction::Run(Command::WorkbenchQuickOpen))
+    );
+
+    app.status.clear();
+    app.update_setting("editor.tabSize", "3");
+    let binding = app
+        .keybindings
+        .iter()
+        .find(|binding| binding.key == "ctrl+shift+j")
+        .cloned()
+        .unwrap();
+    app.update_keybinding(&binding, "ctrl+alt+j");
+    app.status.clear();
+    assert!(
+        !app.reload_config_if_changed(),
+        "Tide's own writes are already applied"
+    );
+    assert!(app.status.is_empty());
+}

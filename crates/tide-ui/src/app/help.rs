@@ -52,6 +52,9 @@ impl App {
         if let Some(pane) = self.workbench.pane_mut(id) {
             pane.active = index;
             if let Some(editor) = pane.tabs.get_mut(index).and_then(Tab::editor_mut) {
+                if let Some(width) = editor.help_width() {
+                    fresh.relayout_help(width);
+                }
                 fresh.scroll_top = editor.scroll_top.min(fresh.document.len_lines());
                 *editor = fresh;
             }

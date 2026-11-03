@@ -3995,6 +3995,17 @@
         "type": "integer"
       }
     },
+    "tui.colorMode": {
+      "default": "auto",
+      "rule": {
+        "enum": [
+          "auto",
+          "truecolor",
+          "256"
+        ],
+        "type": "string"
+      }
+    },
     "tui.diffViewer.autoRefresh": {
       "default": true,
       "rule": {
@@ -4032,9 +4043,10 @@
       }
     },
     "tui.iconStyle": {
-      "default": "nerd",
+      "default": "auto",
       "rule": {
         "enum": [
+          "auto",
           "nerd",
           "ascii"
         ],

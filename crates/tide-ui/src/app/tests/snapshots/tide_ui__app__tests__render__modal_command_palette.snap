@@ -8,26 +8,26 @@ No files · . hidden · Enter expand/│Tide
                                    │A terminal-native code editor.
                                    │
                                    │Ctrl+P  quick open    Ctrl+K  commands
-                              ┌ Command Palette ─────────────────────────────────────────┐
-                              │>                                                         │
-                              │──────────────────────────────────────────────────────────│.
-                              │ Agents: Archive Selected Session...                    AI│
-                              │ Agents: Associate Previous Workspace...                AI│
-                              │ Agents: Delete Selected Session...                     AI│
-                              │ Agents: New Session...                                 AI│
-                              │ Agents: Open Session...                                AI│
-                              │ Agents: Refresh Sessions                               AI│
-                              │ Agents: Rename Selected Session...                     AI│
-                              │ Agents: Toggle Sidebar                                 AI│
-                              │ Add Row                                          Database│
-Enter open · ←/→ folders · . h│ Browse Schema                                    Database│
- ▼ Source Control             │ Complete SQL                                     Database│
- no repository                │ Connect to Database                              Database│
-                              │ Delete Connection                                Database│
-                              │ Describe Table                                   Database│
-                              │                   Open   Cancel [Esc]                    │
-                              │Enter open   Esc cancel                          298 items│
-                              └──────────────────────────────────────────────────────────┘
+                      ┌ Command Palette ─────────────────────────────────────────────────────────┐
+                      │>                                                                         │
+                      │──────────────────────────────────────────────────────────────────────────│
+                      │ Agents: Archive Selected Session...                     AI               │
+                      │ Agents: Associate Previous Workspace...                 AI               │
+                      │ Agents: Delete Selected Session...                      AI               │
+                      │ Agents: New Session...                                  AI  Ctrl+Shift+I │
+                      │ Agents: Open Session...                                 AI  Ctrl+Shift+J │
+                      │ Agents: Refresh Sessions                                AI               │
+                      │ Agents: Rename Selected Session...                      AI               │
+                      │ Agents: Toggle Sidebar                                  AI               │
+                      │ Add Row                                           Database               │
+Enter open · ←/→ folde│ Browse Schema                                     Database               │
+ ▼ Source Control     │ Complete SQL                                      Database               │
+ no repository        │ Connect to Database                               Database               │
+                      │ Delete Connection                                 Database               │
+                      │ Describe Table                                    Database               │
+                      │                           Open   Cancel [Esc]                            │
+                      │Enter open   Esc cancel                                          298 items│
+                      └──────────────────────────────────────────────────────────────────────────┘
                                    │
                                    │
                                    │

@@ -33,11 +33,15 @@ Tide never reads the clipboard through the terminal. To paste over SSH, use your
 
 ## Icons or layout look wrong
 
-File icons need a Nerd Font; set `tui.iconStyle` to `ascii` for plain text. Terminal font metrics and Unicode width handling affect alignment. If a sidebar or the dock disappeared in a small window, make the window larger: Tide hides regions that do not fit and brings them back with their saved sizes.
+Nerd Font file icons show only where the glyphs are available: by default (`tui.iconStyle` set to `auto`) Tide uses them in Ghostty, kitty and WezTerm, which bundle them. If you see empty boxes, set `tui.iconStyle` to `ascii`; if your terminal font is a Nerd Font and you want the icons, set it to `nerd`. Terminal font metrics and Unicode width handling affect alignment. If a sidebar or the dock disappeared in a small window, make the window larger: Tide hides regions that do not fit and brings them back with their saved sizes.
+
+## Colors look wrong
+
+Tide sends 24-bit color only to terminals that report it, and the nearest of 256 colors to others such as Terminal.app before macOS 26. Inside tmux or over SSH the terminal's own variables may not get through: if colors look washed out or banded, set `tui.colorMode` to `truecolor`; if they show as the wrong colors entirely, set it to `256`. The change applies as soon as you save the settings file.
 
 ## Agents are missing
 
-Run `tide --check-ai-cli` and confirm the agent's executable is on the `PATH` of the shell that starts Tide, or set its path override variable (see [AI CLI Agents](features/ai.md)). Install and sign in to the CLI outside Tide. The Agents sidebar shows sessions for the current workspace and folders inside it; after moving a repository, run **Agents: Associate Previous Workspace...**.
+Run `tide --check-ai-cli` and confirm the agent's executable is on the `PATH` of the shell that starts Tide, or set its path override variable (see [AI CLI Agents](features/ai.md)). Install and sign in to the CLI outside Tide. An agent marked “Not signed in” is installed but asked to be signed in or set up when Tide listed its sessions; select the row and press Enter to see what it said. The Agents sidebar shows sessions for the current workspace and folders inside it; after moving a repository, run **Agents: Associate Previous Workspace...**.
 
 ## Missing language-server features
 
@@ -45,7 +49,7 @@ Run `tide --check-lsp`, install the missing server and make sure it is on the `P
 
 ## Settings or keys are ignored
 
-If `~/.config/tide/settings.jsonc` or `~/.config/tide/keybindings.jsonc` cannot be read, Tide opens **Configuration Problems** at startup with the file, line and column, and uses the defaults for that file until you fix it. A setting with an invalid value is listed there too and falls back to its default. Changes made from **Open Settings** and **Open Keyboard Shortcuts** edit only the value you changed and keep your comments; they leave a file with errors unchanged.
+If `~/.config/tide/settings.jsonc` or `~/.config/tide/keybindings.jsonc` cannot be read, Tide opens **Configuration Problems** with the file, line and column: at startup it uses the defaults for that file, and after an edit it keeps the configuration it already had. Save the fixed file and Tide applies it without a restart. A setting with an invalid value is listed there too and falls back to its default. Changes made from **Open Settings** and **Open Keyboard Shortcuts** edit only the value you changed and keep your comments; they leave a file with errors unchanged.
 
 ## A theme does not load
 

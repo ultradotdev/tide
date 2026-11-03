@@ -338,3 +338,107 @@ fn snapshot_confirm() {
         })
     );
 }
+
+fn drawn(app: &mut App, width: u16, height: u16) -> ratatui::buffer::Buffer {
+    let mut terminal =
+        ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    terminal.backend().buffer().clone()
+}
+
+fn has_rgb(buffer: &ratatui::buffer::Buffer) -> bool {
+    buffer.content.iter().any(|cell| {
+        [cell.fg, cell.bg, cell.underline_color]
+            .iter()
+            .any(|color| matches!(color, ratatui::style::Color::Rgb(..)))
+    })
+}
+
+#[test]
+fn terminals_without_truecolor_get_the_256_color_palette() {
+    let (_home, mut app) = test_app();
+    assert!(has_rgb(&drawn(&mut app, 100, 30)));
+    app.terminal = crate::display::TerminalTraits {
+        truecolor: false,
+        nerd_font: false,
+    };
+    let buffer = drawn(&mut app, 100, 30);
+    assert!(!has_rgb(&buffer));
+    assert!(
+        buffer
+            .content
+            .iter()
+            .any(|cell| matches!(cell.bg, ratatui::style::Color::Indexed(16..)))
+    );
+    app.settings
+        .set("tui.colorMode", serde_json::json!("truecolor"));
+    assert!(has_rgb(&drawn(&mut app, 100, 30)));
+    app.terminal = crate::display::TerminalTraits::FULL;
+    app.settings.set("tui.colorMode", serde_json::json!("256"));
+    assert!(!has_rgb(&drawn(&mut app, 100, 30)));
+}
+
+#[test]
+fn icon_style_auto_follows_the_terminal() {
+    let (_home, mut app) = test_app();
+    assert_eq!(
+        app.settings.get("tui.iconStyle"),
+        Some(&serde_json::json!("auto"))
+    );
+    app.terminal.nerd_font = false;
+    assert!(!app.nerd_icons());
+    app.terminal.nerd_font = true;
+    assert!(app.nerd_icons());
+    app.settings
+        .set("tui.iconStyle", serde_json::json!("ascii"));
+    assert!(!app.nerd_icons());
+    app.terminal.nerd_font = false;
+    app.settings.set("tui.iconStyle", serde_json::json!("nerd"));
+    assert!(app.nerd_icons());
+}
+
+#[test]
+fn help_pages_render_as_formatted_text_that_fits_the_pane() {
+    let (_home, mut app) = test_app();
+    app.settings
+        .set("editor.lineNumbers", serde_json::json!("on"));
+    app.execute_command(Command::HelpWelcome);
+    for width in [120, 70] {
+        let buffer = drawn(&mut app, width, 40);
+        let rows = (0..buffer.area.height)
+            .map(|y| {
+                (0..buffer.area.width)
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>();
+        let screen = rows.join("\n");
+        assert!(screen.contains("Welcome to Tide"), "{screen}");
+        assert!(!screen.contains("# Welcome"), "{screen}");
+        assert!(!screen.contains("| --- |"), "{screen}");
+        assert!(!screen.contains("**"), "{screen}");
+        let title = rows
+            .iter()
+            .find(|row| row.contains("Welcome to Tide"))
+            .unwrap();
+        assert!(
+            !title
+                .split("Welcome to Tide")
+                .next()
+                .unwrap()
+                .chars()
+                .any(|ch| ch.is_ascii_digit()),
+            "no line numbers: {title}"
+        );
+        let editor = app.workbench.active_editor().unwrap();
+        let laid_out = editor.help_width().unwrap();
+        assert!(
+            editor
+                .document
+                .lines()
+                .iter()
+                .all(|line| tide_core::display_width(line) <= laid_out),
+            "every line fits {laid_out}"
+        );
+    }
+}

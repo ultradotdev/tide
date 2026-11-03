@@ -9,6 +9,13 @@ regexTarget = "match"
 regexes = ['''authTag":"tJkTZZ89V0IBTDa0lRxkxA=="''']
 
 [[allowlists]]
+description = "Public AES-GCM authentication tag in the 0.11.1 secret-store compatibility test"
+condition = "AND"
+paths = ['''^crates/tide-ai/src/secrets\.rs$''']
+regexTarget = "match"
+regexes = ['''authTag":"3RhPpu0HSdByOoXMtiPnIg=="''']
+
+[[allowlists]]
 description = "Key binding chords such as ctrl+shift+down in the keymap and its generated reference"
 condition = "AND"
 paths = ['''^config/default-keybindings\.jsonc$''', '''^docs/reference/runtime\.json$''']
