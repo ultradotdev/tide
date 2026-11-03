@@ -86,6 +86,21 @@ impl App {
         self.mark_session_dirty();
     }
 
+    /// Titles of the terminals in the dock and the main panes, agent sessions included,
+    /// that are running a program quitting would stop.
+    pub(super) fn busy_terminal_titles(&self) -> Vec<String> {
+        self.dock
+            .tabs
+            .iter()
+            .chain(self.workbench.tabs().filter_map(|tab| match tab {
+                Tab::Terminal(terminal) => Some(terminal),
+                _ => None,
+            }))
+            .filter(|terminal| terminal.is_busy())
+            .map(|terminal| terminal.title.clone())
+            .collect()
+    }
+
     /// Shell terminals in the bottom dock and the main panes. Agent sessions are managed
     /// from the Agents sidebar and stay open.
     fn shell_terminals(&self) -> impl Iterator<Item = &TerminalTab> {

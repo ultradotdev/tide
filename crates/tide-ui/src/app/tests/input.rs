@@ -285,14 +285,27 @@ fn no_single_key_binding_is_also_the_first_key_of_a_chord() {
 }
 
 #[test]
-fn shell_editing_keys_stay_with_a_focused_terminal_while_ctrl_t_reaches_the_palette() {
+fn every_ctrl_letter_stays_with_a_focused_terminal_while_shifted_and_function_keys_reach_tide() {
     let (_home, app) = test_app();
     let ctrl = |ch| KeyEvent::new(KeyCode::Char(ch), KeyModifiers::CONTROL);
-    assert!(app.is_terminal_control_key(ctrl('k')));
-    assert!(app.is_terminal_control_key(ctrl('e')));
-    assert!(!app.is_terminal_control_key(ctrl('t')));
+    // Shell editing, nano (Ctrl+O/X), the tmux prefix (Ctrl+B) and XON (Ctrl+Q) all
+    // belong to the program, even though Tide binds most of them.
+    for ch in 'a'..='z' {
+        assert!(app.is_terminal_control_key(ctrl(ch)), "ctrl+{ch}");
+    }
+    assert!(app.is_terminal_control_key(ctrl(' ')));
+    assert!(!app.is_terminal_control_key(ctrl('`')));
+    assert!(!app.is_terminal_control_key(KeyEvent::new(
+        KeyCode::Char('P'),
+        KeyModifiers::CONTROL | KeyModifiers::SHIFT
+    )));
+    assert!(!app.is_terminal_control_key(KeyEvent::new(
+        KeyCode::Char('f'),
+        KeyModifiers::CONTROL | KeyModifiers::ALT
+    )));
+    assert!(!app.is_terminal_control_key(KeyEvent::new(KeyCode::F(1), KeyModifiers::NONE)));
     assert_eq!(
-        app.keymap.get("ctrl+t").copied(),
+        app.keymap.get("f1").copied(),
         Some(Command::WorkbenchCommandPalette)
     );
 }

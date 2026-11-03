@@ -21,7 +21,7 @@ If input stalls in a release build, note the terminal emulator, window size, fil
 
 ## Shortcuts do not arrive
 
-Many terminals cannot send Ctrl+Shift or Cmd combinations, and a terminal's own shortcuts can take a key before Tide sees it. Use the command palette, `Ctrl+K` or `Ctrl+Shift+P`, and the terminal-safe alternatives in [Keyboard Shortcuts](reference/keyboard-shortcuts.md). While a terminal tab has focus, the shell keeps `Ctrl+A`, `Ctrl+C`, `Ctrl+D`, `Ctrl+E`, `Ctrl+K`, `Ctrl+L`, `Ctrl+R`, `Ctrl+U`, `Ctrl+V`, `Ctrl+W`, `Ctrl+Y`, `Ctrl+Z`, `Ctrl+Space` and `Ctrl+\`; open the palette there with `Ctrl+Shift+P` or `F1`.
+Many terminals cannot send Ctrl+Shift or Cmd combinations, and a terminal's own shortcuts can take a key before Tide sees it. Use the command palette, `Ctrl+K` or `Ctrl+Shift+P`, and the terminal-safe alternatives in [Keyboard Shortcuts](reference/keyboard-shortcuts.md). While a terminal tab has focus, the shell keeps every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`; open the palette there with `Ctrl+Shift+P` or `F1`.
 
 ## Icons or layout look wrong
 
@@ -34,6 +34,10 @@ Run `tide --check-ai-cli` and confirm the agent's executable is on the `PATH` of
 ## Missing language-server features
 
 Run `tide --check-lsp`, install the missing server and make sure it is on the `PATH`, or point `lsp.servers` at it (see [Editor and Language Servers](features/editor.md)). Editing and syntax highlighting do not need a language server.
+
+## Settings or keys are ignored
+
+If `~/.config/tide/settings.jsonc` or `~/.config/tide/keybindings.jsonc` cannot be read, Tide opens **Configuration Problems** at startup with the file, line and column, and uses the defaults for that file until you fix it. A setting with an invalid value is listed there too and falls back to its default. Changes made from **Open Settings** and **Open Keyboard Shortcuts** edit only the value you changed and keep your comments; they leave a file with errors unchanged.
 
 ## A theme does not load
 

@@ -128,13 +128,14 @@ fn edited_settings_apply_and_persist() {
 #[test]
 fn edited_keybindings_apply_and_persist() {
     let (_home, mut app) = test_app();
-    let (old_key, command) = app
+    let binding = app
         .keybindings
         .iter()
         .find(|binding| binding.command == "workbench.commandPalette")
-        .map(|binding| (binding.key.clone(), binding.command.clone()))
+        .cloned()
         .unwrap();
-    app.update_keybinding(&old_key, "ctrl+alt+k");
+    let command = binding.command.clone();
+    app.update_keybinding(&binding, "ctrl+alt+k");
     assert_eq!(
         app.resolve_binding("ctrl+alt+k"),
         Some(BindingAction::Run(command.parse().unwrap()))
@@ -162,4 +163,119 @@ fn an_unset_minimap_setting_follows_the_catalog_default() {
         default
     );
     assert_eq!(Some(app.build_session().ui.minimap_enabled), default);
+}
+
+fn app_with_config(settings: Option<&str>, keybindings: Option<&str>) -> (tempfile::TempDir, App) {
+    let home = tempfile::tempdir().unwrap();
+    let workspace = home.path().join("workspace");
+    std::fs::create_dir_all(&workspace).unwrap();
+    let paths = Paths::from_env(home.path(), |_| None);
+    std::fs::create_dir_all(&paths.config_dir).unwrap();
+    if let Some(text) = settings {
+        std::fs::write(&paths.settings_file, text).unwrap();
+    }
+    if let Some(text) = keybindings {
+        std::fs::write(&paths.keybindings_file, text).unwrap();
+    }
+    let app = App::new(AppConfig {
+        workspace,
+        paths: Some(paths),
+        initial_file: None,
+        session_name: None,
+        restore_session: false,
+        ephemeral_session: false,
+        jobs: Jobs::manual(),
+        agent_discovery: no_agents,
+        install: crate::help::Install::Unknown { executable: None },
+    })
+    .unwrap();
+    (home, app)
+}
+
+#[test]
+fn changing_a_setting_or_key_keeps_the_users_file_as_written() {
+    let settings = "{\n  // Wider indents for this machine\n  \"editor.tabSize\": 3,\n}\n";
+    let keys = "[\n  // My palette key\n  { \"key\": \"f5\", \"command\": \"workbench.commandPalette\" }\n]\n";
+    let (_home, mut app) = app_with_config(Some(settings), Some(keys));
+    assert!(app.overlay.is_none(), "valid files raise no problems");
+
+    app.update_setting("editor.tabSize", "4");
+    app.update_setting("editor.wordWrap", "\"off\"");
+    let written = std::fs::read_to_string(&app.paths.settings_file).unwrap();
+    assert!(
+        written.contains("// Wider indents for this machine"),
+        "{written}"
+    );
+    let values: serde_json::Value = tide_config::parse_jsonc(&written).unwrap();
+    assert_eq!(
+        values,
+        serde_json::json!({"editor.tabSize": 4, "editor.wordWrap": "off"}),
+        "only the user's own values are written, not every default"
+    );
+
+    let theme = app
+        .themes
+        .iter()
+        .map(|theme| theme.id.clone())
+        .find(|id| id != app.themes.selected_id())
+        .unwrap();
+    app.select_theme(&theme);
+    let written = std::fs::read_to_string(&app.paths.settings_file).unwrap();
+    assert!(written.contains("// Wider indents"), "{written}");
+    assert_eq!(
+        tide_config::parse_jsonc::<serde_json::Value>(&written).unwrap()["workbench.colorTheme"],
+        serde_json::json!(theme)
+    );
+
+    // F5 is also Refresh in query results; only the palette binding moves.
+    let palette = Keybinding {
+        key: "f5".into(),
+        command: "workbench.commandPalette".into(),
+        when: None,
+        args: None,
+    };
+    app.update_keybinding(&palette, "ctrl+alt+f11");
+    let written = std::fs::read_to_string(&app.paths.keybindings_file).unwrap();
+    assert!(written.contains("// My palette key"), "{written}");
+    let bindings: Vec<Keybinding> = tide_config::parse_jsonc(&written).unwrap();
+    assert_eq!(
+        bindings.len(),
+        3,
+        "the change is appended to the user's own list"
+    );
+    assert_eq!(
+        app.resolve_binding("ctrl+alt+f11"),
+        Some(BindingAction::Run(Command::WorkbenchCommandPalette))
+    );
+}
+
+#[test]
+fn a_broken_settings_file_is_reported_at_startup_and_never_overwritten() {
+    let broken = "{\n  // half-finished edit\n  \"editor.tabSize\": \n}\n";
+    let (_home, mut app) = app_with_config(Some(broken), Some("[ oops"));
+    let overlay = app.overlay.as_ref().expect("a problems dialog");
+    let message = overlay.base().message.clone().unwrap_or_default();
+    assert!(message.contains("settings.jsonc"), "{message}");
+    assert!(message.contains("keybindings.jsonc"), "{message}");
+    assert!(message.contains("default settings"), "{message}");
+    app.overlay = None;
+
+    app.update_setting("editor.tabSize", "8");
+    assert!(app.status.contains("left unchanged"), "{}", app.status);
+    assert_eq!(
+        std::fs::read_to_string(&app.paths.settings_file).unwrap(),
+        broken
+    );
+}
+
+#[test]
+fn an_invalid_setting_value_is_reported_at_startup() {
+    let (_home, app) = app_with_config(Some(r#"{ "editor.tabSize": 0 }"#), None);
+    let message = app
+        .overlay
+        .as_ref()
+        .and_then(|overlay| overlay.base().message.clone())
+        .unwrap_or_default();
+    assert!(message.contains("editor.tabSize"), "{message}");
+    assert_eq!(app.tab_size(), 2);
 }

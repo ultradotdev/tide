@@ -17,13 +17,13 @@ Tide opens shells in the bottom dock or as ordinary tabs in the main panes. AI a
 
 The dock's `+` button also opens a terminal, and **{{label:editor.moveTabToPane}}** moves a terminal between the dock and the panes.
 
-**{{label:terminal.kill}}** stops every process in a terminal and leaves its tab marked with the exit status, as when the shell exits; it asks first while a command or agent is running. **{{label:terminal.closeAll}}** closes the shell terminals in the dock and the panes, asking first if one is busy; agent tabs stay open. Terminal commands act on the focused terminal, or on the dock's active terminal when focus is elsewhere.
+**{{label:terminal.kill}}** stops every process in a terminal and leaves its tab marked with the exit status, as when the shell exits; it asks first while a command or agent is running. **{{label:terminal.closeAll}}** closes the shell terminals in the dock and the panes, asking first if one is busy; agent tabs stay open. Quitting or restarting Tide also asks first while any terminal or agent is still running a program. Terminal commands act on the focused terminal, or on the dock's active terminal when focus is elsewhere.
 
 New terminals start in the workspace folder with the program in `terminal.shell` ({{setting:terminal.shell}}); when it is empty Tide uses `$SHELL`, then `/bin/sh`. Bash, zsh and sh start as interactive login shells. Terminals report `TERM=xterm-256color`, `COLORTERM=truecolor` and `TERM_PROGRAM=tide`. Shell and scrollback changes apply to new terminals.
 
 ## Keys inside a terminal
 
-While a terminal has focus, the shell's own control keys go to the program running there, even when Tide binds them: {{terminalkeys}}. Workbench keys with Shift, Alt or a function key still reach Tide, so open the command palette from a terminal with {{terminalkey:workbench.commandPalette}}.
+While a terminal has focus, the program running there gets {{terminalkeys}}, even where Tide binds them, so editors such as nano and emacs, tmux and AI agents work as they do outside Tide. Workbench keys with Shift, Alt or a function key still reach Tide, so open the command palette from a terminal with {{terminalkey:workbench.commandPalette}}.
 
 Escape also belongs to the program. To leave a terminal, use {{key:workbench.focusNextRegion}}, {{key:workbench.focusPaneLeft}} and the other pane keys, {{key:workbench.toggleTerminal}} to hide the dock, or click elsewhere.
 

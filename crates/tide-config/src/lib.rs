@@ -69,6 +69,77 @@ pub fn parse_jsonc<T: serde::de::DeserializeOwned>(text: &str) -> Result<T, Conf
     )?)
 }
 
+/// Why a JSONC document could not be edited in place.
+#[derive(Debug, thiserror::Error)]
+pub enum EditError {
+    #[error("{0}")]
+    Syntax(#[from] jsonc_parser::errors::ParseError),
+    #[error("the file must contain a JSON {0}")]
+    Shape(&'static str),
+}
+
+/// Sets the top-level `key` of a JSONC object to `value`, keeping the author's comments,
+/// ordering and formatting. An empty document becomes a new object.
+pub fn set_jsonc_member(
+    text: &str,
+    key: &str,
+    value: &serde_json::Value,
+) -> Result<String, EditError> {
+    let root = parse_cst(text, "{}")?;
+    let object = root.object_value().ok_or(EditError::Shape("object"))?;
+    match object.get(key) {
+        Some(property) => property.set_value(cst_value(value)),
+        None => {
+            object.append(key, cst_value(value));
+        }
+    }
+    Ok(root.to_string())
+}
+
+/// Appends `values` to a JSONC array, keeping the author's comments and formatting. An
+/// empty document becomes a new array.
+pub fn append_jsonc_elements(
+    text: &str,
+    values: &[serde_json::Value],
+) -> Result<String, EditError> {
+    let root = parse_cst(text, "[]")?;
+    let array = root.array_value().ok_or(EditError::Shape("array"))?;
+    for value in values {
+        array.append(cst_value(value));
+    }
+    Ok(root.to_string())
+}
+
+fn parse_cst(text: &str, empty: &str) -> Result<jsonc_parser::cst::CstRootNode, EditError> {
+    let text = if text.trim().is_empty() {
+        format!("{empty}\n")
+    } else {
+        text.to_owned()
+    };
+    Ok(jsonc_parser::cst::CstRootNode::parse(
+        &text,
+        &Default::default(),
+    )?)
+}
+
+fn cst_value(value: &serde_json::Value) -> jsonc_parser::cst::CstInputValue {
+    use jsonc_parser::cst::CstInputValue;
+    match value {
+        serde_json::Value::Null => CstInputValue::Null,
+        serde_json::Value::Bool(value) => CstInputValue::Bool(*value),
+        serde_json::Value::Number(number) => CstInputValue::Number(number.to_string()),
+        serde_json::Value::String(text) => CstInputValue::String(text.clone()),
+        serde_json::Value::Array(items) => {
+            CstInputValue::Array(items.iter().map(cst_value).collect())
+        }
+        serde_json::Value::Object(map) => CstInputValue::Object(
+            map.iter()
+                .map(|(key, value)| (key.clone(), cst_value(value)))
+                .collect(),
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,5 +204,50 @@ mod tests {
         let error = load_jsonc::<Vec<Keybinding>>(&missing).unwrap_err();
         assert!(matches!(error, ConfigError::Read { .. }));
         assert!(error.to_string().contains(&missing.display().to_string()));
+    }
+
+    #[test]
+    fn editing_a_jsonc_member_keeps_comments_and_other_values() {
+        let text = "{\n  // my font size\n  \"editor.tabSize\": 2, // two\n  \"editor.wordWrap\": \"on\"\n}\n";
+        let edited = set_jsonc_member(text, "editor.tabSize", &serde_json::json!(4)).unwrap();
+        assert_eq!(
+            edited,
+            "{\n  // my font size\n  \"editor.tabSize\": 4, // two\n  \"editor.wordWrap\": \"on\"\n}\n"
+        );
+        let added =
+            set_jsonc_member(&edited, "workbench.colorTheme", &serde_json::json!("x")).unwrap();
+        assert!(added.contains("// my font size"), "{added}");
+        let value: serde_json::Value = parse_jsonc(&added).unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({"editor.tabSize": 4, "editor.wordWrap": "on", "workbench.colorTheme": "x"})
+        );
+        let fresh = set_jsonc_member("", "a", &serde_json::json!({"b": [1, null]})).unwrap();
+        assert_eq!(
+            parse_jsonc::<serde_json::Value>(&fresh).unwrap(),
+            serde_json::json!({"a": {"b": [1, null]}})
+        );
+    }
+
+    #[test]
+    fn a_broken_or_wrongly_shaped_document_is_not_rewritten() {
+        assert!(matches!(
+            set_jsonc_member("{ \"a\": ", "a", &serde_json::json!(1)),
+            Err(EditError::Syntax(_))
+        ));
+        assert!(matches!(
+            set_jsonc_member("[]", "a", &serde_json::json!(1)),
+            Err(EditError::Shape("object"))
+        ));
+        let bindings = append_jsonc_elements(
+            "[\n  // mine\n  { \"key\": \"f5\", \"command\": \"a\" }\n]\n",
+            &[serde_json::json!({"key": "f6", "command": "b"})],
+        )
+        .unwrap();
+        assert!(bindings.contains("// mine"), "{bindings}");
+        assert_eq!(
+            parse_jsonc::<serde_json::Value>(&bindings).unwrap()[1]["key"],
+            "f6"
+        );
     }
 }

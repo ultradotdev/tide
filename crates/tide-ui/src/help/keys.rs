@@ -193,7 +193,8 @@ mod tests {
     fn shell_control_keys_belong_to_the_terminal() {
         assert!(terminal_owned("ctrl+k"));
         assert!(terminal_owned("ctrl+space"));
-        assert!(!terminal_owned("ctrl+t"));
+        assert!(terminal_owned("ctrl+t"));
+        assert!(terminal_owned("ctrl+q"));
         assert!(!terminal_owned("ctrl+shift+p"));
         assert!(!terminal_owned("f1"));
     }

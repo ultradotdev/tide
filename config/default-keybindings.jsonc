@@ -68,7 +68,7 @@
   { "key": "ctrl+shift+p", "command": "workbench.commandPalette" }, // Command palette (VS Code; needs a terminal that reports Ctrl+Shift)
   { "key": "shift+meta+p", "command": "workbench.commandPalette" }, // Command palette (macOS)
   { "key": "f1", "command": "workbench.commandPalette" }, // Command palette (fallback in every terminal)
-  { "key": "ctrl+t", "command": "workbench.commandPalette" }, // Command palette (also reaches Tide while a terminal pane has focus)
+  { "key": "ctrl+t", "command": "workbench.commandPalette" }, // Command palette (alternate; a focused terminal keeps it for the shell)
   { "key": "ctrl+e", "command": "workbench.commandPalette" }, // Command palette (passes through VS Code's and Zellij's terminals)
   { "key": "meta+e", "command": "workbench.commandPalette" }, // Command palette (macOS alt)
   { "key": "ctrl+r", "command": "editor.gotoSymbol" },

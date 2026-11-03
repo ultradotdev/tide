@@ -34,6 +34,10 @@ Run `tide --check-ai-cli` and confirm the agent's executable is on the `PATH` of
 
 Run `tide --check-lsp`, install the missing server and make sure it is on the `PATH`, or point `lsp.servers` at it (see {{help:editor}}). Editing and syntax highlighting do not need a language server.
 
+## Settings or keys are ignored
+
+If {{path:settings}} or {{path:keybindings}} cannot be read, Tide opens **Configuration Problems** at startup with the file, line and column, and uses the defaults for that file until you fix it. A setting with an invalid value is listed there too and falls back to its default. Changes made from **{{label:workbench.openSettings}}** and **{{label:workbench.openKeybindings}}** edit only the value you changed and keep your comments; they leave a file with errors unchanged.
+
 ## A theme does not load
 
 User themes load once at startup from {{path:themes}}. A file that fails to load is skipped; start Tide with `--debug` and look in {{path:log}} for the reason.

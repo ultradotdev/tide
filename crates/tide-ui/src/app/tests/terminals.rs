@@ -155,3 +155,33 @@ fn close_all_asks_while_busy_and_leaves_agent_sessions_open() {
     press(&mut app, 'y');
     assert!(app.dock.tabs.is_empty());
 }
+
+#[test]
+fn quitting_asks_first_while_a_terminal_runs_a_program_and_ctrl_q_stays_with_the_shell() {
+    let (_home, mut app) = test_app();
+    let mut busy = shell(&app);
+    busy.title = "build".into();
+    busy.send_text("sleep 30\n");
+    wait_until(&mut busy, TerminalTab::is_busy);
+    app.dock.tabs.push(busy);
+    app.dock.visible = true;
+    app.focus = Focus::Dock;
+
+    // Ctrl+Q in a focused terminal is the program's key, not Quit.
+    app.handle_key(KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL));
+    assert!(app.overlay.is_none());
+    assert!(!app.should_quit);
+
+    app.execute_command(Command::WorkbenchQuit);
+    assert!(matches!(
+        app.overlay.as_ref().unwrap().kind(),
+        ModalKind::Confirm(ConfirmAction::QuitBusy { restart: false })
+    ));
+    app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert!(app.overlay.is_none());
+    assert!(!app.should_quit);
+
+    app.execute_command(Command::WorkbenchQuit);
+    press(&mut app, 'y');
+    assert!(app.should_quit);
+}

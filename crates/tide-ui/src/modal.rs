@@ -72,6 +72,10 @@ pub enum ConfirmAction {
     RenamePath(std::path::PathBuf, std::path::PathBuf),
     SwitchSession(String),
     QuitDirty,
+    /// Quit, or restart, while terminals are still running programs.
+    QuitBusy {
+        restart: bool,
+    },
     RunSql(String),
     DeleteRow(Box<tide_db::RowMutation>),
     ClearQueryHistory(Option<String>),
@@ -674,6 +678,8 @@ impl ModalBase {
                 ModalKind::Confirm(ConfirmAction::ClearQueryHistory(_)) => "Clear [Y]",
                 ModalKind::Confirm(ConfirmAction::SwitchSession(_)) => "Switch [Y]",
                 ModalKind::Confirm(ConfirmAction::KillTerminal(_)) => "Kill [Y]",
+                ModalKind::Confirm(ConfirmAction::QuitBusy { restart: false }) => "Quit [Y]",
+                ModalKind::Confirm(ConfirmAction::QuitBusy { restart: true }) => "Restart [Y]",
                 ModalKind::Confirm(ConfirmAction::GitCommand(ref args)) => {
                     match args.iter().map(String::as_str).collect::<Vec<_>>()[..] {
                         ["push", ..] => "Push [Y]",

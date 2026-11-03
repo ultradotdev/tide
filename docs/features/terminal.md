@@ -18,13 +18,13 @@ Tide opens shells in the bottom dock or as ordinary tabs in the main panes. AI a
 
 The dock's `+` button also opens a terminal, and **Move Active Tab to Main Pane...** moves a terminal between the dock and the panes.
 
-**Kill Terminal** stops every process in a terminal and leaves its tab marked with the exit status, as when the shell exits; it asks first while a command or agent is running. **Close All Terminals** closes the shell terminals in the dock and the panes, asking first if one is busy; agent tabs stay open. Terminal commands act on the focused terminal, or on the dock's active terminal when focus is elsewhere.
+**Kill Terminal** stops every process in a terminal and leaves its tab marked with the exit status, as when the shell exits; it asks first while a command or agent is running. **Close All Terminals** closes the shell terminals in the dock and the panes, asking first if one is busy; agent tabs stay open. Quitting or restarting Tide also asks first while any terminal or agent is still running a program. Terminal commands act on the focused terminal, or on the dock's active terminal when focus is elsewhere.
 
 New terminals start in the workspace folder with the program in `terminal.shell` (`""`); when it is empty Tide uses `$SHELL`, then `/bin/sh`. Bash, zsh and sh start as interactive login shells. Terminals report `TERM=xterm-256color`, `COLORTERM=truecolor` and `TERM_PROGRAM=tide`. Shell and scrollback changes apply to new terminals.
 
 ## Keys inside a terminal
 
-While a terminal has focus, the shell's own control keys go to the program running there, even when Tide binds them: `Ctrl+A`, `Ctrl+C`, `Ctrl+D`, `Ctrl+E`, `Ctrl+K`, `Ctrl+L`, `Ctrl+R`, `Ctrl+U`, `Ctrl+V`, `Ctrl+W`, `Ctrl+Y`, `Ctrl+Z`, `Ctrl+Space` and `Ctrl+\`. Workbench keys with Shift, Alt or a function key still reach Tide, so open the command palette from a terminal with `Ctrl+Shift+P` or `F1`.
+While a terminal has focus, the program running there gets every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`, even where Tide binds them, so editors such as nano and emacs, tmux and AI agents work as they do outside Tide. Workbench keys with Shift, Alt or a function key still reach Tide, so open the command palette from a terminal with `Ctrl+Shift+P` or `F1`.
 
 Escape also belongs to the program. To leave a terminal, use `F6` or `Ctrl+Alt+]`, `Alt+Left` or `Ctrl+Alt+Left` and the other pane keys, `` Ctrl+` `` to hide the dock, or click elsewhere.
 

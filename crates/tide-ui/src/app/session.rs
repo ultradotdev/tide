@@ -218,8 +218,28 @@ impl App {
                 },
             ));
         } else {
-            self.finish_quit();
+            self.quit_unless_busy();
         }
+    }
+
+    /// Quits, first asking when a terminal is still running a command or an agent, since
+    /// quitting stops their processes.
+    pub(super) fn quit_unless_busy(&mut self) {
+        let busy = self.busy_terminal_titles();
+        if busy.is_empty() {
+            self.finish_quit();
+            return;
+        }
+        let restart = self.restart.is_some();
+        self.overlay = Some(modal::confirm(
+            ConfirmAction::QuitBusy { restart },
+            if restart { "Restart Tide" } else { "Quit Tide" },
+            &format!(
+                "Still running: {}. {} stops their processes.",
+                busy.join(", "),
+                if restart { "Restarting" } else { "Quitting" }
+            ),
+        ));
     }
 
     pub(super) fn finish_quit(&mut self) {
