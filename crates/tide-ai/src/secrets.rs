@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use aes_gcm::aead::{Aead, KeyInit};
-use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::{Aes256Gcm, Nonce};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -790,12 +790,13 @@ fn encrypt_v2(store: &PlaintextStore, password: &str) -> Result<EnvelopeV2, Secr
     rand::thread_rng().fill_bytes(&mut salt);
     rand::thread_rng().fill_bytes(&mut iv);
     let key = derive_key(password, &salt)?;
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_slice()));
+    let cipher = Aes256Gcm::new_from_slice(key.as_slice())
+        .map_err(|_| SecretError::Io("encryption failed".to_owned()))?;
     let plaintext = Zeroizing::new(
         serde_json::to_vec(store).map_err(|error| SecretError::Io(error.to_string()))?,
     );
     let ciphertext = cipher
-        .encrypt(Nonce::from_slice(&iv), plaintext.as_slice())
+        .encrypt(&Nonce::from(iv), plaintext.as_slice())
         .map_err(|_| SecretError::Io("encryption failed".to_owned()))?;
     let (ciphertext, auth_tag) = ciphertext.split_at(ciphertext.len() - 16);
     Ok(EnvelopeV2 {
@@ -838,12 +839,14 @@ fn decrypt_v2(bytes: &[u8], password: &str) -> Result<PlaintextStore, SecretErro
     let mut ciphertext = BASE64
         .decode(&envelope.ciphertext)
         .map_err(|_| SecretError::UnsupportedFormat)?;
+    let nonce = Nonce::try_from(iv.as_slice()).map_err(|_| SecretError::UnsupportedFormat)?;
     let key = derive_key(password, &salt)?;
     ciphertext.extend_from_slice(&auth_tag);
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key.as_slice()));
+    let cipher = Aes256Gcm::new_from_slice(key.as_slice())
+        .map_err(|_| SecretError::Unlock("decryption failed".to_owned()))?;
     let plaintext = Zeroizing::new(
         cipher
-            .decrypt(Nonce::from_slice(&iv), ciphertext.as_slice())
+            .decrypt(&nonce, ciphertext.as_slice())
             .map_err(|_| SecretError::Unlock("decryption failed".to_owned()))?,
     );
     let store: PlaintextStore =
@@ -855,7 +858,7 @@ fn decrypt_v2(bytes: &[u8], password: &str) -> Result<PlaintextStore, SecretErro
 }
 
 fn derive_key(password: &str, salt: &[u8]) -> Result<Zeroizing<[u8; 32]>, SecretError> {
-    let params = scrypt::Params::new(SCRYPT_LOG_N, 8, 1, 32)
+    let params = scrypt::Params::new(SCRYPT_LOG_N, 8, 1)
         .map_err(|error| SecretError::Io(error.to_string()))?;
     let mut key = Zeroizing::new([0_u8; 32]);
     scrypt::scrypt(password.as_bytes(), salt, &params, key.as_mut_slice())
@@ -1044,6 +1047,38 @@ mod tests {
                 Err(SecretError::UnsupportedFormat)
             ));
         }
+    }
+
+    /// Written by Tide 0.11.1 (aes-gcm 0.10), so a crate upgrade that changed the
+    /// envelope or cipher output would show up here before it locked anyone out.
+    const SECRETS_WRITTEN_BY_0_11_1: &str = r#"{"version":2,"kdf":{"name":"scrypt","salt":"LcySElFV7VTrlvzTDlU4tQ==","keyLength":32,"cost":131072},"cipher":{"name":"aes-256-gcm","iv":"MSIljytlWl7cl4EX","authTag":"3RhPpu0HSdByOoXMtiPnIg=="},"ciphertext":"rN6Kq4IQayOKHRMzfD+y+hBO0z8U2FLjFggdPEmnYe8PK3nvhsRcq0u/fBeEr6f0/s3RmwWyfihkfYUByW2GTm3aWUSJRF3h4sSiRt4pD2Yma734cUwPPCATxW8yjNqoAg042n/Rt0Jho/M="}"#;
+
+    #[test]
+    fn opens_a_secret_store_written_by_an_earlier_release() {
+        let store = decrypt_v2(
+            SECRETS_WRITTEN_BY_0_11_1.as_bytes(),
+            "correct horse battery staple",
+        )
+        .unwrap();
+        assert_eq!(store.secrets["api.token"].value.as_str(), "token-test");
+        assert!(matches!(
+            decrypt_v2(SECRETS_WRITTEN_BY_0_11_1.as_bytes(), "wrong"),
+            Err(SecretError::Unlock(_))
+        ));
+    }
+
+    #[test]
+    fn a_store_with_a_malformed_iv_is_rejected_not_a_crash() {
+        let mut envelope: serde_json::Value =
+            serde_json::from_str(SECRETS_WRITTEN_BY_0_11_1).unwrap();
+        envelope["cipher"]["iv"] = serde_json::json!(BASE64.encode([0_u8; 5]));
+        assert!(matches!(
+            decrypt_v2(
+                &serde_json::to_vec(&envelope).unwrap(),
+                "correct horse battery staple"
+            ),
+            Err(SecretError::UnsupportedFormat)
+        ));
     }
 
     #[cfg(unix)]

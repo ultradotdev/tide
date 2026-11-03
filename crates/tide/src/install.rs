@@ -48,7 +48,11 @@ pub fn hash(path: &Path) -> Result<String> {
         }
         hash.update(&buffer[..n]);
     }
-    Ok(format!("{:x}", hash.finalize()))
+    Ok(hash
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 fn platform() -> &'static str {
     if cfg!(target_os = "macos") {

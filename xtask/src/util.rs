@@ -34,7 +34,11 @@ pub fn repo_root() -> PathBuf {
 }
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex(&Sha256::digest(bytes))
+}
+
+fn hex(digest: &[u8]) -> String {
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 pub fn sha256_file(path: &Path) -> Result<String> {
@@ -48,7 +52,7 @@ pub fn sha256_file(path: &Path) -> Result<String> {
         }
         hash.update(&buffer[..read]);
     }
-    Ok(format!("{:x}", hash.finalize()))
+    Ok(hex(&hash.finalize()))
 }
 
 pub fn read_text(path: &Path) -> Result<String> {

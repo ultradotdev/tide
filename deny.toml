@@ -50,15 +50,8 @@ ignore = true
 multiple-versions = "deny"
 wildcards = "allow"
 skip = [
-  # RustCrypto 0.10 -> 0.11: Tide uses sha2 0.10; postgres-protocol and
-  # tokio-postgres-rustls use the 0.11 digest stack.
-  { crate = "block-buffer@0.10.4", reason = "RustCrypto 0.10/0.11 transition" },
-  { crate = "const-oid@0.9.6", reason = "RustCrypto 0.10/0.11 transition" },
-  { crate = "cpufeatures@0.2.17", reason = "RustCrypto 0.10/0.11 transition" },
-  { crate = "crypto-common@0.1.7", reason = "RustCrypto 0.10/0.11 transition" },
-  { crate = "digest@0.10.7", reason = "RustCrypto 0.10/0.11 transition" },
-  { crate = "hmac@0.12.1", reason = "RustCrypto 0.10/0.11 transition" },
-  { crate = "sha2@0.10.9", reason = "RustCrypto 0.10/0.11 transition" },
+  # x509-cert (tokio-postgres-rustls) is still on the der 0.7 / const-oid 0.9 line.
+  { crate = "const-oid@0.9.6", reason = "x509-cert uses const-oid 0.9" },
   # rand 0.8 (Tide crates) and rand 0.10 (tokio-postgres, postgres-protocol).
   { crate = "rand@0.8.8", reason = "rand 0.8/0.10 split" },
   { crate = "rand_core@0.6.4", reason = "rand 0.8/0.10 split" },
@@ -68,7 +61,7 @@ skip = [
   { crate = "cfg_aliases@0.1.1", reason = "required by nix 0.28" },
   # Syntax engine and grammar data.
   # Older majors still used by transitive dependencies.
-  { crate = "base64@0.22.1", reason = "Tide uses base64 0.22; hyper-util and plist use 0.23" },
+  { crate = "base64@0.22.1", reason = "alacritty_terminal, postgres-protocol and reqwest use base64 0.22" },
   { crate = "fallible-iterator@0.2.0", reason = "postgres-protocol uses fallible-iterator 0.2" },
   { crate = "hashbrown@0.14.5", reason = "dashmap uses hashbrown 0.14" },
   { crate = "hashbrown@0.16.1", reason = "transitive hashbrown majors" },

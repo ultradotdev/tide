@@ -870,7 +870,8 @@ fn line_diff(old: &str, new: &str) -> Vec<(usize, usize, String)> {
     let diff = TextDiff::configure()
         .timeout(RELOAD_DIFF_TIMEOUT)
         .diff_lines(old, new);
-    let (old_lines, new_lines) = (diff.old_slices(), diff.new_slices());
+    let old_lines: Vec<&str> = diff.iter_old_slices().collect();
+    let new_lines: Vec<&str> = diff.iter_new_slices().collect();
     let mut edits: Vec<(usize, usize, String)> = Vec::new();
     let mut offset = 0;
     for op in diff.ops() {
