@@ -39,6 +39,8 @@ pub const SUPPORTED: &[&str] = &[
     "tui.terminal.height",
     "tui.terminal.scrollback",
     "terminal.shell",
+    "terminal.copyOnSelect",
+    "clipboard.osc52",
     "tui.fileTree.showGitStatus",
     "tui.iconStyle",
     "tui.diffViewer.editMode",
@@ -129,6 +131,7 @@ fn constraints(key: &str) -> ((u64, u64), &'static [&'static str]) {
         "tui.iconStyle" => &["nerd", "ascii"],
         "workbench.startupEditor" => &["welcomeOnFirstRun", "welcome", "none"],
         "tui.diffViewer.editMode" => &["stage-modified", "direct-write"],
+        "clipboard.osc52" => &["auto", "always", "off"],
         _ => &[],
     };
     (range, choices)

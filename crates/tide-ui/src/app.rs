@@ -45,7 +45,7 @@ use crate::modal::{
 use crate::palette::Palette;
 use crate::session_store::SessionStore;
 use crate::sql_tab::SqlTab;
-use crate::terminal_tab::{SpawnSpec, TerminalTab};
+use crate::terminal_tab::{SpawnSpec, TerminalMouse, TerminalTab};
 use crate::workbench::{
     DiffTab, FocusDirection, LayoutNode, Pane, PaneId, SplitDirection, Tab, Workbench,
 };
@@ -263,6 +263,11 @@ pub enum AppEvent {
         result: Result<(), String>,
         done: Option<String>,
         fallback: Option<&'static str>,
+        /// The copied text, returned to be sent with OSC 52 because the system clipboard
+        /// failed.
+        osc52: Option<String>,
+        /// The copy already went to the host terminal with OSC 52.
+        sent: bool,
     },
     ClipboardRead {
         generation: u64,
@@ -452,6 +457,10 @@ pub struct App {
     pending_chord: Option<(String, Instant)>,
     clipboard: String,
     clipboard_commands: crate::clipboard::Commands,
+    /// The session Tide runs in, which decides when copies use OSC 52.
+    clipboard_host: crate::clipboard::Host,
+    /// Escape sequences for the host terminal, written after the next frame.
+    host_output: Vec<u8>,
     /// System-clipboard work runs in order on one helper thread.
     clipboard_jobs: Option<std::sync::mpsc::Sender<(ClipboardJob, Tracked)>>,
     paste_generation: u64,
@@ -643,6 +652,8 @@ impl App {
             pending_chord: None,
             clipboard: String::new(),
             clipboard_commands: crate::clipboard::command,
+            clipboard_host: crate::clipboard::Host::detect(),
+            host_output: Vec::new(),
             clipboard_jobs: None,
             paste_generation: 0,
             last_find_query: String::new(),
@@ -827,6 +838,12 @@ impl App {
         }
     }
 
+    /// Escape sequences, such as an OSC 52 copy, that the host terminal should receive.
+    /// The event loop writes them straight to the terminal after drawing.
+    pub fn take_host_output(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self.host_output)
+    }
+
     pub fn take_event_receiver(&mut self) -> Option<tokio::sync::mpsc::Receiver<AppEvent>> {
         self.events_rx.take()
     }
@@ -837,18 +854,28 @@ impl App {
                 result,
                 done,
                 fallback,
-            } => match result {
-                Ok(()) => {
-                    if let Some(done) = done {
-                        self.set_status(done);
+                osc52,
+                sent,
+            } => {
+                let sent = sent || osc52.is_some_and(|text| self.send_osc52(&text));
+                match result {
+                    Ok(()) => {
+                        if let Some(done) = done {
+                            self.set_status(done);
+                        }
+                    }
+                    Err(_) if sent => {
+                        if let Some(done) = done {
+                            self.set_status(format!("{done} through the terminal (OSC 52)"));
+                        }
+                    }
+                    Err(error) => {
+                        if let Some(fallback) = fallback {
+                            self.set_status(format!("{fallback}; {error}"));
+                        }
                     }
                 }
-                Err(error) => {
-                    if let Some(fallback) = fallback {
-                        self.set_status(format!("{fallback}; {error}"));
-                    }
-                }
-            },
+            }
             AppEvent::ClipboardRead {
                 generation,
                 target,

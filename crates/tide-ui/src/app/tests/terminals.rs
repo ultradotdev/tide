@@ -185,3 +185,232 @@ fn quitting_asks_first_while_a_terminal_runs_a_program_and_ctrl_q_stays_with_the
     press(&mut app, 'y');
     assert!(app.should_quit);
 }
+
+fn copies_succeed(_copy: bool) -> Result<std::process::Command, String> {
+    Ok(std::process::Command::new("cat"))
+}
+
+fn no_system_clipboard(_copy: bool) -> Result<std::process::Command, String> {
+    Err("system clipboard unavailable".into())
+}
+
+fn mouse(app: &mut App, kind: MouseEventKind, column: u16, row: u16) {
+    app.handle_event(Event::Mouse(MouseEvent {
+        kind,
+        column,
+        row,
+        modifiers: KeyModifiers::NONE,
+    }));
+}
+
+/// Waits for the clipboard helper's result and applies it, as the event loop does.
+fn finish_copy(app: &mut App, events: &mut tokio::sync::mpsc::Receiver<AppEvent>) {
+    loop {
+        let event = events.blocking_recv().expect("clipboard result");
+        let done = matches!(event, AppEvent::ClipboardWritten { .. });
+        app.handle_background(event);
+        if done {
+            return;
+        }
+    }
+}
+
+/// A main-pane terminal showing two lines after printing `modes`, drawn so its cells can be
+/// clicked.
+fn terminal_pane(
+    app: &mut App,
+    modes: &str,
+) -> (Rect, ratatui::Terminal<ratatui::backend::TestBackend>) {
+    let mut terminal = spawn(
+        app,
+        "/bin/sh",
+        &[
+            "-c",
+            &format!("printf '{modes}alpha beta\\ngamma delta\\n'; exec sleep 30"),
+        ],
+    );
+    wait_until(&mut terminal, |terminal| {
+        terminal.snapshot().text().contains("gamma delta")
+    });
+    app.workbench.insert_tab_focused(Tab::Terminal(terminal));
+    app.focus = Focus::Main;
+    let mut screen = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    screen.draw(|frame| app.draw(frame)).unwrap();
+    let pane = app.workbench.focused();
+    let area = app
+        .layout
+        .hits
+        .iter()
+        .find_map(|(_, target)| match target {
+            HitTarget::EditorContent(id, area) if *id == pane => Some(*area),
+            _ => None,
+        })
+        .expect("terminal content");
+    (area, screen)
+}
+
+#[test]
+fn dragging_in_a_terminal_pane_selects_highlights_and_copies_text() {
+    let (_home, mut app) = test_app();
+    let mut events = app.take_event_receiver().unwrap();
+    app.clipboard_commands = copies_succeed;
+    app.clipboard_host = crate::clipboard::Host::default();
+    let (area, mut screen) = terminal_pane(&mut app, "");
+    app.focus = Focus::Sidebar;
+
+    let left = MouseButton::Left;
+    mouse(&mut app, MouseEventKind::Down(left), area.x + 6, area.y);
+    assert_eq!(app.focus, Focus::Main, "pressing in a terminal focuses it");
+    mouse(&mut app, MouseEventKind::Drag(left), area.x + 7, area.y + 1);
+    // Past the right edge: the pointer stays captured and is held on the last column.
+    mouse(
+        &mut app,
+        MouseEventKind::Drag(left),
+        area.right() + 5,
+        area.y,
+    );
+    mouse(&mut app, MouseEventKind::Drag(left), area.x + 4, area.y + 1);
+    mouse(&mut app, MouseEventKind::Up(left), area.x + 4, area.y + 1);
+    finish_copy(&mut app, &mut events);
+    assert_eq!(app.clipboard, "beta\ngamma");
+    assert_eq!(app.status, "Copied terminal selection");
+    assert!(
+        app.take_host_output().is_empty(),
+        "OSC 52 waits for a failure"
+    );
+
+    screen.draw(|frame| app.draw(frame)).unwrap();
+    let buffer = screen.backend().buffer();
+    let selection = app.palette.selection;
+    assert_eq!(buffer[(area.x + 6, area.y)].bg, selection);
+    assert_eq!(buffer[(area.x, area.y + 1)].bg, selection);
+    assert_ne!(buffer[(area.x + 5, area.y)].bg, selection);
+    assert_ne!(buffer[(area.x + 5, area.y + 1)].bg, selection);
+
+    // The palette command copies the selection again; Ctrl+C stays the shell's interrupt.
+    app.clipboard.clear();
+    app.handle_key(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL));
+    assert!(app.clipboard.is_empty());
+    let terminal = || match app.workbench.active_tab() {
+        Some(Tab::Terminal(terminal)) => terminal.selection_text(),
+        _ => None,
+    };
+    assert_eq!(
+        terminal(),
+        None,
+        "keys sent to the program drop the selection"
+    );
+
+    // A double click selects a word; copy-on-select can be turned off.
+    app.settings
+        .set("terminal.copyOnSelect", serde_json::json!(false));
+    mouse(&mut app, MouseEventKind::Down(left), area.x + 2, area.y + 1);
+    mouse(&mut app, MouseEventKind::Up(left), area.x + 2, area.y + 1);
+    mouse(&mut app, MouseEventKind::Down(left), area.x + 2, area.y + 1);
+    mouse(&mut app, MouseEventKind::Up(left), area.x + 2, area.y + 1);
+    assert!(app.clipboard.is_empty());
+    app.execute_command(Command::TerminalCopySelection);
+    finish_copy(&mut app, &mut events);
+    assert_eq!(app.clipboard, "gamma");
+    // A third click takes the whole line, and Edit: Copy (Cmd+C) copies in a focused terminal.
+    mouse(&mut app, MouseEventKind::Down(left), area.x + 2, area.y + 1);
+    mouse(&mut app, MouseEventKind::Up(left), area.x + 2, area.y + 1);
+    app.execute_command(Command::EditCopy);
+    finish_copy(&mut app, &mut events);
+    assert_eq!(app.clipboard, "gamma delta\n");
+
+    // A single click clears the selection.
+    std::thread::sleep(Duration::from_millis(450));
+    mouse(&mut app, MouseEventKind::Down(left), area.x + 2, area.y + 1);
+    mouse(&mut app, MouseEventKind::Up(left), area.x + 2, area.y + 1);
+    app.execute_command(Command::TerminalCopySelection);
+    assert!(app.status.contains("nothing is selected"), "{}", app.status);
+}
+
+#[test]
+fn a_program_with_mouse_reporting_keeps_the_mouse_until_shift_is_held() {
+    let (_home, mut app) = test_app();
+    let mut events = app.take_event_receiver().unwrap();
+    app.clipboard_commands = copies_succeed;
+    // As vim or htop would: ask for presses and drags.
+    let (area, _screen) = terminal_pane(&mut app, "\\033[?1000h\\033[?1002h\\033[?1006h");
+    let left = MouseButton::Left;
+    mouse(&mut app, MouseEventKind::Down(left), area.x, area.y);
+    mouse(&mut app, MouseEventKind::Drag(left), area.x + 4, area.y);
+    mouse(&mut app, MouseEventKind::Up(left), area.x + 4, area.y);
+    let selected = |app: &App| match app.workbench.active_tab() {
+        Some(Tab::Terminal(terminal)) => terminal.selection_text(),
+        _ => None,
+    };
+    assert_eq!(selected(&app), None, "the program got the drag");
+
+    let shift = |kind, column| {
+        Event::Mouse(MouseEvent {
+            kind,
+            column,
+            row: area.y,
+            modifiers: KeyModifiers::SHIFT,
+        })
+    };
+    app.handle_event(shift(MouseEventKind::Down(left), area.x));
+    app.handle_event(shift(MouseEventKind::Drag(left), area.x + 4));
+    app.handle_event(shift(MouseEventKind::Up(left), area.x + 4));
+    finish_copy(&mut app, &mut events);
+    assert_eq!(app.clipboard, "alpha");
+}
+
+#[test]
+fn copies_reach_the_host_terminal_with_osc52_over_ssh_or_when_the_clipboard_fails() {
+    let (_home, mut app) = test_app();
+    let mut events = app.take_event_receiver().unwrap();
+    app.new_file();
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("héllo");
+    app.workbench.active_editor_mut().unwrap().select_all();
+    let expected = crate::clipboard::osc52("héllo", crate::clipboard::Host::default()).unwrap();
+
+    // Locally, OSC 52 is the fallback when no system clipboard can be reached.
+    app.clipboard_host = crate::clipboard::Host::default();
+    app.clipboard_commands = no_system_clipboard;
+    app.execute_command(Command::EditCopy);
+    assert!(app.take_host_output().is_empty());
+    finish_copy(&mut app, &mut events);
+    assert_eq!(app.take_host_output(), expected);
+    assert_eq!(app.status, "Copied selection through the terminal (OSC 52)");
+
+    // Over SSH it is sent at once, since the system clipboard is the remote machine's.
+    app.clipboard_host = crate::clipboard::Host {
+        remote: true,
+        tmux: false,
+    };
+    app.clipboard_commands = copies_succeed;
+    app.execute_command(Command::EditCopy);
+    assert_eq!(app.take_host_output(), expected);
+    finish_copy(&mut app, &mut events);
+    assert!(app.take_host_output().is_empty(), "sent once");
+    assert_eq!(app.status, "Copied selection");
+
+    // "off" never writes to the host terminal, even when the clipboard fails.
+    app.settings
+        .set("clipboard.osc52", serde_json::json!("off"));
+    app.clipboard_commands = no_system_clipboard;
+    app.execute_command(Command::EditCopy);
+    finish_copy(&mut app, &mut events);
+    assert!(app.take_host_output().is_empty());
+    assert!(
+        app.status.starts_with("Copied inside Tide"),
+        "{}",
+        app.status
+    );
+
+    // "always" sends it alongside a working system clipboard.
+    app.settings
+        .set("clipboard.osc52", serde_json::json!("always"));
+    app.clipboard_host = crate::clipboard::Host::default();
+    app.clipboard_commands = copies_succeed;
+    app.execute_command(Command::EditCopy);
+    assert_eq!(app.take_host_output(), expected);
+    finish_copy(&mut app, &mut events);
+}

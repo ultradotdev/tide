@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in Tide doesn't work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Open a Rust project with `tide .`
+        2. Press Ctrl+P and type `main`
+        3. Expected src/main.rs first, but …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Tide version
+      description: The output of `tide --version`.
+      placeholder: tide 0.11.1
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install Tide?
+      options:
+        - Homebrew
+        - Install script
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.4 (Apple silicon), Ubuntu 24.04 (x64), WSL Ubuntu 22.04
+    validations:
+      required: true
+  - type: input
+    id: terminal
+    attributes:
+      label: Terminal
+      description: The terminal app Tide runs in, and tmux or SSH if they're involved.
+      placeholder: Ghostty 1.2, iTerm2 3.6 inside tmux 3.5, Terminal.app over SSH
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: |
+        Start Tide with `tide --debug .` to write a debug log; the Troubleshooting help page shows where it is.
+        Remove anything private before pasting.
+      render: text

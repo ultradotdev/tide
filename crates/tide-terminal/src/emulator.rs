@@ -2,7 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use alacritty_terminal::event::{Event, EventListener};
 use alacritty_terminal::grid::Dimensions;
-use alacritty_terminal::index::{Column, Point};
+use alacritty_terminal::index::{Column, Point, Side};
+use alacritty_terminal::selection::{Selection, SelectionType};
 use alacritty_terminal::term::cell::Flags;
 use alacritty_terminal::term::{Config, Term, TermMode, point_to_viewport, viewport_to_point};
 use alacritty_terminal::vte::ansi::{Color, CursorShape, NamedColor, Processor, Rgb};
@@ -184,6 +185,31 @@ pub struct TerminalModes {
     pub modify_other_keys: u8,
 }
 
+/// How a mouse selection grows as it is dragged: by cell, by word or by whole line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SelectionKind {
+    Cells,
+    Words,
+    Lines,
+}
+
+/// The part of a selection on screen, in viewport cells. Both ends are inclusive and
+/// `start` comes first in reading order; every cell between them is selected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SelectionSpan {
+    /// (column, row) of the first selected cell.
+    pub start: (usize, usize),
+    /// (column, row) of the last selected cell.
+    pub end: (usize, usize),
+}
+
+impl SelectionSpan {
+    #[must_use]
+    pub fn contains(&self, x: usize, y: usize) -> bool {
+        (y, x) >= (self.start.1, self.start.0) && (y, x) <= (self.end.1, self.end.0)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TerminalSnapshot {
     pub generation: u64,
@@ -193,6 +219,8 @@ pub struct TerminalSnapshot {
     pub cursor: CursorSnapshot,
     pub modes: TerminalModes,
     pub title: Option<String>,
+    /// The visible part of the mouse selection, if any.
+    pub selection: Option<SelectionSpan>,
 }
 
 impl TerminalSnapshot {
@@ -429,6 +457,101 @@ impl TerminalEmulator {
         self.term.grid().display_offset()
     }
 
+    /// The grid point under viewport cell (`col`, `row`), clamped to the screen.
+    fn viewport_point(&self, col: usize, row: usize) -> Point {
+        let point = Point::new(
+            row.min(self.rows.saturating_sub(1)),
+            Column(col.min(self.cols.saturating_sub(1))),
+        );
+        viewport_to_point(self.term.grid().display_offset(), point)
+    }
+
+    /// Starts a selection at viewport cell (`col`, `row`), replacing any other. A cell
+    /// selection stays empty until it is extended; word and line selections take the word or
+    /// line under the cell at once.
+    pub fn start_selection(&mut self, kind: SelectionKind, col: usize, row: usize) {
+        let ty = match kind {
+            SelectionKind::Cells => SelectionType::Simple,
+            SelectionKind::Words => SelectionType::Semantic,
+            SelectionKind::Lines => SelectionType::Lines,
+        };
+        let point = self.viewport_point(col, row);
+        self.term.selection = Some(Selection::new(ty, point, Side::Left));
+        self.generation = self.generation.wrapping_add(1);
+    }
+
+    /// Moves the free end of the selection to viewport cell (`col`, `row`). The selection is
+    /// anchored to the text, so it follows output that scrolls while the mouse is held.
+    pub fn extend_selection(&mut self, col: usize, row: usize) {
+        let point = self.viewport_point(col, row);
+        let Some(selection) = self.term.selection.as_ref() else {
+            return;
+        };
+        // Cells are whole: the cell under the pointer is always included. The anchor is the
+        // left edge of the first cell pressed, so dragging forward takes the right edge of the
+        // pointer's cell and dragging backward its left edge.
+        let mut probe = selection.clone();
+        probe.update(point, Side::Left);
+        let side = if probe
+            .to_range(&self.term)
+            .is_some_and(|range| range.start == point)
+        {
+            Side::Left
+        } else {
+            Side::Right
+        };
+        if let Some(selection) = self.term.selection.as_mut() {
+            selection.update(point, side);
+        }
+        self.generation = self.generation.wrapping_add(1);
+    }
+
+    /// Drops the selection; returns whether there was one.
+    pub fn clear_selection(&mut self) -> bool {
+        let had = self.term.selection.take().is_some();
+        if had {
+            self.generation = self.generation.wrapping_add(1);
+        }
+        had
+    }
+
+    /// Whether some text is selected, on screen or in the scrollback.
+    #[must_use]
+    pub fn has_selection(&self) -> bool {
+        self.term
+            .selection
+            .as_ref()
+            .and_then(|selection| selection.to_range(&self.term))
+            .is_some()
+    }
+
+    /// The selected text. Wrapped lines join without a line break, wide characters appear
+    /// once, and trailing blanks at the end of each line are dropped.
+    #[must_use]
+    pub fn selection_text(&self) -> Option<String> {
+        self.term
+            .selection_to_string()
+            .filter(|text| !text.is_empty())
+    }
+
+    fn selection_span(&self) -> Option<SelectionSpan> {
+        let range = self.term.selection.as_ref()?.to_range(&self.term)?;
+        let offset = self.term.grid().display_offset();
+        // An end above the screen leaves nothing visible; so does a start below it.
+        let end = point_to_viewport(offset, range.end)?;
+        let start = point_to_viewport(offset, range.start)
+            .map_or((0, 0), |point| (point.column.0, point.line));
+        if start.1 >= self.rows {
+            return None;
+        }
+        let end = if end.line >= self.rows {
+            (self.cols.saturating_sub(1), self.rows.saturating_sub(1))
+        } else {
+            (end.column.0, end.line)
+        };
+        Some(SelectionSpan { start, end })
+    }
+
     pub fn modes(&self) -> TerminalModes {
         let mode = *self.term.mode();
         TerminalModes {
@@ -504,6 +627,7 @@ impl TerminalEmulator {
             cursor,
             modes,
             title,
+            selection: self.selection_span(),
         }
     }
 
@@ -799,6 +923,97 @@ mod tests {
         }
         let snapshot = emulator.snapshot();
         assert!(snapshot.text().contains("line 9"));
+    }
+
+    fn select(emulator: &mut TerminalEmulator, from: (usize, usize), to: (usize, usize)) {
+        emulator.start_selection(super::SelectionKind::Cells, from.0, from.1);
+        emulator.extend_selection(to.0, to.1);
+    }
+
+    #[test]
+    fn a_drag_selects_whole_cells_in_either_direction() {
+        let mut emulator = TerminalEmulator::new(20, 3, 100);
+        emulator.feed(b"hello world\r\nsecond line");
+        emulator.start_selection(super::SelectionKind::Cells, 6, 0);
+        assert!(!emulator.has_selection(), "a click alone selects nothing");
+        assert_eq!(emulator.selection_text(), None);
+        emulator.extend_selection(10, 0);
+        assert_eq!(emulator.selection_text().as_deref(), Some("world"));
+        // Back over the anchor: the pressed cell and the pointer's cell are both kept.
+        emulator.extend_selection(0, 0);
+        assert_eq!(emulator.selection_text().as_deref(), Some("hello "));
+        emulator.extend_selection(6, 0);
+        assert_eq!(emulator.selection_text().as_deref(), Some("w"));
+        select(&mut emulator, (6, 0), (5, 1));
+        assert_eq!(emulator.selection_text().as_deref(), Some("world\nsecond"));
+        let span = emulator.snapshot().selection.unwrap();
+        assert_eq!((span.start, span.end), ((6, 0), (5, 1)));
+        assert!(span.contains(19, 0) && span.contains(0, 1) && !span.contains(6, 1));
+        assert!(emulator.clear_selection());
+        assert_eq!(emulator.snapshot().selection, None);
+    }
+
+    #[test]
+    fn selections_copy_wide_characters_once_and_join_wrapped_lines() {
+        let mut emulator = TerminalEmulator::new(10, 4, 100);
+        // Ten columns: the CJK pair takes four cells, then the line wraps.
+        emulator.feed("a漢字bcdefghij\r\nnext".as_bytes());
+        // Ending on the right half of a wide character still copies it whole.
+        select(&mut emulator, (0, 0), (2, 0));
+        assert_eq!(emulator.selection_text().as_deref(), Some("a漢"));
+        select(&mut emulator, (0, 0), (9, 2));
+        assert_eq!(
+            emulator.selection_text().as_deref(),
+            Some("a漢字bcdefghij\nnext"),
+            "a wrapped line copies as one line"
+        );
+        emulator.start_selection(super::SelectionKind::Lines, 3, 1);
+        assert_eq!(
+            emulator.selection_text().as_deref(),
+            Some("a漢字bcdefghij\n")
+        );
+    }
+
+    #[test]
+    fn word_selection_stops_at_separators_and_trailing_blanks_are_dropped() {
+        let mut emulator = TerminalEmulator::new(30, 3, 100);
+        emulator.feed(b"cargo test --workspace   \r\nok");
+        emulator.start_selection(super::SelectionKind::Words, 13, 0);
+        assert_eq!(emulator.selection_text().as_deref(), Some("--workspace"));
+        emulator.extend_selection(1, 1);
+        assert_eq!(
+            emulator.selection_text().as_deref(),
+            Some("--workspace\nok")
+        );
+        emulator.start_selection(super::SelectionKind::Lines, 0, 0);
+        assert_eq!(
+            emulator.selection_text().as_deref(),
+            Some("cargo test --workspace\n")
+        );
+    }
+
+    #[test]
+    fn a_selection_stays_on_its_text_as_output_scrolls_and_reaches_into_scrollback() {
+        let mut emulator = TerminalEmulator::new(20, 3, 100);
+        emulator.feed(b"one\r\ntwo\r\nthree");
+        select(&mut emulator, (0, 1), (2, 1));
+        assert_eq!(emulator.selection_text().as_deref(), Some("two"));
+        emulator.feed(b"\r\nfour\r\nfive");
+        assert_eq!(emulator.selection_text().as_deref(), Some("two"));
+        // "two" is now in the scrollback, above the screen.
+        assert_eq!(emulator.snapshot().selection, None);
+        emulator.scroll_display(2);
+        let span = emulator.snapshot().selection.unwrap();
+        assert_eq!((span.start, span.end), ((0, 1), (2, 1)));
+        // Dragging from the scrollback down to the live screen spans both.
+        select(&mut emulator, (0, 0), (2, 2));
+        emulator.scroll_to_bottom();
+        assert_eq!(emulator.selection_text().as_deref(), Some("one\ntwo\nthr"));
+        let span = emulator.snapshot().selection.unwrap();
+        assert_eq!((span.start, span.end), ((0, 0), (2, 0)));
+        // Clearing the screen drops a selection on the cleared text.
+        emulator.feed(b"\x1b[2J\x1b[3J");
+        assert!(!emulator.has_selection());
     }
 
     #[test]

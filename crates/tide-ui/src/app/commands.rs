@@ -303,6 +303,7 @@ impl App {
                 }
             }
             Command::TerminalClear => self.clear_terminal(),
+            Command::TerminalCopySelection => self.copy_terminal_selection(),
             Command::TerminalKill => self.confirm_kill_terminal(),
             Command::TerminalScrollToTop => self.scroll_terminal(true),
             Command::TerminalScrollToBottom => self.scroll_terminal(false),
