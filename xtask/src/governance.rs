@@ -168,7 +168,14 @@ pub fn load_config(repository_root: &Path) -> Result<GovernanceConfig> {
         config.owner == "thekeith",
         "Governance owner must be thekeith"
     );
-    let checks = ["CI / macOS", "CI / Linux", "CI / PostgreSQL"].map(String::from);
+    let checks = [
+        "CI / macOS",
+        "CI / Linux",
+        "CI / PostgreSQL",
+        "CI / Format, lint and tooling",
+        "CI / Dependencies",
+    ]
+    .map(String::from);
     ensure!(
         equal_members(&config.required_checks, &checks),
         "Required CI check names drifted"
@@ -896,7 +903,13 @@ mod tests {
         let config = config();
         assert_eq!(
             config.required_checks,
-            ["CI / macOS", "CI / Linux", "CI / PostgreSQL"]
+            [
+                "CI / macOS",
+                "CI / Linux",
+                "CI / PostgreSQL",
+                "CI / Format, lint and tooling",
+                "CI / Dependencies"
+            ]
         );
         assert_eq!(config.rulesets.len(), 5);
         assert!(governance_plan(&config).contains(
