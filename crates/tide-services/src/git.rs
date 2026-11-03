@@ -61,12 +61,153 @@ impl GitChange {
     }
 }
 
+/// A multi-step Git command that has stopped part way, usually on a conflict.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OperationKind {
+    Rebase,
+    Merge,
+    CherryPick,
+    Revert,
+    Bisect,
+    /// `git am`, applying patches from a mailbox.
+    ApplyPatches,
+}
+
+/// An operation in progress in the repository, with what Git records about it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GitOperation {
+    pub kind: OperationKind,
+    /// The branch being rebased or bisected, when Git recorded one.
+    pub branch: Option<String>,
+    /// The commit being rebased onto, cherry-picked, reverted or merged in.
+    pub target: Option<String>,
+    /// The step Git is on and how many there are, for rebases and `git am`.
+    pub progress: Option<(usize, usize)>,
+}
+
+impl GitOperation {
+    /// One line for people, such as "Rebasing main onto 1a2b3c4 (3/7)".
+    #[must_use]
+    pub fn describe(&self) -> String {
+        let short = |id: &str| id.chars().take(8).collect::<String>();
+        let progress = self
+            .progress
+            .map(|(step, total)| format!(" ({step}/{total})"))
+            .unwrap_or_default();
+        match (self.kind, &self.branch, &self.target) {
+            (OperationKind::Rebase, Some(branch), Some(onto)) => {
+                format!("Rebasing {branch} onto {}{progress}", short(onto))
+            }
+            (OperationKind::Rebase, None, Some(onto)) => {
+                format!("Rebasing onto {}{progress}", short(onto))
+            }
+            (OperationKind::Rebase, ..) => format!("Rebase in progress{progress}"),
+            (OperationKind::Merge, _, Some(other)) => format!("Merging {}", short(other)),
+            (OperationKind::Merge, ..) => "Merge in progress".into(),
+            (OperationKind::CherryPick, _, Some(commit)) => {
+                format!("Cherry-picking {}", short(commit))
+            }
+            (OperationKind::CherryPick, ..) => "Cherry-pick in progress".into(),
+            (OperationKind::Revert, _, Some(commit)) => format!("Reverting {}", short(commit)),
+            (OperationKind::Revert, ..) => "Revert in progress".into(),
+            (OperationKind::Bisect, Some(branch), _) => format!("Bisecting {branch}"),
+            (OperationKind::Bisect, ..) => "Bisect in progress".into(),
+            (OperationKind::ApplyPatches, ..) => format!("Applying patches{progress}"),
+        }
+    }
+
+    /// A few words for the status bar, such as "Rebasing 3/7".
+    #[must_use]
+    pub fn short_label(&self) -> String {
+        let verb = match self.kind {
+            OperationKind::Rebase => "Rebasing",
+            OperationKind::Merge => "Merging",
+            OperationKind::CherryPick => "Cherry-picking",
+            OperationKind::Revert => "Reverting",
+            OperationKind::Bisect => "Bisecting",
+            OperationKind::ApplyPatches => "Applying",
+        };
+        match self.progress {
+            Some((step, total)) => format!("{verb} {step}/{total}"),
+            None => verb.into(),
+        }
+    }
+}
+
+/// The operation Git has in progress in `git_dir`, read from the files Git keeps there.
+#[must_use]
+pub fn operation_in_progress(git_dir: &Path) -> Option<GitOperation> {
+    let read = |name: &str| {
+        std::fs::read_to_string(git_dir.join(name))
+            .ok()
+            .map(|text| text.trim().to_owned())
+            .filter(|text| !text.is_empty())
+    };
+    let number = |name: &str| read(name).and_then(|text| text.parse::<usize>().ok());
+    let branch = |name: &str| {
+        read(name).map(|name| {
+            name.strip_prefix("refs/heads/")
+                .map_or_else(|| name.clone(), str::to_owned)
+        })
+    };
+    let operation = |kind, branch, target, progress| GitOperation {
+        kind,
+        branch,
+        target,
+        progress,
+    };
+    let steps = |step: Option<usize>, total: Option<usize>| step.zip(total);
+    if git_dir.join("rebase-merge").is_dir() {
+        return Some(operation(
+            OperationKind::Rebase,
+            branch("rebase-merge/head-name").filter(|name| name != "detached HEAD"),
+            read("rebase-merge/onto"),
+            steps(number("rebase-merge/msgnum"), number("rebase-merge/end")),
+        ));
+    }
+    if git_dir.join("rebase-apply").is_dir() {
+        let progress = steps(number("rebase-apply/next"), number("rebase-apply/last"));
+        return Some(if git_dir.join("rebase-apply/applying").exists() {
+            operation(OperationKind::ApplyPatches, None, None, progress)
+        } else {
+            operation(
+                OperationKind::Rebase,
+                branch("rebase-apply/head-name").filter(|name| name != "detached HEAD"),
+                read("rebase-apply/onto"),
+                progress,
+            )
+        });
+    }
+    for (file, kind) in [
+        ("MERGE_HEAD", OperationKind::Merge),
+        ("CHERRY_PICK_HEAD", OperationKind::CherryPick),
+        ("REVERT_HEAD", OperationKind::Revert),
+    ] {
+        if git_dir.join(file).exists() {
+            let target = read(file).and_then(|text| text.lines().next().map(str::to_owned));
+            return Some(operation(kind, None, target, None));
+        }
+    }
+    if git_dir.join("BISECT_LOG").exists() {
+        return Some(operation(
+            OperationKind::Bisect,
+            read("BISECT_START").filter(|start| !start.chars().all(|ch| ch.is_ascii_hexdigit())),
+            None,
+            None,
+        ));
+    }
+    None
+}
+
 /// Read-only repository state used by the Phase 0 Git spike.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GitSnapshot {
     pub root: PathBuf,
+    /// The checked-out branch; None when HEAD is detached, as it is during a rebase.
     pub branch: Option<String>,
     pub head: Option<String>,
+    /// A rebase, merge, cherry-pick, revert, bisect or `git am` that has not finished.
+    pub operation: Option<GitOperation>,
     pub dirty: bool,
     /// Local graph divergence; None means no upstream or bounded traversal unavailable.
     pub ahead_behind: Option<(usize, usize)>,
@@ -215,6 +356,7 @@ fn repository_snapshot_inner(
         root,
         branch,
         head,
+        operation: operation_in_progress(repo.git_dir()),
         dirty: dirty || !changed_paths.is_empty(),
         ahead_behind: if include_divergence {
             divergence(&repo, &cancel)
@@ -485,6 +627,85 @@ mod tests {
                 .any(|change| change.path == "renamed.txt"
                     && change.index == Some(GitStatus::Renamed)
                     && change.previous_path.as_deref() == Some("file.txt"))
+        );
+    }
+
+    #[test]
+    fn detached_head_and_a_stopped_rebase_are_reported_with_their_changes() {
+        let dir = init_repo();
+        let main = String::from_utf8(
+            Command::new("git")
+                .arg("-C")
+                .arg(dir.path())
+                .args(["branch", "--show-current"])
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap()
+        .trim()
+        .to_owned();
+        git(dir.path(), &["checkout", "-q", "--detach"]);
+        let detached = repository_snapshot(dir.path()).unwrap();
+        assert_eq!(detached.branch, None);
+        assert!(detached.head.is_some());
+        assert_eq!(detached.operation, None);
+
+        git(dir.path(), &["checkout", "-q", &main]);
+        git(dir.path(), &["checkout", "-q", "-b", "other"]);
+        std::fs::write(dir.path().join("file.txt"), "other\n").unwrap();
+        git(dir.path(), &["commit", "-qam", "other"]);
+        git(dir.path(), &["checkout", "-q", &main]);
+        for (index, content) in ["two\n", "three\n"].into_iter().enumerate() {
+            std::fs::write(dir.path().join("file.txt"), content).unwrap();
+            git(dir.path(), &["commit", "-qam", &format!("main {index}")]);
+        }
+        let onto = String::from_utf8(
+            Command::new("git")
+                .arg("-C")
+                .arg(dir.path())
+                .args(["rev-parse", "other"])
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap();
+        let status = Command::new("git")
+            .arg("-C")
+            .arg(dir.path())
+            .args(["rebase", "-q", "other"])
+            .output()
+            .unwrap();
+        assert!(!status.status.success(), "the rebase stops on a conflict");
+        let rebasing = repository_snapshot(dir.path()).unwrap();
+        assert_eq!(rebasing.branch, None);
+        let operation = rebasing.operation.expect("a rebase in progress");
+        assert_eq!(operation.kind, OperationKind::Rebase);
+        assert_eq!(operation.branch.as_deref(), Some(main.as_str()));
+        assert_eq!(operation.progress, Some((1, 2)));
+        assert_eq!(
+            operation.describe(),
+            format!("Rebasing {main} onto {} (1/2)", &onto[..8])
+        );
+        assert_eq!(operation.short_label(), "Rebasing 1/2");
+        assert!(rebasing.changes.iter().any(
+            |change| change.path == "file.txt" && change.worktree == Some(GitStatus::Conflict)
+        ));
+
+        git(dir.path(), &["rebase", "--abort"]);
+        // The merge conflicts too; Git leaves MERGE_HEAD for the commit that finishes it.
+        let merge = Command::new("git")
+            .arg("-C")
+            .arg(dir.path())
+            .args(["merge", "-q", "other"])
+            .output()
+            .unwrap();
+        assert!(!merge.status.success());
+        let merging = repository_snapshot(dir.path()).unwrap();
+        assert_eq!(merging.branch.as_deref(), Some(main.as_str()));
+        assert_eq!(
+            merging.operation.map(|operation| operation.kind),
+            Some(OperationKind::Merge)
         );
     }
 

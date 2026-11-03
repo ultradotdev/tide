@@ -139,10 +139,14 @@ impl PostgresSession {
                 .unwrap_or(10_000)
                 .clamp(1_000, 120_000),
         ));
+        // tokio-postgres only decides whether to encrypt; which certificates are
+        // accepted is up to the TLS configuration built for the mode.
         match connection.ssl_mode() {
             SslPreference::Disable => config.ssl_mode(SslMode::Disable),
             SslPreference::Prefer => config.ssl_mode(SslMode::Prefer),
-            SslPreference::Require => config.ssl_mode(SslMode::Require),
+            SslPreference::Require | SslPreference::VerifyCa | SslPreference::VerifyFull => {
+                config.ssl_mode(SslMode::Require)
+            }
         };
 
         let tls_used = Arc::new(AtomicBool::new(false));
@@ -151,7 +155,7 @@ impl PostgresSession {
                 let (client, connection_task) = config
                     .connect(NoTls)
                     .await
-                    .map_err(|error| DbError::Connect(error.to_string()))?;
+                    .map_err(|error| connect_error(&error, connection))?;
                 tokio::spawn(async move {
                     if let Err(error) = connection_task.await {
                         tracing::debug!(%error, "PostgreSQL connection closed");
@@ -167,7 +171,7 @@ impl PostgresSession {
                         used: tls_used.clone(),
                     })
                     .await
-                    .map_err(|error| DbError::Connect(error.to_string()))?;
+                    .map_err(|error| connect_error(&error, connection))?;
                 tokio::spawn(async move {
                     if let Err(error) = connection_task.await {
                         tracing::debug!(%error, "PostgreSQL connection closed");
@@ -476,6 +480,38 @@ impl PostgresSession {
     }
 }
 
+/// A connection failure with its causes, which name the TLS problem, and what to do about
+/// an untrusted certificate.
+fn connect_error(error: &tokio_postgres::Error, connection: &ConnectionConfig) -> DbError {
+    let mut message = error.to_string();
+    let mut source = std::error::Error::source(error);
+    while let Some(cause) = source {
+        let cause_text = cause.to_string();
+        if !message.contains(&cause_text) {
+            message.push_str(": ");
+            message.push_str(&cause_text);
+        }
+        source = cause.source();
+    }
+    if message.contains("certificate") {
+        let hint = match verification(connection) {
+            Verification::Full if message.contains("NotValidForName") => Some(
+                "the certificate does not name this host; connect by a name it lists, or use sslmode=verify-ca",
+            ),
+            Verification::Full | Verification::Chain => Some(
+                "the server's certificate is not from a trusted authority; set its CA certificate, or use sslmode=require to encrypt without checking it",
+            ),
+            Verification::None => None,
+        };
+        if let Some(hint) = hint {
+            message.push_str(" (");
+            message.push_str(hint);
+            message.push(')');
+        }
+    }
+    DbError::Connect(message)
+}
+
 /// Records whether the server accepted the TLS upgrade, so `prefer` can report
 /// a plaintext fallback.
 struct TrackTls<T> {
@@ -517,12 +553,67 @@ fn trusted_roots(certs: Vec<rustls_pki_types::CertificateDer<'static>>) -> rustl
     roots
 }
 
+/// The certificate checks a TLS mode makes, as libpq makes them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Verification {
+    /// `prefer` and `require`: encrypt, but accept any certificate.
+    None,
+    /// `verify-ca`, or `require` with a CA configured: the chain must lead to a trusted
+    /// authority, whatever host the certificate names.
+    Chain,
+    /// `verify-full`: a trusted chain that also names the host.
+    Full,
+}
+
+fn verification(connection: &ConnectionConfig) -> Verification {
+    match connection.ssl_mode() {
+        SslPreference::Disable | SslPreference::Prefer => Verification::None,
+        // libpq treats `require` as `verify-ca` when a root certificate is configured.
+        SslPreference::Require if connection.ssl_ca().is_some() => Verification::Chain,
+        SslPreference::Require => Verification::None,
+        SslPreference::VerifyCa => Verification::Chain,
+        SslPreference::VerifyFull => Verification::Full,
+    }
+}
+
 fn build_rustls(connection: &ConnectionConfig) -> Result<rustls::ClientConfig, DbError> {
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
     let _ = rustls::crypto::ring::default_provider().install_default();
+    let verifier = certificate_verifier(connection, &provider)?;
+    Ok(rustls::ClientConfig::builder_with_provider(provider)
+        .with_safe_default_protocol_versions()
+        .map_err(|error| DbError::Tls(error.to_string()))?
+        .dangerous()
+        .with_custom_certificate_verifier(verifier)
+        .with_no_client_auth())
+}
+
+/// What decides whether the server's certificate is accepted, for the connection's mode.
+fn certificate_verifier(
+    connection: &ConnectionConfig,
+    provider: &Arc<rustls::crypto::CryptoProvider>,
+) -> Result<Arc<dyn ServerCertVerifier>, DbError> {
+    let verification = verification(connection);
+    if verification == Verification::None {
+        return Ok(Arc::new(AnyCertificate(provider.clone())));
+    }
+    let full = rustls::client::WebPkiServerVerifier::builder_with_provider(
+        Arc::new(trusted_roots_for(connection)?),
+        provider.clone(),
+    )
+    .build()
+    .map_err(|error| DbError::Tls(format!("no trusted certificate authorities: {error}")))?;
+    Ok(if verification == Verification::Chain {
+        Arc::new(TrustedChainAnyHost(full))
+    } else {
+        full
+    })
+}
+
+/// The system's trusted authorities, plus the connection's own CA when it names one.
+fn trusted_roots_for(connection: &ConnectionConfig) -> Result<rustls::RootCertStore, DbError> {
     let mut roots = trusted_roots(rustls_native_certs::load_native_certs().certs);
-    if let Some(serde_json::Value::Object(object)) = &connection.ssl
-        && let Some(ca) = object.get("ca").and_then(serde_json::Value::as_str)
-    {
+    if let Some(ca) = connection.ssl_ca() {
         let pem = if ca.contains("-----BEGIN") {
             ca.as_bytes().to_vec()
         } else {
@@ -544,9 +635,110 @@ fn build_rustls(connection: &ConnectionConfig) -> Result<rustls::ClientConfig, D
             ));
         }
     }
-    Ok(rustls::ClientConfig::builder()
-        .with_root_certificates(roots)
-        .with_no_client_auth())
+    Ok(roots)
+}
+
+/// Accepts any certificate, for `prefer` and `require`. The handshake signatures are still
+/// checked, so the connection is encrypted to whoever holds the certificate's key.
+#[derive(Debug)]
+struct AnyCertificate(Arc<rustls::crypto::CryptoProvider>);
+
+/// Checks the chain like `verify-full` but accepts a certificate for another host.
+#[derive(Debug)]
+struct TrustedChainAnyHost(Arc<rustls::client::WebPkiServerVerifier>);
+
+use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+use rustls::{DigitallySignedStruct, SignatureScheme};
+use rustls_pki_types::{CertificateDer, ServerName, UnixTime};
+
+impl ServerCertVerifier for AnyCertificate {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: UnixTime,
+    ) -> Result<ServerCertVerified, rustls::Error> {
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        rustls::crypto::verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &self.0.signature_verification_algorithms,
+        )
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        rustls::crypto::verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &self.0.signature_verification_algorithms,
+        )
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        self.0.signature_verification_algorithms.supported_schemes()
+    }
+}
+
+impl ServerCertVerifier for TrustedChainAnyHost {
+    fn verify_server_cert(
+        &self,
+        end_entity: &CertificateDer<'_>,
+        intermediates: &[CertificateDer<'_>],
+        server_name: &ServerName<'_>,
+        ocsp_response: &[u8],
+        now: UnixTime,
+    ) -> Result<ServerCertVerified, rustls::Error> {
+        use rustls::CertificateError;
+        // The chain is checked before the name, so a name error means the chain is trusted.
+        match self
+            .0
+            .verify_server_cert(end_entity, intermediates, server_name, ocsp_response, now)
+        {
+            Err(rustls::Error::InvalidCertificate(
+                CertificateError::NotValidForName | CertificateError::NotValidForNameContext { .. },
+            )) => Ok(ServerCertVerified::assertion()),
+            other => other,
+        }
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        self.0.verify_tls12_signature(message, cert, dss)
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        self.0.verify_tls13_signature(message, cert, dss)
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        self.0.supported_verify_schemes()
+    }
 }
 
 /// Test a connection without retaining it.
@@ -682,6 +874,80 @@ IQ12asrsAAJ7PpGM7eSMYaBx+p5InRx+
         std::fs::write(&file, TEST_CA).unwrap();
         assert!(build_rustls(&with_ca(file.to_str().unwrap())).is_ok());
         assert!(build_rustls(&with_ca(TEST_CA)).is_ok());
+    }
+
+    /// A CA and a certificate it issued for `db.example`, valid until 2126.
+    const VERIFY_CA: &str = "-----BEGIN CERTIFICATE-----
+MIIBdzCCAR6gAwIBAgIUCF+K7JLG4oAfXh8Olxxf3KTc0DkwCgYIKoZIzj0EAwIw
+GTEXMBUGA1UEAwwOdGlkZS12ZXJpZnktY2EwIBcNMjYxMTAzMDcyNjE1WhgPMjEy
+NjEwMTAwNzI2MTVaMBkxFzAVBgNVBAMMDnRpZGUtdmVyaWZ5LWNhMFkwEwYHKoZI
+zj0CAQYIKoZIzj0DAQcDQgAEi13FzdfEIQ2ZBV8QLUr4fWSxuvaHgdS2QcaGUaQ7
+lbM1PqF2XLMi2uVJWTQWN5XSMYBqy3mfALJCEgT8GzEZyaNCMEAwHQYDVR0OBBYE
+FAA/rORX7WibY7qAT+sSO/ghp+d4MA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/
+BAQDAgIEMAoGCCqGSM49BAMCA0cAMEQCIC4vBh1BsS+Egcjf7esP34QO4gpSKXAC
+73gIzqZf1b2YAiB/HWKyKAqvbzYceU8WbdlAx2Y5P+Mvi2gmbjp0jJ8Lag==
+-----END CERTIFICATE-----
+";
+    const DB_EXAMPLE: &str = "-----BEGIN CERTIFICATE-----
+MIIBfTCCASSgAwIBAgIUdO4wxfJA2az9DiAlhryBZbDinmQwCgYIKoZIzj0EAwIw
+GTEXMBUGA1UEAwwOdGlkZS12ZXJpZnktY2EwIBcNMjYxMTAzMDcyNjE1WhgPMjEy
+NjEwMTAwNzI2MTVaMBUxEzARBgNVBAMMCmRiLmV4YW1wbGUwWTATBgcqhkjOPQIB
+BggqhkjOPQMBBwNCAATLthbVbbknJ66WupuMhiGrZiXEh+MgAUbet3xT4cXwV6OL
+5CFQLZ02Dee0o75jjjKD+trcBEMJTIr45eW8uqUvo0wwSjAMBgNVHRMBAf8EAjAA
+MA4GA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDATAVBgNVHREEDjAM
+ggpkYi5leGFtcGxlMAoGCCqGSM49BAMCA0cAMEQCIHeuUQzmT+l2FHa6YunEFmYv
+xHs+9i/60BpYN4GUMswqAiBte/2SpmzZ830x9c2X2e6zErWZjaHMc7kSw3NaOhe7
+jg==
+-----END CERTIFICATE-----
+";
+
+    /// Whether `mode` (with `ca` trusted, if given) accepts the `db.example` certificate
+    /// when connecting to `host`.
+    fn accepts(mode: &str, ca: Option<&str>, host: &str) -> bool {
+        use rustls_pki_types::pem::PemObject;
+        let mut ssl = serde_json::json!({ "mode": mode });
+        if let Some(ca) = ca {
+            ssl["ca"] = ca.into();
+        }
+        let connection = ConnectionConfig {
+            host: host.to_owned(),
+            ssl: Some(ssl),
+            ..ConnectionConfig::default()
+        };
+        let provider = Arc::new(rustls::crypto::ring::default_provider());
+        let verifier = certificate_verifier(&connection, &provider).unwrap();
+        let leaf = CertificateDer::from_pem_slice(DB_EXAMPLE.as_bytes()).unwrap();
+        verifier
+            .verify_server_cert(
+                &leaf,
+                &[],
+                &ServerName::try_from(host.to_owned()).unwrap(),
+                &[],
+                // 2030-01-01, inside the certificate's validity.
+                UnixTime::since_unix_epoch(Duration::from_secs(1_893_456_000)),
+            )
+            .is_ok()
+    }
+
+    #[test]
+    fn tls_modes_check_certificates_as_libpq_does() {
+        // prefer and require encrypt without checking, so self-signed servers work.
+        for mode in ["prefer", "require"] {
+            assert!(accepts(mode, None, "db.example"), "{mode}");
+            assert!(accepts(mode, None, "other.example"), "{mode}");
+        }
+        // verify-ca needs a trusted chain but not the host name.
+        assert!(!accepts("verify-ca", None, "db.example"));
+        assert!(!accepts("verify-ca", Some(TEST_CA), "db.example"));
+        assert!(accepts("verify-ca", Some(VERIFY_CA), "db.example"));
+        assert!(accepts("verify-ca", Some(VERIFY_CA), "other.example"));
+        // verify-full needs both.
+        assert!(!accepts("verify-full", None, "db.example"));
+        assert!(accepts("verify-full", Some(VERIFY_CA), "db.example"));
+        assert!(!accepts("verify-full", Some(VERIFY_CA), "other.example"));
+        // As in libpq, require with a CA configured checks the chain like verify-ca.
+        assert!(accepts("require", Some(VERIFY_CA), "other.example"));
+        assert!(!accepts("require", Some(TEST_CA), "db.example"));
     }
 
     #[test]

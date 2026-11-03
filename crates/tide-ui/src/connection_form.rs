@@ -69,7 +69,7 @@ impl Field {
     /// The values a choice field cycles through; empty for free text.
     fn choices(self) -> &'static [&'static str] {
         match self {
-            Self::TlsMode => &["disable", "prefer", "require"],
+            Self::TlsMode => &["disable", "prefer", "require", "verify-ca", "verify-full"],
             Self::ReadOnly => &["true", "false"],
             Self::Scope => &["global", "project"],
             _ => &[],
@@ -141,12 +141,7 @@ impl ConnectionForm {
             config.database.clone(),
             config.username.clone(),
             String::new(),
-            match config.ssl_mode() {
-                tide_db::SslPreference::Disable => "disable",
-                tide_db::SslPreference::Prefer => "prefer",
-                tide_db::SslPreference::Require => "require",
-            }
-            .into(),
+            config.ssl_mode().as_str().into(),
             config
                 .ssl
                 .as_ref()
@@ -271,10 +266,17 @@ impl ConnectionForm {
             .map_err(|_| "Port must be 1–65535")?;
         config.database = get(Field::Database).into();
         config.username = get(Field::Username).into();
-        config.ssl = match get(Field::TlsMode) {
-            // Unset means `require` for remote hosts, so a chosen `disable` must be explicit.
-            "disable" => Some(false.into()),
-            "require" | "prefer" => {
+        let mode = tide_db::SslPreference::parse(get(Field::TlsMode))
+            .filter(|mode| mode.as_str() == get(Field::TlsMode))
+            .ok_or("TLS mode must be disable, prefer, require, verify-ca or verify-full")?;
+        let ca = self.field(Field::CaCertificate).input.trim();
+        config.ssl = match mode {
+            // Unset means verify-full for remote hosts, so a chosen `disable` must be explicit.
+            tide_db::SslPreference::Disable => Some(false.into()),
+            mode if ca.is_empty() => Some(mode.as_str().into()),
+            mode => {
+                // Keep any other TLS settings the record has; `mode` replaces the older
+                // `rejectUnauthorized` flag.
                 let mut ssl = self
                     .original
                     .ssl
@@ -282,38 +284,20 @@ impl ConnectionForm {
                     .filter(|v| v.is_object())
                     .cloned()
                     .unwrap_or_else(|| serde_json::json!({}));
-                if get(Field::TlsMode) == "prefer" && get(Field::CaCertificate).is_empty() {
-                    Some(serde_json::json!("prefer"))
-                } else {
-                    ssl["rejectUnauthorized"] = true.into();
-                    if !get(Field::CaCertificate).is_empty() {
-                        ssl["ca"] = self.field(Field::CaCertificate).input.clone().into();
-                    } else if let Some(o) = ssl.as_object_mut() {
-                        o.remove("ca");
-                    }
-                    Some(ssl)
+                if let Some(object) = ssl.as_object_mut() {
+                    object.remove("rejectUnauthorized");
+                    object.insert("mode".into(), mode.as_str().into());
+                    object.insert("ca".into(), ca.into());
                 }
+                Some(ssl)
             }
-            _ => return Err("TLS mode must be disable, prefer, or require".into()),
         };
-        let old_mode = match self.original.ssl_mode() {
-            tide_db::SslPreference::Disable => "disable",
-            tide_db::SslPreference::Prefer => "prefer",
-            tide_db::SslPreference::Require => "require",
-        };
-        let old_ca = self
-            .original
-            .ssl
-            .as_ref()
-            .and_then(|v| v.get("ca"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if get(Field::TlsMode) == old_mode && self.field(Field::CaCertificate).input == old_ca {
-            config.ssl = self.original.ssl.clone();
-        } else if get(Field::TlsMode) == "prefer"
-            && config.ssl.as_ref().is_some_and(|v| v.is_object())
+        // An unchanged mode and CA keep the record as it was, so a stored password that is
+        // tied to this exact destination stays usable.
+        if mode == self.original.ssl_mode()
+            && ca == self.original.ssl_ca().unwrap_or_default().trim()
         {
-            config.ssl.as_mut().unwrap()["mode"] = "prefer".into();
+            config.ssl = self.original.ssl.clone();
         }
         config.read_only = match get(Field::ReadOnly) {
             "true" => true,
@@ -393,7 +377,10 @@ impl Modal for ConnectionForm {
         if key.code == KeyCode::Esc {
             return ModalOutcome::Close;
         }
-        if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Enter {
+        // Most terminals send Ctrl+Enter as a plain Enter, so Ctrl+S saves too.
+        if key.modifiers.contains(KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Enter | KeyCode::Char('s'))
+        {
             return self.submit(Button::Save);
         }
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('t') {
@@ -577,7 +564,7 @@ impl Modal for ConnectionForm {
                 if self.focused_field() == Some(Field::Password) {
                     "Blank keeps a saved password only for the unchanged destination"
                 } else {
-                    "Tab fields/actions · Arrows change options · Ctrl+Enter save · Ctrl+T test"
+                    "Tab fields/actions · Arrows change options · Ctrl+S save · Ctrl+T test"
                 }
             } else {
                 &self.error
@@ -634,6 +621,37 @@ mod tests {
             ..Default::default()
         }
     }
+    #[test]
+    fn tls_modes_follow_libpq_and_unchanged_records_are_kept_as_they_were() {
+        let mut form = ConnectionForm::new(config());
+        // A record from before named modes was always fully verified, and says so.
+        assert_eq!(form.field(Field::TlsMode).input, "verify-full");
+        let save = KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL);
+        assert_eq!(
+            submitted(form.handle_key(save)).config.ssl,
+            Some(true.into())
+        );
+        form.focus = Field::TlsMode as usize;
+        for (mode, ca, expected) in [
+            ("require", "", serde_json::json!("require")),
+            (
+                "verify-ca",
+                "/etc/ca.pem",
+                serde_json::json!({ "mode": "verify-ca", "ca": "/etc/ca.pem" }),
+            ),
+            ("disable", "", serde_json::json!(false)),
+        ] {
+            while form.field(Field::TlsMode).input != mode {
+                form.handle_key(KeyEvent::new(KeyCode::Right, KeyModifiers::NONE));
+            }
+            let field = form.field_mut(Field::CaCertificate);
+            field.input = ca.into();
+            field.cursor = ca.chars().count();
+            let submission = submitted(form.handle_key(save));
+            assert_eq!(submission.config.ssl, Some(expected), "{mode}");
+        }
+    }
+
     #[test]
     fn masked_password_transport_preservation_buttons_and_tiny_geometry() {
         let mut form = ConnectionForm::new(config());

@@ -293,6 +293,82 @@ fn history_opens_independent_connected_copies_and_clear_is_scoped_and_safe() {
 }
 
 #[test]
+fn project_connections_keep_their_password_in_the_user_store_not_the_project() {
+    let (home, mut app) = test_app();
+    let secrets = Arc::new(SecretService::encrypted_only(
+        home.path().join("fixture-secrets.json"),
+    ));
+    secrets.unlock("master-fixture-password").unwrap();
+    app.db.secrets = secrets;
+    app.db.pgpass = None;
+    let config = ConnectionConfig {
+        name: "Team database".into(),
+        host: "db.example.test".into(),
+        database: "app".into(),
+        username: "alice".into(),
+        scope: tide_db::ConnectionScope::Project,
+        ..Default::default()
+    };
+    let submit = |app: &mut App, config: ConnectionConfig, password: &str| {
+        app.with_db(|db, ui| {
+            db.submit_connection_form(
+                crate::connection_form::Submission {
+                    config,
+                    password: Some(password.into()),
+                    action: ConnectionAction::Save,
+                },
+                ui,
+            )
+        });
+    };
+    submit(&mut app, config, "first-fixture-password");
+    assert!(app.status.contains("saved"), "{}", app.status);
+    let project_file = app.paths.workspace_connections_file(&app.workspace);
+    let shared = std::fs::read_to_string(&project_file).unwrap();
+    assert!(shared.contains("Team database"));
+    assert!(!shared.contains("fixture-password") && !shared.contains("passwordSecret"));
+    let saved = app.db.store.connections()[0].clone();
+    assert_eq!(
+        app.db.password(&saved).as_deref(),
+        Some("first-fixture-password")
+    );
+
+    // A new password replaces the old one, whose secret is removed.
+    let old = app.db.store.project_credential(&saved).unwrap().to_owned();
+    submit(&mut app, saved.clone(), "second-fixture-password");
+    assert_eq!(
+        app.db.password(&saved).as_deref(),
+        Some("second-fixture-password")
+    );
+    assert_eq!(app.db.secrets.get(&old), None);
+    assert!(
+        !std::fs::read_to_string(&app.paths.connections_file)
+            .unwrap()
+            .contains("fixture-password")
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn a_libpq_password_file_supplies_passwords_tide_has_not_stored() {
+    use std::os::unix::fs::PermissionsExt;
+    let (home, mut app) = test_app();
+    let pgpass = home.path().join("pgpass");
+    std::fs::write(&pgpass, "db.example.test:5432:app:alice:from-pgpass\n").unwrap();
+    std::fs::set_permissions(&pgpass, std::fs::Permissions::from_mode(0o600)).unwrap();
+    app.db.pgpass = Some(pgpass);
+    let config = ConnectionConfig {
+        name: "Team database".into(),
+        host: "db.example.test".into(),
+        database: "app".into(),
+        username: "alice".into(),
+        scope: tide_db::ConnectionScope::Project,
+        ..Default::default()
+    };
+    assert_eq!(app.db.password(&config).as_deref(), Some("from-pgpass"));
+}
+
+#[test]
 fn database_password_unlock_preserves_draft_and_never_renders_or_persists_plaintext() {
     let (home, mut app) = test_app();
     let secrets = Arc::new(SecretService::encrypted_only(

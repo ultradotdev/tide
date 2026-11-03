@@ -158,6 +158,15 @@ pub(crate) struct GitController {
     pub generation: u64,
     picker_generation: u64,
     jobs: GitJobs,
+    /// The commit message last typed and not yet committed.
+    draft: Option<Draft>,
+}
+
+/// A commit message waiting to be committed. `submitted_on` is the commit it was submitted
+/// on top of, if it was submitted; once HEAD moves on, the commit landed and the draft goes.
+struct Draft {
+    message: String,
+    submitted_on: Option<Option<String>>,
 }
 
 impl GitController {
@@ -167,7 +176,33 @@ impl GitController {
         self.panel.layout(list);
     }
 
-    /// Draws the Source Control section: the branch line and the change list.
+    /// Rows above the change list: the branch line, and a line for a paused operation.
+    pub fn source_control_header_rows(&self) -> u16 {
+        1 + u16::from(
+            self.state
+                .snapshot
+                .as_ref()
+                .is_some_and(|snapshot| snapshot.operation.is_some()),
+        )
+    }
+
+    /// What the branch line says: the branch, the detached commit, or that there is no
+    /// repository.
+    pub fn head_label(&self) -> String {
+        match &self.state.snapshot {
+            None => "no repository".into(),
+            Some(snapshot) => match (&snapshot.branch, &snapshot.head) {
+                (Some(branch), _) => branch.clone(),
+                (None, Some(head)) => {
+                    format!("HEAD detached at {}", crate::display::short_id(head))
+                }
+                (None, None) => "HEAD detached".into(),
+            },
+        }
+    }
+
+    /// Draws the Source Control section: the branch line, any paused operation, and the
+    /// change list.
     pub fn render_source_control(
         &self,
         frame: &mut Frame,
@@ -175,19 +210,26 @@ impl GitController {
         palette: Palette,
         focused: bool,
     ) {
+        let rows = self.source_control_header_rows();
         let [header, list_area] =
-            Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).areas(area);
-        let branch = self
+            Layout::vertical([Constraint::Length(rows), Constraint::Min(1)]).areas(area);
+        let mut lines = vec![Line::from(Span::styled(
+            format!(" {}", self.head_label()),
+            Style::default().fg(palette.accent),
+        ))];
+        if let Some(operation) = self
             .state
             .snapshot
             .as_ref()
-            .and_then(|snapshot| snapshot.branch.as_deref())
-            .unwrap_or("no repository");
+            .and_then(|snapshot| snapshot.operation.as_ref())
+        {
+            lines.push(Line::from(Span::styled(
+                format!(" {}", operation.describe()),
+                Style::default().fg(palette.warning),
+            )));
+        }
         frame.render_widget(
-            Paragraph::new(Span::styled(
-                format!(" {branch}"),
-                Style::default().fg(palette.accent).bg(palette.sidebar),
-            )),
+            Paragraph::new(lines).style(Style::default().bg(palette.sidebar)),
             header,
         );
         self.panel.render(
@@ -288,6 +330,7 @@ impl GitController {
             generation: 0,
             picker_generation: 0,
             jobs: GitJobs::new(jobs, events),
+            draft: None,
         }
     }
 
@@ -387,6 +430,14 @@ impl GitController {
                 // cached rows even when its payload revision equals startup.
                 let revision = self.state.revision.wrapping_add(1);
                 self.state = git;
+                if self.draft.as_ref().is_some_and(|draft| {
+                    draft
+                        .submitted_on
+                        .as_ref()
+                        .is_some_and(|head| *head != self.head())
+                }) {
+                    self.draft = None;
+                }
                 self.state.revision = revision;
                 self.load_inline_diff(ui);
                 self.refresh_diff_views(ui);
@@ -766,7 +817,7 @@ impl GitController {
             KeyCode::Char('S') => self.stage_all(ui),
             KeyCode::Char('u') if file => self.unstage_selected(ui),
             KeyCode::Char('d') if file => self.discard_selected(ui),
-            KeyCode::Char('c') => open_commit_prompt(ui),
+            KeyCode::Char('c') => self.open_commit_prompt(ui),
             KeyCode::Char('r') => self.refresh(ui),
             KeyCode::Enter if file => self.open_selected_diff(ui),
             KeyCode::Enter => self.toggle_panel_group(),
@@ -1006,11 +1057,30 @@ impl GitController {
     }
 
     pub fn commit(&mut self, message: &str, ui: &mut Ui<'_>) {
-        if message.trim().is_empty() {
+        let message = commit_message(message);
+        if message.is_empty() {
             ui.status("Commit message is empty");
             return;
         }
-        self.run(&["commit", "-m", message], ui);
+        // Kept until the commit lands, so a failed commit can be retried without retyping.
+        self.draft = Some(Draft {
+            message: message.clone(),
+            submitted_on: Some(self.head()),
+        });
+        self.run(&["commit", "-m", &message], ui);
+    }
+
+    /// The current commit, as last read.
+    fn head(&self) -> Option<String> {
+        self.state.snapshot.as_ref().and_then(|s| s.head.clone())
+    }
+
+    /// Keeps a commit message the user closed the box on, for the next time it opens.
+    pub fn keep_draft(&mut self, message: &str) {
+        self.draft = (!message.trim().is_empty()).then(|| Draft {
+            message: message.to_owned(),
+            submitted_on: None,
+        });
     }
 
     pub fn run(&mut self, args: &[&str], ui: &mut Ui<'_>) {
@@ -1288,14 +1358,9 @@ impl GitController {
             ])
             .map(|name| name.trim().to_owned())
             .filter(|_| git(&["merge-base", "--is-ancestor", "HEAD", "@{upstream}"]).is_some());
-            let (subject, body) = split_message(&message);
             GitNext::Prompt {
-                title: if body.is_some() {
-                    "Amend Commit (body is kept)".into()
-                } else {
-                    "Amend Commit".into()
-                },
-                initial: subject.to_owned(),
+                title: format!("Amend Commit {}", commit.trim()),
+                initial: message.clone(),
                 action: PromptAction::CommitAmend {
                     commit: commit.trim().to_owned(),
                     message,
@@ -1313,17 +1378,13 @@ impl GitController {
         input: &str,
         ui: &mut Ui<'_>,
     ) {
-        let subject = input.trim();
-        if subject.is_empty() {
+        // The box shows the whole message, summary and body, so what it holds is what is kept.
+        let amended = commit_message(input);
+        if amended.is_empty() {
             ui.status("Commit message is empty");
             return;
         }
-        // The prompt edits the subject; a body the commit had is kept.
-        let amended = match split_message(message).1 {
-            Some(body) => format!("{subject}\n\n{body}"),
-            None => subject.to_owned(),
-        };
-        let args = if amended == message {
+        let args = if amended == commit_message(message) {
             vec!["commit".into(), "--amend".into(), "--no-edit".into()]
         } else {
             vec!["commit".into(), "--amend".into(), "-m".into(), amended]
@@ -1395,7 +1456,11 @@ impl GitController {
     }
 
     pub fn open_commit_prompt(&mut self, ui: &mut Ui<'_>) {
-        open_commit_prompt(ui);
+        let draft = self
+            .draft
+            .as_ref()
+            .map_or("", |draft| draft.message.as_str());
+        open_commit_prompt(ui, draft);
     }
 
     pub fn open_branch_picker(&mut self, ui: &mut Ui<'_>) {
@@ -1954,8 +2019,25 @@ fn confirm(ui: &mut Ui<'_>, args: Vec<String>, title: &str, message: &str) {
     ));
 }
 
-fn open_commit_prompt(ui: &mut Ui<'_>) {
-    *ui.overlay = Some(modal::prompt(PromptAction::Commit, "Commit", ""));
+fn open_commit_prompt(ui: &mut Ui<'_>, draft: &str) {
+    *ui.overlay = Some(modal::prompt(PromptAction::Commit, "Commit", draft));
+}
+
+/// A commit message as Git stores it: no trailing spaces or surrounding blank lines, and
+/// a blank line between the summary and the body, which is how Git tells them apart.
+pub(crate) fn commit_message(input: &str) -> String {
+    let mut lines = input
+        .lines()
+        .map(str::trim_end)
+        .skip_while(|line| line.is_empty())
+        .collect::<Vec<_>>();
+    while lines.last().is_some_and(|line| line.is_empty()) {
+        lines.pop();
+    }
+    if lines.len() > 1 && !lines[1].is_empty() {
+        lines.insert(1, "");
+    }
+    lines.join("\n")
 }
 
 fn git_message(args: &[&str], output: &tide_services::git_process::GitOutput) -> String {
@@ -2094,18 +2176,6 @@ fn empty_choice(action: &str) -> Option<&'static str> {
         "cherryPick" => Some("Git: no commits on other branches that this branch lacks"),
         "revert" | "reset" => Some("Git: this branch has no commits"),
         _ => None,
-    }
-}
-
-/// A commit message's subject line and, when it has one, its body.
-fn split_message(message: &str) -> (&str, Option<&str>) {
-    match message.split_once('\n') {
-        Some((subject, body)) if !body.trim().is_empty() => (
-            subject.trim_end(),
-            Some(body.trim_start_matches(['\n', '\r'])),
-        ),
-        Some((subject, _)) => (subject.trim_end(), None),
-        None => (message, None),
     }
 }
 
