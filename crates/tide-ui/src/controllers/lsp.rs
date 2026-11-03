@@ -667,6 +667,13 @@ impl LspController {
         self.generation = self.generation.wrapping_add(1);
         self.pending = None;
         let editor = ui.workbench.active_editor();
+        let indent = editor.map_or_else(
+            || {
+                let defaults = super::indent_defaults(ui.settings);
+                crate::editor::Indent::from_settings(defaults.tab_size, defaults.insert_spaces)
+            },
+            crate::editor::EditorState::indent,
+        );
         self.origin = Origin {
             revision: editor.map_or(0, |editor| editor.revision()),
             cursor: editor.map_or(Position::new(0, 0), |e| e.document.cursor().position),
@@ -684,8 +691,12 @@ impl LspController {
                 .get(&document.uri)
                 .cloned()
                 .unwrap_or_default(),
-            tab_size: super::tab_size(ui.settings),
-            insert_spaces: ui.setting_bool("editor.insertSpaces", true),
+            tab_size: if indent.insert_spaces {
+                indent.size
+            } else {
+                indent.tab_width
+            },
+            insert_spaces: indent.insert_spaces,
         };
         let lease = self.leases.entry(document.uri.clone()).or_default().clone();
         let clients = self.clients.clone();

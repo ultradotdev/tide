@@ -7,7 +7,7 @@ This guide is also built into Tide, where it shows your own keybindings, setting
 
 ## The one key to remember
 
-Press `Ctrl+K` or `Ctrl+Shift+P` to open the **command palette**. Every command in Tide is there: start typing a few letters of what you want, such as `split`, `commit` or `theme`, and press Enter. The palette is also how you reach anything that has no key, including all the help guides (type `help`).
+Press `Ctrl+K` or `Ctrl+Shift+P` to open the **command palette**. Every command in Tide is there: start typing a few letters of what you want, such as `split`, `commit`, `new terminal` or `theme`, and press Enter. A command's key is shown on the right, so the palette also teaches you the shortcuts, and the commands you ran recently come first. It is also how you reach anything that has no key, including all the help guides (type `help`).
 
 While a terminal has focus, every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, goes to the program running there. Open the palette from a terminal with `F1`.
 
@@ -78,9 +78,11 @@ Install and sign in to an agent outside Tide. Tide finds it on the `PATH` it was
 
 ## Make it yours
 
-- **Settings:** `Ctrl+,` or `Ctrl+Alt+O` lists every setting. They are saved in `~/.config/tide/settings.jsonc`, which you can also edit directly; [Settings Reference](reference/configuration.md) describes each one.
+- **Settings:** `Ctrl+,` or `Ctrl+Alt+O` lists every setting. They are saved in `~/.config/tide/settings.jsonc`, which you can also edit directly: Tide applies your edits as soon as you save the file. [Settings Reference](reference/configuration.md) describes each one.
 - **Keybindings:** `Ctrl+Shift+,` or `Ctrl+Alt+K` lets you change a key. Your own bindings live in `~/.config/tide/keybindings.jsonc` as entries such as `{ "key": "ctrl+alt+p", "command": "workbench.commandPalette" }`. [Keyboard Shortcuts](reference/keyboard-shortcuts.md) lists every active key and command ID.
 - **Themes:** `Ctrl+Alt+R` picks one of the built-in themes; your own go in `~/.config/tide/themes`. See [Themes and Customization](features/themes.md).
+- **File icons:** Tide shows Nerd Font file and folder icons in Ghostty, kitty and WezTerm, which bundle the glyphs, and plain text elsewhere. If your terminal font is a Nerd Font, set `tui.iconStyle` to `nerd` to get the icons in any terminal.
+- **Colors:** Tide uses 24-bit color where the terminal says it supports it, and the nearest of 256 colors elsewhere, such as Terminal.app before macOS 26. If colors look wrong, set `tui.colorMode` to `truecolor` or `256`.
 - **This page:** `workbench.startupEditor` (`welcomeOnFirstRun`) decides when Welcome opens by itself: `welcomeOnFirstRun` the first time Tide starts without a file or session, `welcome` every time it does, and `none` never.
 
 ## Updating and uninstalling

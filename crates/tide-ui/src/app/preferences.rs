@@ -39,6 +39,173 @@ impl App {
             .set_enabled(self.setting_bool("session.databaseQueryHistory", true));
     }
 
+    /// Applies the current value of `key` to the running workbench, for a setting that
+    /// is not simply read where it is used.
+    fn apply_setting(&mut self, key: &str) -> SettingEffect {
+        let value = self.settings.get(key).cloned().unwrap_or_default();
+        match key {
+            "workbench.colorTheme" => {
+                let id = value.as_str().unwrap_or_default();
+                let Some(theme) = self.themes.get(id).cloned() else {
+                    return SettingEffect::Rejected(format!("there is no theme named “{id}”"));
+                };
+                self.themes.select(id);
+                self.palette = Palette::from_theme(&theme);
+                self.syntax.set_theme(&theme);
+            }
+            "tui.sidebar.width" => self.sidebar_width = self.setting_cells(key, 36),
+            "tui.sidebar.visible" => self.sidebar_visible = self.setting_bool(key, true),
+            "tui.sidebar.location" => self.sidebar_left = value.as_str() != Some("right"),
+            "tui.agentsSidebar.visible" => self.ai.agents_visible = self.setting_bool(key, true),
+            "tui.agentsSidebar.width" => self.ai.agents_width = self.setting_cells(key, 36),
+            "tui.terminal.height" => self.dock.height = self.setting_cells(key, 10),
+            "session.databaseQueryHistory" => {
+                self.db.history.set_enabled(self.setting_bool(key, true));
+            }
+            "tui.timeline.mode" | "tui.timeline.commitCount" => {
+                self.git.timeline.file = self
+                    .settings
+                    .get("tui.timeline.mode")
+                    .and_then(serde_json::Value::as_str)
+                    == Some("file");
+                with_ui!(self, |ui| self.git.refresh_timeline(ui));
+            }
+            "tui.diffViewer.showDiagnostics" | "tui.diffViewer.autoRefresh" => {
+                with_ui!(self, |ui| crate::controllers::git::sync_diff_diagnostics(
+                    ui,
+                    &self.lsp.diagnostics
+                ));
+                with_ui!(self, |ui| self.git.refresh_diff_views(ui));
+            }
+            "tui.fileTree.showGitStatus" => {
+                if value == serde_json::Value::Bool(false) {
+                    self.file_tree.set_decorations(Vec::new());
+                } else {
+                    with_ui!(self, |ui| self.git.refresh(ui));
+                }
+            }
+            "ai.cli.workspaceAliases" => self.with_ai(|ai, ui| ai.rebuild_sessions(ui)),
+            "tui.terminal.scrollback" | "terminal.shell" => return SettingEffect::NewTerminals,
+            _ if NEXT_START.contains(&key) => return SettingEffect::NextStart,
+            _ => {}
+        }
+        SettingEffect::Now
+    }
+
+    /// Shows problems with the user's configuration files in one dialog, or in the
+    /// status bar while another dialog is open.
+    pub(super) fn show_config_problems(&mut self, problems: &[String]) {
+        let message = format!(
+            "{}\n\nFix the file and save it: Tide applies it as soon as it is valid. Until then Tide keeps the settings it already had. Changes made from the Settings and Keyboard Shortcuts lists leave a file with errors unchanged.",
+            problems.join("\n")
+        );
+        if self.overlay.is_none()
+            || self
+                .overlay
+                .as_ref()
+                .is_some_and(|overlay| overlay.base().title == "Configuration Problems")
+        {
+            self.overlay = Some(modal::info("Configuration Problems", &message));
+        }
+        self.set_status(format!(
+            "Configuration problem: {}",
+            problems.first().map_or("", String::as_str)
+        ));
+    }
+
+    /// Re-reads settings.jsonc and keybindings.jsonc when either changed on disk since
+    /// Tide last read or wrote it.
+    pub(super) fn reload_config_if_changed(&mut self) -> bool {
+        let stamps = config_stamps(&self.paths);
+        if stamps == self.config_stamps {
+            return false;
+        }
+        self.config_stamps = stamps;
+        self.reload_config()
+    }
+
+    /// Applies the settings and keybindings files as they are now. A file that does not
+    /// parse is reported and the configuration Tide already had is kept.
+    pub(super) fn reload_config(&mut self) -> bool {
+        let mut problems = Vec::new();
+        let mut applied = Vec::new();
+        let mut new_terminals = Vec::new();
+        let mut next_start = Vec::new();
+        if let Some(settings) = load_settings(&self.paths, &mut problems, "settings it had") {
+            let mut keys = settings
+                .iter()
+                .map(|(key, _)| key.clone())
+                .chain(self.settings.iter().map(|(key, _)| key.clone()))
+                .filter(|key| settings.get(key) != self.settings.get(key))
+                .collect::<Vec<_>>();
+            keys.sort();
+            keys.dedup();
+            let previous = std::mem::replace(&mut self.settings, settings);
+            for key in keys {
+                match self.apply_setting(&key) {
+                    SettingEffect::Now => applied.push(key),
+                    SettingEffect::NewTerminals => new_terminals.push(key),
+                    SettingEffect::NextStart => next_start.push(key),
+                    SettingEffect::Rejected(problem) => {
+                        problems.push(format!(
+                            "{}: “{key}”: {problem}, so Tide kept its previous value.",
+                            self.paths.settings_file.display()
+                        ));
+                        if let Some(value) = previous.get(&key) {
+                            self.settings.set(key, value.clone());
+                        }
+                    }
+                }
+            }
+        }
+        let mut keys_changed = false;
+        if let Some(user) = load_user_keybindings(&self.paths, &mut problems, "keys it had")
+            && user != self.user_keybindings
+        {
+            self.keybindings = merged_keybindings(&user);
+            self.user_keybindings = user;
+            self.install_alternate_bindings();
+            self.rebuild_keymap();
+            keys_changed = true;
+        }
+        if !problems.is_empty() {
+            self.show_config_problems(&problems);
+            return true;
+        }
+        if self
+            .overlay
+            .as_ref()
+            .is_some_and(|overlay| overlay.base().title == "Configuration Problems")
+        {
+            self.overlay = None;
+        }
+        let mut parts = Vec::new();
+        if !applied.is_empty() || !new_terminals.is_empty() || !next_start.is_empty() {
+            parts.push("Settings reloaded".to_owned());
+        }
+        if keys_changed {
+            parts.push("Keybindings reloaded".to_owned());
+        }
+        if parts.is_empty() {
+            return false;
+        }
+        let mut message = parts.join("; ");
+        if !new_terminals.is_empty() {
+            message.push_str(&format!(
+                "; {} applies to new terminals",
+                new_terminals.join(", ")
+            ));
+        }
+        if !next_start.is_empty() {
+            message.push_str(&format!(
+                "; {} takes effect after restart",
+                next_start.join(", ")
+            ));
+        }
+        self.set_status(message);
+        true
+    }
+
     pub(super) fn update_setting(&mut self, key: &str, input: &str) {
         let value = serde_json::from_str::<serde_json::Value>(input.trim())
             .unwrap_or_else(|_| serde_json::Value::String(input.trim().to_owned()));
@@ -57,68 +224,15 @@ impl App {
             tide_config::set_jsonc_member(text, key, &value)
         }) {
             Ok(()) => {
+                self.config_stamps = config_stamps(&self.paths);
                 self.settings = next;
-                if key == "workbench.colorTheme" {
-                    self.select_theme(value.as_str().unwrap());
-                } else if key.starts_with("tui.sidebar.")
-                    || key.starts_with("tui.agentsSidebar.")
-                    || key == "tui.terminal.height"
-                    || key == "session.databaseQueryHistory"
-                {
-                    match key {
-                        "tui.sidebar.width" => {
-                            self.sidebar_width = saturating_u16_from_u64(value.as_u64().unwrap())
-                        }
-                        "tui.sidebar.visible" => self.sidebar_visible = value.as_bool().unwrap(),
-                        "tui.sidebar.location" => {
-                            self.sidebar_left = value.as_str() == Some("left")
-                        }
-                        "tui.agentsSidebar.visible" => {
-                            self.ai.agents_visible = value.as_bool().unwrap()
-                        }
-                        "tui.agentsSidebar.width" => {
-                            self.ai.agents_width = saturating_u16_from_u64(value.as_u64().unwrap())
-                        }
-                        "tui.terminal.height" => {
-                            self.dock.height = saturating_u16_from_u64(value.as_u64().unwrap())
-                        }
-                        "session.databaseQueryHistory" => {
-                            self.db.history.set_enabled(value.as_bool().unwrap())
-                        }
-                        _ => {}
-                    }
-                }
-                if matches!(key, "tui.timeline.mode" | "tui.timeline.commitCount") {
-                    self.git.timeline.file = self
-                        .settings
-                        .get("tui.timeline.mode")
-                        .and_then(serde_json::Value::as_str)
-                        == Some("file");
-                    with_ui!(self, |ui| self.git.refresh_timeline(ui));
-                }
-                if matches!(
-                    key,
-                    "tui.diffViewer.showDiagnostics" | "tui.diffViewer.autoRefresh"
-                ) {
-                    with_ui!(self, |ui| crate::controllers::git::sync_diff_diagnostics(
-                        ui,
-                        &self.lsp.diagnostics
-                    ));
-                    with_ui!(self, |ui| self.git.refresh_diff_views(ui));
-                }
-                if key == "tui.fileTree.showGitStatus" {
-                    if value == serde_json::Value::Bool(false) {
-                        self.file_tree.set_decorations(Vec::new());
-                    } else {
-                        with_ui!(self, |ui| self.git.refresh(ui));
-                    }
-                }
+                let effect = self.apply_setting(key);
                 self.set_status(format!(
                     "Setting {key} updated{}",
-                    if matches!(key, "tui.terminal.scrollback" | "terminal.shell") {
-                        "; applies to new terminals"
-                    } else {
-                        ""
+                    match effect {
+                        SettingEffect::NewTerminals => "; applies to new terminals",
+                        SettingEffect::NextStart => "; takes effect after restart",
+                        SettingEffect::Now | SettingEffect::Rejected(_) => "",
                     }
                 ));
             }
@@ -158,6 +272,7 @@ impl App {
             self.set_status(format!("Keybinding not saved: {error}"));
             return;
         }
+        self.config_stamps = config_stamps(&self.paths);
         self.keybindings.retain(|binding| {
             !((canonical_key(&binding.key) == canonical
                 || canonical_key(&binding.key) == canonical_key(new_key))
@@ -209,6 +324,7 @@ impl App {
             self.set_status(format!("Theme not saved: {error}"));
             return;
         }
+        self.config_stamps = config_stamps(&self.paths);
         self.themes.select(id);
         self.settings = next;
         self.palette = Palette::from_theme(&theme);
@@ -231,6 +347,36 @@ impl App {
             .unwrap_or_default()
     }
 
+    /// Whether icons use Nerd Font glyphs: `tui.iconStyle`, where `auto` uses them only
+    /// in terminals that bundle the glyphs.
+    pub(crate) fn nerd_icons(&self) -> bool {
+        match self
+            .settings
+            .get("tui.iconStyle")
+            .and_then(serde_json::Value::as_str)
+        {
+            Some("nerd") => true,
+            Some("ascii") => false,
+            _ => self.terminal.nerd_font,
+        }
+    }
+
+    /// The colours sent to the terminal: `tui.colorMode`, where `auto` uses 24-bit
+    /// colour only in terminals known to show it.
+    pub(crate) fn color_depth(&self) -> crate::display::ColorDepth {
+        use crate::display::ColorDepth;
+        match self
+            .settings
+            .get("tui.colorMode")
+            .and_then(serde_json::Value::as_str)
+        {
+            Some("truecolor") => ColorDepth::TrueColor,
+            Some("256") => ColorDepth::Indexed,
+            _ if self.terminal.truecolor => ColorDepth::TrueColor,
+            _ => ColorDepth::Indexed,
+        }
+    }
+
     pub(super) fn show_line_numbers(&self) -> bool {
         self.settings
             .get("editor.lineNumbers")
@@ -241,6 +387,114 @@ impl App {
     pub(super) fn tab_size(&self) -> usize {
         crate::controllers::tab_size(&self.settings)
     }
+
+    /// `editor.tabSize`, `editor.insertSpaces` and `editor.detectIndentation`.
+    pub(super) fn indent_defaults(&self) -> crate::editor::IndentDefaults {
+        crate::controllers::indent_defaults(&self.settings)
+    }
+}
+
+/// How a changed setting reaches the running workbench.
+enum SettingEffect {
+    Now,
+    NewTerminals,
+    /// Read only while Tide starts.
+    NextStart,
+    Rejected(String),
+}
+
+/// Settings read only while Tide starts.
+const NEXT_START: &[&str] = &[
+    "session.restoreOnStartup",
+    "workbench.startupEditor",
+    "update.checkAutomatically",
+    "tui.outline.collapsedOnStartup",
+    "tui.timeline.collapsedOnStartup",
+];
+
+/// A configuration file's modification time and length, or `None` when it is missing.
+pub(super) type ConfigStamp = (Option<std::time::SystemTime>, u64);
+
+/// The current stamps of the settings and keybindings files.
+pub(super) fn config_stamps(paths: &tide_config::Paths) -> [Option<ConfigStamp>; 2] {
+    [&paths.settings_file, &paths.keybindings_file].map(|path| {
+        std::fs::metadata(path)
+            .ok()
+            .map(|metadata| (metadata.modified().ok(), metadata.len()))
+    })
+}
+
+/// The built-in settings with the user's file merged in. A value of the wrong type or
+/// range is replaced by its default and reported. `None` when the file does not parse:
+/// the caller keeps `fallback`, which the report names.
+pub(super) fn load_settings(
+    paths: &tide_config::Paths,
+    problems: &mut Vec<String>,
+    fallback: &str,
+) -> Option<Settings> {
+    let mut settings = crate::catalog::settings();
+    if !paths.settings_file.exists() {
+        return Some(settings);
+    }
+    let user = tide_config::load_jsonc::<Settings>(&paths.settings_file)
+        .inspect_err(|error| {
+            tracing::warn!(%error, "user settings were not loaded");
+            problems.push(format!("{error}. Tide is using the {fallback}."));
+        })
+        .ok()?;
+    let defaults = settings.clone();
+    settings.merge(&user);
+    let invalid = settings
+        .iter()
+        .filter(|(key, value)| {
+            crate::preferences::supported(key) && crate::preferences::validate(key, value).is_err()
+        })
+        .map(|(key, _)| key.clone())
+        .collect::<Vec<_>>();
+    for key in invalid {
+        problems.push(format!(
+            "{}: “{key}” has an invalid value, so Tide is using its default.",
+            paths.settings_file.display()
+        ));
+        if let Some(value) = defaults.get(&key) {
+            settings.set(key, value.clone());
+        }
+    }
+    Some(settings)
+}
+
+/// The entries of the user's keybindings file, or `None` when it does not parse.
+pub(super) fn load_user_keybindings(
+    paths: &tide_config::Paths,
+    problems: &mut Vec<String>,
+    fallback: &str,
+) -> Option<Vec<Keybinding>> {
+    if !paths.keybindings_file.exists() {
+        return Some(Vec::new());
+    }
+    tide_config::load_jsonc::<Vec<Keybinding>>(&paths.keybindings_file)
+        .inspect_err(|error| {
+            tracing::warn!(%error, "user keybindings were not loaded");
+            problems.push(format!("{error}. Tide is using the {fallback}."));
+        })
+        .ok()
+}
+
+/// The built-in keybindings with `user` entries replacing the binding for the same key
+/// and context, or added after them.
+pub(super) fn merged_keybindings(user: &[Keybinding]) -> Vec<Keybinding> {
+    let mut keybindings = tide_config::builtin::keybindings();
+    for binding in user {
+        let canonical = canonical_key(&binding.key);
+        if let Some(existing) = keybindings.iter_mut().find(|existing| {
+            canonical_key(&existing.key) == canonical && existing.when == binding.when
+        }) {
+            *existing = binding.clone();
+        } else {
+            keybindings.push(binding.clone());
+        }
+    }
+    keybindings
 }
 
 /// Applies `edit` to the user's JSONC file at `path`, which may not exist yet. Only the

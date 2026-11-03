@@ -52,8 +52,16 @@ fn welcome_opens_on_the_first_launch_only() {
     assert_eq!(active_help(&first), Some("welcome"));
     assert_eq!(tab_titles(&first), ["Welcome"]);
     let text = first.workbench.active_editor().unwrap().document.text();
-    assert!(text.starts_with("# Welcome to Tide"));
-    assert!(text.contains("| Open the command palette | `Ctrl+K` or `Ctrl+Shift+P` |"));
+    assert!(
+        text.starts_with("Welcome to Tide"),
+        "formatted, not Markdown: {text}"
+    );
+    assert!(!text.contains("| --- |") && !text.contains("## "), "{text}");
+    let row = text
+        .lines()
+        .find(|line| line.starts_with("Open the command palette"))
+        .unwrap();
+    assert!(row.ends_with("  Ctrl+K or Ctrl+Shift+P"), "{row}");
     assert!(marker.is_file());
     drop(first);
 
@@ -169,7 +177,7 @@ fn reopening_a_help_page_renders_it_again_in_place() {
             .unwrap()
             .document
             .text()
-            .contains("`Ctrl+Alt+J`")
+            .contains("Ctrl+Alt+J")
     );
     let binding = app
         .keybindings
@@ -183,7 +191,7 @@ fn reopening_a_help_page_renders_it_again_in_place() {
     assert_eq!(app.workbench.focused_pane().tabs.len(), tabs);
     assert_eq!(active_help(&app), Some("keyboard-shortcuts"));
     let text = app.workbench.active_editor().unwrap().document.text();
-    assert!(text.contains("`Ctrl+Alt+J`"), "{text}");
+    assert!(text.contains("Ctrl+Alt+J"), "{text}");
     assert!(
         app.workbench
             .active_editor()
@@ -237,7 +245,13 @@ fn help_tabs_are_saved_as_pages_and_rendered_again_on_restore() {
     assert_eq!(tab_titles(&restored), ["Welcome", "Help: Settings"]);
     assert_eq!(active_help(&restored), Some("settings"));
     let text = restored.workbench.active_editor().unwrap().document.text();
-    assert!(text.contains("| `editor.tabSize` | Number of spaces per tab | **`7`** | `2` |"));
+    let row = text
+        .lines()
+        .find(|line| line.starts_with("editor.tabSize "))
+        .unwrap()
+        .split_whitespace()
+        .collect::<Vec<_>>();
+    assert!(row.ends_with(&["7", "2", "1–16"]), "{row:?}");
 }
 
 #[test]

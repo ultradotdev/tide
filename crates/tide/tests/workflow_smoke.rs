@@ -31,6 +31,9 @@ impl Fixture {
         config.rows = 40;
         config.env = vec![
             ("TERM".into(), "xterm-256color".into()),
+            // A terminal that bundles Nerd Font glyphs, so the default icon style
+            // draws them.
+            ("TERM_PROGRAM".into(), "ghostty".into()),
             ("PATH".into(), "/usr/bin:/bin".into()),
             ("HOME".into(), self.home.path().display().to_string()),
             ("TIDE_NO_UPDATE_CHECK".into(), "1".into()),
@@ -1335,7 +1338,7 @@ fn welcome_opens_once_and_help_follows_the_palette_and_user_keys() {
     let mut session = PtySession::spawn(fixture.config(&fixture.workspace)).unwrap();
     let mut screen = TerminalEmulator::new(120, 40, 1000);
     wait_screen(&session, &mut screen, |s| {
-        s.text().contains("# Welcome to Tide")
+        s.text().contains("Welcome to Tide 0") && !s.text().contains("# Welcome")
     });
     session.write(&[0x0b]).unwrap();
     wait_screen(&session, &mut screen, |s| {
@@ -1345,7 +1348,9 @@ fn welcome_opens_once_and_help_follows_the_palette_and_user_keys() {
     wait_screen(&session, &mut screen, |s| s.text().contains("Help: Git"));
     session.write(b"\r").unwrap();
     wait_screen(&session, &mut screen, |s| {
-        s.text().contains("# Git Workflows") && tab_bar_text(s).contains("Help: Git")
+        s.text().contains("Git Workflows")
+            && !s.text().contains("# Git")
+            && tab_bar_text(s).contains("Help: Git")
     });
     session.write(b"x").unwrap();
     wait_screen(&session, &mut screen, |s| {
@@ -1370,10 +1375,10 @@ fn welcome_opens_once_and_help_follows_the_palette_and_user_keys() {
     let start = wait_screen(&session, &mut screen, |s| {
         s.text().contains("Ctrl+Alt+W opens the Welcome guide")
     });
-    assert!(!start.text().contains("# Welcome to Tide"));
+    assert!(!start.text().contains("Welcome to Tide 0"));
     session.write(b"\x1b\x17").unwrap();
     wait_screen(&session, &mut screen, |s| {
-        s.text().contains("# Welcome to Tide") && s.text().contains("`Ctrl+Alt+W`")
+        s.text().contains("Welcome to Tide 0") && s.text().contains("Ctrl+Alt+W")
     });
     quit(&mut session);
 }

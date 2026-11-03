@@ -13,6 +13,7 @@ mod delimiters;
 pub mod diff_browser;
 mod display;
 pub mod editor;
+pub mod editorconfig;
 pub mod file_tree;
 mod git_jobs;
 pub mod git_panel;

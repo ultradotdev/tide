@@ -1,7 +1,7 @@
 <!-- Generated from crates/tide-ui/src/help/pages/themes.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Themes and Customization
 
-One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk.
+One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk. In a terminal without 24-bit color, Tide shows each theme color as the nearest of the 256-color palette; see `tui.colorMode` in [Settings Reference](../reference/configuration.md).
 
 ## Choose a theme
 
@@ -37,7 +37,7 @@ Put `.json` or `.jsonc` theme files in `~/.config/tide/themes` and restart Tide;
 
 ## Settings
 
-Run `Ctrl+,` or `Ctrl+Alt+O` to browse and change settings, or edit `~/.config/tide/settings.jsonc` directly; Tide reads it at startup and rewrites it when you change a setting in the app. Values that fail validation fall back to their defaults, and keys Tide does not know are kept but ignored. [Settings Reference](../reference/configuration.md) lists every setting with its default and current value.
+Run `Ctrl+,` or `Ctrl+Alt+O` to browse and change settings, or edit `~/.config/tide/settings.jsonc` directly; Tide applies your edits when you save the file and rewrites it when you change a setting in the app. Values that fail validation fall back to their defaults, and keys Tide does not know are kept but ignored. [Settings Reference](../reference/configuration.md) lists every setting with its default and current value.
 
 ## Keybindings
 
@@ -54,7 +54,7 @@ Run `Ctrl+,` or `Ctrl+Alt+O` to browse and change settings, or edit `~/.config/t
 ]
 ```
 
-An entry with the same key and `when` context as a default replaces it; other entries are added. A command of `""` or `-<command>` removes the key. Context bindings win over global ones for the same key. Restart Tide after editing the file by hand. [Keyboard Shortcuts](../reference/keyboard-shortcuts.md) lists every key and command ID, and [All Commands](../reference/commands.md) lists the commands.
+An entry with the same key and `when` context as a default replaces it; other entries are added. A command of `""` or `-<command>` removes the key. Context bindings win over global ones for the same key. Edits you make to the file by hand apply when you save it. [Keyboard Shortcuts](../reference/keyboard-shortcuts.md) lists every key and command ID, and [All Commands](../reference/commands.md) lists the commands.
 
 ## Startup
 

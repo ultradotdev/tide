@@ -16,7 +16,9 @@ use tide_services::{HighlightSpan, SyntaxHighlighter};
 
 use crate::palette::Palette;
 
+pub mod indent;
 mod lines;
+pub use indent::{Indent, IndentDefaults, IndentSource};
 pub use lines::{CaseTransform, CommentMode};
 pub(crate) use lines::{block_comment, line_comment};
 
@@ -69,6 +71,15 @@ struct SharedDocument {
     /// The status bar's line ending for a document version; detecting it
     /// scans up to 256 KiB.
     line_ending: Option<(u64, &'static str)>,
+    /// `.editorconfig` and detected indentation, worked out on first use.
+    style: Option<std::sync::Arc<FileStyle>>,
+}
+
+/// What a file's surroundings and its own text say about how to edit it.
+#[derive(Debug, Default)]
+pub struct FileStyle {
+    pub config: crate::editorconfig::EditorConfig,
+    pub detected: Option<indent::Detected>,
 }
 
 #[derive(Debug, Default)]
@@ -79,6 +90,8 @@ struct DiskState {
     baseline_hash: Option<String>,
     recovery_conflict: bool,
     initialized: bool,
+    /// The file exists and this user may not write it.
+    read_only: bool,
 }
 
 impl DocumentHandle {
@@ -100,6 +113,7 @@ impl DocumentHandle {
                 views: vec![Arc::downgrade(&view)],
                 disk: DiskState::default(),
                 line_ending: None,
+                style: None,
             })),
             view,
         }
@@ -270,6 +284,7 @@ impl DocumentHandle {
                 stamp,
                 baseline_hash: path.and_then(hash_file),
                 initialized: true,
+                read_only: path.is_some_and(file_is_read_only),
                 ..DiskState::default()
             };
         }
@@ -282,6 +297,8 @@ impl DocumentHandle {
         let Ok(metadata) = std::fs::metadata(path) else {
             return true;
         };
+        let read_only = file_is_read_only(path);
+        crate::lock(&self.shared).disk.read_only = read_only;
         let stamp = FileStamp::from_metadata(&metadata);
         let baseline = {
             let shared = crate::lock(&self.shared);
@@ -326,7 +343,46 @@ impl DocumentHandle {
             baseline_hash: hash_file(path),
             recovery_conflict: false,
             initialized: true,
+            read_only: file_is_read_only(path),
         };
+    }
+
+    /// Whether the file was read-only when last checked: on open, on save and by the
+    /// periodic check for outside changes.
+    #[must_use]
+    pub fn disk_read_only(&self) -> bool {
+        crate::lock(&self.shared).disk.read_only
+    }
+
+    /// The `.editorconfig` properties and detected indentation for `path`, read once.
+    pub fn file_style(&self, path: Option<&Path>) -> std::sync::Arc<FileStyle> {
+        if let Some(style) = &crate::lock(&self.shared).style {
+            return style.clone();
+        }
+        let sample = self.with(|document| {
+            let lines = document.len_lines().min(1000);
+            (0..lines)
+                .filter_map(|line| document.line(line))
+                .collect::<Vec<_>>()
+                .join("\n")
+        });
+        let config = path
+            .map(crate::editorconfig::EditorConfig::for_file)
+            .unwrap_or_default();
+        if let Some(ending) = config.end_of_line {
+            self.with_mut(|document| document.set_default_line_break(ending.as_str()));
+        }
+        let style = std::sync::Arc::new(FileStyle {
+            config,
+            detected: indent::detect(&sample),
+        });
+        crate::lock(&self.shared).style = Some(style.clone());
+        style
+    }
+
+    /// Forgets the file style, so it is read again for a new path or `.editorconfig`.
+    pub fn reset_file_style(&self) {
+        crate::lock(&self.shared).style = None;
     }
 
     #[must_use]
@@ -504,6 +560,18 @@ impl DocumentHandle {
     }
 }
 
+/// The blank columns left of a help page's text.
+const HELP_GUTTER: usize = 2;
+/// The width a help page is laid out for before its first draw.
+const DEFAULT_HELP_WIDTH: usize = 100;
+
+#[derive(Debug, Clone)]
+struct HelpView {
+    source: String,
+    width: usize,
+    lines: Vec<crate::help::format::Line>,
+}
+
 #[derive(Debug, Clone)]
 struct SearchCache {
     revision: u64,
@@ -544,6 +612,8 @@ pub struct EditorState {
     pub historical: Option<(PathBuf, String)>,
     /// The help page this read-only, path-less buffer renders.
     pub help: Option<&'static crate::help::Page>,
+    /// The help page's Markdown and its formatted lines for the current width.
+    help_view: Option<HelpView>,
     pub document: DocumentHandle,
     pub scroll_top: usize,
     pub scroll_left: usize,
@@ -573,6 +643,9 @@ pub struct EditorState {
     fold_deferred: Option<(u64, Instant)>,
     relative_numbers: bool,
     indent_unit: String,
+    indent: Indent,
+    /// Go to Line asked for the cursor line to be centred at the next layout.
+    center_cursor: bool,
     drag_anchor: Option<Position>,
     drag_scrollbar: bool,
     search_cache: std::cell::RefCell<Option<SearchCache>>,
@@ -595,6 +668,7 @@ impl Clone for EditorState {
             hunk_edit: self.hunk_edit.clone(),
             historical: self.historical.clone(),
             help: self.help,
+            help_view: self.help_view.clone(),
             document: self.document.fork_view(),
             scroll_top: self.scroll_top,
             scroll_left: self.scroll_left,
@@ -621,6 +695,8 @@ impl Clone for EditorState {
             fold_deferred: self.fold_deferred,
             relative_numbers: self.relative_numbers,
             indent_unit: self.indent_unit.clone(),
+            indent: self.indent,
+            center_cursor: false,
             drag_anchor: None,
             drag_scrollbar: false,
             search_cache: std::cell::RefCell::new(None),
@@ -665,6 +741,7 @@ impl EditorState {
             hunk_edit: None,
             historical: None,
             help: None,
+            help_view: None,
             document: DocumentHandle::new(Document::new("")),
             scroll_top: 0,
             scroll_left: 0,
@@ -691,6 +768,8 @@ impl EditorState {
             fold_deferred: None,
             relative_numbers: false,
             indent_unit: "  ".into(),
+            indent: Indent::from_settings(2, true),
+            center_cursor: false,
             drag_anchor: None,
             drag_scrollbar: false,
             search_cache: std::cell::RefCell::new(None),
@@ -706,16 +785,70 @@ impl EditorState {
         state
     }
 
-    /// A read-only Markdown buffer showing a rendered help page.
+    /// A read-only view of a help page: `markdown` shown as formatted text, laid out
+    /// again whenever the width changes.
     #[must_use]
-    pub fn help(page: &'static crate::help::Page, text: &str) -> Self {
-        let mut state = Self::scratch(text, "md");
-        state
-            .document
-            .with_mut(|document| document.set_read_only(true));
-        state.document.mark_clean();
+    pub fn help(page: &'static crate::help::Page, markdown: &str) -> Self {
+        let mut state = Self::scratch("", "txt");
         state.help = Some(page);
+        state.help_view = Some(HelpView {
+            source: markdown.to_owned(),
+            width: 0,
+            lines: Vec::new(),
+        });
+        state.relayout_help(DEFAULT_HELP_WIDTH);
         state
+    }
+
+    /// The width the help page is laid out for.
+    #[must_use]
+    pub fn help_width(&self) -> Option<usize> {
+        self.help_view.as_ref().map(|view| view.width)
+    }
+
+    /// Lays the help page out for `width` cells, keeping the top line's place in the
+    /// page. The buffer is rebuilt, so the cursor moves to the top of the view.
+    pub fn relayout_help(&mut self, width: usize) {
+        let Some(view) = &mut self.help_view else {
+            return;
+        };
+        let width = width.clamp(20, crate::help::format::MAX_WIDTH);
+        if view.width == width {
+            return;
+        }
+        let anchor = view.lines.get(self.scroll_top).map(|line| {
+            let first = view
+                .lines
+                .iter()
+                .position(|candidate| candidate.block == line.block)
+                .unwrap_or(self.scroll_top);
+            (line.block, self.scroll_top - first)
+        });
+        view.width = width;
+        view.lines = crate::help::format::layout(&view.source, width);
+        self.scroll_top = anchor.map_or(0, |(block, offset)| {
+            let start = view
+                .lines
+                .iter()
+                .position(|line| line.block >= block)
+                .unwrap_or(0);
+            let length = view.lines[start..]
+                .iter()
+                .take_while(|line| line.block == block)
+                .count();
+            start + offset.min(length.saturating_sub(1))
+        });
+        let mut document = Document::new(crate::help::format::text(&view.lines));
+        document.set_read_only(true);
+        self.document = DocumentHandle::new(document);
+        self.document.initialize_disk(None, None);
+        self.document.mark_clean();
+        self.document.set_cursor(Position::new(self.scroll_top, 0));
+        self.follow_cursor = false;
+        self.scroll_left = 0;
+        self.folded.clear();
+        self.fold_regions.clear();
+        self.rendered_rows.clear();
     }
 
     pub fn from_content(path: Option<PathBuf>, content: &str) -> Self {
@@ -758,6 +891,7 @@ impl EditorState {
             hunk_edit: None,
             historical: None,
             help: None,
+            help_view: None,
             scroll_top: 0,
             scroll_left: 0,
             language_extension,
@@ -783,6 +917,8 @@ impl EditorState {
             fold_deferred: None,
             relative_numbers: false,
             indent_unit: "  ".into(),
+            indent: Indent::from_settings(2, true),
+            center_cursor: false,
             drag_anchor: None,
             drag_scrollbar: false,
             search_cache: std::cell::RefCell::new(None),
@@ -793,6 +929,12 @@ impl EditorState {
     #[must_use]
     pub fn path(&self) -> Option<&Path> {
         self.path.as_deref()
+    }
+
+    /// The text area the last layout chose.
+    #[must_use]
+    pub fn text_area(&self) -> Rect {
+        self.text_area
     }
 
     #[must_use]
@@ -877,15 +1019,46 @@ impl EditorState {
     }
 
     pub fn save(&mut self) -> std::io::Result<()> {
+        if self.hunk_edit.is_some() && self.help.is_none() && self.historical.is_none() {
+            return Err(std::io::Error::other(
+                "Save the edited hunk through its Git action",
+            ));
+        }
+        self.save_with(false, false)
+    }
+
+    /// Saves over a file this user may not write, after the user confirmed it. The
+    /// file keeps its permissions.
+    pub fn save_read_only(&mut self) -> std::io::Result<()> {
+        self.save_with(false, true)
+    }
+
+    /// Whether the file on disk is read-only for this user, as last checked.
+    #[must_use]
+    pub fn is_file_read_only(&self) -> bool {
+        self.path.is_some()
+            && self.historical.is_none()
+            && self.help.is_none()
+            && self.document.disk_read_only()
+    }
+
+    /// Checks the file's permissions now, for a save about to happen.
+    #[must_use]
+    pub fn check_file_read_only(&self) -> bool {
+        let read_only = self.path().is_some_and(file_is_read_only);
+        crate::lock(&self.document.shared).disk.read_only = read_only;
+        read_only && self.historical.is_none() && self.help.is_none()
+    }
+
+    fn save_with(
+        &mut self,
+        overwrite_changed: bool,
+        overwrite_read_only: bool,
+    ) -> std::io::Result<()> {
         self.refuse_help()?;
         if self.historical.is_some() {
             return Err(std::io::Error::other(
                 "Historical file is read-only; use Save As to create a copy",
-            ));
-        }
-        if self.hunk_edit.is_some() {
-            return Err(std::io::Error::other(
-                "Save the edited hunk through its Git action",
             ));
         }
         refuse_lossy_overwrite(&self.document)?;
@@ -895,15 +1068,84 @@ impl EditorState {
                 "document has no path",
             ));
         };
-        if self.document.disk_contents_changed(&path) {
+        if !overwrite_changed && self.document.disk_contents_changed(&path) {
             return Err(std::io::Error::other(
                 "file changed on disk; reload or explicitly overwrite before saving",
             ));
         }
-        write_atomic(&path, self.document.text().as_bytes())?;
+        if !overwrite_read_only && self.check_file_read_only() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                format!(
+                    "{} is read-only; save it on its own to overwrite it anyway",
+                    self.title()
+                ),
+            ));
+        }
+        self.format_for_save();
+        write_atomic(&path, self.document.text().as_bytes())
+            .map_err(|error| explain(error, &path))?;
         self.document.update_disk(&path);
         self.document.mark_clean();
         Ok(())
+    }
+
+    /// Applies the `.editorconfig` save rules Tide supports: `trim_trailing_whitespace`
+    /// and `insert_final_newline`. The changes are one undo step in the buffer, so the
+    /// buffer matches what is written.
+    fn format_for_save(&mut self) {
+        let Some(path) = self.path.clone() else {
+            return;
+        };
+        let style = self.document.file_style(Some(&path));
+        let config = &style.config;
+        let trim = config.trim_trailing_whitespace == Some(true);
+        let final_newline = config.insert_final_newline == Some(true);
+        if !trim && !final_newline {
+            return;
+        }
+        let edits = self.document.with(|document| {
+            let mut edits = Vec::new();
+            let count = document.len_lines();
+            if trim {
+                for line in 0..count {
+                    let Some(text) = document.line(line) else {
+                        continue;
+                    };
+                    let kept = text.trim_end_matches([' ', '\t']).chars().count();
+                    let total = text.chars().count();
+                    if kept < total {
+                        edits.push((
+                            Range::new(Position::new(line, kept), Position::new(line, total)),
+                            String::new(),
+                        ));
+                    }
+                }
+            }
+            let text = document.text();
+            if final_newline && !text.is_empty() && !text.ends_with(['\n', '\r']) {
+                let last = count.saturating_sub(1);
+                let end = document.line(last).map_or(0, |line| line.chars().count());
+                let at = Position::new(last, end);
+                // Trimming the same last line must not overlap the insertion.
+                edits.retain(|(range, _)| range.start.line != last);
+                let kept = if trim {
+                    document
+                        .line(last)
+                        .map_or(0, |line| line.trim_end_matches([' ', '\t']).chars().count())
+                } else {
+                    end
+                };
+                edits.push((
+                    Range::new(Position::new(last, kept), at),
+                    document.line_break().to_owned(),
+                ));
+            }
+            edits
+        });
+        if !edits.is_empty() {
+            let _ = self.document.apply_edits_preserving_cursor(&edits);
+        }
     }
 
     /// Replace the buffer with the current disk contents and refresh the stamp.
@@ -939,26 +1181,10 @@ impl EditorState {
         Ok(())
     }
 
-    /// Save even if the file changed on disk. Used only after explicit user
-    /// confirmation in the reload/overwrite flow.
+    /// Save even if the file changed on disk or is read-only. Used only after explicit
+    /// user confirmation in the reload/overwrite flow.
     pub fn save_force(&mut self) -> std::io::Result<()> {
-        self.refuse_help()?;
-        if self.historical.is_some() {
-            return Err(std::io::Error::other(
-                "Historical files are read-only; use Save As",
-            ));
-        }
-        refuse_lossy_overwrite(&self.document)?;
-        let Some(path) = self.path().map(Path::to_path_buf) else {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "document has no path",
-            ));
-        };
-        write_atomic(&path, self.document.text().as_bytes())?;
-        self.document.update_disk(&path);
-        self.document.mark_clean();
-        Ok(())
+        self.save_with(true, true)
     }
 
     pub fn save_as(&mut self, path: PathBuf) -> std::io::Result<()> {
@@ -992,10 +1218,18 @@ impl EditorState {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        if overwrite {
-            write_atomic(&path, self.document.text().as_bytes())?;
+        let previous = self.path.replace(path.clone());
+        self.document.reset_file_style();
+        self.format_for_save();
+        let written = if overwrite {
+            write_atomic(&path, self.document.text().as_bytes())
         } else {
-            write_atomic_new(&path, self.document.text().as_bytes())?;
+            write_atomic_new(&path, self.document.text().as_bytes())
+        };
+        if let Err(error) = written {
+            self.path = previous;
+            self.document.reset_file_style();
+            return Err(explain(error, &path));
         }
         if self.historical.is_some() || self.hunk_edit.is_some() {
             self.document = DocumentHandle::new(Document::new(self.document.text()));
@@ -1018,6 +1252,11 @@ impl EditorState {
     #[must_use]
     pub fn language_extension(&self) -> &str {
         &self.language_extension
+    }
+
+    /// Whether line numbers show, given the setting: never on a help page.
+    fn line_numbers(&self, setting: bool) -> bool {
+        setting && self.help.is_none()
     }
 
     pub fn word_wrap_enabled(&self) -> bool {
@@ -1098,6 +1337,9 @@ impl EditorState {
         }
         self.text_area = area;
         self.cursor_screen = None;
+        if self.help_view.is_some() {
+            self.relayout_help((area.width as usize).saturating_sub(HELP_GUTTER + 1));
+        }
         self.refresh_fold_regions(true);
         if self.word_wrap {
             self.layout_wrapped(area, view);
@@ -1106,11 +1348,15 @@ impl EditorState {
         let tab_size = view.tab_size;
         let view_height = area.height as usize;
         let view_width = area.width as usize;
+        self.apply_center(view_height);
         self.ensure_visible(view_height, view_width, tab_size);
 
+        if self.help.is_some() {
+            self.scroll_left = 0;
+        }
         self.unfold_for_cursor();
         let line_count = self.document.len_lines();
-        let gutter = if view.show_line_numbers {
+        let gutter = if self.line_numbers(view.show_line_numbers) {
             gutter_width(line_count) + 2
         } else {
             2
@@ -1169,6 +1415,7 @@ impl EditorState {
             tab_size,
             focused,
         } = *view;
+        let show_line_numbers = self.line_numbers(show_line_numbers);
         if let Some(signature) = &self.inline_signature
             && !self.signature_area.is_empty()
         {
@@ -1213,6 +1460,19 @@ impl EditorState {
                 lines.push(Line::raw(""));
                 continue;
             };
+            if let Some(help) = &self.help_view {
+                let mut spans = vec![Span::raw(" ".repeat(HELP_GUTTER))];
+                if let Some(line) = help.lines.get(line_index) {
+                    spans.extend(line.spans.iter().map(|(range, mark)| {
+                        Span::styled(
+                            line.text[range.clone()].to_owned(),
+                            crate::help::format::style(*mark, &palette),
+                        )
+                    }));
+                }
+                lines.push(Line::from(spans));
+                continue;
+            }
             let raw = self.document.line(line_index).unwrap_or_default();
             let highlighted = syntax
                 .document_line(self.document.syntax_id(), self.revision(), line_index)
@@ -1294,27 +1554,41 @@ impl EditorState {
         self.paint_overlays(frame, area, palette, gutter, tab_size);
         self.render_minimap(frame, palette, syntax, tab_size);
         self.render_scrollbar(frame, palette);
-        if let Some(browser) = &self.inline
-            && !self.is_dirty()
+        self.paint_change_marks(frame, area, palette);
+    }
+
+    /// Marks lines changed since the last commit in the gutter's first column: added
+    /// lines green, changed lines amber, and a red edge where lines were deleted.
+    /// Unchanged context lines inside a hunk get no mark.
+    fn paint_change_marks(&self, frame: &mut Frame, area: Rect, palette: Palette) {
+        let Some(browser) = self.inline.as_ref().filter(|_| !self.is_dirty()) else {
+            return;
+        };
+        let marks = change_marks(&browser.diff.hunks);
+        if marks.is_empty() {
+            return;
+        }
+        for (row, (line, _)) in self
+            .rendered_rows
+            .iter()
+            .enumerate()
+            .take(area.height as usize)
         {
-            for (row, (line, _)) in self
-                .rendered_rows
-                .iter()
-                .enumerate()
-                .take(area.height as usize)
-            {
-                if browser.diff.hunks.iter().any(|h| {
-                    *line + 1 >= h.new_start.max(1)
-                        && *line + 1 < h.new_start.max(1) + h.new_count.max(1)
-                }) {
-                    frame.buffer_mut().set_string(
-                        area.x,
-                        area.y + saturating_u16(row),
-                        "▎",
-                        Style::default().fg(palette.diff_add),
-                    );
-                }
-            }
+            let Some(mark) = marks.get(line) else {
+                continue;
+            };
+            let (glyph, color) = match mark.kind {
+                ChangeKind::Added => ("▎", palette.diff_add),
+                ChangeKind::Modified => ("▎", palette.git_modified),
+                ChangeKind::DeletedAbove => ("▔", palette.diff_delete),
+                ChangeKind::DeletedBelow => ("▁", palette.diff_delete),
+            };
+            frame.buffer_mut().set_string(
+                area.x,
+                area.y + saturating_u16(row),
+                glyph,
+                Style::default().fg(color),
+            );
         }
     }
 
@@ -1485,6 +1759,7 @@ impl EditorState {
             .min(self.wrap_column.unwrap_or(usize::MAX))
             .max(1);
         let height = (area.height as usize).max(1);
+        self.apply_center(height);
         let cursor = self.document.cursor().position;
         let collect = |top: usize, offset: usize| {
             let mut rows = Vec::new();
@@ -1664,28 +1939,7 @@ impl EditorState {
             frame.set_cursor_position(point);
         }
         self.paint_overlays(frame, area, palette, gutter, tab_size);
-        if let Some(browser) = &self.inline
-            && !self.is_dirty()
-        {
-            for (row, (line, _)) in self
-                .rendered_rows
-                .iter()
-                .enumerate()
-                .take(area.height as usize)
-            {
-                if browser.diff.hunks.iter().any(|h| {
-                    *line + 1 >= h.new_start.max(1)
-                        && *line + 1 < h.new_start.max(1) + h.new_count.max(1)
-                }) {
-                    frame.buffer_mut().set_string(
-                        area.x,
-                        area.y + saturating_u16(row),
-                        "▎",
-                        Style::default().fg(palette.diff_add),
-                    );
-                }
-            }
-        }
+        self.paint_change_marks(frame, area, palette);
     }
 
     #[must_use]
@@ -2015,6 +2269,12 @@ impl EditorState {
     /// pause for [`FOLD_IDLE`], keeping the previous index meanwhile.
     fn refresh_fold_regions(&mut self, defer: bool) {
         let key = (self.document.syntax_id(), self.revision());
+        if self.help.is_some() {
+            // Formatted help has no code structure to fold.
+            self.fold_regions.clear();
+            self.fold_revision = key;
+            return;
+        }
         if self.fold_revision == key {
             self.fold_deferred = None;
             return;
@@ -2837,13 +3097,40 @@ impl EditorState {
         }
     }
 
+    /// Moves the cursor to the start of 1-based `line`. A line already on screen
+    /// stays where it is; any other line is centred at the next layout.
     pub fn goto_line(&mut self, line: usize) {
         self.follow_cursor = true;
         let line = line
             .saturating_sub(1)
             .min(self.document.len_lines().saturating_sub(1));
         self.document.move_cursor_to(Position::new(line, 0), false);
-        self.scroll_top = line;
+        let height = usize::from(self.text_area.height);
+        let visible = height > 0
+            && if self.rendered_rows.is_empty() {
+                (self.scroll_top..self.scroll_top + height).contains(&line)
+            } else {
+                // Only fully drawn rows count: the last one may be cut off by wrapping.
+                self.rendered_rows
+                    .iter()
+                    .take(height.saturating_sub(1).max(1))
+                    .any(|(row_line, _)| *row_line == line)
+            };
+        self.center_cursor = !visible;
+        if !visible {
+            self.scroll_top = line;
+        }
+    }
+
+    /// Puts the cursor line in the middle of a view `height` rows tall, when Go to
+    /// Line asked for it.
+    fn apply_center(&mut self, height: usize) {
+        if std::mem::take(&mut self.center_cursor) && height > 0 {
+            let line = self.document.cursor().position.line;
+            let max_scroll = self.document.len_lines().saturating_sub(height);
+            self.scroll_top = line.saturating_sub(height / 2).min(max_scroll);
+            self.wrap_offset = 0;
+        }
     }
 
     pub fn search_ranges(
@@ -2951,18 +3238,29 @@ impl EditorState {
         Ok(count)
     }
 
-    pub fn configure_editing(
-        &mut self,
-        tab_size: usize,
-        insert_spaces: bool,
-        relative_numbers: bool,
-    ) {
-        self.indent_unit = if insert_spaces {
-            " ".repeat(tab_size.clamp(1, 32))
+    /// Applies the editing settings, combined with this file's `.editorconfig` and
+    /// detected indentation.
+    pub fn configure_editing(&mut self, defaults: IndentDefaults, relative_numbers: bool) {
+        self.indent = if self.help.is_some() || self.historical.is_some() {
+            Indent::from_settings(defaults.tab_size, defaults.insert_spaces)
         } else {
-            "\t".into()
+            let style = self.document.file_style(self.path.as_deref());
+            indent::resolve(defaults, &style.config, style.detected)
         };
+        self.indent_unit = self.indent.unit();
         self.relative_numbers = relative_numbers;
+    }
+
+    /// The indentation from the last [`Self::configure_editing`].
+    #[must_use]
+    pub fn indent(&self) -> Indent {
+        self.indent
+    }
+
+    /// How many columns a tab character takes in this editor.
+    #[must_use]
+    pub fn tab_width(&self) -> usize {
+        self.indent.tab_width
     }
 
     pub fn insert_tab(&mut self) {
@@ -2992,6 +3290,7 @@ impl EditorState {
         clicks: u8,
     ) {
         use crossterm::event::KeyModifiers;
+        let numbers = self.line_numbers(numbers);
         if self
             .minimap_area
             .contains(ratatui::layout::Position::new(x, y))
@@ -3019,9 +3318,9 @@ impl EditorState {
         if x == area.x
             && !self.is_dirty()
             && let Some(browser) = &mut self.inline
-            && let Some(index) = browser.diff.hunks.iter().position(|h| {
-                line + 1 >= h.new_start.max(1) && line + 1 < h.new_start.max(1) + h.new_count.max(1)
-            })
+            && let Some(index) = change_marks(&browser.diff.hunks)
+                .get(&line)
+                .map(|mark| mark.hunk)
         {
             browser.show_only_hunk(index);
             self.inline_focus = !self.inline_focus;
@@ -3087,6 +3386,7 @@ impl EditorState {
         self.follow_cursor = false;
     }
     pub fn mouse_drag(&mut self, area: Rect, x: u16, y: u16, numbers: bool, tab_size: usize) {
+        let numbers = self.line_numbers(numbers);
         if self.drag_minimap {
             self.minimap_to(y);
             return;
@@ -3148,7 +3448,7 @@ impl EditorState {
         show_line_numbers: bool,
         tab_size: usize,
     ) {
-        let gutter = if show_line_numbers {
+        let gutter = if self.line_numbers(show_line_numbers) {
             gutter_width(self.document.len_lines()) + 2
         } else {
             2
@@ -3202,6 +3502,109 @@ fn translate_offset(offset: usize, start: usize, removed: usize, inserted: usize
 }
 
 /// A lossily decoded buffer would replace the original bytes with U+FFFD.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ChangeKind {
+    Added,
+    Modified,
+    /// Lines were deleted just above this one.
+    DeletedAbove,
+    /// Lines were deleted after this one, the last line of the file.
+    DeletedBelow,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ChangeMark {
+    kind: ChangeKind,
+    hunk: usize,
+}
+
+/// The gutter mark for each changed 0-based line of the new text. Hunks carry
+/// unchanged context lines around their changes; those are left out.
+fn change_marks(hunks: &[tide_services::git::diff::DiffHunk]) -> HashMap<usize, ChangeMark> {
+    use tide_services::git::diff::DiffKind;
+    let mut marks = HashMap::new();
+    for (hunk_index, hunk) in hunks.iter().enumerate() {
+        let mut deleted = false;
+        let mut added: Vec<usize> = Vec::new();
+        // The last new-file line seen, for a deletion at the end of the hunk.
+        let mut last_new: Option<usize> = None;
+        let flush = |deleted: &mut bool,
+                     added: &mut Vec<usize>,
+                     next: Option<usize>,
+                     last: Option<usize>,
+                     marks: &mut HashMap<usize, ChangeMark>| {
+            if !added.is_empty() {
+                let kind = if *deleted {
+                    ChangeKind::Modified
+                } else {
+                    ChangeKind::Added
+                };
+                for line in added.drain(..) {
+                    marks.insert(
+                        line.saturating_sub(1),
+                        ChangeMark {
+                            kind,
+                            hunk: hunk_index,
+                        },
+                    );
+                }
+            } else if *deleted {
+                let (line, kind) = match (next, last) {
+                    (Some(next), _) => (next, ChangeKind::DeletedAbove),
+                    (None, Some(last)) => (last, ChangeKind::DeletedBelow),
+                    // A hunk without context: `+N,0` means after line N.
+                    (None, None) if hunk.new_start == 0 => (1, ChangeKind::DeletedAbove),
+                    (None, None) => (hunk.new_start, ChangeKind::DeletedBelow),
+                };
+                marks.entry(line.saturating_sub(1)).or_insert(ChangeMark {
+                    kind,
+                    hunk: hunk_index,
+                });
+            }
+            *deleted = false;
+        };
+        for line in &hunk.lines {
+            match line.kind {
+                DiffKind::Added => {
+                    if let Some(new) = line.new_line {
+                        added.push(new);
+                        last_new = Some(new);
+                    }
+                }
+                DiffKind::Deleted => deleted = true,
+                DiffKind::Context => {
+                    flush(
+                        &mut deleted,
+                        &mut added,
+                        line.new_line,
+                        last_new,
+                        &mut marks,
+                    );
+                    last_new = line.new_line.or(last_new);
+                }
+                DiffKind::Meta => {}
+            }
+        }
+        flush(&mut deleted, &mut added, None, last_new, &mut marks);
+    }
+    marks
+}
+
+/// Names the folder when a save is refused for permissions, since the file itself may
+/// be writable while its folder is not.
+fn explain(error: std::io::Error, path: &Path) -> std::io::Error {
+    if error.kind() != std::io::ErrorKind::PermissionDenied {
+        return error;
+    }
+    let folder = path
+        .parent()
+        .map_or_else(|| ".".to_owned(), |p| p.display().to_string());
+    std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        format!("permission denied writing in {folder}"),
+    )
+}
+
 fn refuse_lossy_overwrite(document: &DocumentHandle) -> std::io::Result<()> {
     if document.with(Document::is_lossy) {
         return Err(std::io::Error::other(
@@ -3414,6 +3817,17 @@ fn hash_file(path: &Path) -> Option<String> {
             .map(|byte| format!("{byte:02x}"))
             .collect()
     })
+}
+
+/// Whether `path` exists but this user may not write it, by its permissions or flags.
+/// A missing file is not read-only: saving creates it.
+pub(crate) fn file_is_read_only(path: &Path) -> bool {
+    use nix::unistd::{AccessFlags, access};
+    match access(path, AccessFlags::W_OK) {
+        Ok(()) => false,
+        Err(nix::errno::Errno::ENOENT | nix::errno::Errno::ENOTDIR) => false,
+        Err(_) => path.exists(),
+    }
 }
 
 fn file_stamp(path: &Path) -> Option<FileStamp> {
@@ -3877,16 +4291,143 @@ mod tests {
         assert_eq!(editor.search_ranges("foo", selected).unwrap().len(), 2);
     }
 
+    fn hunk(patch: &str) -> Vec<tide_services::git::diff::DiffHunk> {
+        use tide_services::git::diff::{DiffHunk, DiffKind, DiffLine};
+        let mut hunks: Vec<DiffHunk> = Vec::new();
+        let (mut old, mut new) = (0, 0);
+        for line in patch.lines() {
+            if let Some(header) = line.strip_prefix("@@ ") {
+                let fields: Vec<&str> = header.split_whitespace().collect();
+                let pair = |field: &str| {
+                    let (start, count) = field[1..].split_once(',').unwrap_or((&field[1..], "1"));
+                    (start.parse().unwrap(), count.parse().unwrap())
+                };
+                let ((old_start, old_count), (new_start, new_count)) =
+                    (pair(fields[0]), pair(fields[1]));
+                (old, new) = (old_start, new_start);
+                hunks.push(DiffHunk {
+                    old_start,
+                    old_count,
+                    new_start,
+                    new_count,
+                    header: line.into(),
+                    lines: Vec::new(),
+                });
+                continue;
+            }
+            let (kind, old_line, new_line) = match &line[..1] {
+                "+" => {
+                    new += 1;
+                    (DiffKind::Added, None, Some(new - 1))
+                }
+                "-" => {
+                    old += 1;
+                    (DiffKind::Deleted, Some(old - 1), None)
+                }
+                _ => {
+                    old += 1;
+                    new += 1;
+                    (DiffKind::Context, Some(old - 1), Some(new - 1))
+                }
+            };
+            hunks.last_mut().unwrap().lines.push(DiffLine {
+                kind,
+                old_line,
+                new_line,
+                text: line[1..].into(),
+            });
+        }
+        hunks
+    }
+
+    fn marked(hunks: &[tide_services::git::diff::DiffHunk]) -> Vec<(usize, ChangeKind)> {
+        let mut marks = change_marks(hunks)
+            .into_iter()
+            .map(|(line, mark)| (line + 1, mark.kind))
+            .collect::<Vec<_>>();
+        marks.sort_unstable_by_key(|(line, _)| *line);
+        marks
+    }
+
+    #[test]
+    fn the_gutter_marks_changed_lines_but_not_the_hunk_context() {
+        // Lines 30–32 of the old file became lines 30–37; three context lines either side.
+        let mut patch = String::from("@@ -27,9 +27,14 @@\n c27\n c28\n c29\n");
+        patch.push_str("-old30\n-old31\n-old32\n");
+        for line in 30..=37 {
+            patch.push_str(&format!("+new{line}\n"));
+        }
+        patch.push_str(" c38\n c39\n c40\n");
+        let marks = marked(&hunk(&patch));
+        assert_eq!(
+            marks,
+            (30..=37)
+                .map(|line| (line, ChangeKind::Modified))
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn the_gutter_tells_added_changed_and_deleted_lines_apart() {
+        let hunks = hunk(concat!(
+            "@@ -1,6 +1,6 @@\n",
+            " a\n",
+            "+added\n",
+            " b\n",
+            "-gone\n",
+            " c\n",
+            "-was\n",
+            "+now\n",
+            " d\n",
+            "@@ -20,3 +20,2 @@\n",
+            " x\n",
+            " y\n",
+            "-last\n",
+        ));
+        assert_eq!(
+            marked(&hunks),
+            vec![
+                (2, ChangeKind::Added),
+                (4, ChangeKind::DeletedAbove),
+                (5, ChangeKind::Modified),
+                (21, ChangeKind::DeletedBelow),
+            ]
+        );
+        // Without context lines, `+N,0` is a deletion after line N.
+        assert_eq!(
+            marked(&hunk("@@ -5,2 +4,0 @@\n-a\n-b\n")),
+            vec![(4, ChangeKind::DeletedBelow)]
+        );
+        assert_eq!(
+            marked(&hunk("@@ -1,2 +0,0 @@\n-a\n-b\n")),
+            vec![(1, ChangeKind::DeletedAbove)]
+        );
+    }
+
     #[test]
     fn nondefault_indentation_relative_numbers_and_grapheme_mouse_geometry() {
         let mut editor = EditorState::from_content(None, "if ready:\n👩‍💻漢 text");
-        editor.configure_editing(4, false, true);
+        editor.configure_editing(
+            IndentDefaults {
+                tab_size: 4,
+                insert_spaces: false,
+                detect: false,
+            },
+            true,
+        );
         editor.document.set_cursor(Position::new(0, 9));
         editor.newline();
         assert!(editor.document.text().starts_with("if ready:\n\t"));
         editor.undo();
         editor.document.set_cursor(Position::new(0, 9));
-        editor.configure_editing(4, true, true);
+        editor.configure_editing(
+            IndentDefaults {
+                tab_size: 4,
+                insert_spaces: true,
+                detect: false,
+            },
+            true,
+        );
         editor.newline();
         assert!(editor.document.text().starts_with("if ready:\n    "));
         editor.undo();

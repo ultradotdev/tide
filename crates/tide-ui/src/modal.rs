@@ -92,6 +92,8 @@ pub enum ConfirmAction {
     },
     ReloadFile,
     OverwriteFile,
+    /// Save the active file although its permissions make it read-only.
+    OverwriteReadOnly(std::path::PathBuf),
     ExportResults(std::path::PathBuf),
     /// The terminal's unique serial.
     KillTerminal(u64),
@@ -158,6 +160,14 @@ pub struct ModalItem {
     pub detail: String,
     pub value: String,
     pub current: bool,
+    /// A dimmed, right-aligned hint after the detail, such as a command's key.
+    pub hint: String,
+    /// Other words the item is found by, such as "new terminal" for a command
+    /// labelled "Open Bottom Terminal Tab". An item with keywords is a common one,
+    /// listed first among equal matches.
+    pub keywords: Vec<String>,
+    /// Added to the item's match score, so recently used items rank higher.
+    pub boost: u32,
 }
 
 impl ModalItem {
@@ -172,6 +182,9 @@ impl ModalItem {
             detail: detail.into(),
             value: value.into(),
             current: false,
+            hint: String::new(),
+            keywords: Vec::new(),
+            boost: 0,
         }
     }
 
@@ -395,6 +408,9 @@ impl ModalBase {
         REFILTERS.set(REFILTERS.get() + 1);
         if self.input.is_empty() || !self.is_searchable() {
             self.filtered = (0..self.items.len()).collect();
+            // Recently used commands come first.
+            self.filtered
+                .sort_by_key(|index| std::cmp::Reverse(self.items[*index].boost));
             self.selected = self.selected.min(self.filtered.len().saturating_sub(1));
             return;
         }
@@ -403,6 +419,8 @@ impl ModalBase {
         let needle = Utf32Str::new(&self.input, &mut needle_buffer);
         let mut results = Vec::new();
         let mut haystack_buffer = Vec::new();
+        let mut keyword_buffer = Vec::new();
+        let query = self.input.trim().to_lowercase();
         let mut search = String::new();
         for (index, item) in self.items.iter().enumerate() {
             let haystack = if self.kind == ModalKind::CommandPalette {
@@ -413,7 +431,33 @@ impl ModalBase {
             } else {
                 Utf32Str::new(&item.label, &mut haystack_buffer)
             };
-            if let Some(score) = matcher.fuzzy_match_greedy(haystack, needle) {
+            let palette = self.kind == ModalKind::CommandPalette;
+            // A keyword the query spells out exactly, or starts, counts for more than
+            // the same letters found in a label.
+            let keyword = if palette {
+                item.keywords
+                    .iter()
+                    .filter_map(|keyword| {
+                        let score = matcher.fuzzy_match_greedy(
+                            Utf32Str::new(keyword, &mut keyword_buffer),
+                            needle,
+                        )?;
+                        let keyword = keyword.to_lowercase();
+                        let bonus = if keyword == query {
+                            16
+                        } else if keyword.starts_with(&query) {
+                            8
+                        } else {
+                            0
+                        };
+                        Some(score.saturating_add(bonus))
+                    })
+                    .max()
+            } else {
+                None
+            };
+            let score = matcher.fuzzy_match_greedy(haystack, needle).max(keyword);
+            if let Some(score) = score {
                 // Quick Open ranks a match in the file name above one spread across folders.
                 let name_score = if self.kind == ModalKind::QuickOpen {
                     let name = item.label.rsplit('/').next().unwrap_or(&item.label);
@@ -423,19 +467,24 @@ impl ModalBase {
                 } else {
                     0
                 };
-                results.push((u32::from(score) + u32::from(name_score), index));
+                results.push((
+                    u32::from(score) + u32::from(name_score) + self.items[index].boost,
+                    index,
+                ));
             }
         }
         // Equal scores keep their original order, except that Quick Open lists the
-        // shorter path first.
+        // shorter path first and the palette lists common commands first.
         let quick_open = self.kind == ModalKind::QuickOpen;
         results.sort_by_key(|&(score, index)| {
-            let length = if quick_open {
-                self.items[index].label.len()
-            } else {
-                0
-            };
-            (std::cmp::Reverse(score), length, index)
+            let item = &self.items[index];
+            let length = if quick_open { item.label.len() } else { 0 };
+            (
+                std::cmp::Reverse(score),
+                item.keywords.is_empty(),
+                length,
+                index,
+            )
         });
         self.filtered = results.into_iter().map(|entry| entry.1).collect();
         self.selected = self.selected.min(self.filtered.len().saturating_sub(1));
@@ -528,8 +577,8 @@ impl ModalBase {
             return Rect::new(x, y, width, height);
         }
         let (width, height) = match &self.kind {
-            ModalKind::CommandPalette
-            | ModalKind::Tabs(_)
+            ModalKind::CommandPalette => (76, 20),
+            ModalKind::Tabs(_)
             | ModalKind::AllTabs
             | ModalKind::MoveTab
             | ModalKind::AddPanel
@@ -696,6 +745,7 @@ impl ModalBase {
                     ConfirmAction::SaveAs(_)
                     | ConfirmAction::RenamePath(_, _)
                     | ConfirmAction::OverwriteFile
+                    | ConfirmAction::OverwriteReadOnly(_)
                     | ConfirmAction::ExportResults(_),
                 ) => "Overwrite [Y]",
                 ModalKind::Confirm(ConfirmAction::ReloadFile) => "Reload [Y]",
@@ -953,7 +1003,14 @@ impl ModalBase {
     }
 
     fn render_input(&self, frame: &mut Frame, area: Rect, palette: Palette) {
-        self.render_input_prefix(frame, area, palette, "> ");
+        if self.field_selected && matches!(self.kind, ModalKind::Prompt(_)) {
+            let mut selected = palette;
+            selected.input_bg = palette.selection_bg;
+            selected.input_fg = palette.selection_fg;
+            self.render_input_prefix(frame, area, selected, "> ");
+        } else {
+            self.render_input_prefix(frame, area, palette, "> ");
+        }
     }
     fn render_input_prefix(&self, frame: &mut Frame, area: Rect, palette: Palette, prefix: &str) {
         if area.is_empty() {
@@ -1001,6 +1058,7 @@ impl ModalBase {
         let input = self.content_layout(Block::bordered().inner(popup))[0];
         if !input.is_empty() && input.contains((x, y).into()) {
             self.actions_focused = false;
+            self.field_selected = false;
             let (_, _, start) = self.input_view(input.width as usize);
             let target = x.saturating_sub(input.x + 2) as usize;
             let value: String = self.input.chars().skip(start).collect();
@@ -1148,6 +1206,17 @@ impl ModalBase {
                 .selected
                 .saturating_sub(visible.saturating_sub(1))
                 .min(self.filtered.len().saturating_sub(1));
+            // Hints, such as keys, line up in a right-hand column.
+            let hint_width = self
+                .filtered
+                .iter()
+                .skip(start)
+                .take(visible)
+                .filter_map(|index| self.items.get(*index))
+                .map(|item| display_width(&item.hint))
+                .max()
+                .unwrap_or(0)
+                .min((list_area.width as usize) / 3);
             let items = self
                 .filtered
                 .iter()
@@ -1174,26 +1243,49 @@ impl ModalBase {
                     label.push_str(&item.label);
                     let label = format!(" {label}");
                     let detail = item.detail.clone();
-                    let used = display_width(&label) + display_width(&detail);
+                    let hint = truncate_to_width(&item.hint, hint_width);
+                    let hint_column = if hint_width > 0 { hint_width + 3 } else { 0 };
+                    let used = display_width(&label) + display_width(&detail) + hint_column;
                     let width = list_area.width as usize;
                     let padding = width.saturating_sub(used);
-                    Some(ListItem::new(Line::from(vec![
+                    let hint_style = Style::default()
+                        .fg(if selected {
+                            palette.selection_fg
+                        } else {
+                            palette.description
+                        })
+                        .bg(background)
+                        .add_modifier(Modifier::DIM);
+                    let hint = (hint_column > 0).then(|| {
                         Span::styled(
-                            label,
-                            Style::default().fg(foreground).bg(background).add_modifier(
-                                if selected {
-                                    Modifier::BOLD
-                                } else {
-                                    Modifier::empty()
-                                },
+                            format!(
+                                "{}{hint} ",
+                                " ".repeat(hint_column - 1 - display_width(hint))
                             ),
-                        ),
-                        Span::styled(" ".repeat(padding), Style::default().bg(background)),
-                        Span::styled(
-                            detail,
-                            Style::default().fg(palette.description).bg(background),
-                        ),
-                    ])))
+                            hint_style,
+                        )
+                    });
+                    Some(ListItem::new(Line::from_iter(
+                        [
+                            Span::styled(
+                                label,
+                                Style::default().fg(foreground).bg(background).add_modifier(
+                                    if selected {
+                                        Modifier::BOLD
+                                    } else {
+                                        Modifier::empty()
+                                    },
+                                ),
+                            ),
+                            Span::styled(" ".repeat(padding), Style::default().bg(background)),
+                            Span::styled(
+                                detail,
+                                Style::default().fg(palette.description).bg(background),
+                            ),
+                        ]
+                        .into_iter()
+                        .chain(hint),
+                    )))
                 })
                 .collect::<Vec<_>>();
             frame.render_widget(List::new(items), list_area);
@@ -2263,11 +2355,56 @@ pub struct PromptModal {
 }
 
 impl PromptModal {
+    /// A prompt filled with `initial` opens with it selected, so typing replaces it
+    /// and an arrow key starts editing it.
     #[must_use]
     pub fn new(action: PromptAction, title: &str, initial: &str) -> Self {
-        Self {
-            base: ModalBase::prompt(ModalKind::Prompt(action), title, initial),
+        let mut base = ModalBase::prompt(ModalKind::Prompt(action), title, initial);
+        base.field_selected = !initial.is_empty();
+        Self { base }
+    }
+
+    /// Applies `key` to a selected pre-filled value: typing or deleting replaces it,
+    /// and Left/Home or Right/End keep it with the cursor at that end. True when the
+    /// key needs nothing more.
+    fn replace_selection(&mut self, key: KeyEvent) -> bool {
+        if !self.base.field_selected || self.base.actions_focused {
+            return false;
         }
+        let plain = !key.modifiers.intersects(
+            KeyModifiers::CONTROL | KeyModifiers::ALT | KeyModifiers::SUPER | KeyModifiers::META,
+        );
+        match key.code {
+            KeyCode::Char(_) if plain => {
+                self.clear_selected();
+                false
+            }
+            KeyCode::Backspace | KeyCode::Delete => {
+                self.clear_selected();
+                true
+            }
+            KeyCode::Left | KeyCode::Home | KeyCode::Right | KeyCode::End => {
+                self.base.field_selected = false;
+                self.base.cursor = if matches!(key.code, KeyCode::Left | KeyCode::Home) {
+                    0
+                } else {
+                    self.base.input.chars().count()
+                };
+                true
+            }
+            KeyCode::Enter | KeyCode::Esc => false,
+            _ => {
+                self.base.field_selected = false;
+                false
+            }
+        }
+    }
+
+    fn clear_selected(&mut self) {
+        self.base.field_selected = false;
+        self.base.input.clear();
+        self.base.cursor = 0;
+        self.base.refilter();
     }
 }
 
@@ -2293,8 +2430,18 @@ impl Modal for PromptModal {
                 save: true,
             });
         }
+        if self.replace_selection(key) {
+            return ModalOutcome::None;
+        }
         let outcome = default_key(&mut self.base, key);
         resolve(self, outcome)
+    }
+
+    fn paste(&mut self, text: &str) {
+        if self.base.field_selected && !self.base.actions_focused {
+            self.clear_selected();
+        }
+        self.base.push_str(text);
     }
 }
 
@@ -2593,7 +2740,9 @@ pub fn info(title: &str, message: &str) -> Box<dyn Modal> {
 
 #[must_use]
 pub fn command_palette(items: Vec<ModalItem>) -> Box<dyn Modal> {
-    Box::new(CommandPaletteModal::new(items))
+    let mut modal = CommandPaletteModal::new(items);
+    modal.base_mut().refilter();
+    Box::new(modal)
 }
 
 pub fn tabs(pane: usize, items: Vec<ModalItem>) -> Box<dyn Modal> {
@@ -2717,7 +2866,11 @@ pub fn confirm(action: ConfirmAction, title: &str, message: &str) -> Box<dyn Mod
 pub fn command_items(commands: &[(String, tide_config::CommandInfo)]) -> Vec<ModalItem> {
     commands
         .iter()
-        .map(|(id, info)| ModalItem::new(info.label.clone(), info.category.clone(), id.clone()))
+        .map(|(id, info)| {
+            let mut item = ModalItem::new(info.label.clone(), info.category.clone(), id.clone());
+            item.keywords.clone_from(&info.keywords);
+            item
+        })
         .collect()
 }
 
@@ -2801,6 +2954,14 @@ mod tests {
         let overwrite = ModalBase::confirm(ConfirmAction::OverwriteFile, "Overwrite", "Replace?");
         assert_eq!(overwrite.action_role(0), ActionRole::Destructive);
         assert_eq!(overwrite.action_role(1), ActionRole::Neutral);
+        let read_only = ModalBase::confirm(
+            ConfirmAction::OverwriteReadOnly("a.txt".into()),
+            "Read-Only File",
+            "a.txt is read-only. Overwrite it anyway?",
+        );
+        assert_eq!(read_only.action_labels()[0], " Overwrite [Y] ");
+        assert_eq!(read_only.action_role(0), ActionRole::Destructive);
+        assert_eq!(read_only.action_index, 1, "starts on Cancel");
     }
 
     #[test]
@@ -2874,7 +3035,7 @@ mod tests {
     fn default_modal_geometry_is_centred_and_bounded() {
         let modal = CommandPaletteModal::new(items());
         let area = modal.base().geometry(Rect::new(0, 0, 120, 40));
-        assert_eq!(area.width, 60);
+        assert_eq!(area.width, 76);
         assert_eq!(area.height, 20);
         assert_eq!(area.y, 6);
         let quick = QuickOpenModal::new(items());

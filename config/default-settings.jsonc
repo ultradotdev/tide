@@ -2,6 +2,7 @@
   // Editor
   "editor.tabSize": 2, // Number of spaces per tab
   "editor.insertSpaces": true, // Use spaces instead of tabs
+  "editor.detectIndentation": true, // Use each file's existing indentation instead of editor.tabSize and editor.insertSpaces when it has enough to go by; an .editorconfig wins over both
   "editor.autoIndent": "full", // Auto-indent mode: "none", "keep", or "full"
   "editor.wordWrap": "on", // Word wrap: "off", "on", "wordWrapColumn", "bounded"
   "editor.wordWrapColumn": 80, // Wrap column for "wordWrapColumn" and "bounded" word wrap (10-1000)
@@ -44,7 +45,8 @@
 
   // TUI File Tree
   "tui.fileTree.showGitStatus": true, // Show git status colors on files in file tree
-  "tui.iconStyle": "nerd", // Icon style: "nerd" (Nerd Font glyphs, width-1, default) or "ascii" (no icons, for terminals without a Nerd Font)
+  "tui.iconStyle": "auto", // Icon style: "auto" (Nerd Font glyphs in Ghostty, kitty and WezTerm, which bundle them; plain text elsewhere), "nerd" (always, for a terminal font that includes Nerd Font glyphs) or "ascii" (never)
+  "tui.colorMode": "auto", // Colors sent to the terminal: "auto" (24-bit color where the terminal reports it, otherwise the nearest of 256 colors), "truecolor" or "256"
 
   // TUI Tab Bar
   "tui.tabBar.scrollAmount": 1, // Number of tabs to scroll when using scroll buttons

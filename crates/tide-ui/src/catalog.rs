@@ -15,6 +15,9 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
             label: "Select Color Theme".to_owned(),
             category: "Preferences".to_owned(),
             description: Some("Switch the active semantic theme".to_owned()),
+            keywords: ["color theme", "colour theme", "dark mode", "light mode"]
+                .map(str::to_owned)
+                .to_vec(),
         });
     commands.insert(
         "agents.associateWorkspace".into(),
@@ -24,6 +27,7 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
             description: Some(
                 "Explicitly associate native sessions after moving a workspace".into(),
             ),
+            ..CommandInfo::default()
         },
     );
     for (id, label) in [
@@ -65,7 +69,7 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
         commands.entry(id.into()).or_insert(CommandInfo {
             label: label.into(),
             category: "Workbench".into(),
-            description: None,
+            ..CommandInfo::default()
         });
     }
     for (id, label, category) in [
@@ -88,7 +92,7 @@ pub fn commands() -> BTreeMap<String, CommandInfo> {
         commands.entry(id.into()).or_insert(CommandInfo {
             label: label.into(),
             category: category.into(),
-            description: None,
+            ..CommandInfo::default()
         });
     }
     commands

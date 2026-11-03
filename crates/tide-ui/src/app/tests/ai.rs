@@ -187,6 +187,7 @@ fn provider_refresh_keeps_independent_caches_and_explicit_workspace_associations
                 state: DiscoveryState::Ok,
                 sessions: vec![claude],
                 error: None,
+                notice: None,
             },
             ui,
         )
@@ -198,6 +199,7 @@ fn provider_refresh_keeps_independent_caches_and_explicit_workspace_associations
                 state: DiscoveryState::Ok,
                 sessions: vec![codex],
                 error: None,
+                notice: None,
             },
             ui,
         )
@@ -210,6 +212,7 @@ fn provider_refresh_keeps_independent_caches_and_explicit_workspace_associations
                 state: DiscoveryState::Error,
                 sessions: Vec::new(),
                 error: Some("fixture timeout".into()),
+                notice: None,
             },
             ui,
         )
@@ -237,6 +240,7 @@ fn provider_refresh_keeps_independent_caches_and_explicit_workspace_associations
                 state: DiscoveryState::Ok,
                 sessions: Vec::new(),
                 error: None,
+                notice: None,
             },
             ui,
         )
@@ -275,6 +279,7 @@ fn agents_search_paste_never_edits_the_underlying_buffer_and_picker_refreshes() 
                 state: DiscoveryState::Ok,
                 sessions: vec![session],
                 error: None,
+                notice: None,
             },
             ui,
         )
@@ -340,4 +345,48 @@ fn session_state_records_the_agents_region() {
     app.ai.agents_visible = true;
     let session = app.build_session();
     assert!(session.ui.agents_sidebar_visible);
+}
+
+#[test]
+fn a_cli_that_needs_signing_in_shows_a_calm_status_instead_of_an_error() {
+    let (_home, mut app) = test_app();
+    app.with_ai(|ai, ui| {
+        ai.cli_status = vec![tide_ai::cli::CliStatus {
+            provider: CliProvider::Gemini,
+            installed: true,
+            executable: Some(PathBuf::from("/usr/local/bin/gemini")),
+        }];
+        ai.merge_provider(
+            ProviderDiscovery {
+                provider: CliProvider::Gemini,
+                state: DiscoveryState::Ok,
+                sessions: Vec::new(),
+                error: None,
+                notice: Some("Please set an Auth method".into()),
+            },
+            ui,
+        )
+    });
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 40)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let screen = terminal
+        .backend()
+        .buffer()
+        .content
+        .iter()
+        .map(ratatui::buffer::Cell::symbol)
+        .collect::<String>();
+    assert!(screen.contains("Not signed in"), "{screen}");
+    assert!(!screen.contains("Gemini CLI (0) !"), "no error marker");
+    app.with_ai(|ai, ui| ai.show_status(CliProvider::Gemini, ui));
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(message.contains("needs signing in"), "{message}");
+    assert!(message.contains("Please set an Auth method"), "{message}");
 }

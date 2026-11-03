@@ -8,7 +8,13 @@ impl App {
     /// Lays out and draws one frame.
     pub fn draw(&mut self, frame: &mut Frame) {
         let mut layout = self.layout_frame(frame.area());
-        let painted = self.render(frame, &layout);
+        let mut painted = self.render(frame, &layout);
+        // The one place colours are fitted to the terminal: everything drawn this frame,
+        // including terminal panes, goes through here.
+        if self.color_depth() == crate::display::ColorDepth::Indexed {
+            crate::display::reduce_colors(frame.buffer_mut().content.iter_mut());
+            crate::display::reduce_colors(painted.curly_cells.iter_mut().map(|(.., cell)| cell));
+        }
         layout.hits = painted.hits;
         layout.status_targets = painted.status_targets;
         layout.curly_cells = painted.curly_cells;
@@ -47,12 +53,7 @@ impl App {
 
         let exclusions = self.file_excludes();
         self.file_tree.configure(exclusions);
-        self.file_tree.set_ascii_icons(
-            self.settings
-                .get("tui.iconStyle")
-                .and_then(serde_json::Value::as_str)
-                == Some("ascii"),
-        );
+        self.file_tree.set_ascii_icons(!self.nerd_icons());
         let regions = crate::regions::layout(
             area,
             crate::regions::Sidebar {
@@ -579,7 +580,12 @@ impl App {
             (
                 pane.tabs
                     .iter()
-                    .map(|tab| (tab.title(), tab.is_dirty()))
+                    .map(|tab| match tab {
+                        Tab::Editor(editor) if editor.is_file_read_only() => {
+                            (format!("{} [RO]", tab.title()), tab.is_dirty())
+                        }
+                        _ => (tab.title(), tab.is_dirty()),
+                    })
                     .collect(),
                 pane.active,
                 crate::tab_strip::TabStripState {
@@ -634,7 +640,8 @@ impl App {
     fn layout_pane(&mut self, id: PaneId, area: Rect, layout: &mut LayoutState) {
         let focused = self.focus == Focus::Main && self.workbench.focused() == id;
         let show_line_numbers = self.show_line_numbers();
-        let tab_size = self.tab_size();
+        let mut tab_size = self.tab_size();
+        let defaults = self.indent_defaults();
         if let Some(pane) = self.workbench.pane_mut(id) {
             pane.rect = area;
         }
@@ -684,11 +691,6 @@ impl App {
                 .unwrap_or(80)
                 .clamp(1, 1000) as usize
         });
-        let insert_spaces = self
-            .settings
-            .get("editor.insertSpaces")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(true);
         let relative = self
             .settings
             .get("editor.lineNumbers")
@@ -737,8 +739,10 @@ impl App {
                 .and_then(serde_json::Value::as_u64)
                 .unwrap_or(15)
                 .clamp(3, 100) as u16;
-            editor.configure_editing(tab_size, insert_spaces, relative);
-            editor.set_word_wrap(word_wrap || editor.help.is_some());
+            editor.configure_editing(defaults, relative);
+            tab_size = editor.tab_width();
+            // Help pages are laid out for the pane's width already.
+            editor.set_word_wrap(word_wrap && editor.help.is_none());
             editor.set_wrap_column(wrap_column.filter(|_| editor.help.is_none()));
         }
         let view = EditorView {
@@ -771,7 +775,6 @@ impl App {
         } = *pane;
         let focused = self.focus == Focus::Main && self.workbench.focused() == id;
         let show_line_numbers = self.show_line_numbers();
-        let tab_size = self.tab_size();
         out.hits.push((area, HitTarget::Pane(id)));
         let [tab_row, _] =
             Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).areas(area);
@@ -812,6 +815,9 @@ impl App {
         let Some(tab) = pane.tabs.get(pane.active) else {
             return;
         };
+        let tab_size = tab
+            .editor()
+            .map_or_else(|| self.tab_size(), EditorState::tab_width);
         let view = EditorView {
             palette: self.palette,
             syntax: &self.syntax,
@@ -1031,6 +1037,8 @@ impl App {
                     " Read-only: invalid UTF-8 ".into(),
                     Command::WorkbenchDocumentInfo,
                 ));
+            } else if editor.is_file_read_only() {
+                left.push((" Read-only ".into(), Command::WorkbenchDocumentInfo));
             }
             let cursor = editor.document.cursor().position;
             let (eol, selected) = editor.document.status_metadata();
@@ -1063,14 +1071,7 @@ impl App {
             {
                 right.push((format!("LSP: {status}"), Command::LspShowDiagnostics));
             }
-            right.push((
-                if self.setting_bool("editor.insertSpaces", true) {
-                    format!("Spaces: {}", self.tab_size())
-                } else {
-                    format!("Tab Size: {}", self.tab_size())
-                },
-                Command::WorkbenchOpenSettings,
-            ));
+            right.push((editor.indent().label(), Command::WorkbenchOpenSettings));
             right.push(("UTF-8".into(), Command::WorkbenchDocumentInfo));
             right.push((eol.into(), Command::WorkbenchDocumentInfo));
         }
@@ -1171,11 +1172,7 @@ impl App {
         if main.width < 12 || main.height == 0 {
             return Vec::new();
         }
-        let ascii = self
-            .settings
-            .get("tui.iconStyle")
-            .and_then(serde_json::Value::as_str)
-            == Some("ascii");
+        let ascii = !self.nerd_icons();
         let mut controls = Vec::new();
         let mut left = main.x;
         let mut right = main.right();
@@ -1456,8 +1453,15 @@ impl App {
                         .cli_status
                         .iter()
                         .any(|s| s.provider == provider && s.installed);
+                    let notice = self
+                        .ai
+                        .agent_reports
+                        .get(&provider)
+                        .is_some_and(|report| report.notice.is_some());
                     let message = if let Some(error) = error {
                         error.to_owned()
+                    } else if notice {
+                        "Not signed in · Enter for details".into()
                     } else if !self.ai.agent_query.is_empty() {
                         "No matching sessions".into()
                     } else if !installed {

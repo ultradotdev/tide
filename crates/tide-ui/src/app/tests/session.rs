@@ -333,3 +333,41 @@ fn session_list_opens_this_workspaces_sessions_and_delete_explains_the_one_in_us
     app.settle();
     assert!(app.status.contains("no named sessions"), "{}", app.status);
 }
+
+#[test]
+fn a_hangup_keeps_unsaved_edits_in_the_recovery_snapshot_without_writing_files() {
+    let (_home, mut app) = test_app();
+    let path = app.workspace.join("draft.txt");
+    std::fs::write(&path, "on disk\n").unwrap();
+    app.open_file(&path);
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("typed a second ago ");
+    // Whatever was on screen, such as the quit question, has nobody to answer it.
+    app.quit();
+    assert!(app.overlay.is_some());
+    app.restart = Some(false);
+
+    assert!(app.hang_up().unwrap());
+    assert!(app.should_quit());
+    assert!(app.overlay.is_none());
+    assert_eq!(app.restart, None, "a hangup never restarts");
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "on disk\n");
+    let snapshot = app.session_store.load_last().unwrap().unwrap();
+    assert_eq!(
+        snapshot.documents[0].unsaved_content.as_deref(),
+        Some("typed a second ago on disk\n")
+    );
+}
+
+#[test]
+fn a_hangup_with_no_session_writes_nothing() {
+    let (_home, mut app) = test_app();
+    app.session_ephemeral = true;
+    app.new_file();
+    app.workbench.active_editor_mut().unwrap().insert_text("x");
+    assert!(!app.hang_up().unwrap());
+    assert!(app.should_quit());
+    assert!(app.session_store.load_last().unwrap().is_none());
+}

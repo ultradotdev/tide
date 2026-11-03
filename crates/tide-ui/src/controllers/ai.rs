@@ -848,14 +848,26 @@ impl AiController {
             .iter()
             .filter(|session| session.provider_id == provider.id())
             .count();
-        let status = self
-            .agent_reports
-            .get(&provider)
-            .and_then(|report| report.error.as_deref())
-            .unwrap_or(if installed {
-                "Discovery completed"
-            } else {
-                "Provider is not installed or is not on PATH"
+        let report = self.agent_reports.get(&provider);
+        let notice = report
+            .and_then(|report| report.notice.as_deref())
+            .map(|notice| {
+                format!(
+                    "{} is installed but needs signing in or setting up before it can list sessions. Start a session to sign in, or run {} in a terminal. It said:\n\n{notice}",
+                    provider.display_name(),
+                    provider.executable()
+                )
+            });
+        let status = report
+            .and_then(|report| report.error.clone())
+            .or(notice)
+            .unwrap_or_else(|| {
+                if installed {
+                    "Discovery completed"
+                } else {
+                    "Provider is not installed or is not on PATH"
+                }
+                .to_owned()
             });
         *ui.overlay = Some(modal::info(
             provider.display_name(),

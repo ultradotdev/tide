@@ -1,5 +1,6 @@
 //! Help pages: Markdown templates rendered from the live keymap, command catalog,
 //! settings and environment, or from the defaults for the repository's documentation.
+pub(crate) mod format;
 mod keys;
 mod template;
 
@@ -7,7 +8,9 @@ use std::path::{Path, PathBuf};
 
 use crate::command::Command;
 
-pub(crate) use keys::primary_key;
+pub(crate) use keys::{
+    display, effective, needs_keyboard_protocol, primary_key, ranked, terminal_owned,
+};
 pub use template::{Context, Host, Live, Rendered, render, update_instruction};
 
 /// A help page and the documentation file its static rendering produces.

@@ -47,6 +47,7 @@ Open agent tabs are restored with the rest of the session when the agent is stil
 
 - If an agent is missing, check `command -v <executable>` in the shell you start Tide from, or set its path override variable.
 - If its sessions do not list, open a new session to confirm the CLI itself starts and is signed in, then refresh the sidebar with `r`.
+- “Not signed in” under an agent means the CLI is installed but asked to be signed in or configured when Tide listed its sessions. Press Enter on the row to see its message, then start a session to sign in. A project with no sessions yet simply shows “No workspace sessions”.
 - Tide never copies agent credentials or native session stores into its own files or diagnostics.
 
 See {{help:terminal}} for how agent tabs handle keys and {{help:troubleshooting}} for more.
