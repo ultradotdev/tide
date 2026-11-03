@@ -2,10 +2,12 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.10.x | :white_check_mark: |
-| < 0.10   | :x:                |
+Security fixes are released for the latest minor version. Update to the newest release before reporting.
+
+| Version | Supported |
+| ------- | --------- |
+| 0.11.x  | Yes       |
+| < 0.11  | No        |
 
 ## Reporting a Vulnerability
 
@@ -15,7 +17,7 @@ We take security seriously. If you discover a security vulnerability in Tide, pl
 
 ### How to Report
 
-Email your findings to **security@zorz.com** with:
+Report it privately through GitHub: open the repository's **Security** tab and choose **Report a vulnerability** ([direct link](https://github.com/ultradotdev/tide/security/advisories/new)). You can also email **security@zorz.com**. Include:
 
 - A description of the vulnerability
 - Steps to reproduce the issue

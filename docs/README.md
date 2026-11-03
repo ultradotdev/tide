@@ -1,6 +1,6 @@
 # Tide Documentation
 
-This documentation describes Tide 0.11.1. Signed releases are published on [GitHub Releases](https://github.com/ultradotdev/tide/releases).
+This documentation describes Tide 0.11.1. Releases are published on [GitHub Releases](https://github.com/ultradotdev/tide/releases).
 
 - [Welcome tour](welcome.md)
 - [Getting started and installation](getting-started.md)
