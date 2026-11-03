@@ -5,12 +5,20 @@ A SQL tab is an editor with its results below it. Connections, schema browsing, 
 
 ## Connections
 
-Run **New Connection...**. The form takes a name, host, port, database, user name, password, TLS mode (disable, prefer or require) with an optional CA certificate, read-only mode, timeouts, and a scope:
+Run **New Connection...**. The form takes a name, host, port, database, user name, password, TLS mode with an optional CA certificate, read-only mode, timeouts, and a scope:
 
 - **Global** connections are saved in `~/.config/tide/connections.json`.
-- **Project** connections are saved in `.tide/connections.json` inside the workspace. They cannot store a password.
+- **Project** connections are saved in `.tide/connections.json` inside the workspace, so you can share them with the repository. Their passwords are not.
 
-Passwords never go into the connection file. They are kept by the secret service: the macOS Keychain or Linux `secret-tool` when available, read-only `TIDE_SECRET_<KEY>` environment variables, or an encrypted file at `~/.local/share/tide/secrets.enc` that you unlock with **Manage Secrets** or `TIDE_MASTER_PASSWORD`.
+In the form, Ctrl+S saves and Ctrl+T tests the connection.
+
+## Passwords
+
+Passwords never go into a connection file. They are kept by the secret service: the macOS Keychain or Linux `secret-tool` when available, read-only `TIDE_SECRET_<KEY>` environment variables, or an encrypted file at `~/.local/share/tide/secrets.enc` that you unlock with **Manage Secrets** or `TIDE_MASTER_PASSWORD`.
+
+A password you type for a **project** connection is kept the same way, and `~/.config/tide/connections.json` records which destination (host, port, database, user name and TLS settings) it belongs to. The project file stays free of secrets, each person who opens the project enters their own password once, and the password is only ever sent to that exact destination. Change the host, port, database, user or TLS settings and Tide asks for the password again.
+
+When Tide has no password stored for a connection, it uses your PostgreSQL password file, the same one `psql` reads: the file named by `PGPASSFILE`, or `~/.pgpass`. Each line is `hostname:port:database:username:password`, `*` matches any value, and `\` escapes a `:` or `\` inside a field. As with `psql`, the file is ignored unless only you can read it (`chmod 600 ~/.pgpass`). For a project connection, a line with `*` as the host is not used: the line has to name the host, so a shared project file cannot send your password to a server it picks.
 
 **Edit Connection...**, **Test Connection**, **Delete Connection** and **Disconnect** manage saved connections.
 
@@ -18,7 +26,23 @@ Passwords never go into the connection file. They are kept by the secret service
 
 New connections are **read-only**. Tide sets PostgreSQL's read-only transaction mode, runs each query in a read-only transaction, and allows one read statement per run. For a guarantee that holds in every client, also connect as a role without write privileges. On a writable connection, statements that look destructive, broad, mixed or unknown ask for confirmation first.
 
-TLS `require` and `prefer` verify the server certificate against the system roots plus your CA certificate; `prefer` falls back to an unencrypted connection with a warning when the server has no TLS.
+## TLS
+
+TLS modes mean what they mean in `psql` and other libpq clients:
+
+| Mode | Encrypts | Checks the server's certificate |
+| --- | --- | --- |
+| `disable` | Never | No |
+| `prefer` | When the server supports it | No |
+| `require` | Always | No; with a CA certificate set, checks it was issued by that CA, as `verify-ca` |
+| `verify-ca` | Always | Issued by a trusted authority: the system's, or your CA certificate |
+| `verify-full` | Always | As `verify-ca`, and it must name the host you connect to |
+
+`require` works with servers that use a self-signed certificate. It protects against someone reading the traffic, not against someone pretending to be the server; use `verify-full` with the server's CA certificate when that matters. `prefer` falls back to an unencrypted connection, with a warning, when the server has no TLS.
+
+When you leave the mode unset, Tide uses `disable` for `localhost` and Unix sockets and `verify-full` for every other host. Connections saved by earlier versions of Tide were always fully checked and still show as `verify-full`. A connection URL can set `sslmode` and `sslrootcert` (a CA certificate file), as with `psql`.
+
+When a check fails, the error says why, for example `UnknownIssuer` for a certificate from an authority Tide does not trust, and suggests a mode or CA certificate that would work.
 
 ## Queries
 

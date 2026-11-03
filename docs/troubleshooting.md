@@ -59,7 +59,7 @@ For rollback use the same prefix as the installation. See [Getting Started](gett
 
 ## PostgreSQL or credentials
 
-Check the active connection, its TLS mode and the server's permissions. A read-only database role is the real authorization boundary; Tide's read-only mode adds client checks and a read-only session. Saved passwords depend on the keychain being available or the encrypted secrets file being unlocked. Redact passwords, connection strings and sensitive query text from reports. See [PostgreSQL](features/postgresql.md).
+Check the active connection, its TLS mode and the server's permissions. A server with a self-signed certificate needs `require`, or `verify-ca` or `verify-full` with its CA certificate; see the TLS section of [PostgreSQL](features/postgresql.md). A read-only database role is the real authorization boundary; Tide's read-only mode adds client checks and a read-only session. Saved passwords depend on the keychain being available or the encrypted secrets file being unlocked. Redact passwords, connection strings and sensitive query text from reports. See [PostgreSQL](features/postgresql.md).
 
 ## Session restoration
 

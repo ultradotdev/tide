@@ -130,29 +130,45 @@ impl ConnectionConfig {
             && self.ssl == other.ssl
     }
 
-    /// Unset TLS settings default to `disable` only for loopback and Unix
-    /// socket hosts; everything else requires TLS.
+    /// The TLS mode, with libpq's meanings: `disable` never encrypts, `prefer` encrypts
+    /// when the server offers it, `require` always encrypts but does not check the
+    /// server's certificate, `verify-ca` also checks the certificate was issued by a
+    /// trusted authority, and `verify-full` also checks it names the host.
+    ///
+    /// Unset means `disable` for loopback and Unix socket hosts and `verify-full`
+    /// everywhere else. Records saved before Tide had named modes (`true`, or an object
+    /// without `mode`) were always fully verified, so they still are unless they set
+    /// `rejectUnauthorized: false`.
     pub fn ssl_mode(&self) -> SslPreference {
         match &self.ssl {
             None | Some(serde_json::Value::Null) if is_loopback_host(&self.host) => {
                 SslPreference::Disable
             }
-            None | Some(serde_json::Value::Null) => SslPreference::Require,
+            None | Some(serde_json::Value::Null) => SslPreference::VerifyFull,
             Some(serde_json::Value::Bool(false)) => SslPreference::Disable,
-            Some(serde_json::Value::Bool(true)) => SslPreference::Require,
-            Some(serde_json::Value::Object(object))
-                if object.get("mode").and_then(|v| v.as_str()) == Some("prefer") =>
-            {
-                SslPreference::Prefer
+            Some(serde_json::Value::String(mode)) => {
+                SslPreference::parse(mode).unwrap_or(SslPreference::VerifyFull)
             }
-            Some(serde_json::Value::Object(_)) => SslPreference::Require,
-            Some(serde_json::Value::String(mode)) => match mode.as_str() {
-                "disable" => SslPreference::Disable,
-                "prefer" => SslPreference::Prefer,
-                _ => SslPreference::Require,
-            },
-            _ => SslPreference::Require,
+            Some(serde_json::Value::Object(object)) => {
+                match object.get("mode").and_then(|v| v.as_str()) {
+                    Some(mode) => SslPreference::parse(mode).unwrap_or(SslPreference::VerifyFull),
+                    None if object.get("rejectUnauthorized") == Some(&false.into()) => {
+                        SslPreference::Require
+                    }
+                    None => SslPreference::VerifyFull,
+                }
+            }
+            _ => SslPreference::VerifyFull,
         }
+    }
+
+    /// A certificate authority file or PEM text to trust, when the record names one.
+    pub fn ssl_ca(&self) -> Option<&str> {
+        self.ssl
+            .as_ref()
+            .and_then(|ssl| ssl.get("ca"))
+            .and_then(serde_json::Value::as_str)
+            .filter(|ca| !ca.trim().is_empty())
     }
 }
 
@@ -189,17 +205,95 @@ fn percent_decode(value: &str, part: &str) -> Result<String, ConnectionError> {
     })
 }
 
+/// PostgreSQL TLS modes, named and behaving as libpq's `sslmode`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SslPreference {
     Disable,
     Prefer,
     Require,
+    VerifyCa,
+    VerifyFull,
+}
+
+impl SslPreference {
+    pub const ALL: [Self; 5] = [
+        Self::Disable,
+        Self::Prefer,
+        Self::Require,
+        Self::VerifyCa,
+        Self::VerifyFull,
+    ];
+
+    /// The mode's libpq name, such as `verify-full`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Disable => "disable",
+            Self::Prefer => "prefer",
+            Self::Require => "require",
+            Self::VerifyCa => "verify-ca",
+            Self::VerifyFull => "verify-full",
+        }
+    }
+
+    /// A libpq `sslmode` name. `allow` is read as `prefer`, the nearest mode Tide has.
+    pub fn parse(mode: &str) -> Option<Self> {
+        match mode.trim().to_ascii_lowercase().as_str() {
+            "disable" => Some(Self::Disable),
+            "allow" | "prefer" => Some(Self::Prefer),
+            "require" => Some(Self::Require),
+            "verify-ca" => Some(Self::VerifyCa),
+            "verify-full" => Some(Self::VerifyFull),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredConnections {
     #[serde(default)]
     pub connections: Vec<ConnectionConfig>,
+    /// Passwords for project connections. Read only from the user's own file.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub credentials: Vec<SavedCredential>,
+}
+
+/// The password you saved for a destination that a project file names. It lives in your
+/// own connections file, with the password itself in the secret service, so a project
+/// file can be shared without one, and it is only ever sent to that exact destination.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedCredential {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub username: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ssl: Option<serde_json::Value>,
+    pub password_secret: String,
+}
+
+impl SavedCredential {
+    fn destination(connection: &ConnectionConfig) -> ConnectionConfig {
+        ConnectionConfig {
+            host: connection.host.clone(),
+            port: connection.port,
+            database: connection.database.clone(),
+            username: connection.username.clone(),
+            ssl: connection.ssl.clone(),
+            ..ConnectionConfig::default()
+        }
+    }
+
+    fn is_for(&self, connection: &ConnectionConfig) -> bool {
+        SavedCredential::destination(connection).same_destination(&ConnectionConfig {
+            host: self.host.clone(),
+            port: self.port,
+            database: self.database.clone(),
+            username: self.username.clone(),
+            ssl: self.ssl.clone(),
+            ..ConnectionConfig::default()
+        })
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -207,6 +301,7 @@ pub struct ConnectionStore {
     global_file: PathBuf,
     project_file: Option<PathBuf>,
     connections: Vec<ConnectionConfig>,
+    credentials: Vec<SavedCredential>,
 }
 
 impl ConnectionStore {
@@ -215,17 +310,19 @@ impl ConnectionStore {
             global_file: global_file.into(),
             project_file,
             connections: Vec::new(),
+            credentials: Vec::new(),
         }
     }
 
     pub fn load(&mut self) -> Result<(), ConnectionError> {
         self.connections.clear();
-        load_file(
+        self.credentials = load_file(
             &self.global_file,
             ConnectionScope::Global,
             &mut self.connections,
         )?;
         if let Some(project_file) = &self.project_file {
+            // A project file cannot bring its own credentials.
             load_file(
                 project_file,
                 ConnectionScope::Project,
@@ -302,15 +399,23 @@ impl ConnectionStore {
             .filter(|connection| connection.scope == scope)
             .cloned()
             .collect::<Vec<_>>();
-        if connections.is_empty() && !write_when_empty && !path.exists() {
-            return Ok(());
-        }
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|error| ConnectionError::Io(error.to_string()))?;
         }
-        let text = serde_json::to_string_pretty(&StoredConnections { connections })
-            .map_err(|error| ConnectionError::Json(error.to_string()))?;
+        let credentials = if scope == ConnectionScope::Global {
+            self.credentials.clone()
+        } else {
+            Vec::new()
+        };
+        if connections.is_empty() && credentials.is_empty() && !write_when_empty && !path.exists() {
+            return Ok(());
+        }
+        let text = serde_json::to_string_pretty(&StoredConnections {
+            connections,
+            credentials,
+        })
+        .map_err(|error| ConnectionError::Json(error.to_string()))?;
         crate::persistence::write(path, text.as_bytes())
             .map_err(|error| ConnectionError::Io(error.to_string()))?;
         set_mode(path, 0o600);
@@ -393,16 +498,61 @@ impl ConnectionStore {
             .collect()
     }
 
-    /// Project files describe destinations, never authority to select user secrets.
+    /// Project files describe destinations, never authority to select user secrets: a
+    /// project connection uses a password you saved for its exact destination, either on
+    /// one of your own connections or as a saved project credential.
     pub fn credential_reference<'a>(&'a self, connection: &ConnectionConfig) -> Option<&'a str> {
-        self.connections
+        let own = self
+            .connections
             .iter()
             .find(|trusted| {
                 trusted.scope == ConnectionScope::Global
                     && trusted.same_destination(connection)
                     && (connection.scope == ConnectionScope::Project || trusted.id == connection.id)
             })
-            .and_then(|trusted| trusted.password_secret.as_deref())
+            .and_then(|trusted| trusted.password_secret.as_deref());
+        own.or_else(|| {
+            (connection.scope == ConnectionScope::Project)
+                .then(|| self.project_credential(connection))
+                .flatten()
+        })
+    }
+
+    /// The secret key of the password saved for a project connection's destination.
+    pub fn project_credential(&self, connection: &ConnectionConfig) -> Option<&str> {
+        self.credentials
+            .iter()
+            .find(|credential| credential.is_for(connection))
+            .map(|credential| credential.password_secret.as_str())
+    }
+
+    /// Remembers `secret` as the password for `connection`'s destination, in the user's own
+    /// file. Returns the secret key it replaces, which the caller may delete.
+    pub fn save_project_credential(
+        &mut self,
+        connection: &ConnectionConfig,
+        secret: &str,
+    ) -> Result<Option<String>, ConnectionError> {
+        let before = self.credentials.clone();
+        let replaced = self
+            .credentials
+            .iter()
+            .position(|credential| credential.is_for(connection))
+            .map(|index| self.credentials.remove(index).password_secret);
+        let destination = SavedCredential::destination(connection);
+        self.credentials.push(SavedCredential {
+            host: destination.host,
+            port: destination.port,
+            database: destination.database,
+            username: destination.username,
+            ssl: destination.ssl,
+            password_secret: secret.to_owned(),
+        });
+        if let Err(error) = self.save() {
+            self.credentials = before;
+            return Err(error);
+        }
+        Ok(replaced.filter(|old| old != secret))
     }
 
     pub fn connections(&self) -> &[ConnectionConfig] {
@@ -410,14 +560,15 @@ impl ConnectionStore {
     }
 }
 
+/// Adds the connections in `path` and returns the credentials it holds.
 fn load_file(
     path: &Path,
     scope: ConnectionScope,
     connections: &mut Vec<ConnectionConfig>,
-) -> Result<(), ConnectionError> {
+) -> Result<Vec<SavedCredential>, ConnectionError> {
     let text = match std::fs::read_to_string(path) {
         Ok(text) => text,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
         Err(error) => return Err(ConnectionError::Io(error.to_string())),
     };
     let stored: StoredConnections =
@@ -433,7 +584,82 @@ fn load_file(
         }
         connections.push(config);
     }
-    Ok(())
+    Ok(stored.credentials)
+}
+
+/// The password file libpq reads: `PGPASSFILE`, or `~/.pgpass`.
+pub fn pgpass_path() -> Option<PathBuf> {
+    std::env::var_os("PGPASSFILE")
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".pgpass")))
+}
+
+/// The password for `connection` in a libpq password file at `path`.
+///
+/// Lines are `hostname:port:database:username:password`, `*` matches anything, `\` escapes
+/// `:` and `\`, and the first matching line wins. As with libpq, the file is ignored unless
+/// only its owner can read it. A connection from a project file only uses a line that names
+/// its host, so a project cannot send a `*` password to a server of its choosing.
+pub fn pgpass_password(path: &Path, connection: &ConnectionConfig) -> Option<String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        let metadata = std::fs::metadata(path).ok()?;
+        if !metadata.is_file() || metadata.permissions().mode() & 0o077 != 0 {
+            if metadata.is_file() {
+                tracing::warn!(
+                    path = %path.display(),
+                    "password file ignored: it must not be readable by others (chmod 600)"
+                );
+            }
+            return None;
+        }
+    }
+    let text = std::fs::read_to_string(path).ok()?;
+    // libpq matches a Unix socket directory, or no host, as `localhost`.
+    let host = if connection.host.is_empty() || connection.host.starts_with('/') {
+        "localhost"
+    } else {
+        connection.host.as_str()
+    };
+    let port = connection.port.to_string();
+    let wanted = [
+        host,
+        port.as_str(),
+        &connection.database,
+        &connection.username,
+    ];
+    text.lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .filter_map(pgpass_fields)
+        .find(|fields| {
+            fields
+                .iter()
+                .zip(wanted)
+                .enumerate()
+                .all(|(index, (field, wanted))| {
+                    let any = field == "*"
+                        && !(index == 0 && connection.scope == ConnectionScope::Project);
+                    any || field == wanted
+                })
+        })
+        .map(|mut fields| fields.remove(4))
+        .filter(|password| !password.is_empty())
+}
+
+/// The five fields of a password file line, unescaped; None for a malformed line.
+fn pgpass_fields(line: &str) -> Option<Vec<String>> {
+    let mut fields = vec![String::new()];
+    let mut chars = line.chars();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\\' => fields.last_mut()?.push(chars.next().unwrap_or('\\')),
+            ':' if fields.len() < 5 => fields.push(String::new()),
+            ch => fields.last_mut()?.push(ch),
+        }
+    }
+    (fields.len() == 5).then_some(fields)
 }
 
 /// Parse a `postgres://`/`postgresql://` URL. Any password is returned
@@ -478,13 +704,28 @@ pub fn parse_postgres_url(
     if name.trim().is_empty() {
         name = format!("{database}@{host}");
     }
-    let ssl = url.query_pairs().find_map(|(key, value)| {
-        (key == "sslmode").then(|| match value.as_ref() {
-            "disable" => serde_json::Value::Bool(false),
-            "prefer" => serde_json::Value::String("prefer".to_owned()),
-            _ => serde_json::Value::Bool(true),
+    let mode = url
+        .query_pairs()
+        .find(|(key, _)| key == "sslmode")
+        .map(|(_, value)| {
+            SslPreference::parse(&value)
+                .ok_or_else(|| ConnectionError::InvalidUrl(format!("unknown sslmode {value}")))
         })
-    });
+        .transpose()?;
+    let root = url
+        .query_pairs()
+        .find(|(key, _)| key == "sslrootcert")
+        .map(|(_, value)| value.into_owned())
+        .filter(|path| !path.is_empty());
+    let ssl = match (mode, root) {
+        (Some(SslPreference::Disable), _) => Some(serde_json::Value::Bool(false)),
+        (mode, Some(ca)) => Some(serde_json::json!({
+            "mode": mode.unwrap_or(SslPreference::VerifyFull).as_str(),
+            "ca": ca,
+        })),
+        (Some(mode), None) => Some(serde_json::Value::String(mode.as_str().to_owned())),
+        (None, None) => None,
+    };
     let read_only = url
         .query_pairs()
         .find(|(key, _)| key == "readOnly" || key == "readonly")
@@ -607,6 +848,126 @@ mod tests {
     }
 
     #[test]
+    fn project_credentials_stay_in_the_user_file_and_match_only_their_destination() {
+        let dir = tempfile::tempdir().unwrap();
+        let global = dir.path().join("global.json");
+        let project_file = dir.path().join("project.json");
+        let mut store = ConnectionStore::new(&global, Some(project_file.clone()));
+        let mut project = config("app");
+        project.id = "project".into();
+        project.scope = ConnectionScope::Project;
+        project.password_secret = None;
+        store.add(project.clone()).unwrap();
+        assert_eq!(store.credential_reference(&project), None);
+        assert_eq!(
+            store
+                .save_project_credential(&project, "db.project.1.password")
+                .unwrap(),
+            None
+        );
+        assert_eq!(
+            store
+                .save_project_credential(&project, "db.project.2.password")
+                .unwrap(),
+            Some("db.project.1.password".into()),
+            "the replaced secret is handed back"
+        );
+        assert!(
+            !std::fs::read_to_string(&project_file)
+                .unwrap()
+                .contains("password")
+        );
+        assert!(
+            std::fs::read_to_string(&global)
+                .unwrap()
+                .contains("db.project.2.password")
+        );
+
+        let mut reopened = ConnectionStore::new(&global, Some(project_file.clone()));
+        reopened.load().unwrap();
+        assert_eq!(
+            reopened.credential_reference(&project),
+            Some("db.project.2.password")
+        );
+        let mut elsewhere = project.clone();
+        elsewhere.host = "other.example".into();
+        assert_eq!(reopened.credential_reference(&elsewhere), None);
+        let mut own = project.clone();
+        own.scope = ConnectionScope::Global;
+        assert_eq!(
+            reopened.credential_reference(&own),
+            None,
+            "project credentials are only for project connections"
+        );
+
+        // Credentials written into a project file are ignored.
+        std::fs::write(
+            &project_file,
+            r#"{"connections":[],"credentials":[{"host":"evil.example","port":5432,"database":"app","username":"tide","passwordSecret":"OPENAI_API_KEY"}]}"#,
+        )
+        .unwrap();
+        let mut hostile = ConnectionStore::new(dir.path().join("none.json"), Some(project_file));
+        hostile.load().unwrap();
+        let mut evil = project;
+        evil.host = "evil.example".into();
+        assert_eq!(hostile.credential_reference(&evil), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn password_files_match_like_libpq_but_projects_need_a_named_host() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("pgpass");
+        std::fs::write(
+            &path,
+            "# comment\n\
+             db.example:5432:app:tide:exact\n\
+             db.example:*:*:other:any\\:port\n\
+             localhost:5432:*:tide:socket\n\
+             *:*:*:tide:wildcard\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let mut connection = config("app");
+        assert_eq!(
+            pgpass_password(&path, &connection).as_deref(),
+            Some("exact")
+        );
+        connection.username = "other".into();
+        connection.port = 6543;
+        assert_eq!(
+            pgpass_password(&path, &connection).as_deref(),
+            Some("any:port")
+        );
+        connection.username = "tide".into();
+        connection.host = "/var/run/postgresql".into();
+        connection.port = 5432;
+        assert_eq!(
+            pgpass_password(&path, &connection).as_deref(),
+            Some("socket")
+        );
+        connection.host = "elsewhere.example".into();
+        assert_eq!(
+            pgpass_password(&path, &connection).as_deref(),
+            Some("wildcard")
+        );
+        connection.scope = ConnectionScope::Project;
+        assert_eq!(pgpass_password(&path, &connection), None);
+        connection.host = "db.example".into();
+        assert_eq!(
+            pgpass_password(&path, &connection).as_deref(),
+            Some("exact")
+        );
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert_eq!(
+            pgpass_password(&path, &connection),
+            None,
+            "readable by others"
+        );
+    }
+
+    #[test]
     fn stores_global_and_project_connections() {
         let dir = tempfile::tempdir().unwrap();
         let mut store = ConnectionStore::new(
@@ -656,9 +1017,54 @@ mod tests {
     }
 
     #[test]
+    fn ssl_modes_have_libpq_names_and_older_records_stay_verified() {
+        for mode in SslPreference::ALL {
+            let (parsed, _) = parse_postgres_url(&format!(
+                "postgres://u@db.example/app?sslmode={mode}",
+                mode = mode.as_str()
+            ))
+            .unwrap();
+            assert_eq!(parsed.ssl_mode(), mode);
+            assert_eq!(SslPreference::parse(mode.as_str()), Some(mode));
+        }
+        assert!(parse_postgres_url("postgres://u@db.example/app?sslmode=sometimes").is_err());
+        let (rooted, _) = parse_postgres_url(
+            "postgres://u@db.example/app?sslmode=verify-ca&sslrootcert=/etc/ca.pem",
+        )
+        .unwrap();
+        assert_eq!(rooted.ssl_mode(), SslPreference::VerifyCa);
+        assert_eq!(rooted.ssl_ca(), Some("/etc/ca.pem"));
+        let mut record = config("app");
+        for (ssl, mode) in [
+            (serde_json::json!(true), SslPreference::VerifyFull),
+            (
+                serde_json::json!({ "rejectUnauthorized": true }),
+                SslPreference::VerifyFull,
+            ),
+            (
+                serde_json::json!({ "ca": "/ca.pem" }),
+                SslPreference::VerifyFull,
+            ),
+            (
+                serde_json::json!({ "rejectUnauthorized": false }),
+                SslPreference::Require,
+            ),
+            (
+                serde_json::json!({ "mode": "require", "ca": "/ca.pem" }),
+                SslPreference::Require,
+            ),
+            (serde_json::json!("require"), SslPreference::Require),
+            (serde_json::json!("no-such-mode"), SslPreference::VerifyFull),
+        ] {
+            record.ssl = Some(ssl.clone());
+            assert_eq!(record.ssl_mode(), mode, "{ssl}");
+        }
+    }
+
+    #[test]
     fn unset_ssl_requires_tls_except_on_loopback() {
         let mut remote = config("app");
-        assert_eq!(remote.ssl_mode(), SslPreference::Require);
+        assert_eq!(remote.ssl_mode(), SslPreference::VerifyFull);
         for host in [
             "localhost",
             "LOCALHOST",
@@ -673,14 +1079,14 @@ mod tests {
         }
         for host in ["db.example", "10.0.0.5", "localhost.example", "::2"] {
             remote.host = host.to_owned();
-            assert_eq!(remote.ssl_mode(), SslPreference::Require, "{host}");
+            assert_eq!(remote.ssl_mode(), SslPreference::VerifyFull, "{host}");
         }
         remote.ssl = Some(serde_json::Value::Bool(false));
         assert_eq!(remote.ssl_mode(), SslPreference::Disable);
         remote.ssl = Some(serde_json::json!("prefer"));
         assert_eq!(remote.ssl_mode(), SslPreference::Prefer);
         let (parsed, _) = parse_postgres_url("postgres://u@db.example/app").unwrap();
-        assert_eq!(parsed.ssl_mode(), SslPreference::Require);
+        assert_eq!(parsed.ssl_mode(), SslPreference::VerifyFull);
         let (parsed, _) = parse_postgres_url("postgres://u@127.0.0.1/app").unwrap();
         assert_eq!(parsed.ssl_mode(), SslPreference::Disable);
         let (parsed, _) =

@@ -467,6 +467,82 @@ async fn live_tls_connections_accept_a_custom_ca() {
     assert_eq!(result.rows[0]["n"], Value::from(3));
 }
 
+#[cfg(unix)]
+#[tokio::test]
+#[ignore = "needs TIDE_TEST_DATABASE_URL (live PostgreSQL)"]
+async fn live_project_connections_can_take_their_password_from_a_password_file() {
+    use std::os::unix::fs::PermissionsExt;
+    let (mut config, password) = live_config(true, None);
+    let Some(password) = password else {
+        return; // The server needs no password, so there is nothing to look up.
+    };
+    config.scope = tide_db::ConnectionScope::Project;
+    let dir = tempfile::tempdir().unwrap();
+    let pgpass = dir.path().join("pgpass");
+    let escaped = password.replace('\\', "\\\\").replace(':', "\\:");
+    std::fs::write(
+        &pgpass,
+        format!(
+            "{}:{}:*:{}:{escaped}\n",
+            config.host, config.port, config.username
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&pgpass, std::fs::Permissions::from_mode(0o600)).unwrap();
+    assert!(
+        PostgresSession::connect(&config, None).await.is_err(),
+        "the server wants a password"
+    );
+    let found = tide_db::pgpass_password(&pgpass, &config);
+    assert_eq!(found.as_deref(), Some(password.as_str()));
+    let session = PostgresSession::connect(&config, found.as_deref())
+        .await
+        .unwrap();
+    let result = session.execute("SELECT 4 AS n", false).await.unwrap();
+    assert_eq!(result.rows[0]["n"], Value::from(4));
+}
+
+#[tokio::test]
+#[ignore = "needs TIDE_TEST_DATABASE_TLS_URL and TIDE_TEST_DATABASE_CA (live PostgreSQL)"]
+async fn live_tls_modes_check_certificates_as_libpq_does() {
+    let _fixture = LIVE_FIXTURES.lock().await;
+    let url = std::env::var("TIDE_TEST_DATABASE_TLS_URL").expect("TIDE_TEST_DATABASE_TLS_URL");
+    let ca = std::env::var("TIDE_TEST_DATABASE_CA").expect("TIDE_TEST_DATABASE_CA");
+    let (base, password) = parse_postgres_url(&url).unwrap();
+    let connect = |ssl: Value| {
+        let mut config = base.clone();
+        config.ssl = Some(ssl);
+        let password = password.clone();
+        async move { PostgresSession::connect(&config, password.as_deref()).await }
+    };
+    // The server's certificate comes from a private CA that the system does not trust.
+    for mode in ["prefer", "require"] {
+        let session = connect(serde_json::json!(mode))
+            .await
+            .unwrap_or_else(|error| panic!("{mode}: {error}"));
+        let result = session
+            .execute(
+                "SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()",
+                false,
+            )
+            .await
+            .unwrap();
+        assert_eq!(result.rows[0]["ssl"], Value::Bool(true), "{mode} encrypts");
+    }
+    for mode in ["verify-ca", "verify-full"] {
+        let error = connect(serde_json::json!(mode)).await.unwrap_err();
+        // The failure names the cause and the way out.
+        assert!(
+            error.to_string().contains("UnknownIssuer")
+                && error.to_string().contains("sslmode=require"),
+            "{mode}: {error}"
+        );
+        connect(serde_json::json!({ "mode": mode, "ca": ca }))
+            .await
+            .unwrap_or_else(|error| panic!("{mode} with the CA: {error}"));
+    }
+}
+
 #[tokio::test]
 #[ignore = "needs TIDE_TEST_DATABASE_URL (live PostgreSQL)"]
 async fn live_read_only_survives_session_functions_and_transaction_escapes() {

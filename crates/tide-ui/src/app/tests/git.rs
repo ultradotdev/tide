@@ -309,6 +309,7 @@ fn first_async_git_refresh_invalidates_rows_when_startup_revision_collides() {
         root: app.workspace.clone(),
         branch: Some("main".into()),
         head: None,
+        operation: None,
         dirty: true,
         ahead_behind: None,
         changed_paths: vec!["file.txt".into()],
@@ -371,6 +372,7 @@ fn lossy_git_paths_are_never_selected_for_path_actions() {
             root: PathBuf::from("/repo"),
             branch: None,
             head: None,
+            operation: None,
             dirty: true,
             ahead_behind: None,
             changed_paths: vec!["bad\u{fffd}.txt".into(), "file.txt".into()],
@@ -540,11 +542,134 @@ fn choose(app: &mut App, text: &str) {
 }
 
 fn answer(app: &mut App, input: &str) {
+    let commit = matches!(
+        app.overlay.as_ref().map(|overlay| overlay.kind()),
+        Some(ModalKind::Prompt(
+            PromptAction::Commit | PromptAction::CommitAmend { .. }
+        ))
+    );
     let base = app.overlay.as_mut().expect("a prompt").base_mut();
     base.input = input.to_owned();
     base.cursor = input.chars().count();
-    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    // Enter starts a new line in a commit message; Ctrl+S commits it.
+    app.handle_modal_key(if commit {
+        KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL)
+    } else {
+        KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)
+    });
     app.settle();
+}
+
+fn type_keys(app: &mut App, text: &str) {
+    for ch in text.chars() {
+        let code = if ch == '\n' {
+            KeyCode::Enter
+        } else {
+            KeyCode::Char(ch)
+        };
+        app.handle_key(KeyEvent::new(code, KeyModifiers::NONE));
+    }
+}
+
+#[test]
+fn commit_messages_have_a_body_and_a_cancelled_message_is_kept() {
+    let (_home, mut app) = repository();
+    std::fs::write(app.workspace.join("file.txt"), "two\n").unwrap();
+    git_in(&app.workspace, &["add", "file.txt"]);
+    refreshed(&mut app);
+
+    app.execute_command(Command::GitCommit);
+    type_keys(&mut app, "Explain the change\nIt needed a body.");
+    app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert!(app.overlay.is_none());
+    app.execute_command(Command::GitCommit);
+    assert_eq!(
+        app.overlay.as_ref().unwrap().input(),
+        "Explain the change\nIt needed a body.",
+        "the draft comes back"
+    );
+    type_keys(&mut app, "\n\n  ");
+    app.handle_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL));
+    app.settle();
+    // Git separates the summary from the body with a blank line; trailing space goes.
+    assert_eq!(
+        git_in(&app.workspace, &["log", "--format=%B", "-n", "1"]),
+        "Explain the change\n\nIt needed a body."
+    );
+    assert_eq!(
+        git_in(&app.workspace, &["log", "--format=%s", "-n", "1"]),
+        "Explain the change"
+    );
+    refreshed(&mut app);
+    app.execute_command(Command::GitCommit);
+    assert_eq!(
+        app.overlay.as_ref().unwrap().input(),
+        "",
+        "a committed message is not offered again"
+    );
+    app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+
+    // A failed commit keeps the message for the next try.
+    app.execute_command(Command::GitCommit);
+    type_keys(&mut app, "Nothing staged");
+    app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT));
+    app.settle();
+    assert!(app.status.contains("nothing to commit"), "{}", app.status);
+    refreshed(&mut app);
+    app.execute_command(Command::GitCommit);
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "Nothing staged");
+}
+
+#[test]
+fn source_control_shows_a_detached_head_and_a_paused_rebase_with_its_conflicts() {
+    let (_home, mut app) = repository();
+    let draw = |app: &mut App| {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(140, 40)).unwrap();
+        terminal.draw(|frame| app.draw(frame)).unwrap();
+        crate::test_support::screen_text(&terminal)
+    };
+    app.execute_command(Command::GitFocusPanel);
+
+    git_in(&app.workspace, &["checkout", "-q", "--detach"]);
+    let head = git_in(&app.workspace, &["rev-parse", "HEAD"]);
+    refreshed(&mut app);
+    let screen = draw(&mut app);
+    assert!(
+        screen.contains(&format!("HEAD detached at {}", &head[..8])),
+        "{screen}"
+    );
+    assert!(!screen.contains("no repository"), "{screen}");
+
+    git_in(&app.workspace, &["checkout", "-q", "main"]);
+    git_in(&app.workspace, &["checkout", "-q", "-b", "topic"]);
+    commit_file(&app.workspace, "file.txt", "topic\n", "topic change");
+    let onto = git_in(&app.workspace, &["rev-parse", "HEAD"]);
+    git_in(&app.workspace, &["checkout", "-q", "main"]);
+    commit_file(&app.workspace, "file.txt", "main 1\n", "main 1");
+    commit_file(&app.workspace, "file.txt", "main 2\n", "main 2");
+    let rebase = std::process::Command::new("git")
+        .arg("-C")
+        .arg(&app.workspace)
+        .args(["rebase", "-q", "topic"])
+        .output()
+        .unwrap();
+    assert!(!rebase.status.success(), "the rebase stops on a conflict");
+    refreshed(&mut app);
+    let screen = draw(&mut app);
+    assert!(screen.contains("HEAD detached at"), "{screen}");
+    assert!(
+        screen.contains(&format!("Rebasing main onto {} (1/2)", &onto[..8])),
+        "{screen}"
+    );
+    assert!(
+        screen.contains("Rebasing 1/2"),
+        "the status bar says so: {screen}"
+    );
+    assert!(screen.contains("Conflicts"), "{screen}");
+    assert!(screen.contains("file.txt"), "{screen}");
+    // The rows below the two header lines still select files.
+    assert!(app.git.has_changes());
 }
 
 #[test]
@@ -592,7 +717,7 @@ fn discard_discard_all_and_clean_each_touch_only_their_own_changes() {
 }
 
 #[test]
-fn amend_prefills_the_message_keeps_the_body_and_warns_when_pushed() {
+fn amend_shows_the_whole_message_and_warns_when_pushed() {
     let (home, mut app) = test_app();
     initialize_git(&app);
     git_in(&app.workspace, &["symbolic-ref", "HEAD", "refs/heads/main"]);
@@ -631,13 +756,14 @@ fn amend_prefills_the_message_keeps_the_body_and_warns_when_pushed() {
         ModalKind::Prompt(PromptAction::CommitAmend { upstream: Some(upstream), .. })
             if upstream == "origin/main"
     ));
-    assert_eq!(prompt.base().input, "first");
-    answer(&mut app, "first, amended");
+    // The whole message is shown, so the body that will be kept is visible and editable.
+    assert_eq!(prompt.base().input, "first\n\nkeep this body");
+    answer(&mut app, "first, amended\n\nkeep this body\nand say why");
     let warning = confirm_overlay(&mut app);
     assert!(warning.contains("already on origin/main"), "{warning}");
     assert_eq!(
         git_in(&app.workspace, &["log", "--format=%B", "-n", "1"]),
-        "first, amended\n\nkeep this body"
+        "first, amended\n\nkeep this body\nand say why"
     );
     assert_eq!(
         git_in(&app.workspace, &["rev-list", "--count", "HEAD"]),
