@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -272,7 +272,8 @@ pub enum AppEvent {
     /// A background recovery snapshot finished.
     SessionAutosaved(Result<(), String>),
     /// Titles of open editors whose files changed on disk.
-    ExternalChanges(Vec<String>),
+    /// Open files whose contents on disk no longer match what Tide last read or wrote.
+    ExternalChanges(Vec<PathBuf>),
     QuickOpen {
         generation: u64,
         files: Vec<PathBuf>,
@@ -465,6 +466,8 @@ pub struct App {
     autosave_running: bool,
     last_external_check: Instant,
     external_check_running: bool,
+    /// Changed-on-disk files already reported, so the status says it once per change.
+    external_reported: HashSet<PathBuf>,
     files_pending: Option<Instant>,
     session_dirty: bool,
     zen: Option<ZenLayout>,
@@ -652,6 +655,7 @@ impl App {
             autosave_running: false,
             last_external_check: Instant::now(),
             external_check_running: false,
+            external_reported: HashSet::new(),
             files_pending: None,
             session_dirty: false,
             zen: None,
@@ -1156,9 +1160,11 @@ impl App {
         let mut documents = Vec::new();
         for tab in self.workbench.tabs() {
             if let Some(editor) = tab.editor()
+                && editor.historical.is_none()
                 && let Some(path) = editor.path()
+                && !documents.iter().any(|(_, known)| known == path)
             {
-                documents.push((editor.title(), editor.document.clone(), path.to_path_buf()));
+                documents.push((editor.document.clone(), path.to_path_buf()));
             }
         }
         if documents.is_empty() {
@@ -1167,8 +1173,8 @@ impl App {
         let check = move || {
             documents
                 .into_iter()
-                .filter(|(_, document, path)| document.disk_changed(path))
-                .map(|(title, _, _)| title)
+                .filter(|(document, path)| document.disk_changed(path))
+                .map(|(_, path)| path)
                 .collect::<Vec<_>>()
         };
         let sender = self.events_tx.clone();
@@ -1179,14 +1185,64 @@ impl App {
         false
     }
 
-    fn report_external_changes(&mut self, titles: &[String]) -> bool {
-        let Some(title) = titles.first() else {
-            return false;
-        };
-        self.set_status(format!(
-            "{title} changed on disk; save is blocked until reload"
-        ));
-        true
+    /// Reloads open files that changed on disk and have no unsaved edits, as one undo step
+    /// that keeps the cursor near its place. A file with unsaved edits, or one deleted on
+    /// disk, is reported once; saving it stays blocked until it is reverted or overwritten.
+    fn report_external_changes(&mut self, paths: &[PathBuf]) -> bool {
+        self.external_reported.retain(|path| paths.contains(path));
+        let mut reloaded = Vec::new();
+        let mut notices = Vec::new();
+        for path in paths {
+            let Some(editor) = self.workbench.tabs_mut().find_map(|tab| match tab {
+                Tab::Editor(editor)
+                    if editor.historical.is_none() && editor.path() == Some(path.as_path()) =>
+                {
+                    Some(editor)
+                }
+                _ => None,
+            }) else {
+                continue;
+            };
+            let title = editor.title();
+            if editor.is_dirty() {
+                if self.external_reported.insert(path.clone()) {
+                    notices.push(format!(
+                        "{title} changed on disk and has unsaved edits; run “Revert File” to load the disk version or “Overwrite File on Disk” to keep yours"
+                    ));
+                }
+                continue;
+            }
+            match editor.reload() {
+                Ok(()) => reloaded.push(title),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    if self.external_reported.insert(path.clone()) {
+                        notices.push(format!(
+                            "{title} was deleted on disk; run “Overwrite File on Disk” to write it again"
+                        ));
+                    }
+                }
+                Err(error) => {
+                    if self.external_reported.insert(path.clone()) {
+                        notices.push(format!(
+                            "{title} changed on disk but could not be reloaded: {error}"
+                        ));
+                    }
+                }
+            }
+        }
+        if !reloaded.is_empty() {
+            self.mark_session_dirty();
+            with_ui!(self, |ui| self.git.load_inline_diff(ui));
+            notices.insert(
+                0,
+                format!("Reloaded {} (changed on disk)", reloaded.join(", ")),
+            );
+        }
+        let changed = !notices.is_empty();
+        for notice in notices {
+            self.set_status(notice);
+        }
+        changed
     }
 
     fn associate_agent_workspace(&mut self, path: &str) {

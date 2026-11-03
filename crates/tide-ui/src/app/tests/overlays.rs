@@ -536,3 +536,57 @@ fn source_control_group_toggle_from_the_palette_keeps_the_section_open() {
     assert!(expanded(&app));
     assert!(app.git.panel.collapsed.is_empty());
 }
+
+#[test]
+fn quick_open_and_find_in_files_skip_git_and_excluded_folders_and_rank_file_names_first() {
+    let (_home, app) = test_app();
+    let root = &app.workspace;
+    for path in [
+        ".git/refs/heads/main",
+        ".git/logs/HEAD",
+        "node_modules/pkg/main.js",
+        "src/main.rs",
+        "src/domain/maintenance.rs",
+        ".github/workflows/ci.yml",
+    ] {
+        let path = root.join(path);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, "needle\n").unwrap();
+    }
+    let files = collect_files(root, 10_000, &app.file_excludes());
+    let listed = files
+        .iter()
+        .map(|path| path.strip_prefix(root).unwrap().display().to_string())
+        .collect::<Vec<_>>();
+    assert!(listed.contains(&"src/main.rs".to_owned()), "{listed:?}");
+    assert!(
+        listed.contains(&".github/workflows/ci.yml".to_owned()),
+        "dotfiles that are not excluded stay listed: {listed:?}"
+    );
+    assert!(
+        listed
+            .iter()
+            .all(|path| !path.starts_with(".git/") && !path.starts_with("node_modules/")),
+        "{listed:?}"
+    );
+
+    let mut modal = modal::quick_open(file_items(&files, root));
+    for ch in "main".chars() {
+        modal.handle_key(KeyEvent::new(KeyCode::Char(ch), KeyModifiers::NONE));
+    }
+    assert_eq!(modal.base().selected_item().unwrap().label, "src/main.rs");
+
+    let found = crate::workspace_search::search_excluding(
+        root,
+        "needle",
+        &std::sync::atomic::AtomicBool::new(false),
+        &app.file_excludes(),
+    )
+    .into_iter()
+    .map(|item| item.label)
+    .collect::<Vec<_>>()
+    .join("\n");
+    assert!(found.contains("src/main.rs"), "{found}");
+    assert!(!found.contains(".git/"), "{found}");
+    assert!(!found.contains("node_modules"), "{found}");
+}

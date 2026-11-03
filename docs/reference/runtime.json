@@ -2670,11 +2670,13 @@
     },
     {
       "command": "workbench.focusPaneLeft",
-      "key": "alt+left"
+      "key": "alt+left",
+      "when": "!editorFocus"
     },
     {
       "command": "workbench.focusPaneRight",
-      "key": "alt+right"
+      "key": "alt+right",
+      "when": "!editorFocus"
     },
     {
       "command": "workbench.focusPaneUp",
@@ -2934,6 +2936,10 @@
       "key": "ctrl+]"
     },
     {
+      "command": "editor.toggleComment",
+      "key": "ctrl+_"
+    },
+    {
       "command": "workbench.toggleTerminal",
       "key": "ctrl+`"
     },
@@ -2970,6 +2976,10 @@
       "command": "lsp.goToImplementation",
       "key": "ctrl+f12",
       "when": "editorFocus"
+    },
+    {
+      "command": "edit.selectAllOccurrences",
+      "key": "ctrl+f2"
     },
     {
       "command": "editor.gotoLine",
@@ -3256,6 +3266,15 @@
     {
       "command": "workbench.commandPalette",
       "key": "f1"
+    },
+    {
+      "command": "lsp.goToDefinition",
+      "key": "f12"
+    },
+    {
+      "command": "lsp.rename",
+      "key": "f2",
+      "when": "editorFocus"
     },
     {
       "command": "fileTree.rename",
@@ -3618,6 +3637,10 @@
       "command": "queryResults.sort",
       "key": "s",
       "when": "queryResultsFocus"
+    },
+    {
+      "command": "lsp.findReferences",
+      "key": "shift+f12"
     },
     {
       "command": "search.findPrevious",

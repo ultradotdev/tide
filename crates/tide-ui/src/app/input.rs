@@ -377,8 +377,30 @@ impl App {
             editor.configure_editing(tab_size, insert_spaces, relative);
             editor.follow_cursor();
         }
+        let shift = key.modifiers.contains(KeyModifiers::SHIFT);
+        // Ctrl (Option on macOS, which terminals send as Alt) moves by word; Cmd, which
+        // only terminals with the kitty keyboard protocol report, moves to line and
+        // document edges.
+        let by_word = key
+            .modifiers
+            .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT);
+        let command = key
+            .modifiers
+            .intersects(KeyModifiers::SUPER | KeyModifiers::META);
         match self.workbench.active_tab_mut() {
             Some(Tab::Editor(editor)) => match key.code {
+                // Emacs and readline word keys, which macOS terminals send for Option+Left,
+                // Option+Right and Option+Delete.
+                KeyCode::Char('b') if key.modifiers == KeyModifiers::ALT => {
+                    editor.move_word(false, false)
+                }
+                KeyCode::Char('f') if key.modifiers == KeyModifiers::ALT => {
+                    editor.move_word(true, false)
+                }
+                KeyCode::Char('d') if key.modifiers == KeyModifiers::ALT => {
+                    editor.delete_word(true);
+                    self.mark_session_dirty();
+                }
                 KeyCode::Char(ch)
                     if !key.modifiers.intersects(
                         KeyModifiers::CONTROL | KeyModifiers::ALT | KeyModifiers::SUPER,
@@ -403,20 +425,36 @@ impl App {
                     editor.indent_lines(true, tab_size);
                     self.mark_session_dirty();
                 }
+                KeyCode::Backspace if by_word => {
+                    editor.delete_word(false);
+                    self.mark_session_dirty();
+                }
                 KeyCode::Backspace => {
                     editor.backspace();
+                    self.mark_session_dirty();
+                }
+                KeyCode::Delete if by_word => {
+                    editor.delete_word(true);
                     self.mark_session_dirty();
                 }
                 KeyCode::Delete => {
                     editor.delete_forward();
                     self.mark_session_dirty();
                 }
-                KeyCode::Left => editor.move_left(key.modifiers.contains(KeyModifiers::SHIFT)),
-                KeyCode::Right => editor.move_right(key.modifiers.contains(KeyModifiers::SHIFT)),
-                KeyCode::Up => editor.move_up(key.modifiers.contains(KeyModifiers::SHIFT)),
-                KeyCode::Down => editor.move_down(key.modifiers.contains(KeyModifiers::SHIFT)),
-                KeyCode::Home => editor.home(key.modifiers.contains(KeyModifiers::SHIFT)),
-                KeyCode::End => editor.end(key.modifiers.contains(KeyModifiers::SHIFT)),
+                KeyCode::Left if command => editor.home(shift),
+                KeyCode::Right if command => editor.end(shift),
+                KeyCode::Up if command => editor.move_to_document_edge(false, shift),
+                KeyCode::Down if command => editor.move_to_document_edge(true, shift),
+                KeyCode::Left if by_word => editor.move_word(false, shift),
+                KeyCode::Right if by_word => editor.move_word(true, shift),
+                KeyCode::Left => editor.move_left(shift),
+                KeyCode::Right => editor.move_right(shift),
+                KeyCode::Up => editor.move_up(shift),
+                KeyCode::Down => editor.move_down(shift),
+                KeyCode::Home if by_word => editor.move_to_document_edge(false, shift),
+                KeyCode::End if by_word => editor.move_to_document_edge(true, shift),
+                KeyCode::Home => editor.home(shift),
+                KeyCode::End => editor.end(shift),
                 KeyCode::PageUp => editor.page_up(20, key.modifiers.contains(KeyModifiers::SHIFT)),
                 KeyCode::PageDown => {
                     editor.page_down(20, key.modifiers.contains(KeyModifiers::SHIFT))

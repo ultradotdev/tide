@@ -188,13 +188,14 @@ impl App {
         let root = self.workspace.clone();
         let query = query.to_owned();
         let search_query = query.clone();
+        let excludes = self.file_excludes();
         let mut loading = modal::search_results(Vec::new());
         loading.base_mut().hints = Some("Searching workspace…  Esc cancel".into());
         self.overlay = Some(loading);
         self.set_status(format!("Searching for {query}..."));
         self.jobs.spawn(async move {
             let items = tokio::task::spawn_blocking(move || {
-                crate::workspace_search::search(&root, &search_query, &cancel)
+                crate::workspace_search::search_excluding(&root, &search_query, &cancel, &excludes)
             })
             .await
             .unwrap_or_default();

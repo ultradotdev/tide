@@ -24,7 +24,7 @@ New terminals start in the workspace folder with the program in `terminal.shell`
 
 ## Keys inside a terminal
 
-While a terminal has focus, the program running there gets every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`, even where Tide binds them, so editors such as nano and emacs, tmux and AI agents work as they do outside Tide. Workbench keys with Shift, Alt or a function key still reach Tide, so open the command palette from a terminal with `Ctrl+Shift+P` or `F1`.
+While a terminal has focus, the program running there gets every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`, even where Tide binds them, so editors such as nano and emacs, tmux and AI agents work as they do outside Tide. Workbench keys with Shift, Alt or a function key still reach Tide, so open the command palette from a terminal with `F1`.
 
 Escape also belongs to the program. To leave a terminal, use `F6` or `Ctrl+Alt+]`, `Alt+Left` or `Ctrl+Alt+Left` and the other pane keys, `` Ctrl+` `` to hide the dock, or click elsewhere.
 

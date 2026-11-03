@@ -772,18 +772,19 @@ pub(super) fn write_file_atomic(path: &Path, content: &str) -> std::io::Result<(
     crate::editor::write_atomic(path, content.as_bytes())
 }
 
-pub(super) fn collect_files(root: &Path, limit: usize) -> Vec<PathBuf> {
-    let mut files = ignore::WalkBuilder::new(root)
-        .hidden(false)
-        .git_ignore(true)
-        .git_global(false)
-        .git_exclude(true)
+/// Up to `limit` workspace files for Quick Open, shallowest first so a deep or vendored
+/// directory cannot crowd out the files near the root.
+pub(super) fn collect_files(root: &Path, limit: usize, excludes: &[String]) -> Vec<PathBuf> {
+    let mut files = crate::file_tree::workspace_walk(root, root, excludes)
         .build()
         .flatten()
         .filter(|entry| entry.file_type().is_some_and(|kind| kind.is_file()))
-        .map(|entry| entry.into_path())
-        .take(limit.clamp(100, 100000))
+        .map(|entry| (entry.depth(), entry.into_path()))
+        .take(200_000)
         .collect::<Vec<_>>();
+    files.sort();
+    files.truncate(limit.clamp(100, 100_000));
+    let mut files = files.into_iter().map(|(_, path)| path).collect::<Vec<_>>();
     files.sort();
     files
 }

@@ -45,18 +45,7 @@ impl App {
             );
         }
 
-        let exclusions = self
-            .settings
-            .get("files.exclude")
-            .and_then(serde_json::Value::as_object)
-            .map(|patterns| {
-                patterns
-                    .iter()
-                    .filter(|(_, enabled)| enabled.as_bool() == Some(true))
-                    .map(|(pattern, _)| pattern.clone())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let exclusions = self.file_excludes();
         self.file_tree.configure(exclusions);
         self.file_tree.set_ascii_icons(
             self.settings

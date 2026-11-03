@@ -593,9 +593,87 @@ async fn external_change_checks_run_off_the_ui_thread() {
     app.handle_background(event);
     assert!(
         app.status
-            .contains("watched.txt changed on disk; save is blocked until reload"),
+            .contains("Reloaded watched.txt (changed on disk)"),
         "{}",
         app.status
+    );
+    assert_eq!(
+        app.workbench.active_editor().unwrap().document.text(),
+        "external\n"
+    );
+}
+
+#[test]
+fn changes_on_disk_reload_clean_files_and_report_unsaved_or_deleted_ones_once() {
+    let (_home, mut app) = test_app();
+    let clean = app.workspace.join("clean.txt");
+    let edited = app.workspace.join("edited.txt");
+    std::fs::write(&clean, "one\ntwo\nthree\n").unwrap();
+    std::fs::write(&edited, "mine\n").unwrap();
+    app.open_file(&edited);
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("draft ");
+    app.open_file(&clean);
+    app.workbench.active_editor_mut().unwrap().move_down(false);
+
+    std::fs::write(&clean, "one\ntwo changed by a formatter\nthree\n").unwrap();
+    std::fs::write(&edited, "theirs\n").unwrap();
+    app.handle_background(AppEvent::ExternalChanges(vec![
+        clean.clone(),
+        edited.clone(),
+    ]));
+    let editor = app.workbench.active_editor().unwrap();
+    assert_eq!(
+        editor.document.text(),
+        "one\ntwo changed by a formatter\nthree\n"
+    );
+    assert!(!editor.is_dirty());
+    assert_eq!(
+        editor.document.cursor().position.line,
+        1,
+        "the cursor stays on its line"
+    );
+    assert!(
+        app.status_history
+            .iter()
+            .any(|line| line.contains("Reloaded clean.txt"))
+    );
+    assert!(
+        app.status
+            .contains("edited.txt changed on disk and has unsaved edits"),
+        "{}",
+        app.status
+    );
+
+    // Undo brings back what was on screen before the reload.
+    app.workbench.active_editor_mut().unwrap().undo();
+    assert_eq!(
+        app.workbench.active_editor().unwrap().document.text(),
+        "one\ntwo\nthree\n"
+    );
+    app.workbench.active_editor_mut().unwrap().redo();
+
+    // The same unresolved change is not announced again on every check.
+    app.set_status("Saved something");
+    app.handle_background(AppEvent::ExternalChanges(vec![edited.clone()]));
+    assert_eq!(app.status, "Saved something");
+
+    std::fs::remove_file(&clean).unwrap();
+    app.handle_background(AppEvent::ExternalChanges(vec![
+        clean.clone(),
+        edited.clone(),
+    ]));
+    assert!(
+        app.status.contains("clean.txt was deleted on disk"),
+        "{}",
+        app.status
+    );
+    assert_eq!(
+        app.workbench.active_editor().unwrap().document.text(),
+        "one\ntwo changed by a formatter\nthree\n",
+        "a deleted file's text stays open"
     );
 }
 

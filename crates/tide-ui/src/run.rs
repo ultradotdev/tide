@@ -70,6 +70,9 @@ thread_local! {
 fn restore_terminal() {
     let _ = disable_raw_mode();
     let mut stdout = io::stdout();
+    // The kitty keyboard protocol keeps one flag stack per screen: pop Tide's flags on the
+    // alternate screen, where they were pushed, before leaving it.
+    let _ = write!(stdout, "{DISABLE_KEYBOARD}");
     let _ = execute!(
         stdout,
         LeaveAlternateScreen,
@@ -78,7 +81,6 @@ fn restore_terminal() {
         DisableBracketedPaste,
         crossterm::cursor::Show
     );
-    let _ = write!(stdout, "{DISABLE_KEYBOARD}");
     let _ = stdout.flush();
 }
 
@@ -145,7 +147,6 @@ pub async fn run(mut app: App) -> Result<()> {
     let _mode_guard = TerminalModeGuard;
     OWNS_TERMINAL.set(true);
     let mut stdout = io::stdout();
-    write!(stdout, "{ENABLE_KEYBOARD}")?;
     execute!(
         stdout,
         EnterAlternateScreen,
@@ -153,6 +154,9 @@ pub async fn run(mut app: App) -> Result<()> {
         EnableFocusChange,
         EnableBracketedPaste
     )?;
+    // After the switch: flags pushed on the main screen do not apply to the alternate one.
+    write!(stdout, "{ENABLE_KEYBOARD}")?;
+    stdout.flush()?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     let mut events = EventStream::new();

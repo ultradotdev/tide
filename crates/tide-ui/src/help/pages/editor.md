@@ -13,11 +13,13 @@ The Tide editor combines a terminal-cell-aware text model with syntax highlighti
 | Close the tab | {{key:file.close}} |
 | Go to a line | {{key:editor.gotoLine}} |
 
-**{{label:file.saveAll}}**, **{{label:file.reload}}** and **{{label:file.overwrite}}** are in the palette. When a file changes on disk while it is open, Tide blocks saving over it until you reload or explicitly overwrite. Files that are not valid UTF-8 open read-only so a save cannot corrupt them; Save As writes a copy.
+**{{label:file.saveAll}}**, **{{label:file.reload}}** and **{{label:file.overwrite}}** are in the palette. When an open file changes on disk, after a `git checkout`, a formatter or an agent's edit, a tab with no unsaved edits reloads by itself, keeping the cursor near its place; **{{label:edit.undo}}** brings back the previous text. If the tab has unsaved edits, Tide says so once and blocks saving over the newer file until you run **{{label:file.reload}}** or **{{label:file.overwrite}}**. A file deleted on disk stays open with its text. Files that are not valid UTF-8 open read-only so a save cannot corrupt them; Save As writes a copy.
 
 ## Editing
 
 Undo, redo, selection, comments, folding, automatic indentation, auto-closing pairs (`()`, `[]`, `{}`, quotes and backticks), bracket matching and word wrap all work as you would expect.
+
+To move the cursor, `Ctrl+Left` and `Ctrl+Right` (`Option+Left` and `Option+Right` on macOS, which terminals send as Alt or as `Alt+B` and `Alt+F`) move by word, and `Ctrl+Home` and `Ctrl+End` go to the start and end of the file. `Home` goes to the first non-blank character, then to column 0 on a second press. Hold Shift to select as you move. `Ctrl+Backspace` or `Alt+Backspace` deletes the word before the cursor, and `Ctrl+Delete` or `Alt+D` deletes the word after it. Some terminals send `Ctrl+Backspace` as `Ctrl+H` (Replace); use `Alt+Backspace` in those. Where the terminal supports the kitty keyboard protocol, `Cmd+Left` and `Cmd+Right` go to the line's start and end, and `Cmd+Up` and `Cmd+Down` to the file's.
 
 | To | Press |
 | --- | --- |

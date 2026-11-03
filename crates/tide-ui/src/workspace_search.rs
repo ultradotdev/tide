@@ -140,6 +140,8 @@ impl TaskQueue {
 }
 struct SearchContext<'a> {
     root: &'a Path,
+    /// `files.exclude` globs.
+    excludes: &'a [String],
     handle: std::fs::File,
     cancel: &'a AtomicBool,
     done: AtomicBool,
@@ -214,12 +216,7 @@ impl SearchContext<'_> {
             return;
         }
         let path = self.root.join(relative);
-        let mut builder = ignore::WalkBuilder::new(&path);
-        builder
-            .hidden(false)
-            .git_ignore(true)
-            .git_global(false)
-            .git_exclude(true);
+        let mut builder = crate::file_tree::workspace_walk(self.root, &path, self.excludes);
         if distribute {
             builder.max_depth(Some(1));
         }
@@ -282,7 +279,17 @@ impl SearchContext<'_> {
 }
 
 pub fn search(root: &Path, query: &str, cancel: &AtomicBool) -> Vec<ModalItem> {
-    search_with_parallelism(root, query, cancel, 4)
+    search_excluding(root, query, cancel, &[])
+}
+
+/// Searches like [`search`], leaving out the paths the `excludes` globs match.
+pub fn search_excluding(
+    root: &Path,
+    query: &str,
+    cancel: &AtomicBool,
+    excludes: &[String],
+) -> Vec<ModalItem> {
+    run(root, query, cancel, 4, excludes)
 }
 
 /// Search with a caller-supplied worker budget, clamped to one through four.
@@ -293,6 +300,16 @@ pub fn search_with_parallelism(
     query: &str,
     cancel: &AtomicBool,
     parallelism: usize,
+) -> Vec<ModalItem> {
+    run(root, query, cancel, parallelism, &[])
+}
+
+fn run(
+    root: &Path,
+    query: &str,
+    cancel: &AtomicBool,
+    parallelism: usize,
+    excludes: &[String],
 ) -> Vec<ModalItem> {
     if query.len() > 4096 || cancel.load(Ordering::Acquire) {
         return Vec::new();
@@ -313,6 +330,7 @@ pub fn search_with_parallelism(
     let workers = parallelism.clamp(1, 4);
     let context = SearchContext {
         root,
+        excludes,
         handle,
         cancel,
         workers,

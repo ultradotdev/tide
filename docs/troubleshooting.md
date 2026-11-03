@@ -21,7 +21,7 @@ If input stalls in a release build, note the terminal emulator, window size, fil
 
 ## Shortcuts do not arrive
 
-Many terminals cannot send Ctrl+Shift or Cmd combinations, and a terminal's own shortcuts can take a key before Tide sees it. Use the command palette, `Ctrl+K` or `Ctrl+Shift+P`, and the terminal-safe alternatives in [Keyboard Shortcuts](reference/keyboard-shortcuts.md). While a terminal tab has focus, the shell keeps every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`; open the palette there with `Ctrl+Shift+P` or `F1`.
+Tide asks the terminal for the kitty keyboard protocol, which kitty, Ghostty, WezTerm and foot support, and iTerm2 supports once “Report keys using CSI u” is on. Without it, Ctrl+Shift+letter arrives as plain Ctrl+letter and Ctrl+/ as Ctrl+_, and Cmd combinations never reach Tide; macOS Terminal.app is one such terminal. A terminal's own shortcuts can also take a key before Tide sees it. Function keys work everywhere: by default `F12` goes to a definition, `Shift+F12` finds references, `F2` renames and `Ctrl+F2` selects every occurrence. Use the command palette, `Ctrl+K` or `Ctrl+Shift+P`, and the terminal-safe alternatives in [Keyboard Shortcuts](reference/keyboard-shortcuts.md). While a terminal tab has focus, the shell keeps every Ctrl+letter key, such as `Ctrl+C`, `Ctrl+R`, `Ctrl+X` and `Ctrl+Q`, plus `Ctrl+Space`, `Ctrl+@`, `Ctrl+[`, `Ctrl+\`, `Ctrl+]`, `Ctrl+^` and `Ctrl+_`; open the palette there with `F1`.
 
 ## Icons or layout look wrong
 

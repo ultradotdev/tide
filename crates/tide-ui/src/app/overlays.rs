@@ -464,13 +464,14 @@ impl App {
         let sender = self.events_tx.clone();
         let root = self.workspace.clone();
         let limit = saturating_usize(self.setting_u64("tui.filePicker.maxFiles", 10000));
+        let excludes = self.file_excludes();
         let mut loading = modal::quick_open(Vec::new());
         loading.base_mut().loading = true;
         loading.base_mut().hints = Some("Scanning workspace files…  Esc cancel".into());
         self.overlay = Some(loading);
         self.set_status("Scanning workspace files...");
         self.jobs.spawn(async move {
-            let files = tokio::task::spawn_blocking(move || collect_files(&root, limit))
+            let files = tokio::task::spawn_blocking(move || collect_files(&root, limit, &excludes))
                 .await
                 .unwrap_or_default();
             let _ = sender.send(AppEvent::QuickOpen { generation, files }).await;

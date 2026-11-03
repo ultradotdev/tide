@@ -13,7 +13,7 @@ use serde_json::Value;
 use tide_ai::cli::CliStatus;
 use tide_config::{CommandInfo, Keybinding, Paths, Settings, ThemeCatalog};
 
-use super::keys::{display, effective, ranked, terminal_owned};
+use super::keys::{display, effective, needs_keyboard_protocol, ranked, terminal_owned};
 use super::{Install, Page, product, tilde};
 use crate::command::Command;
 
@@ -360,7 +360,10 @@ impl Renderer<'_> {
         }
         let keys = ranked(&self.effective, self.context.user_keybindings, id)
             .into_iter()
-            .filter(|binding| !terminal || !terminal_owned(&binding.key))
+            .filter(|binding| {
+                !terminal
+                    || !(terminal_owned(&binding.key) || needs_keyboard_protocol(&binding.key))
+            })
             .map(|binding| display(&binding.key, self.mac()))
             .fold(Vec::new(), |mut keys, key| {
                 if !keys.contains(&key) {

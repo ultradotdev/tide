@@ -14,23 +14,25 @@ The Tide editor combines a terminal-cell-aware text model with syntax highlighti
 | Close the tab | `Ctrl+W` |
 | Go to a line | `Ctrl+G` |
 
-**Save All**, **Revert File** and **Overwrite File on Disk** are in the palette. When a file changes on disk while it is open, Tide blocks saving over it until you reload or explicitly overwrite. Files that are not valid UTF-8 open read-only so a save cannot corrupt them; Save As writes a copy.
+**Save All**, **Revert File** and **Overwrite File on Disk** are in the palette. When an open file changes on disk, after a `git checkout`, a formatter or an agent's edit, a tab with no unsaved edits reloads by itself, keeping the cursor near its place; **Undo** brings back the previous text. If the tab has unsaved edits, Tide says so once and blocks saving over the newer file until you run **Revert File** or **Overwrite File on Disk**. A file deleted on disk stays open with its text. Files that are not valid UTF-8 open read-only so a save cannot corrupt them; Save As writes a copy.
 
 ## Editing
 
 Undo, redo, selection, comments, folding, automatic indentation, auto-closing pairs (`()`, `[]`, `{}`, quotes and backticks), bracket matching and word wrap all work as you would expect.
 
+To move the cursor, `Ctrl+Left` and `Ctrl+Right` (`Option+Left` and `Option+Right` on macOS, which terminals send as Alt or as `Alt+B` and `Alt+F`) move by word, and `Ctrl+Home` and `Ctrl+End` go to the start and end of the file. `Home` goes to the first non-blank character, then to column 0 on a second press. Hold Shift to select as you move. `Ctrl+Backspace` or `Alt+Backspace` deletes the word before the cursor, and `Ctrl+Delete` or `Alt+D` deletes the word after it. Some terminals send `Ctrl+Backspace` as `Ctrl+H` (Replace); use `Alt+Backspace` in those. Where the terminal supports the kitty keyboard protocol, `Cmd+Left` and `Cmd+Right` go to the line's start and end, and `Cmd+Up` and `Cmd+Down` to the file's.
+
 | To | Press |
 | --- | --- |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` or `Ctrl+Y` |
-| Toggle a line comment | `Ctrl+/` |
+| Toggle a line comment | `Ctrl+/` or `Ctrl+_` |
 | Toggle a block comment | `Alt+Shift+A` |
 | Move the line up / down | `Ctrl+Shift+Up` / `Ctrl+Shift+Down` |
 | Indent / outdent the selected lines | `Tab` / `Shift+Tab` |
 | Select the line | `Ctrl+L` |
 | Duplicate the selection or line | `Ctrl+Shift+D` |
 | Add the next match to the selection | `Ctrl+D` |
-| Select every match | `Ctrl+Shift+L` |
+| Select every match | `Ctrl+Shift+L` or `Ctrl+F2` |
 | Add a cursor above / below | `Ctrl+Alt+Up` / `Ctrl+Alt+Down` |
 | Back to one cursor | `Esc` |
 | Fold / unfold the region | `Ctrl+Shift+[` / `Ctrl+Shift+]` |
@@ -80,7 +82,7 @@ Servers start on demand when their executable is on the `PATH`:
 | CSS | `vscode-css-language-server --stdio` |
 | SQL | `postgres-language-server lsp-proxy` |
 
-With a server running you get completion (`Ctrl+Space`), hover (`Ctrl+I`), signature help (`Ctrl+Shift+Space`), go to definition (`Ctrl+Shift+K`), go to implementation (`Ctrl+F12`), code actions (`Ctrl+.`), and from the palette **Go to Declaration**, **Go to Type Definition**, **Find All References**, **Rename Symbol**, **Format Document**, **Format Selection** and diagnostics navigation. When a lookup finds several places, a picker lists them; when the server does not offer a feature, the status bar says so. **Restart Language Server** restarts the active file's server and reopens its documents. Without a server, editing and highlighting work as usual. Run `tide --check-lsp` to see which servers are installed.
+With a server running you get completion (`Ctrl+Space`), hover (`Ctrl+I`), signature help (`Ctrl+Shift+Space`), go to definition (`Ctrl+Shift+K` or `F12`), go to implementation (`Ctrl+F12`), code actions (`Ctrl+.`), and from the palette **Go to Declaration**, **Go to Type Definition**, **Find All References**, **Rename Symbol**, **Format Document**, **Format Selection** and diagnostics navigation. When a lookup finds several places, a picker lists them; when the server does not offer a feature, the status bar says so. **Restart Language Server** restarts the active file's server and reopens its documents. Without a server, editing and highlighting work as usual. Run `tide --check-lsp` to see which servers are installed.
 
 To use another server or turn one off, add `lsp.servers` to `~/.config/tide/settings.jsonc`. Each key is a language ID from the table's languages (`typescript`, `rust`, `python`, `go`, `ruby`, `c`, `cpp`, `json`, `html`, `css`, `sql` and so on); the value is a command with optional arguments, or `null` to disable that language:
 
