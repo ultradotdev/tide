@@ -8,11 +8,15 @@ _v0.11.1_
 
 Tide combines a code editor, Git tools, PostgreSQL, shells and external coding agents in a persistent terminal workspace. The application is a native Rust executable, and its maintainer tooling is a Rust `cargo xtask` crate.
 
-Signed releases for macOS and Linux are published on [GitHub Releases](https://github.com/ultradotdev/tide/releases).
+![Tide editing a Rust project: Explorer and Source Control on the left, the editor with uncommitted changes marked in the gutter, a terminal running the program below it, and the Agents sidebar on the right](docs/images/tide-workspace.png)
+
+Releases for macOS and Linux are published on [GitHub Releases](https://github.com/ultradotdev/tide/releases).
 
 ## Install
 
-Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64). macOS executables are Developer ID signed and notarized.
+Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64). macOS executables are Developer ID signed and notarized. Every release archive is listed in the release's `SHA256SUMS` and has a GitHub build attestation; Linux executables are not code-signed.
+
+Older Linux distributions and musl-based ones such as Alpine can't run the prebuilt Linux builds; [build from source](#build-from-source) there instead. Windows isn't supported yet: install the Linux build inside [WSL](https://learn.microsoft.com/windows/wsl/install) and run Tide from a WSL terminal.
 
 ### Homebrew (macOS and Linux)
 
@@ -47,6 +51,12 @@ From this checkout:
 ```sh
 cargo build --locked --release -p tide
 ./target/release/tide .
+```
+
+Or let Cargo build and install it to `~/.cargo/bin` in one step. The `tide` crate on crates.io is an unrelated project, so install from this repository:
+
+```sh
+cargo install --locked --git https://github.com/ultradotdev/tide tide
 ```
 
 Use the optimized release build for everyday use. `cargo run --locked -p tide -- .` runs a debug build, which has substantially more runtime overhead. The executable embeds its configuration catalogs, syntax grammars and themes and needs no separate runtime.
@@ -92,7 +102,7 @@ See [getting started](docs/getting-started.md) for prefixes, rollback and where 
 
 1. Open a repository with `tide .`.
 2. Use `Ctrl+P` to find a file and `Ctrl+S` to save it.
-3. Open the command palette with `Ctrl+K`. `Ctrl+Shift+P` and `F1` also work, and `Ctrl+T` reaches it while a terminal pane has focus (where `Ctrl+K` belongs to the shell).
+3. Open the command palette with `Ctrl+K`. `Ctrl+Shift+P` and `F1` also work. While a terminal has focus, every Ctrl+letter key goes to the program running there, so use `F1`.
 4. Use `F6` to cycle regions and `F7` / `F8` to cycle main panes. Split panes and move tabs through their menus or palette commands.
 5. Open a shell, a query, or an available agent from Add Tab. The Agents sidebar groups workspace sessions by provider and focuses sessions already open.
 
@@ -115,6 +125,10 @@ These are synthetic fixture measurements on shared CI runners. They are not a co
 | macOS x64, signed | 27.09 MiB | 10.80 MiB |
 | Linux ARM64 | 29.52 MiB | 11.29 MiB |
 | Linux x64 | 30.80 MiB | 11.19 MiB |
+
+## Privacy
+
+Tide has no telemetry and no account. The only network request it makes on its own is the update check: at most once a day, at startup, one HTTPS request to GitHub for the latest release. Set `update.checkAutomatically` to `false` in your settings, or `TIDE_NO_UPDATE_CHECK=1` in the environment, to turn it off. The tools you run inside Tide, such as language servers, Git remotes, databases and agent CLIs, make their own connections.
 
 ## Documentation
 
