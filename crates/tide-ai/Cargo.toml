@@ -10,7 +10,7 @@ publish.workspace = true
 
 [dependencies]
 aes-gcm = "0.10"
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 rand.workspace = true
 reqwest.workspace = true

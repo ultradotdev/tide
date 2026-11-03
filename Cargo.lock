@@ -4685,7 +4685,7 @@ name = "tide-ai"
 version = "0.11.1"
 dependencies = [
  "aes-gcm",
- "base64 0.22.1",
+ "base64 0.23.1",
  "chrono",
  "nix 0.31.3",
  "rand 0.8.8",
@@ -4807,7 +4807,7 @@ name = "tide-ui"
 version = "0.11.1"
 dependencies = [
  "anyhow",
- "base64 0.22.1",
+ "base64 0.23.1",
  "crossterm",
  "futures-util",
  "ignore",
@@ -5739,7 +5739,7 @@ name = "xtask"
 version = "0.11.1"
 dependencies = [
  "anyhow",
- "base64 0.22.1",
+ "base64 0.23.1",
  "clap",
  "flate2",
  "portable-pty",
