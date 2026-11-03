@@ -2,7 +2,7 @@
 use super::*;
 
 impl App {
-    pub(super) fn forward_terminal_mouse(&mut self, mut mouse: MouseEvent) -> bool {
+    pub(super) fn forward_terminal_mouse(&mut self, mouse: MouseEvent) -> bool {
         if self.overlay.is_some() {
             return false;
         }
@@ -11,13 +11,12 @@ impl App {
         } else {
             None
         };
+        // A captured pointer may leave the terminal; the terminal keeps it on its edge.
         let target = if let Some((id, area)) = captured {
             if area.is_empty() {
                 self.pointer.terminal_capture = None;
                 return false;
             }
-            mouse.column = mouse.column.clamp(area.x, area.right() - 1);
-            mouse.row = mouse.row.clamp(area.y, area.bottom() - 1);
             Some(if id == DOCK_PANE {
                 HitTarget::DockTerminal(area)
             } else {
@@ -34,39 +33,68 @@ impl App {
         if matches!(mouse.kind, MouseEventKind::Up(_)) {
             self.pointer.terminal_capture = None;
         }
-        let (id, area, sent) = match target {
-            Some(HitTarget::EditorContent(id, area)) => {
-                if let Some(pane) = self.workbench.pane_mut(id)
-                    && let Some(Tab::Terminal(terminal)) = pane.tabs.get_mut(pane.active)
-                {
-                    let sent = terminal.send_mouse(area, mouse);
-                    if matches!(mouse.kind, MouseEventKind::Down(_)) {
-                        self.workbench.set_focused(id);
-                        self.focus = Focus::Main;
-                    }
-                    (id, area, sent)
-                } else {
-                    return false;
-                }
+        let (id, area) = match target {
+            Some(HitTarget::EditorContent(id, area))
+                if self.workbench.pane(id).is_some_and(|pane| {
+                    matches!(pane.tabs.get(pane.active), Some(Tab::Terminal(_)))
+                }) =>
+            {
+                (id, area)
             }
-            Some(HitTarget::DockTerminal(area)) => {
-                if matches!(mouse.kind, MouseEventKind::Down(_)) {
-                    self.focus = Focus::Dock;
-                }
-                (
-                    DOCK_PANE,
-                    area,
-                    self.dock
-                        .active_mut()
-                        .is_some_and(|terminal| terminal.send_mouse(area, mouse)),
-                )
-            }
+            Some(HitTarget::DockTerminal(area)) => (DOCK_PANE, area),
             _ => return false,
         };
-        if sent && matches!(mouse.kind, MouseEventKind::Down(_)) {
+        let press = matches!(mouse.kind, MouseEventKind::Down(_));
+        let clicks = if matches!(mouse.kind, MouseEventKind::Down(MouseButton::Left)) {
+            self.count_terminal_clicks(id, mouse)
+        } else {
+            1
+        };
+        let terminal = if id == DOCK_PANE {
+            self.dock.active_mut()
+        } else {
+            self.workbench
+                .pane_mut(id)
+                .and_then(|pane| match pane.tabs.get_mut(pane.active) {
+                    Some(Tab::Terminal(terminal)) => Some(terminal),
+                    _ => None,
+                })
+        };
+        let outcome = terminal.map_or(TerminalMouse::Ignored, |terminal| {
+            terminal.send_mouse(area, mouse, clicks)
+        });
+        if press {
+            if id == DOCK_PANE {
+                self.focus = Focus::Dock;
+            } else {
+                self.workbench.set_focused(id);
+                self.focus = Focus::Main;
+            }
+        }
+        if outcome != TerminalMouse::Ignored && press {
             self.pointer.terminal_capture = Some((id, area));
         }
-        sent || captured.is_some()
+        if outcome == TerminalMouse::Selected && self.setting_bool("terminal.copyOnSelect", true) {
+            self.copy_terminal_selection();
+        }
+        outcome != TerminalMouse::Ignored || captured.is_some()
+    }
+
+    /// Counts quick left presses on one terminal cell: 1, 2 (word) or 3 (line), then 1 again.
+    fn count_terminal_clicks(&mut self, id: PaneId, mouse: MouseEvent) -> u8 {
+        let now = Instant::now();
+        let clicks = self
+            .pointer
+            .terminal_click
+            .filter(|(pane, x, y, at, _)| {
+                *pane == id
+                    && *x == mouse.column
+                    && *y == mouse.row
+                    && now.duration_since(*at) < Duration::from_millis(400)
+            })
+            .map_or(1, |(_, _, _, _, count)| count % 3 + 1);
+        self.pointer.terminal_click = Some((id, mouse.column, mouse.row, now, clicks));
+        clicks
     }
 
     pub(super) fn scroll_metrics(&self, owner: ScrollOwner, area: Rect) -> (usize, usize, usize) {

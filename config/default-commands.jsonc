@@ -152,6 +152,7 @@
   "terminal.next": { "label": "Next Bottom Terminal Tab", "category": "Terminal" },
   "terminal.previous": { "label": "Previous Bottom Terminal Tab", "category": "Terminal" },
   "terminal.clear": { "label": "Clear Terminal", "category": "Terminal", "description": "Clear the scrollback and screen of the focused or bottom terminal without typing into the shell" },
+  "terminal.copySelection": { "label": "Copy Terminal Selection", "category": "Terminal", "description": "Copy the text selected with the mouse in the focused or bottom terminal" },
   "terminal.kill": { "label": "Kill Terminal", "category": "Terminal", "description": "Stop every process in the terminal, asking first while a program is running" },
   "terminal.scrollToTop": { "label": "Scroll Terminal to Top", "category": "Terminal", "description": "Show the oldest scrollback" },
   "terminal.scrollToBottom": { "label": "Scroll Terminal to Bottom", "category": "Terminal", "description": "Return to the live screen" },
