@@ -57,7 +57,7 @@ base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 temp-env = "0.3"
 zeroize = "1.8"
-similar = "2.7"
+similar = "3.2"
 pulldown-cmark = { version = "0.13", default-features = false }
 wait-timeout = "0.2"
 num-traits = "0.2"
