@@ -143,6 +143,7 @@ pub(crate) fn rebuild_source() -> Option<&'static std::path::Path> {
 
 pub async fn run(mut app: App) -> Result<()> {
     install_panic_hook();
+    app.terminal = crate::display::TerminalTraits::detect(|name| std::env::var(name).ok());
     enable_raw_mode()?;
     let _mode_guard = TerminalModeGuard;
     OWNS_TERMINAL.set(true);

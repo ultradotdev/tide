@@ -471,6 +471,13 @@ pub struct App {
     files_pending: Option<Instant>,
     session_dirty: bool,
     zen: Option<ZenLayout>,
+    /// Commands run from the palette, most recent first.
+    recent_commands: Vec<String>,
+    /// What the outer terminal can show; `tui.colorMode` and `tui.iconStyle` default to it.
+    pub terminal: crate::display::TerminalTraits,
+    /// The settings and keybindings files as last read, to notice edits made outside Tide.
+    config_stamps: [Option<preferences::ConfigStamp>; 2],
+    last_config_check: Instant,
 }
 
 impl App {
@@ -484,35 +491,9 @@ impl App {
         // Problems with the user's own files, shown once the workbench is up: otherwise a
         // typo in settings.jsonc would leave Tide on its defaults without a word.
         let mut config_errors = Vec::new();
-        let mut settings = crate::catalog::settings();
-        if paths.settings_file.exists()
-            && let Some(user) = tide_config::load_jsonc::<Settings>(&paths.settings_file)
-                .inspect_err(|error| {
-                    tracing::warn!(%error, "user settings were not loaded");
-                    config_errors.push(format!("{error}. Tide is using the default settings."));
-                })
-                .ok()
-        {
-            let defaults = settings.clone();
-            settings.merge(&user);
-            let invalid = settings
-                .iter()
-                .filter(|(key, value)| {
-                    crate::preferences::supported(key)
-                        && crate::preferences::validate(key, value).is_err()
-                })
-                .map(|(key, _)| key.clone())
-                .collect::<Vec<_>>();
-            for key in invalid {
-                config_errors.push(format!(
-                    "{}: “{key}” has an invalid value, so Tide is using its default.",
-                    paths.settings_file.display()
-                ));
-                if let Some(value) = defaults.get(&key) {
-                    settings.set(key, value.clone());
-                }
-            }
-        }
+        let config_stamps = preferences::config_stamps(&paths);
+        let settings = preferences::load_settings(&paths, &mut config_errors, "default settings")
+            .unwrap_or_else(crate::catalog::settings);
 
         let mut themes = tide_config::builtin::themes();
         for diagnostic in themes.load_user_themes(&paths.themes_dir) {
@@ -526,28 +507,10 @@ impl App {
             themes.select(theme_id);
         }
 
-        let mut keybindings = tide_config::builtin::keybindings();
-        let mut user_keybindings = Vec::new();
-        if paths.keybindings_file.exists()
-            && let Some(user) = tide_config::load_jsonc::<Vec<Keybinding>>(&paths.keybindings_file)
-                .inspect_err(|error| {
-                    tracing::warn!(%error, "user keybindings were not loaded");
-                    config_errors.push(format!("{error}. Tide is using the default keys."));
-                })
-                .ok()
-        {
-            user_keybindings.clone_from(&user);
-            for binding in user {
-                let canonical = canonical_key(&binding.key);
-                if let Some(existing) = keybindings.iter_mut().find(|existing| {
-                    canonical_key(&existing.key) == canonical && existing.when == binding.when
-                }) {
-                    *existing = binding;
-                } else {
-                    keybindings.push(binding);
-                }
-            }
-        }
+        let user_keybindings =
+            preferences::load_user_keybindings(&paths, &mut config_errors, "default keys")
+                .unwrap_or_default();
+        let keybindings = preferences::merged_keybindings(&user_keybindings);
 
         let mut commands = crate::catalog::commands();
         if cfg!(target_os = "macos")
@@ -659,7 +622,12 @@ impl App {
             files_pending: None,
             session_dirty: false,
             zen: None,
+            recent_commands: Vec::new(),
+            terminal: crate::display::TerminalTraits::FULL,
+            config_stamps,
+            last_config_check: Instant::now(),
         };
+        app.recent_commands = overlays::load_recent_commands(&app.paths);
         app.apply_preferences();
         for (section, key) in [
             (SectionId::Outline, "tui.outline.collapsedOnStartup"),
@@ -742,13 +710,7 @@ impl App {
             app.workbench.insert_tab_focused(Tab::Welcome);
         }
         if !config_errors.is_empty() {
-            app.overlay = Some(modal::info(
-                "Configuration Problems",
-                &format!(
-                    "{}\n\nFix the file, then restart Tide. Changes made from the Settings and Keyboard Shortcuts lists leave a file with errors unchanged.",
-                    config_errors.join("\n")
-                ),
-            ));
+            app.show_config_problems(&config_errors);
         }
         Ok(app)
     }
@@ -1047,6 +1009,7 @@ impl App {
             Event::FocusGained => {
                 self.window_focused = true;
                 self.last_external_check = Instant::now() - Duration::from_secs(3);
+                self.last_config_check = Instant::now() - Duration::from_secs(3);
             }
             Event::FocusLost => self.window_focused = false,
             Event::Resize(_, _) => {
@@ -1124,6 +1087,10 @@ impl App {
         {
             self.run_binding(action);
             changed = true;
+        }
+        if self.window_focused && self.last_config_check.elapsed() > Duration::from_secs(2) {
+            self.last_config_check = Instant::now();
+            changed |= self.reload_config_if_changed();
         }
         let watch_mode = self
             .settings

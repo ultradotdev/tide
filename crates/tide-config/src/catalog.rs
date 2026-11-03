@@ -15,12 +15,15 @@ pub struct Keybinding {
 }
 
 /// Command metadata exposed by the palette.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CommandInfo {
     pub label: String,
     pub category: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Other words the palette finds the command by, such as "new terminal".
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keywords: Vec<String>,
 }
 
 pub fn load_keybindings(path: impl AsRef<Path>) -> Result<Vec<Keybinding>, crate::ConfigError> {

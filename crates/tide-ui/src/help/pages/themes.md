@@ -1,6 +1,6 @@
 # Themes and Customization
 
-One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk.
+One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk. In a terminal without 24-bit color, Tide shows each theme color as the nearest of the 256-color palette; see `tui.colorMode` in {{help:settings}}.
 
 ## Choose a theme
 
@@ -22,7 +22,7 @@ Put `.json` or `.jsonc` theme files in {{path:themes}} and restart Tide; the fil
 
 ## Settings
 
-Run {{key:workbench.openSettings}} to browse and change settings, or edit {{path:settings}} directly; Tide reads it at startup and rewrites it when you change a setting in the app. Values that fail validation fall back to their defaults, and keys Tide does not know are kept but ignored. {{help:settings}} lists every setting with its default and current value.
+Run {{key:workbench.openSettings}} to browse and change settings, or edit {{path:settings}} directly; Tide applies your edits when you save the file and rewrites it when you change a setting in the app. Values that fail validation fall back to their defaults, and keys Tide does not know are kept but ignored. {{help:settings}} lists every setting with its default and current value.
 
 ## Keybindings
 
@@ -39,7 +39,7 @@ Run {{key:workbench.openSettings}} to browse and change settings, or edit {{path
 ]
 ```
 
-An entry with the same key and `when` context as a default replaces it; other entries are added. A command of `""` or `-<command>` removes the key. Context bindings win over global ones for the same key. Restart Tide after editing the file by hand. {{help:keyboard-shortcuts}} lists every key and command ID, and {{help:commands}} lists the commands.
+An entry with the same key and `when` context as a default replaces it; other entries are added. A command of `""` or `-<command>` removes the key. Context bindings win over global ones for the same key. Edits you make to the file by hand apply when you save it. {{help:keyboard-shortcuts}} lists every key and command ID, and {{help:commands}} lists the commands.
 
 ## Startup
 

@@ -504,6 +504,18 @@ impl DocumentHandle {
     }
 }
 
+/// The blank columns left of a help page's text.
+const HELP_GUTTER: usize = 2;
+/// The width a help page is laid out for before its first draw.
+const DEFAULT_HELP_WIDTH: usize = 100;
+
+#[derive(Debug, Clone)]
+struct HelpView {
+    source: String,
+    width: usize,
+    lines: Vec<crate::help::format::Line>,
+}
+
 #[derive(Debug, Clone)]
 struct SearchCache {
     revision: u64,
@@ -544,6 +556,8 @@ pub struct EditorState {
     pub historical: Option<(PathBuf, String)>,
     /// The help page this read-only, path-less buffer renders.
     pub help: Option<&'static crate::help::Page>,
+    /// The help page's Markdown and its formatted lines for the current width.
+    help_view: Option<HelpView>,
     pub document: DocumentHandle,
     pub scroll_top: usize,
     pub scroll_left: usize,
@@ -595,6 +609,7 @@ impl Clone for EditorState {
             hunk_edit: self.hunk_edit.clone(),
             historical: self.historical.clone(),
             help: self.help,
+            help_view: self.help_view.clone(),
             document: self.document.fork_view(),
             scroll_top: self.scroll_top,
             scroll_left: self.scroll_left,
@@ -665,6 +680,7 @@ impl EditorState {
             hunk_edit: None,
             historical: None,
             help: None,
+            help_view: None,
             document: DocumentHandle::new(Document::new("")),
             scroll_top: 0,
             scroll_left: 0,
@@ -706,16 +722,70 @@ impl EditorState {
         state
     }
 
-    /// A read-only Markdown buffer showing a rendered help page.
+    /// A read-only view of a help page: `markdown` shown as formatted text, laid out
+    /// again whenever the width changes.
     #[must_use]
-    pub fn help(page: &'static crate::help::Page, text: &str) -> Self {
-        let mut state = Self::scratch(text, "md");
-        state
-            .document
-            .with_mut(|document| document.set_read_only(true));
-        state.document.mark_clean();
+    pub fn help(page: &'static crate::help::Page, markdown: &str) -> Self {
+        let mut state = Self::scratch("", "txt");
         state.help = Some(page);
+        state.help_view = Some(HelpView {
+            source: markdown.to_owned(),
+            width: 0,
+            lines: Vec::new(),
+        });
+        state.relayout_help(DEFAULT_HELP_WIDTH);
         state
+    }
+
+    /// The width the help page is laid out for.
+    #[must_use]
+    pub fn help_width(&self) -> Option<usize> {
+        self.help_view.as_ref().map(|view| view.width)
+    }
+
+    /// Lays the help page out for `width` cells, keeping the top line's place in the
+    /// page. The buffer is rebuilt, so the cursor moves to the top of the view.
+    pub fn relayout_help(&mut self, width: usize) {
+        let Some(view) = &mut self.help_view else {
+            return;
+        };
+        let width = width.clamp(20, crate::help::format::MAX_WIDTH);
+        if view.width == width {
+            return;
+        }
+        let anchor = view.lines.get(self.scroll_top).map(|line| {
+            let first = view
+                .lines
+                .iter()
+                .position(|candidate| candidate.block == line.block)
+                .unwrap_or(self.scroll_top);
+            (line.block, self.scroll_top - first)
+        });
+        view.width = width;
+        view.lines = crate::help::format::layout(&view.source, width);
+        self.scroll_top = anchor.map_or(0, |(block, offset)| {
+            let start = view
+                .lines
+                .iter()
+                .position(|line| line.block >= block)
+                .unwrap_or(0);
+            let length = view.lines[start..]
+                .iter()
+                .take_while(|line| line.block == block)
+                .count();
+            start + offset.min(length.saturating_sub(1))
+        });
+        let mut document = Document::new(crate::help::format::text(&view.lines));
+        document.set_read_only(true);
+        self.document = DocumentHandle::new(document);
+        self.document.initialize_disk(None, None);
+        self.document.mark_clean();
+        self.document.set_cursor(Position::new(self.scroll_top, 0));
+        self.follow_cursor = false;
+        self.scroll_left = 0;
+        self.folded.clear();
+        self.fold_regions.clear();
+        self.rendered_rows.clear();
     }
 
     pub fn from_content(path: Option<PathBuf>, content: &str) -> Self {
@@ -758,6 +828,7 @@ impl EditorState {
             hunk_edit: None,
             historical: None,
             help: None,
+            help_view: None,
             scroll_top: 0,
             scroll_left: 0,
             language_extension,
@@ -1020,6 +1091,11 @@ impl EditorState {
         &self.language_extension
     }
 
+    /// Whether line numbers show, given the setting: never on a help page.
+    fn line_numbers(&self, setting: bool) -> bool {
+        setting && self.help.is_none()
+    }
+
     pub fn word_wrap_enabled(&self) -> bool {
         self.word_wrap
     }
@@ -1098,6 +1174,9 @@ impl EditorState {
         }
         self.text_area = area;
         self.cursor_screen = None;
+        if self.help_view.is_some() {
+            self.relayout_help((area.width as usize).saturating_sub(HELP_GUTTER + 1));
+        }
         self.refresh_fold_regions(true);
         if self.word_wrap {
             self.layout_wrapped(area, view);
@@ -1108,9 +1187,12 @@ impl EditorState {
         let view_width = area.width as usize;
         self.ensure_visible(view_height, view_width, tab_size);
 
+        if self.help.is_some() {
+            self.scroll_left = 0;
+        }
         self.unfold_for_cursor();
         let line_count = self.document.len_lines();
-        let gutter = if view.show_line_numbers {
+        let gutter = if self.line_numbers(view.show_line_numbers) {
             gutter_width(line_count) + 2
         } else {
             2
@@ -1169,6 +1251,7 @@ impl EditorState {
             tab_size,
             focused,
         } = *view;
+        let show_line_numbers = self.line_numbers(show_line_numbers);
         if let Some(signature) = &self.inline_signature
             && !self.signature_area.is_empty()
         {
@@ -1213,6 +1296,19 @@ impl EditorState {
                 lines.push(Line::raw(""));
                 continue;
             };
+            if let Some(help) = &self.help_view {
+                let mut spans = vec![Span::raw(" ".repeat(HELP_GUTTER))];
+                if let Some(line) = help.lines.get(line_index) {
+                    spans.extend(line.spans.iter().map(|(range, mark)| {
+                        Span::styled(
+                            line.text[range.clone()].to_owned(),
+                            crate::help::format::style(*mark, &palette),
+                        )
+                    }));
+                }
+                lines.push(Line::from(spans));
+                continue;
+            }
             let raw = self.document.line(line_index).unwrap_or_default();
             let highlighted = syntax
                 .document_line(self.document.syntax_id(), self.revision(), line_index)
@@ -2015,6 +2111,12 @@ impl EditorState {
     /// pause for [`FOLD_IDLE`], keeping the previous index meanwhile.
     fn refresh_fold_regions(&mut self, defer: bool) {
         let key = (self.document.syntax_id(), self.revision());
+        if self.help.is_some() {
+            // Formatted help has no code structure to fold.
+            self.fold_regions.clear();
+            self.fold_revision = key;
+            return;
+        }
         if self.fold_revision == key {
             self.fold_deferred = None;
             return;
@@ -2992,6 +3094,7 @@ impl EditorState {
         clicks: u8,
     ) {
         use crossterm::event::KeyModifiers;
+        let numbers = self.line_numbers(numbers);
         if self
             .minimap_area
             .contains(ratatui::layout::Position::new(x, y))
@@ -3087,6 +3190,7 @@ impl EditorState {
         self.follow_cursor = false;
     }
     pub fn mouse_drag(&mut self, area: Rect, x: u16, y: u16, numbers: bool, tab_size: usize) {
+        let numbers = self.line_numbers(numbers);
         if self.drag_minimap {
             self.minimap_to(y);
             return;
@@ -3148,7 +3252,7 @@ impl EditorState {
         show_line_numbers: bool,
         tab_size: usize,
     ) {
-        let gutter = if show_line_numbers {
+        let gutter = if self.line_numbers(show_line_numbers) {
             gutter_width(self.document.len_lines()) + 2
         } else {
             2

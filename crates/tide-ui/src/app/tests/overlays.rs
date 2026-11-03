@@ -590,3 +590,106 @@ fn quick_open_and_find_in_files_skip_git_and_excluded_folders_and_rank_file_name
     assert!(!found.contains(".git/"), "{found}");
     assert!(!found.contains("node_modules"), "{found}");
 }
+
+fn palette_search(app: &mut App, query: &str) -> Vec<String> {
+    app.open_command_palette();
+    let overlay = app.overlay.as_mut().unwrap();
+    overlay.base_mut().push_str(query);
+    let base = overlay.base();
+    base.filtered
+        .iter()
+        .map(|index| base.items[*index].value.clone())
+        .collect()
+}
+
+#[test]
+fn the_palette_finds_common_commands_by_other_names() {
+    let (_home, mut app) = test_app();
+    for (query, command) in [
+        ("new terminal", "terminal.new"),
+        ("preferences", "workbench.openSettings"),
+        ("keyboard shortcuts", "workbench.openKeybindings"),
+        ("git commit", "git.commit"),
+        ("new file", "file.new"),
+        ("dark mode", "workbench.selectTheme"),
+    ] {
+        let found = palette_search(&mut app, query);
+        assert_eq!(
+            found.first().map(String::as_str),
+            Some(command),
+            "{query}: {found:?}"
+        );
+    }
+    let found = palette_search(&mut app, "bottom terminal");
+    let open = found.iter().position(|id| id == "terminal.new").unwrap();
+    let close = found.iter().position(|id| id == "terminal.close").unwrap();
+    assert!(open < close, "opening ranks above closing: {found:?}");
+}
+
+#[test]
+fn recently_used_commands_rank_first_and_are_remembered() {
+    let (home, mut app) = test_app();
+    app.open_command_palette();
+    let overlay = app.overlay.take().unwrap();
+    app.submit_modal(overlay, Submitted::Command(Command::TerminalClose));
+    let found = palette_search(&mut app, "bottom terminal");
+    assert_eq!(found.first().map(String::as_str), Some("terminal.close"));
+    app.overlay = None;
+    let paths = Paths::from_env(home.path(), |_| None);
+    assert_eq!(
+        crate::app::overlays::load_recent_commands(&paths),
+        ["terminal.close"]
+    );
+    let found = palette_search(&mut app, "");
+    assert_eq!(found.first().map(String::as_str), Some("terminal.close"));
+}
+
+#[test]
+fn the_palette_shows_each_commands_key_for_where_it_was_opened() {
+    let (_home, mut app) = test_app();
+    app.open_command_palette();
+    let hint = |app: &App, id: &str| {
+        app.overlay
+            .as_ref()
+            .unwrap()
+            .base()
+            .items
+            .iter()
+            .find(|item| item.value == id)
+            .unwrap()
+            .hint
+            .clone()
+    };
+    assert_eq!(hint(&app, "workbench.commandPalette"), "Ctrl+K");
+    assert_eq!(hint(&app, "file.save"), "Ctrl+S");
+    // Source Control's single-letter keys only work in Source Control.
+    assert_eq!(hint(&app, "gitPanel.stage"), "");
+    // A key that resolves to another command in this context is not shown for it.
+    for item in &app.overlay.as_ref().unwrap().base().items {
+        if item.hint.is_empty() {
+            continue;
+        }
+        let key = app
+            .keybindings
+            .iter()
+            .find(|binding| {
+                crate::help::display(&binding.key, cfg!(target_os = "macos")) == item.hint
+                    && crate::command_aliases::canonical(&binding.command)
+                        == crate::command_aliases::canonical(&item.value)
+            })
+            .unwrap_or_else(|| panic!("{} shows {}", item.value, item.hint));
+        let resolved = app.resolve_binding(&key.key);
+        assert!(
+            matches!(resolved, Some(BindingAction::Run(command)) if crate::command_aliases::canonical(command.as_str()) == crate::command_aliases::canonical(&item.value)),
+            "{} shows {} which runs {resolved:?}",
+            item.value,
+            item.hint
+        );
+    }
+    app.overlay = None;
+    app.execute_command(Command::TerminalNewInPane);
+    assert!(app.focus_in_terminal());
+    app.open_command_palette();
+    let palette = hint(&app, "workbench.commandPalette");
+    assert!(!palette.is_empty() && palette != "Ctrl+K", "{palette}");
+}

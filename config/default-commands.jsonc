@@ -5,7 +5,7 @@
   // Labels, categories and descriptions for the command palette and the generated
   // command reference. Every entry must route to a workbench command.
   //
-  // Format: { "command.id": { "label": "...", "category": "...", "description": "..." } }
+  // Format: { "command.id": { "label": "...", "category": "...", "description": "...", "keywords": ["other words the palette finds it by"] } }
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -16,9 +16,9 @@
   "file.saveAll": { "label": "Save All", "category": "File", "description": "Save all open files" },
   "file.reload": { "label": "Revert File", "category": "File", "description": "Reload the active file from disk" },
   "file.overwrite": { "label": "Overwrite File on Disk", "category": "File", "description": "Write the buffer over an externally changed file after confirmation" },
-  "file.open": { "label": "Open File...", "category": "File", "description": "Open a file" },
-  "file.new": { "label": "New File", "category": "File", "description": "Create a new file" },
-  "file.close": { "label": "Close Tab", "category": "File", "description": "Close the active tab" },
+  "file.open": { "label": "Open File...", "category": "File", "description": "Open a file", "keywords": ["browse files"] },
+  "file.new": { "label": "New File", "category": "File", "description": "Create a new file", "keywords": ["new file", "create file", "untitled"] },
+  "file.close": { "label": "Close Tab", "category": "File", "description": "Close the active tab", "keywords": ["close file", "close editor"] },
   "file.closeAll": { "label": "Close All", "category": "File", "description": "Close all open files" },
   "file.closeOthers": { "label": "Close Other Tabs", "category": "File", "description": "Close every tab in the pane except the active one, asking about unsaved changes" },
   "file.rename": { "label": "Rename File...", "category": "File", "description": "Rename the active file, or the Explorer selection while the Explorer has focus; open tabs follow" },
@@ -54,15 +54,15 @@
   // ─────────────────────────────────────────────────────────────────────────────
   "search.find": { "label": "Find", "category": "Search" },
   "search.replace": { "label": "Find and Replace", "category": "Search" },
-  "search.findInFiles": { "label": "Find in Files", "category": "Search" },
-  "search.replaceInFiles": { "label": "Replace in Files", "category": "Search", "description": "Preview and confirm a replacement across workspace files; open files change in their editors so Undo reverts them" },
+  "search.findInFiles": { "label": "Find in Files", "category": "Search", "keywords": ["search", "grep", "search in files"] },
+  "search.replaceInFiles": { "label": "Replace in Files", "category": "Search", "description": "Preview and confirm a replacement across workspace files; open files change in their editors so Undo reverts them", "keywords": ["search and replace"] },
   "search.findNext": { "label": "Find Next", "category": "Search" },
   "search.findPrevious": { "label": "Find Previous", "category": "Search" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Editor Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "editor.gotoLine": { "label": "Go to Line...", "category": "Go" },
+  "editor.gotoLine": { "label": "Go to Line...", "category": "Go", "keywords": ["jump to line"] },
   "editor.gotoSymbol": { "label": "Go to Symbol in Editor...", "category": "Go" },
   "editor.gotoWorkspaceSymbol": { "label": "Go to Symbol in Workspace...", "category": "Go" },
   "editor.nextTab": { "label": "Next Tab", "category": "View" },
@@ -94,11 +94,11 @@
   // Workbench Commands
   // ─────────────────────────────────────────────────────────────────────────────
   "workbench.commandPalette": { "label": "Command Palette", "category": "View" },
-  "workbench.quickOpen": { "label": "Quick Open", "category": "View", "description": "Open file by name" },
+  "workbench.quickOpen": { "label": "Quick Open", "category": "View", "description": "Open file by name", "keywords": ["go to file", "open file", "find file"] },
   "workbench.toggleSidebar": { "label": "Toggle Sidebar", "category": "View" },
   "workbench.moveSidebarLeft": { "label": "Move Sidebar Left", "category": "View" },
   "workbench.moveSidebarRight": { "label": "Move Sidebar Right", "category": "View" },
-  "workbench.toggleTerminal": { "label": "Toggle Bottom Terminal", "category": "View", "description": "Show or hide the bottom terminal dock" },
+  "workbench.toggleTerminal": { "label": "Toggle Bottom Terminal", "category": "View", "description": "Show or hide the bottom terminal dock", "keywords": ["show terminal", "hide terminal", "panel"] },
   "workbench.resizeLeft": { "label": "Move Focused Region Boundary Left", "category": "View" },
   "workbench.resizeRight": { "label": "Move Focused Region Boundary Right", "category": "View" },
   "workbench.resizeUp": { "label": "Move Focused Region Boundary Up", "category": "View" },
@@ -129,9 +129,9 @@
   "workbench.agentsMenu": { "label": "Agents Sidebar Menu...", "category": "View", "description": "Move or hide the agents sidebar" },
   "workbench.documentInfo": { "label": "Show Document Information", "category": "View", "description": "Path, language, encoding, line endings and selection size of the active editor" },
   "pane.addPanel": { "label": "Add Tab", "category": "View", "description": "Add a tab to the focused main pane" },
-  "workbench.openSettings": { "label": "Open Settings", "category": "Preferences" },
-  "workbench.openKeybindings": { "label": "Open Keyboard Shortcuts", "category": "Preferences" },
-  "workbench.quit": { "label": "Quit", "category": "Application" },
+  "workbench.openSettings": { "label": "Open Settings", "category": "Preferences", "keywords": ["settings", "preferences", "options", "configuration"] },
+  "workbench.openKeybindings": { "label": "Open Keyboard Shortcuts", "category": "Preferences", "keywords": ["keyboard shortcuts", "keybindings", "keymap", "hotkeys"] },
+  "workbench.quit": { "label": "Quit", "category": "Application", "keywords": ["exit", "close tide"] },
   "editor.moveTabToPreviousPane": { "label": "Move Active Tab to Previous Main Pane", "category": "View" },
   "editor.moveTabToNextPane": { "label": "Move Active Tab to Next Main Pane", "category": "View" },
   "editor.moveTabToPane": { "label": "Move Active Tab to Main Pane...", "category": "View" },
@@ -139,15 +139,15 @@
   // ─────────────────────────────────────────────────────────────────────────────
   // View Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "view.splitVertical": { "label": "Split Main Pane Right", "category": "View" },
-  "view.splitHorizontal": { "label": "Split Main Pane Down", "category": "View" },
+  "view.splitVertical": { "label": "Split Main Pane Right", "category": "View", "keywords": ["split right", "split editor"] },
+  "view.splitHorizontal": { "label": "Split Main Pane Down", "category": "View", "keywords": ["split down", "split editor"] },
   "view.closePane": { "label": "Close Main Pane", "category": "View" },
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Terminal Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "terminal.new": { "label": "Open Bottom Terminal Tab", "category": "Terminal" },
-  "terminal.newInPane": { "label": "Open Terminal Tab in Main Pane", "category": "Terminal" },
+  "terminal.new": { "label": "Open Bottom Terminal Tab", "category": "Terminal", "keywords": ["new terminal", "create terminal", "shell"] },
+  "terminal.newInPane": { "label": "Open Terminal Tab in Main Pane", "category": "Terminal", "keywords": ["new terminal tab", "shell tab"] },
   "terminal.close": { "label": "Close Bottom Terminal Tab", "category": "Terminal" },
   "terminal.next": { "label": "Next Bottom Terminal Tab", "category": "Terminal" },
   "terminal.previous": { "label": "Previous Bottom Terminal Tab", "category": "Terminal" },
@@ -161,32 +161,32 @@
   // Git Commands
   // ─────────────────────────────────────────────────────────────────────────────
   "git.stage": { "label": "Stage Active File", "category": "Git", "description": "Stage the changes in the active file" },
-  "git.stageAll": { "label": "Stage All Changes", "category": "Git", "description": "Stage all changes" },
+  "git.stageAll": { "label": "Stage All Changes", "category": "Git", "description": "Stage all changes", "keywords": ["git add"] },
   "git.unstage": { "label": "Unstage Active File", "category": "Git", "description": "Unstage the active file's staged changes" },
   "git.unstageAll": { "label": "Unstage All", "category": "Git", "description": "Unstage all changes" },
-  "git.commit": { "label": "Commit", "category": "Git", "description": "Commit staged changes" },
-  "git.push": { "label": "Push", "category": "Git", "description": "Push to remote" },
-  "git.pull": { "label": "Pull", "category": "Git", "description": "Pull from remote" },
-  "git.fetch": { "label": "Fetch", "category": "Git", "description": "Fetch from remote" },
-  "git.stash": { "label": "Stash", "category": "Git", "description": "Stash changes" },
+  "git.commit": { "label": "Commit", "category": "Git", "description": "Commit staged changes", "keywords": ["git commit"] },
+  "git.push": { "label": "Push", "category": "Git", "description": "Push to remote", "keywords": ["git push"] },
+  "git.pull": { "label": "Pull", "category": "Git", "description": "Pull from remote", "keywords": ["git pull"] },
+  "git.fetch": { "label": "Fetch", "category": "Git", "description": "Fetch from remote", "keywords": ["git fetch"] },
+  "git.stash": { "label": "Stash", "category": "Git", "description": "Stash changes", "keywords": ["git stash"] },
   "git.stashPop": { "label": "Pop Stash", "category": "Git", "description": "Pop latest stash" },
   "git.stashApply": { "label": "Apply Stash", "category": "Git", "description": "Apply stash without removing" },
   "git.stashDrop": { "label": "Drop Stash", "category": "Git", "description": "Drop a stash" },
   "git.stashList": { "label": "List Stashes", "category": "Git", "description": "Show all stashes" },
-  "git.log": { "label": "View Log", "category": "Git", "description": "Show commit history" },
+  "git.log": { "label": "View Log", "category": "Git", "description": "Show commit history", "keywords": ["git log", "history"] },
   "git.logFile": { "label": "View File History", "category": "Git", "description": "Show file commit history" },
-  "git.blame": { "label": "Toggle Blame", "category": "Git", "description": "Show line-by-line blame" },
-  "git.diff": { "label": "View Diff", "category": "Git", "description": "Show diff for file" },
+  "git.blame": { "label": "Toggle Blame", "category": "Git", "description": "Show line-by-line blame", "keywords": ["git blame", "annotate"] },
+  "git.diff": { "label": "View Diff", "category": "Git", "description": "Show diff for file", "keywords": ["git diff"] },
   "git.diffStaged": { "label": "View Staged Diff", "category": "Git", "description": "Show staged changes" },
-  "git.createBranch": { "label": "Create Branch...", "category": "Git", "description": "Create a new branch" },
-  "git.switchBranch": { "label": "Switch Branch...", "category": "Git", "description": "Switch to another branch" },
+  "git.createBranch": { "label": "Create Branch...", "category": "Git", "description": "Create a new branch", "keywords": ["new branch", "git branch"] },
+  "git.switchBranch": { "label": "Switch Branch...", "category": "Git", "description": "Switch to another branch", "keywords": ["git checkout", "git switch", "change branch"] },
   "git.deleteBranch": { "label": "Delete Branch...", "category": "Git", "description": "Delete a branch" },
   "git.renameBranch": { "label": "Rename Branch...", "category": "Git", "description": "Rename current branch" },
   "git.merge": { "label": "Merge Branch...", "category": "Git", "description": "Merge a branch" },
   "git.abortMerge": { "label": "Abort Merge", "category": "Git", "description": "Abort current merge" },
   "git.remotes": { "label": "Manage Remotes", "category": "Git", "description": "View and manage remotes" },
   "git.tags": { "label": "List Tags", "category": "Git", "description": "Show all tags" },
-  "git.focusPanel": { "label": "Focus Git Panel", "category": "Git" },
+  "git.focusPanel": { "label": "Focus Git Panel", "category": "Git", "keywords": ["source control", "git status"] },
   "git.refresh": { "label": "Refresh", "category": "Git", "description": "Refresh git status" },
   "git.discard": { "label": "Discard Changes in Active File", "category": "Git", "description": "Discard unstaged changes in the active file after confirmation" },
   "git.discardAll": { "label": "Discard All Changes", "category": "Git", "description": "Discard unstaged changes in every tracked file after confirmation; untracked files are kept" },
@@ -257,7 +257,7 @@
   // AI Commands
   // ─────────────────────────────────────────────────────────────────────────────
   "agents.openSession": { "label": "Agents: Open Session...", "category": "AI" },
-  "agents.newSession": { "label": "Agents: New Session...", "category": "AI", "description": "Start an AI CLI session (Claude Code, Codex, Gemini CLI, etc.)" },
+  "agents.newSession": { "label": "Agents: New Session...", "category": "AI", "description": "Start an AI CLI session (Claude Code, Codex, Gemini CLI, etc.)", "keywords": ["new agent", "ai chat", "claude", "codex"] },
   "agents.renameSession": { "label": "Agents: Rename Selected Session...", "category": "AI" },
   "agents.deleteSession": { "label": "Agents: Delete Selected Session...", "category": "AI" },
   "agents.archiveSession": { "label": "Agents: Archive Selected Session...", "category": "AI" },
@@ -304,14 +304,14 @@
   // ─────────────────────────────────────────────────────────────────────────────
   // Database Commands
   // ─────────────────────────────────────────────────────────────────────────────
-  "database.newQuery": { "label": "New Query", "category": "Database" },
+  "database.newQuery": { "label": "New Query", "category": "Database", "keywords": ["sql", "new sql query"] },
   "database.complete": { "label": "Complete SQL", "category": "Database" },
   "database.executeQuery": { "label": "Execute Query", "category": "Database" },
   "database.executeSelection": { "label": "Execute Selection", "category": "Database" },
   "database.connect": { "label": "Connect to Database", "category": "Database" },
   "database.disconnect": { "label": "Disconnect", "category": "Database" },
   "database.testConnection": { "label": "Test Connection", "category": "Database" },
-  "database.newConnection": { "label": "New Connection...", "category": "Database" },
+  "database.newConnection": { "label": "New Connection...", "category": "Database", "keywords": ["postgres", "connect to database"] },
   "database.editConnection": { "label": "Edit Connection...", "category": "Database" },
   "database.deleteConnection": { "label": "Delete Connection", "category": "Database" },
   "database.viewHistory": { "label": "Query History", "category": "Database" },

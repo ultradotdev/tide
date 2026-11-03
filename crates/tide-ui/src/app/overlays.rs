@@ -195,7 +195,12 @@ impl App {
             return;
         };
         match submitted {
-            Submitted::Command(command) => self.execute_command(command),
+            Submitted::Command(command) => {
+                if *overlay.kind() == ModalKind::CommandPalette {
+                    self.remember_command(command);
+                }
+                self.execute_command(command);
+            }
             Submitted::OpenFile(path) => self.open_file(path),
             Submitted::SearchResult { path, line } => {
                 // Language-server pickers name files by URI.
@@ -455,7 +460,76 @@ impl App {
         let commands = crate::catalog::palette_commands(&self.commands)
             .map(|(id, info)| (id.clone(), info.clone()))
             .collect::<Vec<_>>();
-        self.overlay = Some(modal::command_palette(command_items(&commands)));
+        let mut items = command_items(&commands);
+        let keys = self.palette_keys(commands.iter().map(|(id, _)| id.as_str()));
+        for item in &mut items {
+            if let Some(key) = keys.get(item.value.as_str()) {
+                item.hint.clone_from(key);
+            }
+            if let Some(position) = self
+                .recent_commands
+                .iter()
+                .position(|recent| *recent == item.value)
+            {
+                item.boost = recent_boost(position);
+            }
+        }
+        self.overlay = Some(modal::command_palette(items));
+    }
+
+    /// The key shown beside each command in the palette: its most useful binding that
+    /// runs it from where the palette was opened. In a terminal, keys the shell receives
+    /// instead are left out, as on the help pages.
+    pub(super) fn palette_keys<'a>(
+        &self,
+        commands: impl Iterator<Item = &'a str>,
+    ) -> HashMap<&'a str, String> {
+        use crate::command_aliases::canonical;
+        let terminal = self.focus_in_terminal();
+        let resolved = self.resolved_keys();
+        let effective = crate::help::effective(&self.keybindings);
+        commands
+            .filter_map(|command| {
+                let key = crate::help::ranked(&effective, &self.user_keybindings, command)
+                    .into_iter()
+                    .filter(|binding| {
+                        !terminal
+                            || !(crate::help::terminal_owned(&binding.key)
+                                || crate::help::needs_keyboard_protocol(&binding.key))
+                    })
+                    .find(|binding| {
+                        resolved
+                            .get(&canonical_key(&binding.key))
+                            .is_some_and(|winner| canonical(&winner.command) == canonical(command))
+                    })?;
+                Some((
+                    command,
+                    crate::help::display(&key.key, cfg!(target_os = "macos")),
+                ))
+            })
+            .collect()
+    }
+
+    /// Records a command run from the palette, most recent first, so the palette lists
+    /// it first next time. The list survives restarts; failing to save it only loses that.
+    pub(super) fn remember_command(&mut self, command: Command) {
+        let id = command.as_str().to_owned();
+        self.recent_commands.retain(|recent| *recent != id);
+        self.recent_commands.insert(0, id);
+        self.recent_commands.truncate(RECENT_COMMANDS);
+        let path = recent_commands_file(&self.paths);
+        let written = path
+            .parent()
+            .map_or(Ok(()), std::fs::create_dir_all)
+            .and_then(|()| {
+                std::fs::write(
+                    &path,
+                    serde_json::to_string(&self.recent_commands).unwrap_or_default(),
+                )
+            });
+        if let Err(error) = written {
+            tracing::debug!(%error, "could not record recently used commands");
+        }
     }
 
     pub(super) fn open_quick_open(&mut self) {
@@ -569,4 +643,29 @@ impl App {
             .collect();
         self.overlay = Some(modal::theme_picker(items));
     }
+}
+
+/// How many recently used commands the palette remembers.
+const RECENT_COMMANDS: usize = 8;
+
+/// The score added to a recently used command: enough to lead among similar matches,
+/// not to beat a much closer one.
+fn recent_boost(position: usize) -> u32 {
+    u32::try_from(RECENT_COMMANDS.saturating_sub(position)).unwrap_or(0) * 3
+}
+
+pub(super) fn recent_commands_file(paths: &tide_config::Paths) -> PathBuf {
+    paths.state_dir.join("recent-commands.json")
+}
+
+/// The recently used commands saved by an earlier run, dropping any no longer routed.
+pub(super) fn load_recent_commands(paths: &tide_config::Paths) -> Vec<String> {
+    std::fs::read_to_string(recent_commands_file(paths))
+        .ok()
+        .and_then(|text| serde_json::from_str::<Vec<String>>(&text).ok())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|id| command_supported(id))
+        .take(RECENT_COMMANDS)
+        .collect()
 }

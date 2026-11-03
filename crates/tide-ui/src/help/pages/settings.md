@@ -1,6 +1,14 @@
 # Settings and Storage
 
-Tide starts from its built-in defaults and applies your settings file, {{path:settings}}, on top. Open the Settings list with {{key:workbench.openSettings}} to change a value; Tide checks it, saves the file and applies most changes immediately. You can also edit the file by hand and restart Tide. Invalid values fall back to the default, and keys Tide does not recognize are kept in the file but ignored.
+Tide starts from its built-in defaults and applies your settings file, {{path:settings}}, on top. Open the Settings list with {{key:workbench.openSettings}} to change a value; Tide checks it, saves the file and applies it immediately. You can also edit the file by hand: Tide notices within a couple of seconds of saving and applies the changes, and the status bar says which ones wait for new terminals or a restart. If the file no longer parses, Tide lists the problem in **Configuration Problems** and keeps the settings it had until you fix it. Invalid values fall back to the default, and keys Tide does not recognize are kept in the file but ignored.
+
+Most settings apply at once. `terminal.shell` and `tui.terminal.scrollback` apply to terminals opened afterwards. `session.restoreOnStartup`, `workbench.startupEditor`, `update.checkAutomatically`, `tui.outline.collapsedOnStartup` and `tui.timeline.collapsedOnStartup` are read when Tide starts, so they take effect after a restart.
+
+## Icons and colors
+
+`tui.iconStyle` ({{setting:tui.iconStyle}}) decides whether the Explorer and the edge buttons use Nerd Font glyphs. `auto` uses them in Ghostty, kitty and WezTerm, which bundle the glyphs and show them with any font, and plain text in other terminals. Choose `nerd` if your terminal font is a Nerd Font, or `ascii` to never use them.
+
+`tui.colorMode` ({{setting:tui.colorMode}}) decides how colors are sent to the terminal. `auto` sends 24-bit color when the terminal reports it, through `COLORTERM=truecolor` or `24bit`, a `TERM` ending in `-direct`, or a terminal known to support it such as iTerm2, Ghostty, kitty, WezTerm, Alacritty or the VS Code terminal. Otherwise each color becomes the nearest of the 256-color palette, which every supported terminal shows, including Terminal.app before macOS 26. Choose `truecolor` or `256` if `auto` guesses wrong, for example inside tmux or over SSH.
 
 ## All settings
 

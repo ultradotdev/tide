@@ -246,35 +246,48 @@ impl App {
     /// decides. User bindings keep their merged position.
     pub(super) fn resolve_binding(&self, key: &str) -> Option<BindingAction> {
         let key = canonical_key(key);
-        let matches =
-            |when: &Option<String>| when.as_deref().is_none_or(|expr| self.eval_when(expr));
-        let candidate = self
+        let candidates = self
             .keybindings
             .iter()
             .filter(|binding| canonical_key(&binding.key) == key)
-            .filter(|binding| {
-                command_supported(&binding.command)
-                    || binding.command.is_empty()
-                    || binding.command.starts_with('-')
-            })
-            .filter(|binding| matches(&binding.when))
+            .filter(|binding| self.binding_applies(binding))
             .collect::<Vec<_>>();
-        candidate
-            .iter()
-            .rev()
-            .find(|binding| binding.when.is_some())
-            .or_else(|| {
-                candidate
-                    .iter()
-                    .rev()
-                    .find(|binding| binding.when.is_none())
-            })
-            .map(|binding| {
-                binding
-                    .command
-                    .parse()
-                    .map_or(BindingAction::Unbound, BindingAction::Run)
-            })
+        winning_binding(&candidates).map(|binding| {
+            binding
+                .command
+                .parse()
+                .map_or(BindingAction::Unbound, BindingAction::Run)
+        })
+    }
+
+    /// Whether `binding` takes part in resolving its key right now: it runs a routed
+    /// command or removes a key, and its `when` context holds.
+    fn binding_applies(&self, binding: &Keybinding) -> bool {
+        (command_supported(&binding.command)
+            || binding.command.is_empty()
+            || binding.command.starts_with('-'))
+            && binding
+                .when
+                .as_deref()
+                .is_none_or(|expr| self.eval_when(expr))
+    }
+
+    /// The binding each canonical key resolves to in the current context, as
+    /// [`Self::resolve_binding`] would choose it, for every key at once.
+    pub(super) fn resolved_keys(&self) -> HashMap<String, &Keybinding> {
+        let mut candidates: HashMap<String, Vec<&Keybinding>> = HashMap::new();
+        for binding in &self.keybindings {
+            if self.binding_applies(binding) {
+                candidates
+                    .entry(canonical_key(&binding.key))
+                    .or_default()
+                    .push(binding);
+            }
+        }
+        candidates
+            .into_iter()
+            .filter_map(|(key, bindings)| Some((key, winning_binding(&bindings)?)))
+            .collect()
     }
 
     pub(super) fn eval_when(&self, expression: &str) -> bool {
@@ -1107,4 +1120,20 @@ pub(super) fn key_string(key: KeyEvent) -> Option<String> {
     parts.sort_unstable();
     parts.push(&name);
     Some(parts.join("+"))
+}
+
+/// Of the bindings for one key whose context holds, in catalog order, the one that
+/// runs: the last context-specific binding, otherwise the last unconditional one.
+fn winning_binding<'a>(candidates: &[&'a Keybinding]) -> Option<&'a Keybinding> {
+    candidates
+        .iter()
+        .rev()
+        .find(|binding| binding.when.is_some())
+        .or_else(|| {
+            candidates
+                .iter()
+                .rev()
+                .find(|binding| binding.when.is_none())
+        })
+        .copied()
 }

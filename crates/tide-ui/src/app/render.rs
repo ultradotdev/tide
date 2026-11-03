@@ -8,7 +8,13 @@ impl App {
     /// Lays out and draws one frame.
     pub fn draw(&mut self, frame: &mut Frame) {
         let mut layout = self.layout_frame(frame.area());
-        let painted = self.render(frame, &layout);
+        let mut painted = self.render(frame, &layout);
+        // The one place colours are fitted to the terminal: everything drawn this frame,
+        // including terminal panes, goes through here.
+        if self.color_depth() == crate::display::ColorDepth::Indexed {
+            crate::display::reduce_colors(frame.buffer_mut().content.iter_mut());
+            crate::display::reduce_colors(painted.curly_cells.iter_mut().map(|(.., cell)| cell));
+        }
         layout.hits = painted.hits;
         layout.status_targets = painted.status_targets;
         layout.curly_cells = painted.curly_cells;
@@ -47,12 +53,7 @@ impl App {
 
         let exclusions = self.file_excludes();
         self.file_tree.configure(exclusions);
-        self.file_tree.set_ascii_icons(
-            self.settings
-                .get("tui.iconStyle")
-                .and_then(serde_json::Value::as_str)
-                == Some("ascii"),
-        );
+        self.file_tree.set_ascii_icons(!self.nerd_icons());
         let regions = crate::regions::layout(
             area,
             crate::regions::Sidebar {
@@ -736,7 +737,8 @@ impl App {
                 .unwrap_or(15)
                 .clamp(3, 100) as u16;
             editor.configure_editing(tab_size, insert_spaces, relative);
-            editor.set_word_wrap(word_wrap || editor.help.is_some());
+            // Help pages are laid out for the pane's width already.
+            editor.set_word_wrap(word_wrap && editor.help.is_none());
             editor.set_wrap_column(wrap_column.filter(|_| editor.help.is_none()));
         }
         let view = EditorView {
@@ -1158,11 +1160,7 @@ impl App {
         if main.width < 12 || main.height == 0 {
             return Vec::new();
         }
-        let ascii = self
-            .settings
-            .get("tui.iconStyle")
-            .and_then(serde_json::Value::as_str)
-            == Some("ascii");
+        let ascii = !self.nerd_icons();
         let mut controls = Vec::new();
         let mut left = main.x;
         let mut right = main.right();
@@ -1443,8 +1441,15 @@ impl App {
                         .cli_status
                         .iter()
                         .any(|s| s.provider == provider && s.installed);
+                    let notice = self
+                        .ai
+                        .agent_reports
+                        .get(&provider)
+                        .is_some_and(|report| report.notice.is_some());
                     let message = if let Some(error) = error {
                         error.to_owned()
+                    } else if notice {
+                        "Not signed in · Enter for details".into()
                     } else if !self.ai.agent_query.is_empty() {
                         "No matching sessions".into()
                     } else if !installed {
