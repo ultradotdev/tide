@@ -6,6 +6,7 @@ mod catalog;
 mod clipboard;
 pub mod command;
 mod command_aliases;
+mod commit_message;
 mod connection_form;
 mod controllers;
 mod delimiters;

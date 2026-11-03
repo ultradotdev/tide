@@ -7,7 +7,9 @@ pub mod git;
 pub mod git_process;
 pub mod syntax;
 
-pub use git::{GitChange, GitSnapshot, GitStatus, repository_snapshot};
+pub use git::{
+    GitChange, GitOperation, GitSnapshot, GitStatus, OperationKind, repository_snapshot,
+};
 pub use syntax::{HighlightSpan, SyntaxHighlighter, syntect_theme_from_tide};
 
 mod syntax_document;

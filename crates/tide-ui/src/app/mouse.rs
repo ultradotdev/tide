@@ -475,9 +475,12 @@ impl App {
                     self.open_file(path);
                 }
             }
-            SectionId::SourceControl if row > 0 => {
+            SectionId::SourceControl
+                if row >= usize::from(self.git.source_control_header_rows()) =>
+            {
                 self.git.sync_panel();
-                if let Some((selected, double)) = self.git.panel.click_at(row - 1) {
+                let header = usize::from(self.git.source_control_header_rows());
+                if let Some((selected, double)) = self.git.panel.click_at(row - header) {
                     self.git.sync_panel();
                     match selected {
                         crate::git_panel::Row::Header(..) => self.git.toggle_panel_group(),

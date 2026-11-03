@@ -4,7 +4,7 @@ Tide drives the Git command-line tool installed on your machine. Source Control 
 
 ## Source Control
 
-Open it with {{key:git.focusPanel}}. Below the branch line it groups conflicted, staged, changed and untracked files. Move with Up and Down (or `j` and `k`); Left and Right collapse or expand a group, and clicking a group header does the same. Double-click a file to open its diff.
+Open it with {{key:git.focusPanel}}. The top line shows the branch, or `HEAD detached at` and the commit when no branch is checked out. While a rebase, merge, cherry-pick, revert, bisect or `git am` is paused, a second line says so, for example “Rebasing main onto 1a2b3c4d (3/7)”, and the status bar shows it too. Below that, Source Control groups conflicted, staged, changed and untracked files. Move with Up and Down (or `j` and `k`); Left and Right collapse or expand a group, and clicking a group header does the same. Double-click a file to open its diff.
 
 | With Source Control focused | Press |
 | --- | --- |
@@ -18,6 +18,21 @@ Open it with {{key:git.focusPanel}}. Below the branch line it groups conflicted,
 | Refresh | {{key:gitPanel.refresh}} |
 
 Staging works on whole files. The status bar shows the current branch and how far it is ahead of or behind its upstream.
+
+## Commit messages
+
+{{key:gitPanel.commit}} opens the commit box. The first line is the summary; the rest is the body. Enter starts a new line, so you can write both.
+
+| In the commit box | Press |
+| --- | --- |
+| Commit | Ctrl+S, or Alt+Enter |
+| New line | Enter |
+| Move to the Commit and Cancel buttons | Tab |
+| Close, keeping what you typed | Esc |
+
+Most terminals send Ctrl+Enter and Shift+Enter as a plain Enter, which is why Ctrl+S commits. When the summary and the body are not separated by a blank line, Tide adds one, because Git reads everything up to the first blank line as the summary. The counter in the corner shows the summary's length; past 72 characters the rest is highlighted.
+
+A message you close the box on, or one whose commit fails (for example with nothing staged), is there the next time you open the box; it is cleared once the commit succeeds.
 
 ## Diff tabs
 
@@ -62,10 +77,10 @@ Push, pull, fetch and the commands that run hooks (commit, merge, rebase, cherry
 
 ## Rewriting history
 
-**{{label:git.commitAmend}}** opens the commit prompt with the last commit's subject; its body is kept. The confirmation warns when that commit is already on the upstream branch, which then needs **{{label:git.pushForce}}**. That uses `--force-with-lease`, so it refuses when the remote has commits you have not fetched.
+**{{label:git.commitAmend}}** opens the commit box with the last commit's whole message, summary and body, so what you see is what the amended commit keeps. Leave it as it is to keep the message unchanged. The confirmation warns when that commit is already on the upstream branch, which then needs **{{label:git.pushForce}}**. That uses `--force-with-lease`, so it refuses when the remote has commits you have not fetched.
 
 **{{label:git.rebase}}** picks a branch to rebase onto. **{{label:git.cherryPick}}**, **{{label:git.revert}}** and **{{label:git.reset}}** pick a commit from the log; a reset asks for soft, mixed or hard, and a hard reset asks again before it discards anything. Git never opens an editor for these: messages are used as they are.
 
 ## Conflicts
 
-When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. **{{label:git.conflicts}}** opens a conflicted file. Resolve and stage each one, then run **{{label:git.continue}}**, or **{{label:git.abort}}** to return to where you started; both act on whichever operation is paused. Finish a merge by committing.
+When a pull with rebase, a rebase, merge, cherry-pick or revert stops on conflicts, Tide leaves them in the working tree and the status bar says how to finish. Source Control keeps showing the operation and its conflicted files until it is finished or aborted, including a rebase started from a terminal. **{{label:git.conflicts}}** opens a conflicted file. Resolve and stage each one, then run **{{label:git.continue}}**, or **{{label:git.abort}}** to return to where you started; both act on whichever operation is paused. Finish a merge by committing.
