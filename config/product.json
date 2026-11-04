@@ -3,7 +3,7 @@
   "endorsement": "Tide by Ultra.dev",
   "publisher": "Ultra.dev",
   "binary": "tide",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "prerelease": false,
   "repository": "https://github.com/ultradotdev/tide",
   "homepage": "https://ultra.dev/tide",
