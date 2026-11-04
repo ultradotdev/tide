@@ -133,6 +133,12 @@ pub enum ModalKind {
     BranchPicker,
     GitChoice(String),
     Settings,
+    /// Picks one of a setting's allowed values. `filter` is the Settings list's search
+    /// text, restored when the list reopens.
+    SettingChoice {
+        key: String,
+        filter: String,
+    },
     Keybindings,
     Completion,
     AgentSessions,
@@ -154,6 +160,9 @@ pub enum ModalKind {
     Confirm(ConfirmAction),
 }
 
+/// How many lines of an item's description show under a list.
+const DESCRIPTION_LINES: u16 = 3;
+
 #[derive(Debug, Clone)]
 pub struct ModalItem {
     pub label: String,
@@ -168,6 +177,8 @@ pub struct ModalItem {
     pub keywords: Vec<String>,
     /// Added to the item's match score, so recently used items rank higher.
     pub boost: u32,
+    /// Shown under the list, wrapped, while the item is selected.
+    pub description: String,
 }
 
 impl ModalItem {
@@ -185,12 +196,19 @@ impl ModalItem {
             hint: String::new(),
             keywords: Vec::new(),
             boost: 0,
+            description: String::new(),
         }
     }
 
     #[must_use]
     pub fn current(mut self, current: bool) -> Self {
         self.current = current;
+        self
+    }
+
+    #[must_use]
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = description.into();
         self
     }
 }
@@ -513,6 +531,7 @@ impl ModalBase {
                 | ModalKind::BranchPicker
                 | ModalKind::GitChoice(_)
                 | ModalKind::Settings
+                | ModalKind::SettingChoice { .. }
                 | ModalKind::Keybindings
                 | ModalKind::Completion
                 | ModalKind::AgentSessions
@@ -588,6 +607,7 @@ impl ModalBase {
             ModalKind::ThemePicker => (60, 20),
             ModalKind::BranchPicker | ModalKind::GitChoice(_) => (60, 20),
             ModalKind::Settings => (70, 25),
+            ModalKind::SettingChoice { .. } => (50, 12),
             ModalKind::Keybindings => (70, 25),
             ModalKind::Completion => (
                 saturating_u16(
@@ -673,7 +693,7 @@ impl ModalBase {
         }
         let input = self.is_searchable() || self.is_prompt() || self.kind == ModalKind::SaveAs;
         let list = self.is_searchable() || self.kind == ModalKind::SaveAs;
-        Layout::vertical([
+        let [input, separator, list, _, actions, footer] = Layout::vertical([
             Constraint::Length(if self.kind == ModalKind::Find && self.replace_mode {
                 2
             } else {
@@ -681,6 +701,7 @@ impl ModalBase {
             }),
             Constraint::Length(u16::from(list)),
             Constraint::Min(0),
+            Constraint::Length(self.description_rows()),
             Constraint::Length(if self.kind == ModalKind::Find {
                 self.find_action_rows(inner.width)
             } else {
@@ -695,7 +716,18 @@ impl ModalBase {
             }),
             Constraint::Length(u16::from(inner.height > 3)),
         ])
-        .areas(inner)
+        .areas(inner);
+        [input, separator, list, actions, footer]
+    }
+
+    /// Rows under the list for the selected item's description: a rule and up to
+    /// three lines. Kept the same for every item so the list doesn't jump.
+    fn description_rows(&self) -> u16 {
+        if self.is_searchable() && self.items.iter().any(|item| !item.description.is_empty()) {
+            DESCRIPTION_LINES + 1
+        } else {
+            0
+        }
     }
 
     pub fn action_bounds(&self, area: Rect) -> Vec<(Rect, usize, String)> {
@@ -771,6 +803,7 @@ impl ModalBase {
                 ModalKind::Confirm(_) => "Discard [Y]",
                 ModalKind::SaveAs => "Save",
                 ModalKind::Settings | ModalKind::Keybindings => "Edit",
+                ModalKind::SettingChoice { .. } => "Set",
                 ModalKind::SessionDeletePicker => "Delete…",
                 ModalKind::Prompt(_) | ModalKind::Find => "Submit",
                 _ => "Open",
@@ -1291,6 +1324,32 @@ impl ModalBase {
             frame.render_widget(List::new(items), list_area);
         }
 
+        let rows = self.description_rows();
+        if rows > 0 {
+            let area = Rect::new(inner.x, list_area.bottom(), inner.width, rows);
+            let mut lines = vec![Line::styled(
+                "─".repeat(inner.width as usize),
+                Style::default().fg(palette.modal_border),
+            )];
+            let description = self
+                .selected_item()
+                .map_or("", |item| item.description.as_str());
+            let mut wrapped = wrap_message(description, inner.width.saturating_sub(2) as usize);
+            if wrapped.len() > DESCRIPTION_LINES as usize {
+                wrapped.truncate(DESCRIPTION_LINES as usize);
+                if let Some(last) = wrapped.last_mut() {
+                    last.push('…');
+                }
+            }
+            lines.extend(wrapped.into_iter().map(|line| {
+                Line::styled(format!(" {line}"), Style::default().fg(palette.description))
+            }));
+            frame.render_widget(
+                Paragraph::new(lines).style(Style::default().bg(palette.modal_bg)),
+                area,
+            );
+        }
+
         let count = if self.input.is_empty() {
             format!("{} items", self.items.len())
         } else {
@@ -1506,7 +1565,16 @@ pub enum Submitted {
     Session(String),
     DeleteSession(String),
     CodeAction(usize),
-    Setting(String),
+    /// A row of the Settings list, with the list's search text.
+    Setting {
+        key: String,
+        filter: String,
+    },
+    SettingChoice {
+        key: String,
+        filter: String,
+        value: String,
+    },
     Keybinding(String),
     LspCompletion(Box<tide_lsp::CompletionItem>),
     CompletionText(String),
@@ -1577,7 +1645,15 @@ impl Submitted {
             ModalKind::CodeActions => value
                 .and_then(|value| value.parse().ok())
                 .map(Self::CodeAction),
-            ModalKind::Settings => owned().map(Self::Setting),
+            ModalKind::Settings => owned().map(|key| Self::Setting {
+                key,
+                filter: base.input.clone(),
+            }),
+            ModalKind::SettingChoice { key, filter } => owned().map(|value| Self::SettingChoice {
+                key: key.clone(),
+                filter: filter.clone(),
+                value,
+            }),
             ModalKind::Keybindings => owned().map(Self::Keybinding),
             ModalKind::Completion => owned().map(Self::CompletionText),
             ModalKind::Prompt(PromptAction::EditRowCell(query, column)) => Some(Self::RowCell {

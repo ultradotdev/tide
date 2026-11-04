@@ -95,9 +95,48 @@ pub fn validate(key: &str, value: &Value) -> Result<(), String> {
         value.is_boolean()
     };
     if valid {
-        Ok(())
+        return Ok(());
+    }
+    Err(match control(key) {
+        Control::Number(min, max) => format!("{key} must be a whole number from {min} to {max}"),
+        Control::Choice(choices) => format!("{key} must be one of: {}", choices.join(", ")),
+        Control::Toggle => format!("{key} must be true or false"),
+        Control::Theme | Control::Text => format!("Invalid value for {key}"),
+    })
+}
+
+/// How the Settings list edits a setting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Control {
+    /// On or off: Enter flips it.
+    Toggle,
+    /// One of a fixed set of values, picked from a list.
+    Choice(&'static [&'static str]),
+    /// A whole number in an inclusive range, typed into a prompt.
+    Number(u64, u64),
+    /// The color theme, picked from the theme list.
+    Theme,
+    /// Anything else, typed into a prompt as text or JSON.
+    Text,
+}
+
+/// Matches `validate`: a supported key with no range, choices or other type is a boolean.
+#[must_use]
+pub fn control(key: &str) -> Control {
+    let (range, choices) = constraints(key);
+    if range.1 > 0 {
+        Control::Number(range.0, range.1)
+    } else if !choices.is_empty() {
+        Control::Choice(choices)
+    } else if key == "workbench.colorTheme" {
+        Control::Theme
+    } else if matches!(
+        key,
+        "terminal.shell" | "lsp.triggerCharacters" | "ai.cli.workspaceAliases" | "files.exclude"
+    ) {
+        Control::Text
     } else {
-        Err(format!("Invalid value for {key}"))
+        Control::Toggle
     }
 }
 

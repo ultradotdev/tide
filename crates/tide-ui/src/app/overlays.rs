@@ -177,6 +177,7 @@ impl App {
             ModalKind::Confirm(ConfirmAction::CloseTab { .. }) => self.pending_close = None,
             ModalKind::Confirm(ConfirmAction::ReplaceInFiles(_)) => self.pending_replace = None,
             ModalKind::Confirm(ConfirmAction::CloseOtherTabs(_)) => self.pending_keep = None,
+            ModalKind::SettingChoice { key, filter } => self.open_settings_at(Some(key), filter),
             _ => {}
         }
     }
@@ -269,13 +270,10 @@ impl App {
             Submitted::Session(name) => self.open_named_session(&name),
             Submitted::DeleteSession(name) => self.confirm_delete_session(&name),
             Submitted::Confirm(ConfirmAction::DeleteSession(name)) => self.delete_session(&name),
-            Submitted::Setting(key) => {
-                let current = self
-                    .settings
-                    .get(&key)
-                    .map_or_else(String::new, ToString::to_string);
-                let title = format!("Edit Setting: {key}");
-                self.open_prompt(PromptAction::EditSetting(key), &title, &current);
+            Submitted::Setting { key, filter } => self.edit_setting(&key, &filter),
+            Submitted::SettingChoice { key, filter, value } => {
+                self.update_setting(&key, &value);
+                self.open_settings_at(Some(&key), &filter);
             }
             Submitted::Keybinding(selected) => {
                 if let Ok(binding) = serde_json::from_str::<Keybinding>(&selected) {
@@ -612,13 +610,96 @@ impl App {
     }
 
     pub(super) fn open_settings(&mut self) {
+        self.open_settings_at(None, "");
+    }
+
+    /// Opens the Settings list with `filter` typed and `key` selected, so changing a
+    /// value from the list comes back to the same row.
+    pub(super) fn open_settings_at(&mut self, key: Option<&str>, filter: &str) {
+        let descriptions = tide_config::builtin::setting_descriptions();
         let items = self
             .settings
             .iter()
             .filter(|(key, _)| crate::preferences::supported(key))
-            .map(|(key, value)| ModalItem::new(key.clone(), value.to_string(), key.clone()))
+            .map(|(key, value)| {
+                ModalItem::new(key.clone(), setting_text(value), key.clone())
+                    .description(descriptions.get(key).cloned().unwrap_or_default())
+            })
             .collect();
-        self.overlay = Some(modal::settings(items));
+        let mut overlay = modal::settings(items);
+        let base = overlay.base_mut();
+        base.hints = Some("Enter change   Esc close".to_owned());
+        base.input = filter.to_owned();
+        base.cursor = filter.chars().count();
+        base.refilter();
+        if let Some(index) = key.and_then(|key| {
+            base.filtered
+                .iter()
+                .position(|index| base.items[*index].value == key)
+        }) {
+            base.selected = index;
+        }
+        self.overlay = Some(overlay);
+    }
+
+    /// Edits the setting chosen in the Settings list: an on/off setting flips, one
+    /// with fixed values or the theme opens a list, and the rest open a prompt that
+    /// names what is allowed.
+    fn edit_setting(&mut self, key: &str, filter: &str) {
+        use crate::preferences::Control;
+        let value = self.settings.get(key).cloned().unwrap_or_default();
+        match crate::preferences::control(key) {
+            Control::Toggle => {
+                let next = !value.as_bool().unwrap_or(false);
+                self.update_setting(key, &next.to_string());
+                self.open_settings_at(Some(key), filter);
+            }
+            Control::Choice(choices) => {
+                let default = tide_config::builtin::settings().get(key).cloned();
+                let items = choices
+                    .iter()
+                    .map(|choice| {
+                        let detail = if default.as_ref().and_then(|v| v.as_str()) == Some(choice) {
+                            "default"
+                        } else {
+                            ""
+                        };
+                        ModalItem::new(*choice, detail, *choice)
+                            .current(value.as_str() == Some(choice))
+                    })
+                    .collect::<Vec<_>>();
+                let selected = items.iter().position(|item| item.current).unwrap_or(0);
+                let mut overlay = modal::picker(
+                    ModalKind::SettingChoice {
+                        key: key.to_owned(),
+                        filter: filter.to_owned(),
+                    },
+                    key,
+                    items,
+                );
+                let base = overlay.base_mut();
+                base.selected = selected;
+                base.hints = Some("Enter set   Esc back".to_owned());
+                self.overlay = Some(overlay);
+            }
+            Control::Theme => self.open_theme_picker(),
+            Control::Number(min, max) => {
+                let title = format!("Edit Setting: {key} ({min}–{max})");
+                self.open_prompt(
+                    PromptAction::EditSetting(key.to_owned()),
+                    &title,
+                    &setting_text(&value),
+                );
+            }
+            Control::Text => {
+                let title = format!("Edit Setting: {key}");
+                self.open_prompt(
+                    PromptAction::EditSetting(key.to_owned()),
+                    &title,
+                    &setting_text(&value),
+                );
+            }
+        }
     }
 
     pub(super) fn open_keybindings(&mut self) {
@@ -640,12 +721,24 @@ impl App {
     }
 
     pub(super) fn open_theme_picker(&mut self) {
+        let current = self
+            .settings
+            .get("workbench.colorTheme")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default()
+            .to_owned();
         let items = self
             .themes
             .iter()
-            .map(|theme| ModalItem::new(theme.name.clone(), theme.id.clone(), theme.id.clone()))
-            .collect();
-        self.overlay = Some(modal::theme_picker(items));
+            .map(|theme| {
+                ModalItem::new(theme.name.clone(), theme.id.clone(), theme.id.clone())
+                    .current(theme.id == current)
+            })
+            .collect::<Vec<_>>();
+        let selected = items.iter().position(|item| item.current).unwrap_or(0);
+        let mut overlay = modal::theme_picker(items);
+        overlay.base_mut().selected = selected;
+        self.overlay = Some(overlay);
     }
 }
 
@@ -672,4 +765,12 @@ pub(super) fn load_recent_commands(paths: &tide_config::Paths) -> Vec<String> {
         .filter(|id| command_supported(id))
         .take(RECENT_COMMANDS)
         .collect()
+}
+
+/// A setting's value as the Settings list shows it and its prompt starts with: text
+/// without JSON quotes, anything else as JSON.
+fn setting_text(value: &serde_json::Value) -> String {
+    value
+        .as_str()
+        .map_or_else(|| value.to_string(), str::to_owned)
 }
