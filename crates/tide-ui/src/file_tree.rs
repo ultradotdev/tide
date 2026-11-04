@@ -7,7 +7,7 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, List, ListItem};
 
-use crate::palette::Palette;
+use crate::palette::{IconTint, Palette};
 
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -365,16 +365,10 @@ impl FileTreeState {
                 } else {
                     " "
                 };
-                let kind = file_icon(entry, self.ascii_icons);
+                let (kind, tint) = file_icon(entry, self.ascii_icons);
                 let decoration = self.decorations.get(&entry.path).map_or("", String::as_str);
-                let text = format!(
-                    "{}{} {} {} {}",
-                    "  ".repeat(entry.depth),
-                    icon,
-                    kind,
-                    entry.name,
-                    decoration
-                );
+                let lead = format!("{}{} ", "  ".repeat(entry.depth), icon);
+                let text = format!(" {} {}", entry.name, decoration);
                 let style = if index == self.selected {
                     Style::default()
                         .fg(palette.selection_fg)
@@ -391,7 +385,15 @@ impl FileTreeState {
                         })
                         .bg(palette.sidebar)
                 };
-                ListItem::new(Line::from(Span::styled(text, style)))
+                let background = style.bg.unwrap_or(palette.sidebar);
+                let kind_style = palette
+                    .icon(tint, background)
+                    .map_or(style, |color| style.fg(color));
+                ListItem::new(Line::from(vec![
+                    Span::styled(lead, style),
+                    Span::styled(kind, kind_style),
+                    Span::styled(text, style),
+                ]))
             })
             .collect::<Vec<_>>();
         if items.is_empty() {
@@ -421,40 +423,107 @@ impl FileTreeState {
     }
 }
 
-fn file_icon(entry: &FileEntry, ascii: bool) -> &'static str {
+/// The Nerd Font glyph and theme colour for an Explorer row, or an empty glyph in ASCII
+/// mode. Each glyph takes one cell. In a non-Mono Nerd Font they are drawn wider and
+/// spill into the space after them, so every glyph here stays under 1.5 cells wide there:
+/// Font Awesome's folders and link (1.5 to 1.8 cells) were cut off in some terminals.
+fn file_icon(entry: &FileEntry, ascii: bool) -> (&'static str, IconTint) {
+    use IconTint::{Blue, Cyan, Green, Magenta, Orange, Plain, Red, Yellow};
     if ascii {
-        return "";
+        return ("", Plain);
     }
     if entry.is_symlink {
-        return "\u{f0c1}";
+        return ("\u{eaee}", Cyan); // cod-file_symlink_file
     }
     if entry.is_dir {
         return if entry.expanded {
-            "\u{f07c}"
+            ("\u{e5fe}", Yellow) // custom-folder_open
         } else {
-            "\u{f07b}"
+            ("\u{e5ff}", Yellow) // custom-folder
         };
     }
-    match entry
-        .path
-        .extension()
-        .and_then(|x| x.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "ts" | "tsx" => "\u{e628}",
-        "js" | "jsx" | "mjs" | "cjs" => "\u{e74e}",
-        "json" | "jsonc" => "\u{e60b}",
-        "md" | "mdx" => "\u{e609}",
-        "rs" => "\u{e7a8}",
-        "py" | "pyi" => "\u{e73c}",
-        "html" | "htm" => "\u{e736}",
-        "css" | "scss" => "\u{e749}",
-        "go" => "\u{e627}",
-        "sh" | "bash" | "zsh" => "\u{e795}",
-        "toml" | "yaml" | "yml" => "\u{e615}",
-        _ => "\u{f15b}",
+    let name = entry.name.to_ascii_lowercase();
+    let by_name = match name.as_str() {
+        "dockerfile"
+        | "containerfile"
+        | "docker-compose.yml"
+        | "docker-compose.yaml"
+        | "compose.yml"
+        | "compose.yaml" => Some(("\u{e7b0}", Blue)), // dev-docker
+        "makefile" | "gnumakefile" | "justfile" => Some(("\u{e673}", Plain)), // seti-makefile
+        ".gitignore" | ".gitattributes" | ".gitmodules" | ".gitkeep" => {
+            Some(("\u{e702}", Orange)) // dev-git
+        }
+        "license" | "license.md" | "license.txt" | "licence" | "copying" => {
+            Some(("\u{e60a}", Yellow)) // seti-license
+        }
+        "cargo.toml" | "cargo.lock" => Some(("\u{e7a8}", Orange)), // dev-rust
+        "package.json" | "package-lock.json" | ".npmrc" => Some(("\u{e71e}", Red)), // dev-npm
+        "tsconfig.json" | "jsconfig.json" => Some(("\u{e69d}", Blue)), // seti-tsconfig
+        ".editorconfig" => Some(("\u{e652}", Plain)),              // seti-editorconfig
+        _ if name == ".env" || name.starts_with(".env.") => Some(("\u{e615}", Yellow)), // seti-config
+        _ => None,
+    };
+    if let Some(icon) = by_name {
+        return icon;
+    }
+    let extension = name.rsplit_once('.').map_or("", |(_, extension)| extension);
+    match extension {
+        "ts" | "mts" | "cts" => ("\u{e628}", Blue), // seti-typescript
+        "tsx" => ("\u{e7ba}", Blue),                // dev-react
+        "jsx" => ("\u{e7ba}", Yellow),
+        "js" | "mjs" | "cjs" => ("\u{e74e}", Yellow), // dev-javascript_alt
+        "json" | "jsonc" | "json5" => ("\u{e60b}", Green), // seti-json
+        "md" | "mdx" | "markdown" => ("\u{e73e}", Plain), // dev-markdown
+        "rs" => ("\u{e7a8}", Orange),                 // dev-rust
+        "py" | "pyi" => ("\u{e73c}", Blue),           // dev-python
+        "rb" => ("\u{e739}", Red),                    // dev-ruby
+        "go" => ("\u{e626}", Cyan),                   // custom-go
+        "java" => ("\u{e738}", Orange),               // dev-java
+        "kt" | "kts" => ("\u{e634}", Magenta),        // seti-kotlin
+        "swift" => ("\u{e755}", Orange),              // dev-swift
+        "c" => ("\u{e61e}", Blue),                    // custom-c
+        "h" => ("\u{e61e}", Magenta),
+        "cpp" | "cc" | "cxx" | "hpp" | "hh" | "hxx" => ("\u{e61d}", Blue), // custom-cpp
+        "cs" => ("\u{e648}", Magenta),                                     // seti-c_sharp
+        "php" => ("\u{e608}", Magenta),                                    // seti-php
+        "dart" => ("\u{e64c}", Blue),                                      // seti-dart
+        "ex" | "exs" => ("\u{e62d}", Magenta),                             // seti-elixir
+        "hs" => ("\u{e61f}", Magenta),                                     // seti-haskell
+        "scala" => ("\u{e68e}", Red),                                      // seti-scala
+        "zig" => ("\u{e6a9}", Orange),                                     // seti-zig
+        "lua" => ("\u{e620}", Blue),                                       // seti-lua
+        "r" => ("\u{e68a}", Blue),                                         // seti-r
+        "vim" => ("\u{e62b}", Green),                                      // custom-vim
+        "html" | "htm" => ("\u{e736}", Orange),                            // dev-html5
+        "css" => ("\u{e749}", Blue),                                       // dev-css3
+        "scss" | "sass" => ("\u{e74b}", Magenta),                          // dev-sass
+        "less" => ("\u{e758}", Magenta),                                   // dev-less
+        "vue" => ("\u{e6a0}", Green),                                      // seti-vue
+        "svelte" => ("\u{e697}", Orange),                                  // seti-svelte
+        "graphql" | "gql" => ("\u{e662}", Magenta),                        // seti-graphql
+        "sql" => ("\u{e706}", Yellow),                                     // dev-database
+        "sh" | "bash" | "zsh" | "fish" => ("\u{e795}", Green),             // dev-terminal
+        "yaml" | "yml" => ("\u{e6a8}", Magenta),                           // seti-yml
+        "toml" => ("\u{e6b2}", Plain),                                     // custom-toml
+        "xml" => ("\u{e619}", Orange),                                     // seti-xml
+        "csv" | "tsv" => ("\u{e64a}", Green),                              // seti-csv
+        "tf" | "tfvars" => ("\u{e69a}", Magenta),                          // seti-terraform
+        "tex" => ("\u{e69b}", Plain),                                      // seti-tex
+        "txt" | "log" => ("\u{e64e}", Plain),                              // seti-text
+        "lock" => ("\u{e672}", Plain),                                     // seti-lock
+        "svg" => ("\u{e698}", Yellow),                                     // seti-svg
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "ico" | "bmp" | "avif" => {
+            ("\u{e60d}", Green) // seti-image
+        }
+        "mp4" | "mov" | "webm" | "mkv" => ("\u{e69f}", Magenta), // seti-video
+        "mp3" | "wav" | "flac" | "ogg" | "m4a" => ("\u{e638}", Magenta), // seti-audio
+        "ttf" | "otf" | "woff" | "woff2" => ("\u{e659}", Plain), // seti-font
+        "pdf" => ("\u{e67d}", Red),                              // seti-pdf
+        "zip" | "tar" | "gz" | "tgz" | "xz" | "zst" | "bz2" | "7z" | "rar" => {
+            ("\u{e6aa}", Yellow) // seti-zip
+        }
+        _ => ("\u{e612}", Plain), // custom-default
     }
 }
 
@@ -524,23 +593,158 @@ mod tests {
         let icons = tree
             .entries
             .iter()
-            .map(|entry| file_icon(entry, false))
+            .map(|entry| file_icon(entry, false).0)
             .collect::<Vec<_>>();
-        assert!(icons.contains(&"\u{f07b}"));
+        assert!(icons.contains(&"\u{e5ff}"));
         assert!(icons.contains(&"\u{e628}"));
         assert!(icons.contains(&"\u{e7a8}"));
         assert!(icons.contains(&"\u{e74e}"));
         assert!(icons.contains(&"\u{e60b}"));
-        assert!(icons.contains(&"\u{e609}"));
+        assert!(icons.contains(&"\u{e73e}"));
         assert!(icons.iter().all(|icon| tide_core::display_width(icon) == 1));
         assert!(
             tree.entries
                 .iter()
-                .all(|entry| file_icon(entry, true).is_empty())
+                .all(|entry| file_icon(entry, true).0.is_empty())
         );
         tree.select_first();
         tree.expand_selected();
-        assert_eq!(file_icon(tree.selected().unwrap(), false), "\u{f07c}");
+        assert_eq!(file_icon(tree.selected().unwrap(), false).0, "\u{e5fe}");
+    }
+
+    fn file(name: &str) -> FileEntry {
+        FileEntry {
+            path: PathBuf::from(name),
+            name: name.to_owned(),
+            depth: 0,
+            is_dir: false,
+            is_symlink: false,
+            expanded: false,
+        }
+    }
+
+    #[test]
+    fn special_names_win_over_extensions_and_matching_ignores_case() {
+        assert_eq!(
+            file_icon(&file("Dockerfile"), false),
+            ("\u{e7b0}", IconTint::Blue)
+        );
+        assert_eq!(file_icon(&file("Makefile"), false).0, "\u{e673}");
+        assert_eq!(
+            file_icon(&file("Cargo.toml"), false),
+            ("\u{e7a8}", IconTint::Orange)
+        );
+        assert_eq!(file_icon(&file("package.json"), false).0, "\u{e71e}");
+        assert_eq!(file_icon(&file(".env.local"), false).0, "\u{e615}");
+        assert_eq!(file_icon(&file("LICENSE"), false).0, "\u{e60a}");
+        assert_eq!(
+            file_icon(&file("App.TSX"), false),
+            ("\u{e7ba}", IconTint::Blue)
+        );
+        assert_eq!(file_icon(&file("other.toml"), false).0, "\u{e6b2}");
+        assert_eq!(file_icon(&file("archive.tar.gz"), false).0, "\u{e6aa}");
+        assert_eq!(
+            file_icon(&file("no_extension"), false),
+            ("\u{e612}", IconTint::Plain)
+        );
+    }
+
+    #[test]
+    fn every_icon_is_one_cell_wide() {
+        for name in [
+            "a.ts",
+            "a.tsx",
+            "a.jsx",
+            "a.js",
+            "a.json",
+            "a.md",
+            "a.rs",
+            "a.py",
+            "a.rb",
+            "a.go",
+            "a.java",
+            "a.kt",
+            "a.swift",
+            "a.c",
+            "a.h",
+            "a.cpp",
+            "a.cs",
+            "a.php",
+            "a.dart",
+            "a.ex",
+            "a.hs",
+            "a.scala",
+            "a.zig",
+            "a.lua",
+            "a.r",
+            "a.vim",
+            "a.html",
+            "a.css",
+            "a.scss",
+            "a.less",
+            "a.vue",
+            "a.svelte",
+            "a.graphql",
+            "a.sql",
+            "a.sh",
+            "a.yml",
+            "a.toml",
+            "a.xml",
+            "a.csv",
+            "a.tf",
+            "a.tex",
+            "a.txt",
+            "a.lock",
+            "a.svg",
+            "a.png",
+            "a.mp4",
+            "a.mp3",
+            "a.ttf",
+            "a.pdf",
+            "a.zip",
+            "Dockerfile",
+            "Makefile",
+            ".gitignore",
+            "LICENSE",
+            "Cargo.toml",
+            "package.json",
+            "tsconfig.json",
+            ".editorconfig",
+            ".env",
+            "plain",
+        ] {
+            let (icon, _) = file_icon(&file(name), false);
+            assert_eq!(tide_core::display_width(icon), 1, "{name}");
+        }
+    }
+
+    #[test]
+    fn icon_colours_come_from_the_theme_and_stay_visible() {
+        for theme in tide_config::builtin::themes().iter() {
+            let palette = Palette::from_theme(theme);
+            for background in [palette.sidebar, palette.selection_bg] {
+                assert_eq!(palette.icon(IconTint::Plain, background), None);
+                for tint in [
+                    IconTint::Red,
+                    IconTint::Green,
+                    IconTint::Yellow,
+                    IconTint::Blue,
+                    IconTint::Magenta,
+                    IconTint::Cyan,
+                    IconTint::Orange,
+                ] {
+                    let color = palette.icon(tint, background).unwrap();
+                    assert!(
+                        crate::palette::contrast_ratio(color, background) >= 3.0,
+                        "{} {tint:?}",
+                        theme.name
+                    );
+                }
+            }
+        }
+        let mut bare = Palette::ultra_dusk();
+        bare.terminal_ansi = [None; 16];
+        assert_eq!(bare.icon(IconTint::Blue, bare.sidebar), None);
     }
 
     #[test]
