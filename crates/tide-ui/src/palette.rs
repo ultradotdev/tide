@@ -200,6 +200,44 @@ impl Palette {
     }
 }
 
+/// The theme colour a file icon takes, named after the terminal colour it comes from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IconTint {
+    Plain,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    /// Halfway between the theme's red and yellow, since terminals have no orange.
+    Orange,
+}
+
+impl Palette {
+    /// The colour for an icon of `tint` drawn on `background`. It comes from the theme's
+    /// terminal colours, so it suits light and dark themes alike, and it is lightened or
+    /// darkened to a 3:1 contrast where the theme's colour is too faint. `None` means the
+    /// icon takes the text colour: a plain tint, or a theme without terminal colours.
+    #[must_use]
+    pub fn icon(&self, tint: IconTint, background: Color) -> Option<Color> {
+        let ansi = |index: usize| self.terminal_ansi[index].map(|(r, g, b)| Color::Rgb(r, g, b));
+        let color = match tint {
+            IconTint::Plain => None,
+            IconTint::Red => ansi(1),
+            IconTint::Green => ansi(2),
+            IconTint::Yellow => ansi(3),
+            IconTint::Blue => ansi(4),
+            IconTint::Magenta => ansi(5),
+            IconTint::Cyan => ansi(6),
+            IconTint::Orange => ansi(1)
+                .zip(ansi(3))
+                .map(|(red, yellow)| blend(red, yellow, 0.5)),
+        };
+        color.map(|color| with_contrast(color, background, 3.0))
+    }
+}
+
 #[must_use]
 pub fn hex_color(value: &str) -> Option<Color> {
     let value = value.trim().trim_start_matches('#');
@@ -277,12 +315,21 @@ fn luminance(color: Color) -> f64 {
         0.0
     }
 }
+#[cfg(test)]
+pub(crate) fn contrast_ratio(a: Color, b: Color) -> f64 {
+    contrast(a, b)
+}
 fn contrast(a: Color, b: Color) -> f64 {
     let (a, b) = (luminance(a), luminance(b));
     (a.max(b) + 0.05) / (a.min(b) + 0.05)
 }
 pub(crate) fn accessible(foreground: Color, background: Color) -> Color {
-    if contrast(foreground, background) >= 4.5 {
+    with_contrast(foreground, background, 4.5)
+}
+/// Moves `foreground` toward black or white, whichever contrasts more with `background`,
+/// until the two reach `ratio`.
+fn with_contrast(foreground: Color, background: Color, ratio: f64) -> Color {
+    if contrast(foreground, background) >= ratio {
         return foreground;
     }
     let endpoint = if contrast(Color::Rgb(0, 0, 0), background)
@@ -294,7 +341,7 @@ pub(crate) fn accessible(foreground: Color, background: Color) -> Color {
     };
     for step in 1..=20 {
         let candidate = blend(foreground, endpoint, f64::from(step) / 20.0);
-        if contrast(candidate, background) >= 4.5 {
+        if contrast(candidate, background) >= ratio {
             return candidate;
         }
     }
