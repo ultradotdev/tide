@@ -931,7 +931,7 @@ fn explorer_type_icons_and_proportional_scrollbar_are_visible_and_clickable() {
         // Rail bounds come from the completed first frame. The first file
         // and icon can arrive while only the upper half has been painted.
         s.text().contains("a.ts")
-            && s.text().contains('\u{f114}')
+            && s.text().contains('\u{e5ff}')
             && s.text()
                 .lines()
                 .last()

@@ -424,21 +424,22 @@ impl FileTreeState {
 }
 
 /// The Nerd Font glyph and theme colour for an Explorer row, or an empty glyph in ASCII
-/// mode. The glyphs come from the Seti, Devicons and Font Awesome sets in Nerd Fonts 3,
-/// and each takes one cell.
+/// mode. Each glyph takes one cell. In a non-Mono Nerd Font they are drawn wider and
+/// spill into the space after them, so every glyph here stays under 1.5 cells wide there:
+/// Font Awesome's folders and link (1.5 to 1.8 cells) were cut off in some terminals.
 fn file_icon(entry: &FileEntry, ascii: bool) -> (&'static str, IconTint) {
     use IconTint::{Blue, Cyan, Green, Magenta, Orange, Plain, Red, Yellow};
     if ascii {
         return ("", Plain);
     }
     if entry.is_symlink {
-        return ("\u{f0c1}", Cyan); // fa-link
+        return ("\u{eaee}", Cyan); // cod-file_symlink_file
     }
     if entry.is_dir {
         return if entry.expanded {
-            ("\u{f115}", Yellow) // fa-folder_open_o
+            ("\u{e5fe}", Yellow) // custom-folder_open
         } else {
-            ("\u{f114}", Yellow) // fa-folder_o
+            ("\u{e5ff}", Yellow) // custom-folder
         };
     }
     let name = entry.name.to_ascii_lowercase();
@@ -594,7 +595,7 @@ mod tests {
             .iter()
             .map(|entry| file_icon(entry, false).0)
             .collect::<Vec<_>>();
-        assert!(icons.contains(&"\u{f114}"));
+        assert!(icons.contains(&"\u{e5ff}"));
         assert!(icons.contains(&"\u{e628}"));
         assert!(icons.contains(&"\u{e7a8}"));
         assert!(icons.contains(&"\u{e74e}"));
@@ -608,7 +609,7 @@ mod tests {
         );
         tree.select_first();
         tree.expand_selected();
-        assert_eq!(file_icon(tree.selected().unwrap(), false).0, "\u{f115}");
+        assert_eq!(file_icon(tree.selected().unwrap(), false).0, "\u{e5fe}");
     }
 
     fn file(name: &str) -> FileEntry {

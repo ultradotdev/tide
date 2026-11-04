@@ -4,7 +4,7 @@ assertion_line: 277
 expression: "snapshot_app(120, 40)"
 ---
  ▼ Explorer  [2]                 ▾ │ ←  main.ts ×                                                                  ▾  ←
-▸  src                            │▎1   const answer = 42;                                                  ▒░
+▸  src                            │▎1   const answer = 42;                                                  ▒░
    README.md                      │ 2
                                    │
                                    │
