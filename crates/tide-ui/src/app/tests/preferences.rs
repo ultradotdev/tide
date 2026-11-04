@@ -430,3 +430,171 @@ fn keybindings_edited_outside_tide_apply_and_tides_own_writes_are_not_reported()
     );
     assert!(app.status.is_empty());
 }
+
+/// Opens the Settings list, types `filter` and presses Enter on `key`.
+fn edit_from_settings(app: &mut App, filter: &str, key: &str) {
+    app.open_settings();
+    let base = app.overlay.as_mut().unwrap().base_mut();
+    base.input = filter.to_owned();
+    base.cursor = filter.chars().count();
+    base.refilter();
+    base.selected = base
+        .filtered
+        .iter()
+        .position(|index| base.items[*index].value == key)
+        .unwrap();
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+}
+
+fn selected_setting(app: &App) -> (String, String, String) {
+    let base = app.overlay.as_ref().unwrap().base();
+    assert_eq!(base.kind, ModalKind::Settings);
+    let item = base.selected_item().unwrap();
+    (base.input.clone(), item.value.clone(), item.detail.clone())
+}
+
+#[test]
+fn enter_flips_an_on_off_setting_and_keeps_the_list_where_it_was() {
+    let (_home, mut app) = test_app();
+    let before = app
+        .settings
+        .get("editor.minimap.enabled")
+        .unwrap()
+        .as_bool()
+        .unwrap();
+    edit_from_settings(&mut app, "minimap", "editor.minimap.enabled");
+    assert_eq!(
+        app.settings.get("editor.minimap.enabled"),
+        Some(&serde_json::json!(!before))
+    );
+    let saved = std::fs::read_to_string(&app.paths.settings_file).unwrap();
+    assert!(
+        saved.contains(&format!("\"editor.minimap.enabled\": {}", !before)),
+        "{saved}"
+    );
+    assert_eq!(
+        selected_setting(&app),
+        (
+            "minimap".to_owned(),
+            "editor.minimap.enabled".to_owned(),
+            (!before).to_string()
+        )
+    );
+}
+
+#[test]
+fn a_setting_with_fixed_values_is_picked_from_a_list() {
+    let (_home, mut app) = test_app();
+    edit_from_settings(&mut app, "icon", "tui.iconStyle");
+    let base = app.overlay.as_ref().unwrap().base();
+    assert_eq!(
+        base.kind,
+        ModalKind::SettingChoice {
+            key: "tui.iconStyle".to_owned(),
+            filter: "icon".to_owned()
+        }
+    );
+    let choices = base
+        .items
+        .iter()
+        .map(|item| (item.label.as_str(), item.detail.as_str(), item.current))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        choices,
+        [
+            ("auto", "default", true),
+            ("nerd", "", false),
+            ("ascii", "", false)
+        ]
+    );
+    assert_eq!(base.selected_item().unwrap().label, "auto");
+
+    // Esc goes back to the list without changing anything.
+    app.handle_modal_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+    assert_eq!(selected_setting(&app).1, "tui.iconStyle");
+    assert_eq!(
+        app.settings.get("tui.iconStyle"),
+        Some(&serde_json::json!("auto"))
+    );
+
+    app.overlay = None;
+    edit_from_settings(&mut app, "icon", "tui.iconStyle");
+    app.handle_modal_key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+    app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    assert_eq!(
+        app.settings.get("tui.iconStyle"),
+        Some(&serde_json::json!("nerd"))
+    );
+    assert_eq!(
+        selected_setting(&app),
+        (
+            "icon".to_owned(),
+            "tui.iconStyle".to_owned(),
+            "nerd".to_owned()
+        )
+    );
+}
+
+#[test]
+fn prompts_name_the_allowed_range_and_start_with_plain_text() {
+    let (_home, mut app) = test_app();
+    edit_from_settings(&mut app, "", "editor.tabSize");
+    let base = app.overlay.as_ref().unwrap().base();
+    assert_eq!(base.title, "Edit Setting: editor.tabSize (1–16)");
+    app.overlay = None;
+    app.update_setting("editor.tabSize", "40");
+    assert_eq!(
+        app.status,
+        "editor.tabSize must be a whole number from 1 to 16"
+    );
+    app.update_setting("tui.colorMode", "16");
+    assert_eq!(
+        app.status,
+        "tui.colorMode must be one of: auto, truecolor, 256"
+    );
+
+    app.update_setting("terminal.shell", "/bin/sh");
+    edit_from_settings(&mut app, "shell", "terminal.shell");
+    assert_eq!(app.overlay.as_ref().unwrap().input(), "/bin/sh");
+}
+
+#[test]
+fn the_settings_list_shows_plain_values_and_the_selected_description() {
+    let (_home, mut app) = test_app();
+    app.open_settings();
+    let base = app.overlay.as_mut().unwrap().base_mut();
+    let icon = base
+        .items
+        .iter()
+        .find(|item| item.value == "tui.iconStyle")
+        .unwrap();
+    assert_eq!(icon.detail, "auto");
+    base.input = "tui.iconStyle".to_owned();
+    base.refilter();
+    base.selected = 0;
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let text = terminal
+        .backend()
+        .buffer()
+        .content
+        .iter()
+        .map(|cell| cell.symbol())
+        .collect::<String>();
+    assert!(
+        text.contains("Icon style:"),
+        "the description shows under the list"
+    );
+}
+
+#[test]
+fn the_theme_setting_opens_the_theme_list_at_the_current_theme() {
+    let (_home, mut app) = test_app();
+    let current = app.themes.selected_id().to_owned();
+    edit_from_settings(&mut app, "theme", "workbench.colorTheme");
+    let base = app.overlay.as_ref().unwrap().base();
+    assert_eq!(base.kind, ModalKind::ThemePicker);
+    let item = base.selected_item().unwrap();
+    assert!(item.current);
+    assert_eq!(item.value, current);
+}
