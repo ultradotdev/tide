@@ -174,12 +174,15 @@ pub fn run_session_action(
             args.last().ok_or("Missing session identity")?,
         );
     }
+    // OpenCode mutations go through its HTTP API, which only deletes. Match the whole
+    // `delete_args` shape so no other action can reach it.
     if provider == CliProvider::OpenCode {
-        return crate::native_cli::delete_opencode(
-            &executable,
-            workspace,
-            args.last().ok_or("Missing session identity")?,
-        );
+        return match args {
+            [command, action, id] if command == "session" && action == "delete" => {
+                crate::native_cli::delete_opencode(&executable, workspace, id)
+            }
+            _ => Err("Unsupported OpenCode session action".to_owned()),
+        };
     }
     let args = args.iter().map(String::as_str).collect::<Vec<_>>();
     run_listing(&executable, &args, workspace)
@@ -1468,6 +1471,37 @@ mod tests {
         let status = detect(CliProvider::OpenCode);
         // The host may have OpenCode installed; only assert the probe shape.
         assert_eq!(status.provider, CliProvider::OpenCode);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn opencode_runs_only_its_delete_action() {
+        use std::os::unix::fs::PermissionsExt as _;
+        let dir = tempfile::tempdir().unwrap();
+        let marker = dir.path().join("ran");
+        let executable = dir.path().join("opencode");
+        std::fs::write(
+            &executable,
+            format!("#!/bin/sh\ntouch '{}'\n", marker.display()),
+        )
+        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755)).unwrap();
+        temp_env::with_var("TIDE_OPENCODE_PATH", Some(executable.as_os_str()), || {
+            for args in [
+                vec!["session", "rename", "ses_abc"],
+                vec!["archive", "--", "ses_abc"],
+                vec!["ses_abc"],
+                vec![],
+            ] {
+                let args = args.into_iter().map(str::to_owned).collect::<Vec<_>>();
+                assert_eq!(
+                    run_session_action(CliProvider::OpenCode, dir.path(), &args),
+                    Err("Unsupported OpenCode session action".to_owned()),
+                    "{args:?}"
+                );
+            }
+        });
+        assert!(!marker.exists(), "an unsupported action started OpenCode");
     }
 
     fn temp_override_path(path: &Path, run: impl FnOnce()) {
