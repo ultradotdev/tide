@@ -216,6 +216,34 @@ pub struct GitSnapshot {
 }
 
 /// Inspect a repository with `gix` without shelling out to `git`.
+/// The project folder for `path`: the working tree of the nearest Git repository at or
+/// above it, or `None` when there is none.
+///
+/// A submodule gives way to the repository that contains it, so a file in a submodule
+/// opens the superproject. A linked worktree is its own project. The search never looks
+/// in `home` or above it: a repository there (a dotfiles repo, say) would make every file
+/// under the home folder open the whole home folder.
+#[must_use]
+pub fn project_root(path: &Path, home: Option<&Path>) -> Option<PathBuf> {
+    let mut found = None;
+    for dir in path.ancestors() {
+        if home.is_some_and(|home| home.starts_with(dir)) {
+            break;
+        }
+        if std::fs::symlink_metadata(dir.join(".git")).is_err() {
+            continue;
+        }
+        let Ok(repo) = gix::open(dir) else {
+            continue;
+        };
+        found = Some(dir.to_path_buf());
+        if repo.kind() != gix::repository::Kind::Submodule {
+            break;
+        }
+    }
+    found
+}
+
 pub fn repository_snapshot(path: impl AsRef<Path>) -> Result<GitSnapshot> {
     repository_snapshot_inner(
         path,
@@ -736,5 +764,104 @@ mod tests {
         let snapshot = repository_snapshot(dir.path()).unwrap();
         assert!(snapshot.dirty);
         assert!(snapshot.changed_paths.iter().any(|path| path == "new.txt"));
+    }
+
+    fn canonical(dir: &tempfile::TempDir) -> PathBuf {
+        std::fs::canonicalize(dir.path()).unwrap()
+    }
+
+    #[test]
+    fn project_root_is_the_nearest_repository() {
+        let outer = init_repo();
+        let outer_root = canonical(&outer);
+        let file = outer_root.join("src/deep/main.rs");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(&file, "").unwrap();
+        assert_eq!(project_root(&file, None), Some(outer_root.clone()));
+        assert_eq!(
+            project_root(file.parent().unwrap(), None),
+            Some(outer_root.clone())
+        );
+
+        let inner = outer_root.join("vendor/clone");
+        std::fs::create_dir_all(&inner).unwrap();
+        git(&inner, &["init", "-q"]);
+        let inner_file = inner.join("lib.rs");
+        std::fs::write(&inner_file, "").unwrap();
+        assert_eq!(project_root(&inner_file, None), Some(inner));
+    }
+
+    #[test]
+    fn project_root_without_a_repository_is_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = canonical(&dir).join("notes.txt");
+        std::fs::write(&file, "").unwrap();
+        // A temporary folder may sit inside some repository; only check when it doesn't.
+        if gix::discover(dir.path()).is_err() {
+            assert_eq!(project_root(&file, None), None);
+        }
+    }
+
+    #[test]
+    fn project_root_never_reaches_the_home_folder() {
+        let home = init_repo();
+        let home_root = canonical(&home);
+        let file = home_root.join("Documents/notes/todo.md");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(&file, "").unwrap();
+        assert_eq!(project_root(&file, Some(&home_root)), None);
+        assert_eq!(project_root(&home_root, Some(&home_root)), None);
+
+        let project = home_root.join("Development/app");
+        std::fs::create_dir_all(&project).unwrap();
+        git(&project, &["init", "-q"]);
+        assert_eq!(
+            project_root(&project.join("src"), Some(&home_root)),
+            Some(project)
+        );
+    }
+
+    #[test]
+    fn project_root_climbs_out_of_a_submodule() {
+        let library = init_repo();
+        let parent = init_repo();
+        let parent_root = canonical(&parent);
+        git(
+            &parent_root,
+            &[
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                "-q",
+                library.path().to_str().unwrap(),
+                "libs/library",
+            ],
+        );
+        let file = parent_root.join("libs/library/file.txt");
+        assert!(file.is_file());
+        assert_eq!(project_root(&file, None), Some(parent_root));
+    }
+
+    #[test]
+    fn project_root_of_a_linked_worktree_is_the_worktree() {
+        let main = init_repo();
+        let scratch = tempfile::tempdir().unwrap();
+        let worktree = canonical(&scratch).join("feature");
+        git(
+            main.path(),
+            &[
+                "worktree",
+                "add",
+                "-q",
+                "-b",
+                "feature",
+                worktree.to_str().unwrap(),
+            ],
+        );
+        assert_eq!(
+            project_root(&worktree.join("file.txt"), None),
+            Some(worktree)
+        );
     }
 }

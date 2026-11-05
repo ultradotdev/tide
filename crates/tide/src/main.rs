@@ -204,7 +204,9 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    let (workspace, initial_file) = resolve_workspace(cli.path.as_deref());
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let launch = resolve_workspace(cli.path.as_deref(), home.as_deref());
+    let (workspace, initial_file) = (launch.workspace, launch.file);
     tracing::info!(?workspace, ?initial_file, "starting Tide");
     if !std::io::stdout().is_terminal() {
         anyhow::bail!(
@@ -215,6 +217,7 @@ async fn main() -> Result<()> {
     let app = tide_ui::App::new(tide_ui::AppConfig {
         workspace,
         initial_file,
+        initial_folder: launch.folder,
         session_name: cli.session,
         restore_session: !cli.no_session,
         ephemeral_session: cli.no_session,
@@ -226,28 +229,43 @@ async fn main() -> Result<()> {
     tide_ui::run(app).await
 }
 
-fn resolve_workspace(path: Option<&Path>) -> (PathBuf, Option<PathBuf>) {
-    let Some(path) = path else {
-        return (
-            std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-            None,
-        );
+/// The workspace to open for the path on the command line, the file to open in it, and
+/// the folder to show in the Explorer.
+///
+/// A file or folder inside a Git repository opens the repository (see
+/// [`tide_services::git::project_root`]); otherwise a file opens its own folder and a
+/// folder opens itself. With no path, the current folder is the path.
+struct Launch {
+    workspace: PathBuf,
+    file: Option<PathBuf>,
+    folder: Option<PathBuf>,
+}
+
+fn resolve_workspace(path: Option<&Path>, home: Option<&Path>) -> Launch {
+    let current = || std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let path = path.map_or_else(current, Path::to_path_buf);
+    let path = std::fs::canonicalize(&path).unwrap_or(path);
+    let (folder, file) = if path.is_dir() {
+        (path, None)
+    } else if path.is_file() {
+        let folder = path
+            .parent()
+            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
+        (folder, Some(path))
+    } else {
+        return Launch {
+            workspace: current(),
+            file: None,
+            folder: None,
+        };
     };
-    let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
-    if path.is_dir() {
-        return (path, None);
+    let workspace =
+        tide_services::git::project_root(&folder, home).unwrap_or_else(|| folder.clone());
+    Launch {
+        folder: (file.is_none() && folder != workspace).then_some(folder),
+        workspace,
+        file,
     }
-    if path.is_file() {
-        return (
-            path.parent()
-                .map_or_else(|| PathBuf::from("."), Path::to_path_buf),
-            Some(path.to_path_buf()),
-        );
-    }
-    (
-        std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-        None,
-    )
 }
 
 fn init_logging(debug: bool) -> Result<()> {
@@ -280,15 +298,63 @@ mod tests {
         let dir = tempfile::tempdir_in(".").unwrap();
         let file = dir.path().join("src/main.rs");
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
-        std::fs::write(
-            &file,
-            "fn main() {}
-",
-        )
-        .unwrap();
-        let (workspace, initial) = resolve_workspace(Some(&file));
-        assert!(workspace.is_absolute());
-        assert!(initial.as_ref().unwrap().is_absolute());
-        assert_eq!(initial.unwrap(), std::fs::canonicalize(file).unwrap());
+        std::fs::write(&file, "fn main() {}\n").unwrap();
+        let launch = resolve_workspace(Some(&file), None);
+        assert!(launch.workspace.is_absolute());
+        assert!(launch.file.as_ref().unwrap().is_absolute());
+        assert_eq!(launch.file.unwrap(), std::fs::canonicalize(file).unwrap());
+    }
+
+    fn git_init(dir: &Path) {
+        let status = std::process::Command::new("git")
+            .arg("-C")
+            .arg(dir)
+            .args(["init", "-q"])
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn a_file_in_a_repository_opens_the_repository() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = std::fs::canonicalize(dir.path()).unwrap();
+        git_init(&root);
+        let file = root.join("src/main.rs");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(&file, "fn main() {}\n").unwrap();
+        let launch = resolve_workspace(Some(&file), None);
+        assert_eq!(launch.workspace, root);
+        assert_eq!(launch.file, Some(file));
+        assert_eq!(launch.folder, None);
+    }
+
+    #[test]
+    fn a_folder_in_a_repository_opens_the_repository_showing_the_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = std::fs::canonicalize(dir.path()).unwrap();
+        git_init(&root);
+        let folder = root.join("crates/app");
+        std::fs::create_dir_all(&folder).unwrap();
+        let launch = resolve_workspace(Some(&folder), None);
+        assert_eq!(launch.workspace, root);
+        assert_eq!(launch.file, None);
+        assert_eq!(launch.folder, Some(folder));
+
+        let launch = resolve_workspace(Some(&root), None);
+        assert_eq!((launch.workspace, launch.folder), (root, None));
+    }
+
+    #[test]
+    fn a_file_under_home_outside_any_repository_opens_its_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let home = std::fs::canonicalize(dir.path()).unwrap();
+        git_init(&home);
+        let file = home.join("Documents/notes.md");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(&file, "").unwrap();
+        let launch = resolve_workspace(Some(&file), Some(&home));
+        assert_eq!(launch.workspace, home.join("Documents"));
+        assert_eq!(launch.file, Some(file));
     }
 }

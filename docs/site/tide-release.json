@@ -268,7 +268,7 @@
   },
   "source": {
     "contentHash": "0ad82a7d3e15cf2225f06faeb0f60740d02649bcf1cbe4d7c4f9488e885154f6",
-    "lastVerifiedGitFingerprint": "a0fc7462c40ad74f072d3c378b4725bdb7a1d32a",
+    "lastVerifiedGitFingerprint": "000c568fcf3e44a35d5083425192b75c2b6ccb01",
     "inputFiles": [
       "config/product.json",
       "config/release.json",
