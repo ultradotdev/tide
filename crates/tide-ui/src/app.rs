@@ -486,6 +486,7 @@ pub struct App {
     pub terminal: crate::display::TerminalTraits,
     /// The settings and keybindings files as last read, to notice edits made outside Tide.
     config_stamps: [Option<preferences::ConfigStamp>; 2],
+    theme_stamps: preferences::ThemeStamps,
     last_config_check: Instant,
 }
 
@@ -501,6 +502,7 @@ impl App {
         // typo in settings.jsonc would leave Tide on its defaults without a word.
         let mut config_errors = Vec::new();
         let config_stamps = preferences::config_stamps(&paths);
+        let theme_stamps = preferences::theme_stamps(&paths);
         let settings = preferences::load_settings(&paths, &mut config_errors, "default settings")
             .unwrap_or_else(crate::catalog::settings);
 
@@ -636,6 +638,7 @@ impl App {
             recent_commands: Vec::new(),
             terminal: crate::display::TerminalTraits::FULL,
             config_stamps,
+            theme_stamps,
             last_config_check: Instant::now(),
         };
         app.recent_commands = overlays::load_recent_commands(&app.paths);
