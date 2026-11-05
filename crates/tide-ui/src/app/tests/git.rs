@@ -281,6 +281,7 @@ async fn startup_defers_git_status_to_the_background_queue() {
     let mut app = App::new(AppConfig {
         workspace,
         initial_file: None,
+        initial_folder: None,
         session_name: None,
         restore_session: false,
         ephemeral_session: false,
