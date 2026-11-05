@@ -1465,11 +1465,12 @@ impl App {
                         .ai
                         .agent_reports
                         .get(&provider)
-                        .is_some_and(|report| report.notice.is_some());
+                        .and_then(|report| report.notice.as_deref())
+                        .map(tide_ai::cli::SetupNotice::of);
                     let message = if let Some(error) = error {
                         error.to_owned()
-                    } else if notice {
-                        "Not signed in · Enter for details".into()
+                    } else if let Some(notice) = notice {
+                        format!("{} · Enter for details", notice.label())
                     } else if !self.ai.agent_query.is_empty() {
                         "No matching sessions".into()
                     } else if !installed {

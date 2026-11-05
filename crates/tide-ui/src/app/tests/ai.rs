@@ -390,3 +390,49 @@ fn a_cli_that_needs_signing_in_shows_a_calm_status_instead_of_an_error() {
     assert!(message.contains("needs signing in"), "{message}");
     assert!(message.contains("Please set an Auth method"), "{message}");
 }
+
+#[test]
+fn an_ineligible_account_is_not_shown_as_signed_out() {
+    let (_home, mut app) = test_app();
+    let notice = "Error authenticating: IneligibleTierError: this client is not supported";
+    app.with_ai(|ai, ui| {
+        ai.cli_status = vec![tide_ai::cli::CliStatus {
+            provider: CliProvider::Gemini,
+            installed: true,
+            executable: Some(PathBuf::from("/usr/local/bin/gemini")),
+        }];
+        ai.merge_provider(
+            ProviderDiscovery {
+                provider: CliProvider::Gemini,
+                state: DiscoveryState::Ok,
+                sessions: Vec::new(),
+                error: None,
+                notice: Some(notice.into()),
+            },
+            ui,
+        )
+    });
+    app.ai.agents_visible = true;
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 40)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let screen = terminal
+        .backend()
+        .buffer()
+        .content
+        .iter()
+        .map(ratatui::buffer::Cell::symbol)
+        .collect::<String>();
+    assert!(screen.contains("Account not eligible"), "{screen}");
+    assert!(!screen.contains("Not signed in"), "{screen}");
+    app.with_ai(|ai, ui| ai.show_status(CliProvider::Gemini, ui));
+    let message = app
+        .overlay
+        .as_ref()
+        .unwrap()
+        .base()
+        .message
+        .clone()
+        .unwrap();
+    assert!(message.contains("account can't use it"), "{message}");
+    assert!(message.contains("IneligibleTierError"), "{message}");
+}
