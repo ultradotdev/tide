@@ -121,12 +121,13 @@ pub(crate) fn terminal_owned(key: &str) -> bool {
         .is_some_and(|rest| crate::app::TERMINAL_CONTROL_KEYS.contains(&rest))
 }
 
-/// Ctrl+Shift+letter, which a terminal without the kitty keyboard protocol sends as plain
-/// Ctrl+letter: in a focused terminal that goes to the shell instead.
+/// Ctrl+Shift with a letter, digit or punctuation key, which a terminal without the kitty
+/// keyboard protocol can't send: Ctrl+Shift+letter arrives as plain Ctrl+letter (in a
+/// focused terminal that goes to the shell), and Ctrl+Shift+` as Ctrl+` or nothing.
 pub(crate) fn needs_keyboard_protocol(key: &str) -> bool {
     canonical_key(key)
         .strip_prefix("ctrl+shift+")
-        .is_some_and(|rest| rest.len() == 1 && rest.as_bytes()[0].is_ascii_alphabetic())
+        .is_some_and(|rest| rest.len() == 1 && rest.as_bytes()[0].is_ascii_graphic())
 }
 
 #[cfg(test)]
@@ -204,6 +205,8 @@ mod tests {
         assert!(terminal_owned("ctrl+t"));
         assert!(terminal_owned("ctrl+q"));
         assert!(needs_keyboard_protocol("ctrl+shift+p"));
+        assert!(needs_keyboard_protocol("ctrl+shift+`"));
+        assert!(needs_keyboard_protocol("ctrl+shift+1"));
         assert!(!needs_keyboard_protocol("ctrl+shift+f12"));
         assert!(!needs_keyboard_protocol("f1"));
         assert!(!terminal_owned("ctrl+shift+p"));

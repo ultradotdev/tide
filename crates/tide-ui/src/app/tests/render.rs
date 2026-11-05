@@ -402,6 +402,7 @@ fn terminals_without_truecolor_get_the_256_color_palette() {
     app.terminal = crate::display::TerminalTraits {
         truecolor: false,
         nerd_font: false,
+        keyboard_protocol: false,
     };
     let buffer = drawn(&mut app, 100, 30);
     assert!(!has_rgb(&buffer));

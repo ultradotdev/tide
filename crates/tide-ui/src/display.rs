@@ -121,6 +121,11 @@ pub struct TerminalTraits {
     /// Nerd Font glyphs render even when the chosen font lacks them, because the
     /// terminal bundles them as a fallback (Ghostty, kitty and WezTerm do).
     pub nerd_font: bool,
+    /// Ctrl+Shift with a letter, digit or punctuation key reaches Tide as itself, through
+    /// the kitty keyboard protocol. Claimed only where `TERM` names kitty or Ghostty
+    /// directly: inside tmux or screen the outer terminal's variables are inherited but
+    /// the protocol does not pass through.
+    pub keyboard_protocol: bool,
 }
 
 impl TerminalTraits {
@@ -128,6 +133,7 @@ impl TerminalTraits {
     pub const FULL: Self = Self {
         truecolor: true,
         nerd_font: true,
+        keyboard_protocol: true,
     };
 
     /// Reads `COLORTERM`, `TERM`, `TERM_PROGRAM` and the variables terminals set for
@@ -159,6 +165,7 @@ impl TerminalTraits {
         Self {
             truecolor,
             nerd_font: ghostty || kitty || wezterm,
+            keyboard_protocol: matches!(term.as_str(), "xterm-kitty" | "xterm-ghostty"),
         }
     }
 }
@@ -278,10 +285,18 @@ mod tests {
             &[("TERM_PROGRAM", "WezTerm")],
             &[("TERM", "tmux-256color"), ("KITTY_WINDOW_ID", "1")],
         ] {
-            assert_eq!(detect(terminal), TerminalTraits::FULL, "{terminal:?}");
+            let traits = detect(terminal);
+            assert!(traits.truecolor && traits.nerd_font, "{terminal:?}");
         }
         let unknown = detect(&[("TERM", "xterm-256color")]);
         assert!(!unknown.truecolor && !unknown.nerd_font);
+        assert!(!unknown.keyboard_protocol);
+        assert!(detect(&[("TERM", "xterm-kitty")]).keyboard_protocol);
+        assert!(detect(&[("TERM", "xterm-ghostty")]).keyboard_protocol);
+        assert!(
+            !detect(&[("TERM", "tmux-256color"), ("TERM_PROGRAM", "ghostty")]).keyboard_protocol,
+            "not through tmux"
+        );
         assert!(!detect(&[]).truecolor);
     }
 
