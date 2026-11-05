@@ -111,6 +111,7 @@ pub(super) fn test_app_with(jobs: Jobs) -> (tempfile::TempDir, App) {
     let app = App::new(AppConfig {
         workspace,
         initial_file: None,
+        initial_folder: None,
         session_name: None,
         restore_session: false,
         ephemeral_session: false,
@@ -161,6 +162,7 @@ pub(super) fn pinned_workbench(
     let mut app = App::new(AppConfig {
         workspace: workspace.clone(),
         initial_file: Some(workspace.join("src/main.ts")),
+        initial_folder: None,
         session_name: None,
         restore_session: false,
         ephemeral_session: false,

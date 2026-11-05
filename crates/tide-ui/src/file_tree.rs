@@ -241,6 +241,27 @@ impl FileTreeState {
         }
     }
 
+    /// Expands the folders down to `path`, `path` too when it is a folder, and selects it.
+    /// Returns false when `path` is outside the tree or hidden by its filters.
+    pub fn reveal(&mut self, path: &Path) -> bool {
+        let Ok(relative) = path.strip_prefix(&self.root) else {
+            return false;
+        };
+        let mut folder = self.root.clone();
+        for part in relative.components() {
+            folder.push(part);
+            if folder.is_dir() {
+                self.expanded.insert(folder.clone());
+            }
+        }
+        self.refresh();
+        let Some(index) = self.entries.iter().position(|entry| entry.path == path) else {
+            return false;
+        };
+        self.selected = index;
+        true
+    }
+
     /// Returns the selected file path when the entry is a file.
     pub fn activate_selected(&mut self) -> Option<PathBuf> {
         let entry = self.entries.get(self.selected)?.clone();
@@ -572,6 +593,25 @@ pub(crate) fn workspace_walk(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reveal_expands_the_folders_down_to_a_path_and_selects_it() {
+        let root = tempfile::tempdir().unwrap();
+        let folder = root.path().join("crates/app/src");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join("main.rs"), "").unwrap();
+        std::fs::create_dir(root.path().join(".hidden")).unwrap();
+        let mut tree = FileTreeState::new(root.path());
+        assert!(tree.reveal(&root.path().join("crates/app")));
+        assert_eq!(
+            tree.selected().unwrap().path,
+            root.path().join("crates/app")
+        );
+        assert!(tree.selected().unwrap().expanded);
+        assert!(tree.entries.iter().any(|entry| entry.path == folder));
+        assert!(!tree.reveal(&root.path().join(".hidden")));
+        assert!(!tree.reveal(Path::new("/elsewhere")));
+    }
 
     #[test]
     fn native_folder_type_and_symlink_icons_have_one_cell_and_ascii_remains_available() {

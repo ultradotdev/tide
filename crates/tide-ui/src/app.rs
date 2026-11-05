@@ -246,6 +246,8 @@ impl Default for DockState {
 pub struct AppConfig {
     pub workspace: PathBuf,
     pub initial_file: Option<PathBuf>,
+    /// A folder inside the workspace to show in the Explorer at startup.
+    pub initial_folder: Option<PathBuf>,
     pub session_name: Option<String>,
     pub restore_session: bool,
     /// `--no-session`: leave the saved session alone until the user saves one.
@@ -698,7 +700,15 @@ impl App {
         } else {
             false
         };
-        if !had_session {
+        if let Some(folder) = &config.initial_folder {
+            app.file_tree.reveal(folder);
+        }
+        let initial_file = config.initial_file;
+        if had_session {
+            if let Some(file) = initial_file {
+                app.open_file(file);
+            }
+        } else {
             let mode = app
                 .settings
                 .get("workbench.startupEditor")
@@ -706,7 +716,7 @@ impl App {
                 .unwrap_or_default();
             let first_run =
                 mode == "welcomeOnFirstRun" && !crate::help::welcome_marker(&app.paths).exists();
-            if let Some(file) = config.initial_file {
+            if let Some(file) = initial_file {
                 app.open_file(file);
                 if first_run {
                     app.set_status("New to Tide? Run “Help: Welcome” from the command palette");

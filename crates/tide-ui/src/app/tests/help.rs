@@ -7,6 +7,7 @@ fn launch(home: &Path, initial_file: Option<PathBuf>, restore_session: bool) -> 
     App::new(AppConfig {
         workspace,
         initial_file,
+        initial_folder: None,
         session_name: None,
         restore_session,
         ephemeral_session: false,
@@ -435,4 +436,30 @@ fn the_update_check_is_due_after_a_day_or_when_its_record_is_unusable() {
         std::fs::write(&marker, recorded).unwrap();
         assert_eq!(due(), expected, "{recorded}");
     }
+}
+
+#[test]
+fn a_file_on_the_command_line_opens_over_a_restored_session() {
+    let home = tempfile::tempdir().unwrap();
+    let workspace = home.path().join("workspace");
+    let first_file = workspace.join("first.txt");
+    let second_file = workspace.join("second.txt");
+    std::fs::create_dir_all(&workspace).unwrap();
+    std::fs::write(&first_file, "first\n").unwrap();
+    std::fs::write(&second_file, "second\n").unwrap();
+    let mut first = launch(home.path(), Some(first_file.clone()), true);
+    first.save_session().unwrap();
+    drop(first);
+
+    let second = launch(home.path(), Some(second_file.clone()), true);
+    let titles = tab_titles(&second);
+    assert!(
+        titles.iter().any(|title| title == "first.txt"),
+        "{titles:?}"
+    );
+    let active = second.workbench.active_editor().unwrap();
+    assert_eq!(
+        active.path(),
+        Some(std::fs::canonicalize(&second_file).unwrap().as_path())
+    );
 }
