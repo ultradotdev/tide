@@ -424,6 +424,15 @@ pub(super) fn config_stamps(paths: &tide_config::Paths) -> [Option<ConfigStamp>;
     })
 }
 
+/// Defaults that older releases wrote for settings whose values have since changed.
+/// Tide 0.10.0 saved every default into settings.jsonc whenever one setting changed,
+/// so these arrive without the user choosing them: they mean "use the default" and
+/// are not reported as problems.
+const LEGACY_DEFAULTS: &[(&str, &str)] = &[
+    // 0.10.0: "File to open on startup (empty for none)"; now an enum.
+    ("workbench.startupEditor", ""),
+];
+
 /// The built-in settings with the user's file merged in. A value of the wrong type or
 /// range is replaced by its default and reported. `None` when the file does not parse:
 /// the caller keeps `fallback`, which the report names.
@@ -444,6 +453,13 @@ pub(super) fn load_settings(
         .ok()?;
     let defaults = settings.clone();
     settings.merge(&user);
+    for (key, legacy) in LEGACY_DEFAULTS {
+        if user.get(key).and_then(serde_json::Value::as_str) == Some(legacy)
+            && let Some(value) = defaults.get(key)
+        {
+            settings.set(*key, value.clone());
+        }
+    }
     let invalid = settings
         .iter()
         .filter(|(key, value)| {
