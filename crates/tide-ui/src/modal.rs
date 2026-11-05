@@ -1777,7 +1777,7 @@ fn char_byte(text: &str, position: usize) -> usize {
         .map_or(text.len(), |(byte, _)| byte)
 }
 
-fn wrap_message(text: &str, width: usize) -> Vec<String> {
+pub(crate) fn wrap_message(text: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
     let mut lines = Vec::new();
     for paragraph in text.split('\n') {

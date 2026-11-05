@@ -250,6 +250,31 @@ fn changing_a_setting_or_key_keeps_the_users_file_as_written() {
 }
 
 #[test]
+fn defaults_saved_by_older_releases_load_silently_as_todays_defaults() {
+    // Tide 0.10.0 wrote every default into settings.jsonc, including this one,
+    // whose values have since changed.
+    let settings = "{\n  \"workbench.startupEditor\": \"\",\n  \"editor.tabSize\": 3\n}\n";
+    let (_home, app) = app_with_config(Some(settings), None);
+    assert!(app.overlay.is_none(), "an old default is not a problem");
+    assert_eq!(
+        app.settings.get("workbench.startupEditor"),
+        crate::catalog::settings().get("workbench.startupEditor")
+    );
+    assert_eq!(
+        app.settings.get("editor.tabSize"),
+        Some(&serde_json::json!(3))
+    );
+
+    let (_home, app) = app_with_config(Some("{ \"workbench.startupEditor\": \"bogus\" }"), None);
+    let overlay = app
+        .overlay
+        .as_ref()
+        .expect("other invalid values are reported");
+    let message = overlay.base().message.clone().unwrap_or_default();
+    assert!(message.contains("workbench.startupEditor"), "{message}");
+}
+
+#[test]
 fn a_broken_settings_file_is_reported_at_startup_and_never_overwritten() {
     let broken = "{\n  // half-finished edit\n  \"editor.tabSize\": \n}\n";
     let (_home, mut app) = app_with_config(Some(broken), Some("[ oops"));

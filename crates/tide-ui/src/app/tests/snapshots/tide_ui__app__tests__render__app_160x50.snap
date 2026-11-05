@@ -1,6 +1,5 @@
 ---
 source: crates/tide-ui/src/app/tests/render.rs
-assertion_line: 287
 expression: "snapshot_app(160, 50)"
 ---
  ▼ Explorer  [2]                 ▾ │ ←  main.ts ×                                                                      ▾  → │Agents                       +  ▾
@@ -50,6 +49,6 @@ Enter open · ←/→ folders · . hidden│                                    
                                    │                                                                                        │
                                    │                                                                                        │
                                    │                                                                                        │
- ▶ Outline  [1]                    │                                                                                        │
- ▶ Timeline                        │                                                                                      ↑ │ / search · n new · r refresh · w w
+ ▶ Outline  [1]                    │                                                                                        │ / search · n new · r refresh
+ ▶ Timeline                        │                                                                                      ↑ │ w workspace
  >_ │ main.ts │                                                                                               Ln 1, Col 1 │ TypeScript │ Spaces: 2 │ UTF-8 │ LF

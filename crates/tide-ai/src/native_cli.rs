@@ -12,6 +12,15 @@ use crate::cli::{CliProvider, CliSession, epoch_millis_to_rfc3339, safe_session_
 const MAX_FRAME: usize = 256 * 1024;
 const MAX_OUTPUT: usize = 16 * 1024 * 1024;
 
+/// How long a `codex app-server` has to start and answer every request of one client.
+/// Listing pages through every thread (about 2 s per 100 on a laptop, more on a busy
+/// one), and a cold start can stall for seconds, so this is well above a quick reply.
+const CODEX_BUDGET: Duration = Duration::from_secs(15);
+/// A native process is killed this long after its client's budget runs out.
+const WATCHDOG_GRACE: Duration = Duration::from_secs(3);
+/// The lifetime of a temporary `opencode serve`.
+const OPENCODE_LIFETIME: Duration = Duration::from_secs(8);
+
 #[derive(Clone, Default)]
 pub struct Cancellation(std::sync::Arc<std::sync::atomic::AtomicBool>);
 impl Cancellation {
@@ -65,7 +74,9 @@ impl Drop for OwnedProcess {
     }
 }
 
-fn spawn(command: &mut Command) -> Result<OwnedProcess, String> {
+/// Spawns `command` in its own process group, killed after `lifetime` unless it
+/// completes or is dropped first.
+fn spawn(command: &mut Command, lifetime: Duration) -> Result<OwnedProcess, String> {
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
@@ -78,7 +89,7 @@ fn spawn(command: &mut Command) -> Result<OwnedProcess, String> {
     let cancellation = current_cancellation();
     std::thread::spawn(move || {
         let (done, wake) = &*deadline;
-        let expires = Instant::now() + Duration::from_secs(8);
+        let expires = Instant::now() + lifetime;
         let mut guard = done
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -128,6 +139,7 @@ pub struct CodexClient {
 
 impl CodexClient {
     pub fn start(executable: &Path, workspace: &Path) -> Result<Self, String> {
+        let deadline = Instant::now() + CODEX_BUDGET;
         let mut child = spawn(
             tide_core::process::scrub_tide_secrets(&mut Command::new(executable))
                 .args(["app-server"])
@@ -135,6 +147,7 @@ impl CodexClient {
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null()),
+            CODEX_BUDGET + WATCHDOG_GRACE,
         )?;
         let input = child.stdin.take().ok_or("missing app-server stdin")?;
         let stdout = child.stdout.take().ok_or("missing app-server stdout")?;
@@ -173,7 +186,7 @@ impl CodexClient {
             _child: child,
             input,
             output,
-            deadline: Instant::now() + Duration::from_secs(5),
+            deadline,
             next_id: 0,
         };
         client.request("initialize",json!({"clientInfo":{"name":"tide","title":"Tide","version":env!("CARGO_PKG_VERSION")}}))?;
@@ -352,6 +365,7 @@ impl OpenCodeClient {
                 .stdin(Stdio::piped())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null()),
+            OPENCODE_LIFETIME,
         )?;
         let mut server = Self {
             child,
@@ -733,7 +747,7 @@ port=int(sys.argv[sys.argv.index('--port')+1]);HTTPServer(('127.0.0.1',port),Han
 
     #[test]
     fn dropping_a_process_with_a_poisoned_completion_lock_does_not_panic() {
-        let process = spawn(Command::new("/bin/sleep").arg("30")).unwrap();
+        let process = spawn(Command::new("/bin/sleep").arg("30"), OPENCODE_LIFETIME).unwrap();
         let completed = process.completed.clone();
         let _ = std::thread::spawn(move || {
             let _guard = completed.0.lock().unwrap();
