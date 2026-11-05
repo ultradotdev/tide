@@ -1,5 +1,5 @@
 <!-- Generated from crates/tide-ui/src/help/pages/welcome.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
-# Welcome to Tide 0.12.1
+# Welcome to Tide 0.12.2
 
 Tide is a keyboard-driven IDE that runs inside your terminal. Code editing with language servers, Git, shells, PostgreSQL and AI coding agents such as Claude Code and Codex share one workbench, so you can do a whole task without leaving the window you started in.
 

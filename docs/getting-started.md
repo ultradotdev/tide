@@ -1,7 +1,7 @@
 <!-- Generated from crates/tide-ui/src/help/pages/getting-started.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Getting Started
 
-Tide 0.12.1 runs as a native Rust executable on macOS and Linux. Releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
+Tide 0.12.2 runs as a native Rust executable on macOS and Linux. Releases are published on GitHub and install with Homebrew or the install script; you can also build from source.
 
 Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux with glibc 2.35 or later (Ubuntu 22.04 and newer, ARM64 and x64). On older or musl-based Linux distributions such as Alpine, build from source. Windows isn't supported yet; run the Linux build inside WSL.
 
@@ -33,7 +33,7 @@ curl -fsSL https://github.com/ultradotdev/tide/releases/latest/download/install.
 `install.sh` is published with every release and covered by its `SHA256SUMS` and GitHub build attestation. Without `--version` it installs GitHub's latest release, found through the `https://github.com/ultradotdev/tide/releases/latest` redirect rather than the rate-limited API. To install a specific version, name it explicitly:
 
 ```sh
-curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.12.1/install.sh | sh -s -- --version 0.12.1
+curl -fsSL https://github.com/ultradotdev/tide/releases/download/v0.12.2/install.sh | sh -s -- --version 0.12.2
 ```
 
 The script downloads the archive and `SHA256SUMS`, verifies the checksum, and on macOS also verifies the notarization receipt and the executable's Developer ID signature, team and notarization ticket with `codesign`. When an authenticated GitHub CLI is present it verifies the archive's GitHub build attestation; `TIDE_REQUIRE_ATTESTATION=1` makes that check mandatory. It then smoke-tests the executable and activates it in the managed store described below. Add `--add-to-path` to append `~/.local/bin` to your zsh or bash startup file.

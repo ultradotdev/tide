@@ -18,7 +18,7 @@ body:
     attributes:
       label: Tide version
       description: The output of `tide --version`.
-      placeholder: tide 0.12.1
+      placeholder: tide 0.12.2
     validations:
       required: true
   - type: dropdown
