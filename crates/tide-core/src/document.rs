@@ -110,6 +110,20 @@ impl Document {
     pub fn is_lossy(&self) -> bool {
         self.lossy
     }
+    /// The encoding shown in the status bar: `UTF-8`, `UTF-8 with BOM` when the text
+    /// starts with a byte-order mark (kept on save), or `None` for text decoded lossily,
+    /// whose real encoding Tide doesn't know.
+    #[must_use]
+    pub fn encoding_label(&self) -> Option<&'static str> {
+        if self.lossy {
+            None
+        } else if self.rope.get_char(0) == Some('\u{feff}') {
+            Some("UTF-8 with BOM")
+        } else {
+            Some("UTF-8")
+        }
+    }
+
     pub fn set_read_only(&mut self, value: bool) {
         self.read_only = value;
     }
@@ -914,6 +928,21 @@ fn line_diff(old: &str, new: &str) -> Vec<(usize, usize, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn encoding_label_names_a_byte_order_mark_and_gives_none_for_lossy_text() {
+        assert_eq!(Document::new("plain").encoding_label(), Some("UTF-8"));
+        assert_eq!(Document::new("").encoding_label(), Some("UTF-8"));
+        let bom = Document::from_bytes(b"\xEF\xBB\xBFtext".to_vec());
+        assert_eq!(bom.encoding_label(), Some("UTF-8 with BOM"));
+        assert_eq!(
+            bom.text().as_bytes(),
+            b"\xEF\xBB\xBFtext",
+            "the mark is kept"
+        );
+        let latin1 = Document::from_bytes(b"caf\xE9".to_vec());
+        assert_eq!(latin1.encoding_label(), None);
+    }
     use crate::{display_width, grapheme_boundaries};
 
     #[test]

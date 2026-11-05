@@ -1072,7 +1072,9 @@ impl App {
                 right.push((format!("LSP: {status}"), Command::LspShowDiagnostics));
             }
             right.push((editor.indent().label(), Command::WorkbenchOpenSettings));
-            right.push(("UTF-8".into(), Command::WorkbenchDocumentInfo));
+            if let Some(encoding) = editor.document.with(Document::encoding_label) {
+                right.push((encoding.into(), Command::WorkbenchDocumentInfo));
+            }
             right.push((eol.into(), Command::WorkbenchDocumentInfo));
         }
         // Preserve cursor position first as width tightens, dropping whole low-priority fields.
