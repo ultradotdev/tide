@@ -614,7 +614,7 @@ impl App {
             keymap: HashMap::new(),
             pending_chord: None,
             clipboard: String::new(),
-            clipboard_commands: crate::clipboard::command,
+            clipboard_commands: crate::clipboard::DEFAULT,
             clipboard_host: crate::clipboard::Host::detect(),
             host_output: Vec::new(),
             clipboard_jobs: None,

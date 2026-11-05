@@ -15,6 +15,8 @@ const LIMIT: usize = 1024 * 1024;
 /// Builds the helper command that copies (`true`) or pastes (`false`).
 pub type Commands = fn(bool) -> Result<Command, String>;
 
+// Unused in unit tests, which start with `test_command`.
+#[cfg_attr(test, allow(dead_code))]
 pub fn command(copy: bool) -> Result<Command, String> {
     let candidates: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
         if copy {
@@ -51,6 +53,25 @@ pub fn command(copy: bool) -> Result<Command, String> {
         }
     }
     Err("system clipboard unavailable (use terminal paste or install a clipboard helper)".into())
+}
+
+/// The commands an app starts with: the system clipboard, except in unit tests, which
+/// must never overwrite the developer's clipboard.
+#[cfg(not(test))]
+pub const DEFAULT: Commands = command;
+#[cfg(test)]
+pub const DEFAULT: Commands = test_command;
+
+/// The clipboard commands an app starts with in unit tests: copying succeeds without
+/// touching the system clipboard, and there is nothing to paste. Tests that need other
+/// behaviour set their own.
+#[cfg(test)]
+fn test_command(copy: bool) -> Result<Command, String> {
+    if copy {
+        Ok(Command::new("cat"))
+    } else {
+        Err("no system clipboard in tests".into())
+    }
 }
 
 fn run(mut command: Command, input: Option<&str>) -> Result<String, String> {
