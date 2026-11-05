@@ -71,6 +71,47 @@ fn status_uses_active_document_selection_eol_and_settings_with_real_click_target
 }
 
 #[test]
+fn the_agents_footer_wraps_its_keys_and_errors_instead_of_clipping_them() {
+    let (_home, mut app) = test_app();
+    app.ai.agents_visible = true;
+    app.focus = Focus::Agents;
+    let footer = |app: &mut App| {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+        terminal.draw(|frame| app.draw(frame)).unwrap();
+        let area = app.layout.agents_parts.unwrap().footer;
+        let buffer = terminal.backend().buffer();
+        (area.y..area.bottom())
+            .map(|y| {
+                (area.x..area.right())
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+                    .trim_end()
+                    .to_owned()
+            })
+            .collect::<Vec<_>>()
+    };
+    let keys = footer(&mut app);
+    assert!(keys.len() > 1, "{keys:?}");
+    let text = keys.join(" ");
+    for hint in ["/ search", "n new", "r refresh", "w workspace"] {
+        assert!(text.contains(hint), "{hint} in {keys:?}");
+    }
+
+    app.ai.agents_error = Some("Codex native catalog: Codex app-server timed out".into());
+    let error = footer(&mut app);
+    let text = error.join(" ");
+    assert!(text.contains("timed out"), "{error:?}");
+    assert!(text.ends_with("r retry"), "{error:?}");
+
+    // A long error is cut at three rows, visibly, and the list keeps its space.
+    app.ai.agents_error = Some("word ".repeat(200));
+    let long = footer(&mut app);
+    assert_eq!(long.len(), 3, "{long:?}");
+    assert!(long[2].ends_with('…'), "{long:?}");
+}
+
+#[test]
 fn constrained_workbench_frames_and_overlays_never_escape_the_viewport() {
     let (_home, mut app) = test_app();
     app.new_file();

@@ -1303,10 +1303,18 @@ impl App {
             inner.width,
             inner.height.saturating_sub(1),
         );
+        // The footer wraps rather than clipping its keys or error, up to three rows
+        // and leaving the list at least one.
+        let footer_height = self
+            .agents_footer_lines(inner.width)
+            .len()
+            .min(3)
+            .min(usize::from(inner.height.saturating_sub(2)))
+            .max(1);
         let [search, body, footer] = Layout::vertical([
             Constraint::Length(1),
             Constraint::Min(1),
-            Constraint::Length(1),
+            Constraint::Length(saturating_u16(footer_height)),
         ])
         .areas(inner);
         let rows = self.ai.rows();
@@ -1524,17 +1532,22 @@ impl App {
                 body,
             );
         }
-        let hint = self.ai.agents_error.as_ref().map_or_else(
-            || " / search · n new · r refresh · w workspace".to_owned(),
-            |error| {
-                format!(
-                    " ! {} · r retry",
-                    truncate_to_width(error, footer.width.saturating_sub(13) as usize)
-                )
-            },
-        );
+        let mut lines = self.agents_footer_lines(footer.width);
+        if lines.len() > usize::from(footer.height) {
+            lines.truncate(usize::from(footer.height));
+            if let Some(last) = lines.last_mut() {
+                let width = usize::from(footer.width.saturating_sub(2));
+                *last = format!("{}…", truncate_to_width(last, width));
+            }
+        }
         frame.render_widget(
-            Paragraph::new(hint).style(Style::default().fg(if self.ai.agents_error.is_some() {
+            Paragraph::new(
+                lines
+                    .into_iter()
+                    .map(|line| Line::from(format!(" {line}")))
+                    .collect::<Vec<_>>(),
+            )
+            .style(Style::default().fg(if self.ai.agents_error.is_some() {
                 self.palette.error
             } else {
                 self.palette.description
@@ -1542,6 +1555,43 @@ impl App {
             footer,
         );
     }
+
+    /// The Agents footer for a sidebar `width` cells wide: its keys, or the last
+    /// discovery error and how to retry, wrapped between items rather than inside one.
+    fn agents_footer_lines(&self, width: u16) -> Vec<String> {
+        let items = self.ai.agents_error.as_ref().map_or_else(
+            || {
+                ["/ search", "n new", "r refresh", "w workspace"]
+                    .map(str::to_owned)
+                    .to_vec()
+            },
+            |error| vec![format!("! {error}"), "r retry".to_owned()],
+        );
+        pack_hints(&items, usize::from(width.saturating_sub(1)))
+    }
+}
+
+/// Packs `items` into lines at most `width` cells wide, joined by " · ". An item
+/// longer than a line wraps by its words.
+fn pack_hints(items: &[String], width: usize) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    for item in items {
+        for (index, part) in crate::modal::wrap_message(item, width)
+            .into_iter()
+            .enumerate()
+        {
+            match lines.last_mut() {
+                Some(line)
+                    if index == 0 && display_width(line) + 3 + display_width(&part) <= width =>
+                {
+                    line.push_str(" · ");
+                    line.push_str(&part);
+                }
+                _ => lines.push(part),
+            }
+        }
+    }
+    lines
 }
 
 pub(super) fn outline_items(editor: &EditorState) -> Vec<(usize, String)> {
