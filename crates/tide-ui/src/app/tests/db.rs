@@ -293,6 +293,69 @@ fn history_opens_independent_connected_copies_and_clear_is_scoped_and_safe() {
 }
 
 #[test]
+fn a_global_connections_old_password_is_removed_when_it_changes() {
+    let (home, mut app) = test_app();
+    let secrets = Arc::new(SecretService::encrypted_only(
+        home.path().join("fixture-secrets.json"),
+    ));
+    secrets.unlock("master-fixture-password").unwrap();
+    app.db.secrets = secrets;
+    app.db.pgpass = None;
+    let submit = |app: &mut App, config: ConnectionConfig, password: Option<&str>| {
+        app.with_db(|db, ui| {
+            db.submit_connection_form(
+                crate::connection_form::Submission {
+                    config,
+                    password: password.map(Into::into),
+                    action: ConnectionAction::Save,
+                },
+                ui,
+            )
+        });
+    };
+    let config = ConnectionConfig {
+        name: "Personal database".into(),
+        host: "db.example.test".into(),
+        database: "app".into(),
+        username: "alice".into(),
+        ..Default::default()
+    };
+    submit(&mut app, config, Some("first-fixture-password"));
+    let saved = app.db.store.connections()[0].clone();
+    let first = saved.password_secret.clone().unwrap();
+    assert_eq!(
+        app.db.secrets.get(&first).as_deref(),
+        Some("first-fixture-password")
+    );
+
+    // Saving without a new password keeps the stored one.
+    submit(&mut app, saved.clone(), None);
+    assert_eq!(
+        app.db.secrets.get(&first).as_deref(),
+        Some("first-fixture-password")
+    );
+
+    submit(&mut app, saved.clone(), Some("second-fixture-password"));
+    let saved = app.db.store.connections()[0].clone();
+    let second = saved.password_secret.clone().unwrap();
+    assert_ne!(first, second);
+    assert_eq!(
+        app.db.password(&saved).as_deref(),
+        Some("second-fixture-password")
+    );
+    assert_eq!(app.db.secrets.get(&first), None, "the old password is gone");
+
+    // A new destination drops the password, which no longer applies.
+    let moved = ConnectionConfig {
+        host: "elsewhere.example.test".into(),
+        ..saved
+    };
+    submit(&mut app, moved, None);
+    assert_eq!(app.db.store.connections()[0].password_secret, None);
+    assert_eq!(app.db.secrets.get(&second), None);
+}
+
+#[test]
 fn project_connections_keep_their_password_in_the_user_store_not_the_project() {
     let (home, mut app) = test_app();
     let secrets = Arc::new(SecretService::encrypted_only(
