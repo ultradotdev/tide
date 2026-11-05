@@ -108,6 +108,7 @@ fn session_restore_reopens_dirty_documents() {
     let restored = App::new(AppConfig {
         workspace,
         initial_file: None,
+        initial_folder: None,
         session_name: None,
         restore_session: true,
         ephemeral_session: false,
@@ -139,6 +140,7 @@ fn no_session_leaves_the_saved_session_alone_until_the_user_saves() {
     let mut fresh = App::new(AppConfig {
         workspace,
         initial_file: None,
+        initial_folder: None,
         session_name: None,
         restore_session: false,
         ephemeral_session: true,

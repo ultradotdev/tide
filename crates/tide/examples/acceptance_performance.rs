@@ -61,6 +61,7 @@ async fn main() {
     let mut app = App::new(AppConfig {
         workspace: root.clone(),
         initial_file: None,
+        initial_folder: None,
         session_name: None,
         restore_session: false,
         ephemeral_session: false,

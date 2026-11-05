@@ -349,8 +349,8 @@ pub fn discover_sessions_with_cli(
     workspace: &Path,
 ) -> Vec<CliSession> {
     match provider {
-        CliProvider::Gemini => discover_gemini_sessions(workspace),
-        CliProvider::OpenCode => discover_opencode_sessions(workspace),
+        CliProvider::Gemini => discover_gemini_sessions(home, workspace),
+        CliProvider::OpenCode => discover_opencode_sessions(home, workspace),
         _ => discover_sessions(provider, home, workspace),
     }
 }
@@ -457,8 +457,8 @@ fn discover_provider(provider: CliProvider, home: &Path, workspace: &Path) -> Pr
                 Ok(discover_codex_sessions(home))
             }
         }
-        CliProvider::Gemini => try_discover_gemini(workspace),
-        CliProvider::OpenCode => try_discover_opencode(workspace),
+        CliProvider::Gemini => try_discover_gemini(home, workspace),
+        CliProvider::OpenCode => try_discover_opencode(home, workspace),
         CliProvider::Antigravity => Ok(discover_antigravity_sessions(home, workspace)),
     };
     match result {
@@ -714,16 +714,53 @@ fn kill_process_tree(child: &mut std::process::Child) {
     let _ = child.wait();
 }
 
-pub fn discover_gemini_sessions(workspace: &Path) -> Vec<CliSession> {
-    try_discover_gemini(workspace).unwrap_or_default()
+pub fn discover_gemini_sessions(home: &Path, workspace: &Path) -> Vec<CliSession> {
+    try_discover_gemini(home, workspace).unwrap_or_default()
 }
 
-fn try_discover_gemini(workspace: &Path) -> Result<Vec<CliSession>, ListingFailure> {
+fn try_discover_gemini(home: &Path, workspace: &Path) -> Result<Vec<CliSession>, ListingFailure> {
     let executable = provider_executable(CliProvider::Gemini).ok_or(ListingFailure::Unavailable)?;
+    if !gemini_may_have_sessions(home, workspace) {
+        return Ok(Vec::new());
+    }
     gemini_sessions(
         run_listing(&executable, &["--list-sessions"], workspace)?,
         workspace,
     )
+}
+
+// Listing sessions is not read-only for every CLI: `gemini --list-sessions` registers the
+// folder it runs in as a Gemini project, and `opencode session list` creates OpenCode's
+// database and configuration. So Tide only asks when the CLI already has data that could
+// hold a session for this workspace, and otherwise reports none without running it.
+
+/// Whether Gemini CLI may have sessions for `workspace`: it has been used at all, and its
+/// project registry, when there is one, lists the workspace. Older Gemini versions had
+/// no registry and are always asked.
+fn gemini_may_have_sessions(home: &Path, workspace: &Path) -> bool {
+    let gemini = home.join(".gemini");
+    if !gemini.join("tmp").is_dir() {
+        return false;
+    }
+    let Ok(bytes) = std::fs::read(gemini.join("projects.json")) else {
+        return true;
+    };
+    let Ok(registry) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return true;
+    };
+    let Some(projects) = registry
+        .get("projects")
+        .and_then(serde_json::Value::as_object)
+    else {
+        return true;
+    };
+    let workspace = workspace.to_string_lossy();
+    projects.contains_key(workspace.as_ref())
+}
+
+/// Whether OpenCode has a database under its data folder (`data`, the XDG data home).
+fn opencode_may_have_sessions(data: &Path) -> bool {
+    data.join("opencode/opencode.db").is_file()
 }
 
 /// Gemini CLI prints "No previous sessions found for this project." for a project
@@ -738,13 +775,20 @@ pub fn gemini_sessions(
     Ok(parse_gemini_sessions(&listing.output()?, workspace))
 }
 
-pub fn discover_opencode_sessions(workspace: &Path) -> Vec<CliSession> {
-    try_discover_opencode(workspace).unwrap_or_default()
+pub fn discover_opencode_sessions(home: &Path, workspace: &Path) -> Vec<CliSession> {
+    try_discover_opencode(home, workspace).unwrap_or_default()
 }
 
-fn try_discover_opencode(workspace: &Path) -> Result<Vec<CliSession>, ListingFailure> {
+fn try_discover_opencode(home: &Path, workspace: &Path) -> Result<Vec<CliSession>, ListingFailure> {
     let executable =
         provider_executable(CliProvider::OpenCode).ok_or(ListingFailure::Unavailable)?;
+    let data = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .unwrap_or_else(|| home.join(".local/share"));
+    if !opencode_may_have_sessions(&data) {
+        return Ok(Vec::new());
+    }
     let listing = run_listing(
         &executable,
         &["session", "list", "--format", "json"],
@@ -1332,6 +1376,41 @@ mod tests {
     }
 
     #[test]
+    fn gemini_is_asked_only_once_it_knows_the_workspace() {
+        let home = tempfile::tempdir().unwrap();
+        let workspace = Path::new("/work/app");
+        assert!(
+            !gemini_may_have_sessions(home.path(), workspace),
+            "never used"
+        );
+        std::fs::create_dir_all(home.path().join(".gemini/tmp")).unwrap();
+        assert!(
+            gemini_may_have_sessions(home.path(), workspace),
+            "no registry"
+        );
+        let registry = home.path().join(".gemini/projects.json");
+        std::fs::write(&registry, r#"{"projects":{"/work/other":"other"}}"#).unwrap();
+        assert!(!gemini_may_have_sessions(home.path(), workspace));
+        std::fs::write(&registry, r#"{"projects":{"/work/app":"app"}}"#).unwrap();
+        assert!(gemini_may_have_sessions(home.path(), workspace));
+        std::fs::write(&registry, "not json").unwrap();
+        assert!(
+            gemini_may_have_sessions(home.path(), workspace),
+            "unreadable registry"
+        );
+    }
+
+    #[test]
+    fn opencode_is_asked_only_once_it_has_a_database() {
+        let data = tempfile::tempdir().unwrap();
+        assert!(!opencode_may_have_sessions(data.path()));
+        std::fs::create_dir_all(data.path().join("opencode")).unwrap();
+        assert!(!opencode_may_have_sessions(data.path()));
+        std::fs::write(data.path().join("opencode/opencode.db"), "").unwrap();
+        assert!(opencode_may_have_sessions(data.path()));
+    }
+
+    #[test]
     fn discovery_drains_output_larger_than_a_pipe_without_deadlocking() {
         let dir = tempfile::tempdir().unwrap();
         let result = run_listing(
@@ -1652,12 +1731,17 @@ mod tests {
         let bin = tempfile::tempdir().unwrap();
         let script = bin.path().join("opencode");
         std::fs::write(&script, "#!/bin/sh\n/bin/sleep 10\n").unwrap();
+        // OpenCode is only asked once it has a database.
+        let data = home.path().join(".local/share/opencode");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::write(data.join("opencode.db"), "").unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt as _;
             std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
         }
-        temp_env::with_var("PATH", Some(bin.path().as_os_str()), || {
+        let path = Some(bin.path().as_os_str());
+        temp_env::with_vars([("PATH", path), ("XDG_DATA_HOME", None)], || {
             let started = std::time::Instant::now();
             let report = discover_all_with_status(home.path(), workspace.path());
             assert!(started.elapsed() < std::time::Duration::from_secs(6));

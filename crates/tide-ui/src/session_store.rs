@@ -26,7 +26,7 @@ struct LastSession {
     timestamp: String,
 }
 
-/// Workspace and named session snapshots under `$XDG_STATE_HOME/tide/sessions/rust`.
+/// Workspace and named session snapshots under `$XDG_STATE_HOME/tide/sessions`.
 ///
 /// A save refuses to overwrite a file another instance changed since this store
 /// last read or wrote it, so concurrent instances cannot discard each other's
@@ -42,6 +42,9 @@ pub struct SessionStore {
 impl SessionStore {
     #[must_use]
     pub fn new(paths: Paths, workspace: PathBuf) -> Self {
+        if let Err(error) = migrate_layout(&paths.sessions_dir) {
+            tracing::warn!(%error, "could not move sessions out of sessions/rust");
+        }
         let store = Self {
             paths,
             workspace,
@@ -241,7 +244,7 @@ impl SessionStore {
     }
 
     fn root(&self) -> PathBuf {
-        self.paths.sessions_dir.join("rust")
+        self.paths.sessions_dir.clone()
     }
 
     fn last_session_file(&self) -> PathBuf {
@@ -258,6 +261,67 @@ impl SessionStore {
             .map(|byte| format!("{byte:02x}"))
             .collect()
     }
+}
+
+/// Marks a sessions folder that uses the current layout, with sessions at its top.
+const LAYOUT_MARKER: &str = ".layout";
+
+/// Moves sessions out of `sessions/rust`, where Tide 0.10.0 to 0.12.2 kept them apart
+/// from the TypeScript-era Tide's files, which use the same names at the top of
+/// `sessions/`.
+///
+/// The first time, anything already at the top (those old files) is moved into
+/// `sessions/legacy/`, and the `.layout` marker is written so it never happens again. Then
+/// the contents of `rust/` move up. An older Tide still running can recreate `rust/`;
+/// later starts move its files up too, but never over a file that is already there.
+fn migrate_layout(sessions: &Path) -> Result<()> {
+    let old = sessions.join("rust");
+    let marker = sessions.join(LAYOUT_MARKER);
+    if marker.exists() && !old.is_dir() {
+        return Ok(());
+    }
+    if !marker.exists() {
+        if old.is_dir() {
+            let legacy = sessions.join("legacy");
+            for entry in std::fs::read_dir(sessions)? {
+                let entry = entry?;
+                let name = entry.file_name();
+                if name == "rust" || name == "legacy" || name == LAYOUT_MARKER {
+                    continue;
+                }
+                std::fs::create_dir_all(&legacy)?;
+                set_mode(&legacy, 0o700)?;
+                move_missing(&entry.path(), &legacy.join(&name))?;
+            }
+        }
+        std::fs::create_dir_all(sessions)?;
+        set_mode(sessions, 0o700)?;
+        write_private(&marker, b"2\n")?;
+    }
+    if old.is_dir() {
+        move_missing(&old, sessions)?;
+    }
+    Ok(())
+}
+
+/// Moves `from` to `to`, merging folders: what already exists at `to` is kept, and what
+/// could not move stays at `from`. Emptied folders are removed.
+fn move_missing(from: &Path, to: &Path) -> Result<()> {
+    let is_dir = std::fs::symlink_metadata(from)?.is_dir();
+    if std::fs::symlink_metadata(to).is_err() {
+        std::fs::rename(from, to)
+            .with_context(|| format!("move {} to {}", from.display(), to.display()))?;
+        return Ok(());
+    }
+    if is_dir && std::fs::symlink_metadata(to)?.is_dir() {
+        for entry in std::fs::read_dir(from)? {
+            let entry = entry?;
+            move_missing(&entry.path(), &to.join(entry.file_name()))?;
+        }
+        // Fails, harmlessly, when something was left behind.
+        let _ = std::fs::remove_dir(from);
+    }
+    Ok(())
 }
 
 fn read_last_optional(path: &Path) -> Result<Option<LastSession>> {
@@ -353,6 +417,87 @@ mod tests {
             .unwrap(),
         )
         .unwrap()
+    }
+
+    fn write(path: &Path, text: &str) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+    }
+
+    fn read(path: &Path) -> String {
+        std::fs::read_to_string(path).unwrap()
+    }
+
+    #[test]
+    fn sessions_move_out_of_the_rust_folder_and_old_files_are_archived() {
+        let home = tempfile::tempdir().unwrap();
+        let paths = Paths::from_env(home.path(), |_| None);
+        let sessions = paths.sessions_dir.clone();
+        write(&sessions.join("last-session.json"), "typescript last");
+        write(&sessions.join("workspaces/abc.json"), "typescript abc");
+        write(&sessions.join("rust/last-session.json"), "rust last");
+        write(&sessions.join("rust/workspaces/abc.json"), "rust abc");
+        write(&sessions.join("rust/named/demo.json"), "rust named");
+
+        let workspace = home.path().join("workspace");
+        std::fs::create_dir_all(&workspace).unwrap();
+        let _store = SessionStore::new(paths.clone(), workspace.clone());
+
+        assert_eq!(read(&sessions.join("last-session.json")), "rust last");
+        assert_eq!(read(&sessions.join("workspaces/abc.json")), "rust abc");
+        assert_eq!(read(&sessions.join("named/demo.json")), "rust named");
+        assert_eq!(
+            read(&sessions.join("legacy/last-session.json")),
+            "typescript last"
+        );
+        assert_eq!(
+            read(&sessions.join("legacy/workspaces/abc.json")),
+            "typescript abc"
+        );
+        assert!(!sessions.join("rust").exists());
+        assert!(sessions.join(LAYOUT_MARKER).is_file());
+
+        // An older Tide still running writes to rust/ again: its new files move up on the
+        // next start, nothing current is archived, and nothing is overwritten.
+        write(
+            &sessions.join("rust/workspaces/abc.json"),
+            "older instance abc",
+        );
+        write(
+            &sessions.join("rust/workspaces/new.json"),
+            "older instance new",
+        );
+        let _store = SessionStore::new(paths, workspace);
+        assert_eq!(read(&sessions.join("workspaces/abc.json")), "rust abc");
+        assert_eq!(
+            read(&sessions.join("workspaces/new.json")),
+            "older instance new"
+        );
+        assert_eq!(read(&sessions.join("last-session.json")), "rust last");
+        assert_eq!(
+            read(&sessions.join("rust/workspaces/abc.json")),
+            "older instance abc",
+            "kept where it was rather than overwrite"
+        );
+        assert!(!sessions.join("legacy/workspaces/new.json").exists());
+    }
+
+    #[test]
+    fn a_new_profile_needs_no_migration() {
+        let home = tempfile::tempdir().unwrap();
+        let paths = Paths::from_env(home.path(), |_| None);
+        let sessions = paths.sessions_dir.clone();
+        let workspace = home.path().join("workspace");
+        std::fs::create_dir_all(&workspace).unwrap();
+        let store = SessionStore::new(paths, workspace);
+        store.save(&fixture(), None).unwrap();
+        assert!(
+            store
+                .workspace_session_path()
+                .starts_with(sessions.join("workspaces"))
+        );
+        assert!(!sessions.join("legacy").exists());
+        assert!(!sessions.join("rust").exists());
     }
 
     #[test]
