@@ -9,8 +9,12 @@ use serde_json::{Value, json};
 
 use crate::cli::{CliProvider, CliSession, epoch_millis_to_rfc3339, safe_session_id};
 
-const MAX_FRAME: usize = 256 * 1024;
-const MAX_OUTPUT: usize = 16 * 1024 * 1024;
+/// The longest line a `codex app-server` may send. A `thread/list` page is one
+/// line holding up to 100 threads, each with a preview of its first message, which
+/// Codex does not shorten: pages of half a megabyte are ordinary.
+const MAX_FRAME: usize = 16 * 1024 * 1024;
+/// The most a `codex app-server` may send in all, across every page.
+const MAX_OUTPUT: usize = 64 * 1024 * 1024;
 
 /// How long a `codex app-server` has to start and answer every request of one client.
 /// Listing pages through every thread (about 2 s per 100 on a laptop, more on a busy
@@ -634,7 +638,7 @@ for line in sys.stdin:
         drop(client);
         std::fs::write(
             &executable,
-            "#!/usr/bin/python3\nimport sys\nsys.stdout.write('x'*300000);sys.stdout.flush()\n",
+            "#!/usr/bin/python3\nimport sys\nsys.stdout.write('x'*(16*1024*1024+1));sys.stdout.flush()\n",
         )
         .unwrap();
         assert!(
@@ -644,6 +648,29 @@ for line in sys.stdin:
                 .contains("limit")
         );
         assert!(start.elapsed() < Duration::from_secs(6));
+    }
+
+    #[test]
+    fn codex_pages_with_long_previews_are_listed() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let executable = root.path().join("codex");
+        // One page of 100 threads, each previewing 5 KB: about half a megabyte on
+        // one line, as a real catalog sends.
+        let script = r#"#!/usr/bin/python3
+import json,sys
+for line in sys.stdin:
+ r=json.loads(line)
+ if 'id' not in r:continue
+ rows=[{'id':'thread-%d'%i,'preview':'p'*5000} for i in range(100)]
+ print(json.dumps({'id':r['id'],'result':{'data':rows,'nextCursor':None} if r['method']=='thread/list' else {}}),flush=True)
+"#;
+        std::fs::write(&executable, script).unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let mut client = CodexClient::start(&executable, root.path()).unwrap();
+        let sessions = client.sessions(root.path()).unwrap();
+        assert_eq!(sessions.len(), 100);
+        assert_eq!(sessions[0].title.chars().count(), 256);
     }
 
     #[test]

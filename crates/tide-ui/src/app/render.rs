@@ -1322,13 +1322,23 @@ impl App {
         let rows = self.ai.rows();
         self.ai.agent_row = self.ai.agent_row.min(rows.len().saturating_sub(1));
         let height = body.height.max(1) as usize;
-        if self.ai.agent_row < self.ai.agent_scroll {
-            self.ai.agent_scroll = self.ai.agent_row;
+        // A status row can wrap onto several lines, so scroll by the lines rows take.
+        let heights = rows
+            .iter()
+            .map(|row| self.agent_row_height(row, body.width))
+            .collect::<Vec<_>>();
+        let row = self.ai.agent_row;
+        let mut scroll = self.ai.agent_scroll.min(row);
+        while scroll < row && heights[scroll..=row].iter().sum::<usize>() > height {
+            scroll += 1;
         }
-        if self.ai.agent_row >= self.ai.agent_scroll + height {
-            self.ai.agent_scroll = self.ai.agent_row + 1 - height;
+        let mut last = heights.len();
+        let mut below = 0;
+        while last > 0 && below + heights[last - 1] <= height {
+            last -= 1;
+            below += heights[last];
         }
-        self.ai.agent_scroll = self.ai.agent_scroll.min(rows.len().saturating_sub(height));
+        self.ai.agent_scroll = scroll.min(last);
         layout.agents_parts = Some(AgentsLayout {
             search,
             body,
@@ -1409,106 +1419,16 @@ impl App {
             ));
         }
         let rows = self.ai.rows();
-        for (offset, row) in rows
-            .iter()
-            .enumerate()
-            .skip(self.ai.agent_scroll)
-            .take(body.height as usize)
-        {
-            let rect = Rect::new(
-                body.x,
-                body.y + saturating_u16(offset - self.ai.agent_scroll),
-                body.width,
-                1,
-            );
-            let (text, target) = match *row {
-                AgentRow::Provider(provider) => {
-                    let count = self
-                        .ai
-                        .agent_sessions
-                        .iter()
-                        .filter(|session| session.provider_id == provider.id())
-                        .count();
-                    (
-                        format!(
-                            " {} {} ({count}){}",
-                            if self.ai.agent_collapsed.contains(provider.id()) {
-                                "▸"
-                            } else {
-                                "▾"
-                            },
-                            provider.display_name(),
-                            if self
-                                .ai
-                                .agent_reports
-                                .get(&provider)
-                                .is_some_and(|report| report.error.is_some())
-                            {
-                                " !"
-                            } else {
-                                ""
-                            }
-                        ),
-                        HitTarget::AgentProvider(provider),
-                    )
-                }
-                AgentRow::Status(provider) => {
-                    let error = self
-                        .ai
-                        .agent_reports
-                        .get(&provider)
-                        .and_then(|r| r.error.as_deref());
-                    let installed = self
-                        .ai
-                        .cli_status
-                        .iter()
-                        .any(|s| s.provider == provider && s.installed);
-                    let notice = self
-                        .ai
-                        .agent_reports
-                        .get(&provider)
-                        .and_then(|report| report.notice.as_deref())
-                        .map(tide_ai::cli::SetupNotice::of);
-                    let message = if let Some(error) = error {
-                        error.to_owned()
-                    } else if let Some(notice) = notice {
-                        format!("{} · Enter for details", notice.label())
-                    } else if !self.ai.agent_query.is_empty() {
-                        "No matching sessions".into()
-                    } else if !installed {
-                        "Not installed".into()
-                    } else {
-                        let other = self
-                            .ai
-                            .agent_candidates
-                            .iter()
-                            .filter(|s| s.provider_id == provider.id())
-                            .count();
-                        if other > 0 {
-                            format!("No workspace sessions · {other} elsewhere · w associate")
-                        } else {
-                            "No workspace sessions".into()
-                        }
-                    };
-                    (format!("   {message}"), HitTarget::AgentStatus(provider))
-                }
-                AgentRow::Session(index) => {
-                    let session = &self.ai.agent_sessions[index];
-                    (
-                        format!(
-                            " {} {} · {}{}",
-                            self.agent_session_marker(session),
-                            session.title,
-                            session.session_id.chars().take(8).collect::<String>(),
-                            session
-                                .model
-                                .as_ref()
-                                .map_or(String::new(), |model| format!(" · {model}"))
-                        ),
-                        HitTarget::AgentSession(index),
-                    )
-                }
-            };
+        let mut y = body.y;
+        for (offset, row) in rows.iter().enumerate().skip(self.ai.agent_scroll) {
+            let bottom = body.y.saturating_add(body.height);
+            if y >= bottom {
+                break;
+            }
+            let (lines, target) = self.agent_row_lines(row, body.width);
+            let shown = saturating_u16(lines.len()).min(bottom - y);
+            let rect = Rect::new(body.x, y, body.width, shown);
+            y += shown;
             let selected = self.focus == Focus::Agents && offset == self.ai.agent_row;
             let style = Style::default()
                 .fg(if selected {
@@ -1522,7 +1442,14 @@ impl App {
                     self.palette.sidebar
                 });
             frame.render_widget(
-                Paragraph::new(truncate_to_width(&text, rect.width as usize)).style(style),
+                Paragraph::new(
+                    lines
+                        .into_iter()
+                        .take(usize::from(shown))
+                        .map(Line::from)
+                        .collect::<Vec<_>>(),
+                )
+                .style(style),
                 rect,
             );
             out.hits.push((rect, target));
@@ -1559,6 +1486,124 @@ impl App {
         );
     }
 
+    /// The lines of the Agents sidebar a row takes: a status row wraps, at most
+    /// [`AGENT_STATUS_LINES`] lines; every other row is one line.
+    fn agent_row_height(&self, row: &AgentRow, width: u16) -> usize {
+        match row {
+            AgentRow::Status(_) => self.agent_row_lines(row, width).0.len(),
+            _ => 1,
+        }
+    }
+
+    fn agent_row_lines(&self, row: &AgentRow, width: u16) -> (Vec<String>, HitTarget) {
+        let width = usize::from(width);
+        let (text, target) = match *row {
+            AgentRow::Provider(provider) => {
+                let count = self
+                    .ai
+                    .agent_sessions
+                    .iter()
+                    .filter(|session| session.provider_id == provider.id())
+                    .count();
+                (
+                    format!(
+                        " {} {} ({count}){}",
+                        if self.ai.agent_collapsed.contains(provider.id()) {
+                            "▸"
+                        } else {
+                            "▾"
+                        },
+                        provider.display_name(),
+                        if self
+                            .ai
+                            .agent_reports
+                            .get(&provider)
+                            .is_some_and(|report| report.error.is_some())
+                        {
+                            " !"
+                        } else {
+                            ""
+                        }
+                    ),
+                    HitTarget::AgentProvider(provider),
+                )
+            }
+            AgentRow::Status(provider) => {
+                let error = self
+                    .ai
+                    .agent_reports
+                    .get(&provider)
+                    .and_then(|r| r.error.as_deref());
+                let installed = self
+                    .ai
+                    .cli_status
+                    .iter()
+                    .any(|s| s.provider == provider && s.installed);
+                let notice = self
+                    .ai
+                    .agent_reports
+                    .get(&provider)
+                    .and_then(|report| report.notice.as_deref())
+                    .map(tide_ai::cli::SetupNotice::of);
+                let message = if let Some(error) = error {
+                    error.to_owned()
+                } else if let Some(notice) = notice {
+                    format!("{} · Enter for details", notice.label())
+                } else if !self.ai.agent_query.is_empty() {
+                    "No matching sessions".into()
+                } else if !installed {
+                    "Not installed".into()
+                } else {
+                    let other = self
+                        .ai
+                        .agent_candidates
+                        .iter()
+                        .filter(|s| s.provider_id == provider.id())
+                        .count();
+                    if other > 0 {
+                        format!("No workspace sessions · {other} elsewhere · w associate")
+                    } else {
+                        "No workspace sessions".into()
+                    }
+                };
+                let parts = message.split(" · ").map(str::to_owned).collect::<Vec<_>>();
+                let text_width = width.saturating_sub(3).max(1);
+                let mut lines = pack_hints(&parts, text_width);
+                if lines.len() > AGENT_STATUS_LINES {
+                    lines.truncate(AGENT_STATUS_LINES);
+                    if let Some(last) = lines.last_mut() {
+                        *last =
+                            format!("{}…", truncate_to_width(last, text_width.saturating_sub(1)));
+                    }
+                }
+                if lines.is_empty() {
+                    lines.push(String::new());
+                }
+                return (
+                    lines.into_iter().map(|line| format!("   {line}")).collect(),
+                    HitTarget::AgentStatus(provider),
+                );
+            }
+            AgentRow::Session(index) => {
+                let session = &self.ai.agent_sessions[index];
+                (
+                    format!(
+                        " {} {} · {}{}",
+                        self.agent_session_marker(session),
+                        session.title,
+                        session.session_id.chars().take(8).collect::<String>(),
+                        session
+                            .model
+                            .as_ref()
+                            .map_or(String::new(), |model| format!(" · {model}"))
+                    ),
+                    HitTarget::AgentSession(index),
+                )
+            }
+        };
+        (vec![truncate_to_width(&text, width).to_owned()], target)
+    }
+
     /// The Agents footer for a sidebar `width` cells wide: its keys, or the last
     /// discovery error and how to retry, wrapped between items rather than inside one.
     fn agents_footer_lines(&self, width: u16) -> Vec<String> {
@@ -1573,6 +1618,10 @@ impl App {
         pack_hints(&items, usize::from(width.saturating_sub(1)))
     }
 }
+
+/// The most lines a status row in the Agents sidebar wraps onto; Enter on it
+/// shows the whole message.
+const AGENT_STATUS_LINES: usize = 4;
 
 /// Packs `items` into lines at most `width` cells wide, joined by " · ". An item
 /// longer than a line wraps by its words.
