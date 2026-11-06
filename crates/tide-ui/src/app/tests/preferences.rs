@@ -626,3 +626,41 @@ fn the_theme_setting_opens_the_theme_list_at_the_current_theme() {
     assert!(item.current);
     assert_eq!(item.value, current);
 }
+
+#[test]
+fn a_user_theme_edited_on_disk_applies_without_a_restart() {
+    let (_home, mut app) = test_app();
+    let source = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../config/themes/catppuccin-latte.json"),
+    )
+    .unwrap();
+    let file = app.paths.themes_dir.join("my-theme.json");
+    write_config(&file, &source.replace("Catppuccin Latte", "My Theme"));
+    assert!(app.reload_config_if_changed());
+    assert!(app.themes.get("my-theme").is_some(), "{}", app.status);
+    write_config(
+        &app.paths.settings_file,
+        "{ \"workbench.colorTheme\": \"my-theme\" }",
+    );
+    assert!(app.reload_config_if_changed());
+    assert_eq!(app.themes.selected_id(), "my-theme");
+    let background = |app: &App| app.themes.selected().colors["editor.background"].clone();
+    assert_eq!(background(&app), "#eff1f5");
+
+    write_config(&file, &source.replace("#eff1f5", "#123456"));
+    assert!(app.reload_config_if_changed());
+    assert_eq!(app.themes.selected_id(), "my-theme");
+    assert_eq!(background(&app), "#123456");
+    assert_eq!(app.status, "Themes reloaded");
+    assert!(!app.reload_config_if_changed(), "read once");
+
+    write_config(&file, "{ not json");
+    assert!(app.reload_config_if_changed());
+    let message = app
+        .overlay
+        .as_ref()
+        .and_then(|overlay| overlay.base().message.clone())
+        .unwrap_or_default();
+    assert!(message.contains("Theme not loaded"), "{message}");
+}

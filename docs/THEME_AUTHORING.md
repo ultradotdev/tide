@@ -1,6 +1,6 @@
 # Tide Theme Authoring
 
-Tide accepts JSON or JSONC theme files in the `themes` directory under its configuration root. The filename stem is the theme ID. Restart Tide after adding or editing a file, then choose it from Select Color Theme or `workbench.colorTheme`.
+Tide accepts JSON or JSONC theme files in the `themes` directory under its configuration root. The filename stem is the theme ID. Tide reloads the folder within a couple of seconds of a file being saved, so there's no need to restart; choose a new theme from Select Color Theme or `workbench.colorTheme`. Edits to the theme you're using show at once.
 
 ## Format
 

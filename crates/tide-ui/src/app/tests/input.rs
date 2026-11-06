@@ -335,3 +335,16 @@ fn terminal_safe_alternate_shortcuts_resolve() {
         Some(Command::WorkbenchCommandPalette)
     );
 }
+
+#[test]
+fn kitty_ctrl_shift_backtick_opens_a_bottom_terminal_tab() {
+    // kitty sends CSI 96;6u, which crossterm reads as Ctrl+Shift with the unshifted key.
+    let (_home, mut app) = test_app();
+    let before = app.dock.tabs.len();
+    app.handle_event(Event::Key(KeyEvent::new(
+        KeyCode::Char('`'),
+        KeyModifiers::CONTROL | KeyModifiers::SHIFT,
+    )));
+    assert_eq!(app.dock.tabs.len(), before + 1, "{}", app.status);
+    assert!(app.dock.visible);
+}

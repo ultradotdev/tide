@@ -33,7 +33,7 @@ The bundled palettes from other projects keep their attribution and pinned prove
 
 ## Your own themes
 
-Put `.json` or `.jsonc` theme files in `~/.config/tide/themes` and restart Tide; the file name without its extension is the theme's ID (letters, digits, `-` and `_`). A file with a built-in theme's ID replaces that theme. A file that cannot be loaded is skipped and the built-in themes stay as they are; run Tide with `--debug` to see why in `~/.local/state/tide/logs/debug.log`. The [theme authoring guide](../THEME_AUTHORING.md) describes the format and every color role.
+Put `.json` or `.jsonc` theme files in `~/.config/tide/themes`. Tide notices within a couple of seconds of saving and reloads them, so edits to the theme you're using show at once. The file name without its extension is the theme's ID (letters, digits, `-` and `_`). A file with a built-in theme's ID replaces that theme. A file that cannot be loaded is skipped, listed in **Configuration Problems**, and the built-in themes stay as they are. The [theme authoring guide](../THEME_AUTHORING.md) describes the format and every color role.
 
 ## Settings
 

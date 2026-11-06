@@ -116,12 +116,46 @@ impl App {
     /// Re-reads settings.jsonc and keybindings.jsonc when either changed on disk since
     /// Tide last read or wrote it.
     pub(super) fn reload_config_if_changed(&mut self) -> bool {
+        let themes = theme_stamps(&self.paths);
+        let themes_changed = themes != self.theme_stamps;
+        if themes_changed {
+            self.theme_stamps = themes;
+            self.reload_themes();
+        }
         let stamps = config_stamps(&self.paths);
         if stamps == self.config_stamps {
-            return false;
+            return themes_changed;
         }
         self.config_stamps = stamps;
-        self.reload_config()
+        self.reload_config() || themes_changed
+    }
+
+    /// Re-reads the user themes and re-applies the selected theme, so editing its file
+    /// shows at once. A theme file with a problem is reported and left out; when the
+    /// selected theme is gone, the setting's theme stays selected by name and the
+    /// default colours show until it returns.
+    pub(super) fn reload_themes(&mut self) {
+        let selected = self.themes.selected_id().to_owned();
+        let mut themes = tide_config::builtin::themes();
+        let problems = themes
+            .load_user_themes(&self.paths.themes_dir)
+            .into_iter()
+            .map(|diagnostic| format!("Theme not loaded: {diagnostic}"))
+            .collect::<Vec<_>>();
+        let found = themes.select(&selected);
+        self.themes = themes;
+        let theme = self.themes.selected().clone();
+        self.palette = Palette::from_theme(&theme);
+        self.syntax.set_theme(&theme);
+        if !problems.is_empty() {
+            self.show_config_problems(&problems);
+        } else if found {
+            self.set_status("Themes reloaded");
+        } else {
+            self.set_status(format!(
+                "Themes reloaded; theme “{selected}” is gone, so default colours show"
+            ));
+        }
     }
 
     /// Applies the settings and keybindings files as they are now. A file that does not
@@ -414,6 +448,34 @@ const NEXT_START: &[&str] = &[
 
 /// A configuration file's modification time and length, or `None` when it is missing.
 pub(super) type ConfigStamp = (Option<std::time::SystemTime>, u64);
+
+/// The stamps of the theme files in the user themes folder, by name.
+pub(super) type ThemeStamps = Vec<(std::ffi::OsString, ConfigStamp)>;
+
+pub(super) fn theme_stamps(paths: &tide_config::Paths) -> ThemeStamps {
+    let Ok(entries) = std::fs::read_dir(&paths.themes_dir) else {
+        return Vec::new();
+    };
+    let mut stamps = entries
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            matches!(
+                entry.path().extension().and_then(|value| value.to_str()),
+                Some("json" | "jsonc")
+            )
+        })
+        .take(101)
+        .filter_map(|entry| {
+            let metadata = entry.metadata().ok()?;
+            Some((
+                entry.file_name(),
+                (metadata.modified().ok(), metadata.len()),
+            ))
+        })
+        .collect::<Vec<_>>();
+    stamps.sort();
+    stamps
+}
 
 /// The current stamps of the settings and keybindings files.
 pub(super) fn config_stamps(paths: &tide_config::Paths) -> [Option<ConfigStamp>; 2] {
