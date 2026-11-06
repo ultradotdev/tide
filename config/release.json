@@ -11,10 +11,10 @@
     "description": "Code, Git, databases, terminal, editing, agent CLIs and more, all in one terminal-native workspace."
   },
   "releasePolicy": {
-    "tag": "v0.12.2",
+    "tag": "v0.13.0",
     "tagPattern": "v*",
-    "title": "Tide v0.12.2",
-    "notesPath": "docs/v0.12.2.md",
+    "title": "Tide v0.13.0",
+    "notesPath": "docs/v0.13.0.md",
     "manualRunsMayPublish": false,
     "publicationActor": "thekeith",
     "checksumsFilename": "SHA256SUMS",
@@ -47,7 +47,7 @@
   "artifacts": [
     {
       "id": "darwin-arm64",
-      "filename": "tide-v0.12.2-darwin-arm64.zip",
+      "filename": "tide-v0.13.0-darwin-arm64.zip",
       "platform": "darwin",
       "architecture": "arm64",
       "status": "published",
@@ -65,7 +65,7 @@
     },
     {
       "id": "darwin-x64",
-      "filename": "tide-v0.12.2-darwin-x64.zip",
+      "filename": "tide-v0.13.0-darwin-x64.zip",
       "platform": "darwin",
       "architecture": "x64",
       "status": "published",
@@ -83,7 +83,7 @@
     },
     {
       "id": "linux-arm64",
-      "filename": "tide-v0.12.2-linux-arm64.tar.gz",
+      "filename": "tide-v0.13.0-linux-arm64.tar.gz",
       "platform": "linux",
       "architecture": "arm64",
       "status": "published",
@@ -102,7 +102,7 @@
     },
     {
       "id": "linux-x64",
-      "filename": "tide-v0.12.2-linux-x64.tar.gz",
+      "filename": "tide-v0.13.0-linux-x64.tar.gz",
       "platform": "linux",
       "architecture": "x64",
       "status": "published",
