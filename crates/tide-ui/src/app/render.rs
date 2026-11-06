@@ -1072,7 +1072,9 @@ impl App {
                 right.push((format!("LSP: {status}"), Command::LspShowDiagnostics));
             }
             right.push((editor.indent().label(), Command::WorkbenchOpenSettings));
-            right.push(("UTF-8".into(), Command::WorkbenchDocumentInfo));
+            if let Some(encoding) = editor.document.with(Document::encoding_label) {
+                right.push((encoding.into(), Command::WorkbenchDocumentInfo));
+            }
             right.push((eol.into(), Command::WorkbenchDocumentInfo));
         }
         // Preserve cursor position first as width tightens, dropping whole low-priority fields.
@@ -1465,11 +1467,12 @@ impl App {
                         .ai
                         .agent_reports
                         .get(&provider)
-                        .is_some_and(|report| report.notice.is_some());
+                        .and_then(|report| report.notice.as_deref())
+                        .map(tide_ai::cli::SetupNotice::of);
                     let message = if let Some(error) = error {
                         error.to_owned()
-                    } else if notice {
-                        "Not signed in · Enter for details".into()
+                    } else if let Some(notice) = notice {
+                        format!("{} · Enter for details", notice.label())
                     } else if !self.ai.agent_query.is_empty() {
                         "No matching sessions".into()
                     } else if !installed {

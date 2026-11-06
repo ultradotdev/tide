@@ -855,6 +855,17 @@ impl DbController {
             ui.status(format!("Database: {error}"));
             return;
         }
+        // A global connection's previous password is dropped once the saved connection no
+        // longer points at it: after a new password, a new destination, or a move to the
+        // project's credentials.
+        if let Some(old) = existing
+            .as_ref()
+            .filter(|old| old.scope == ConnectionScope::Global)
+            .and_then(|old| old.password_secret.as_ref())
+            && config.password_secret.as_ref() != Some(old)
+        {
+            let _ = self.secrets.delete(old);
+        }
         self.cancel_requests(&config.id, ui);
         self.select_connection(&config.id, ui);
         ui.status(format!("Database: saved {}", config.name));
