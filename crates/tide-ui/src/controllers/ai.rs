@@ -851,12 +851,16 @@ impl AiController {
         let report = self.agent_reports.get(&provider);
         let notice = report
             .and_then(|report| report.notice.as_deref())
-            .map(|notice| {
-                format!(
+            .map(|notice| match tide_ai::cli::SetupNotice::of(notice) {
+                tide_ai::cli::SetupNotice::SignIn => format!(
                     "{} is installed but needs signing in or setting up before it can list sessions. Start a session to sign in, or run {} in a terminal. It said:\n\n{notice}",
                     provider.display_name(),
                     provider.executable()
-                )
+                ),
+                tide_ai::cli::SetupNotice::Ineligible => format!(
+                    "{} is signed in, but the account can't use it, so it can't list sessions. Signing in again won't help; use an account or plan the CLI supports. It said:\n\n{notice}",
+                    provider.display_name()
+                ),
             });
         let status = report
             .and_then(|report| report.error.clone())

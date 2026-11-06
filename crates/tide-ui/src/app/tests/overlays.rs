@@ -777,3 +777,13 @@ fn prefilled_prompts_keep_their_value_when_you_move_into_it() {
     app.handle_paste("pasted");
     assert_eq!(app.overlay.as_ref().unwrap().input(), "pasted");
 }
+
+#[test]
+fn the_palette_shows_a_key_the_terminal_can_send() {
+    let (_home, mut app) = test_app();
+    let keys = |app: &App| app.palette_keys(["terminal.new"].into_iter())["terminal.new"].clone();
+    app.terminal.keyboard_protocol = true;
+    assert_eq!(keys(&app), "Ctrl+Shift+`");
+    app.terminal.keyboard_protocol = false;
+    assert_eq!(keys(&app), "Ctrl+Alt+T");
+}

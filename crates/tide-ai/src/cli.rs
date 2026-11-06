@@ -195,6 +195,36 @@ pub fn run_session_action(
         })
 }
 
+/// What a CLI's setup notice (`ProviderDiscovery::notice`) is about.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SetupNotice {
+    /// Not signed in, or missing an API key or configuration.
+    SignIn,
+    /// Signed in, but the account can't use the CLI, as with Gemini's
+    /// `IneligibleTierError`. Signing in again won't help.
+    Ineligible,
+}
+
+impl SetupNotice {
+    #[must_use]
+    pub fn of(notice: &str) -> Self {
+        if notice.to_ascii_lowercase().contains("ineligible") {
+            Self::Ineligible
+        } else {
+            Self::SignIn
+        }
+    }
+
+    /// The short status shown in place of a provider's sessions.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::SignIn => "Not signed in",
+            Self::Ineligible => "Account not eligible",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CliStatus {
     pub provider: CliProvider,
@@ -546,6 +576,7 @@ impl Listing {
     }
 
     /// The line where the CLI says it needs signing in, an API key or other setup.
+    /// [`SetupNotice::of`] tells the kinds of problem apart.
     #[must_use]
     pub fn sign_in_problem(&self) -> Option<String> {
         const SIGNS: &[&str] = &[
@@ -1332,6 +1363,17 @@ fn string_field(value: &Value, key: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_ineligible_account_is_not_a_sign_in_problem() {
+        let notice = "Error authenticating: IneligibleTierError: this client is not supported";
+        assert_eq!(SetupNotice::of(notice), SetupNotice::Ineligible);
+        assert_eq!(SetupNotice::of(notice).label(), "Account not eligible");
+        assert_eq!(
+            SetupNotice::of("Please set an Auth method in your settings.json"),
+            SetupNotice::SignIn
+        );
+    }
 
     #[test]
     fn gemini_is_asked_only_once_it_knows_the_workspace() {

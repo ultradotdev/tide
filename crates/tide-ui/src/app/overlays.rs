@@ -490,20 +490,28 @@ impl App {
         let terminal = self.focus_in_terminal();
         let resolved = self.resolved_keys();
         let effective = crate::help::effective(&self.keybindings);
+        let protocol = self.terminal.keyboard_protocol;
         commands
             .filter_map(|command| {
-                let key = crate::help::ranked(&effective, &self.user_keybindings, command)
+                let mut keys = crate::help::ranked(&effective, &self.user_keybindings, command)
                     .into_iter()
                     .filter(|binding| {
                         !terminal
                             || !(crate::help::terminal_owned(&binding.key)
                                 || crate::help::needs_keyboard_protocol(&binding.key))
                     })
-                    .find(|binding| {
+                    .filter(|binding| {
                         resolved
                             .get(&canonical_key(&binding.key))
                             .is_some_and(|winner| canonical(&winner.command) == canonical(command))
-                    })?;
+                    })
+                    .collect::<Vec<_>>();
+                // Where the terminal may not send Ctrl+Shift+` and the like, show a key it
+                // can, when there is one. The sort is stable, so the ranking stays otherwise.
+                if !protocol {
+                    keys.sort_by_key(|binding| crate::help::needs_keyboard_protocol(&binding.key));
+                }
+                let key = keys.first()?;
                 Some((
                     command,
                     crate::help::display(&key.key, cfg!(target_os = "macos")),
