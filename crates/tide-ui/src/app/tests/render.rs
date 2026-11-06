@@ -112,6 +112,55 @@ fn the_agents_footer_wraps_its_keys_and_errors_instead_of_clipping_them() {
 }
 
 #[test]
+fn an_agent_status_wraps_instead_of_being_cut_off() {
+    use tide_ai::cli::{CliProvider, DiscoveryState, ProviderDiscovery};
+    let (_home, mut app) = test_app();
+    app.ai.agents_visible = true;
+    app.focus = Focus::Agents;
+    let status = |app: &mut App, error: String| {
+        app.ai.agent_reports.insert(
+            CliProvider::Codex,
+            ProviderDiscovery {
+                provider: CliProvider::Codex,
+                state: DiscoveryState::Error,
+                sessions: Vec::new(),
+                error: Some(error),
+                notice: None,
+            },
+        );
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 40)).unwrap();
+        terminal.draw(|frame| app.draw(frame)).unwrap();
+        let area = app
+            .layout
+            .hits
+            .iter()
+            .find(|(_, hit)| *hit == HitTarget::AgentStatus(CliProvider::Codex))
+            .map(|(rect, _)| *rect)
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        (area.y..area.bottom())
+            .map(|y| {
+                (area.x..area.right())
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+                    .trim()
+                    .to_owned()
+            })
+            .collect::<Vec<_>>()
+    };
+    let message = "Codex native catalog: Codex app-server metadata output limit exceeded";
+    let lines = status(&mut app, message.into());
+    assert!(lines.len() > 1, "{lines:?}");
+    assert_eq!(lines.join(" "), message);
+
+    // A very long one stops at four lines, visibly; Enter shows all of it.
+    let lines = status(&mut app, "word ".repeat(200));
+    assert_eq!(lines.len(), 4, "{lines:?}");
+    assert!(lines[3].ends_with('…'), "{lines:?}");
+}
+
+#[test]
 fn constrained_workbench_frames_and_overlays_never_escape_the_viewport() {
     let (_home, mut app) = test_app();
     app.new_file();
