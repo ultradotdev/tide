@@ -67,21 +67,115 @@ thread_local! {
     static OWNS_TERMINAL: Cell<bool> = const { Cell::new(false) };
 }
 
+/// How long the terminal must stay quiet before Tide trusts it has stopped sending.
+/// Reports sent just before it stopped can still be on their way, over SSH for longer.
+const QUIET: u16 = 30;
+/// The longest Tide waits for that quiet on exit.
+const MAX_SETTLE: Duration = Duration::from_millis(300);
+
+/// Asks the terminal to stop sending mouse movements and focus changes. Tide stops
+/// reading input when it quits, and anything the terminal keeps sending after that
+/// would reach the shell as text.
+fn stop_reports() {
+    let mut stdout = io::stdout();
+    let _ = execute!(stdout, DisableMouseCapture, DisableFocusChange);
+    let _ = stdout.flush();
+}
+
+/// Throws away input Tide never read, such as mouse movements queued while it shut
+/// down, until the terminal has been quiet for a moment, so none of it reaches the
+/// shell. Keys typed while Tide was closing go too.
+fn discard_unread_input() {
+    use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
+    use nix::sys::termios::{FlushArg, tcflush};
+    use std::os::fd::AsFd;
+    let Ok(tty) = std::fs::File::open("/dev/tty") else {
+        return;
+    };
+    let started = Instant::now();
+    loop {
+        let _ = tcflush(&tty, FlushArg::TCIFLUSH);
+        if started.elapsed() >= MAX_SETTLE {
+            break;
+        }
+        let mut fds = [PollFd::new(tty.as_fd(), PollFlags::POLLIN)];
+        if !matches!(poll(&mut fds, PollTimeout::from(QUIET)), Ok(ready) if ready > 0) {
+            break;
+        }
+    }
+}
+
 fn restore_terminal() {
-    let _ = disable_raw_mode();
     let mut stdout = io::stdout();
     // The kitty keyboard protocol keeps one flag stack per screen: pop Tide's flags on the
     // alternate screen, where they were pushed, before leaving it.
     let _ = write!(stdout, "{DISABLE_KEYBOARD}");
-    let _ = execute!(
-        stdout,
-        LeaveAlternateScreen,
-        DisableMouseCapture,
-        DisableFocusChange,
-        DisableBracketedPaste,
-        crossterm::cursor::Show
-    );
+    let _ = execute!(stdout, DisableBracketedPaste);
+    stop_reports();
+    // Still in raw mode, so nothing queued is echoed; then nothing is left to echo.
+    discard_unread_input();
+    let _ = disable_raw_mode();
+    let _ = execute!(stdout, LeaveAlternateScreen, crossterm::cursor::Show);
     let _ = stdout.flush();
+}
+
+/// How long quitting may take before Tide says it is still closing.
+const QUIT_NOTICE_AFTER: Duration = Duration::from_millis(500);
+
+/// Draws "Quitting Tide…" in the middle of the last frame, so a slow shutdown does not
+/// look like a hang. Drawn straight to the backend, since the app is busy shutting down.
+fn paint_quit_notice<B: ratatui::backend::Backend>(
+    backend: &mut B,
+    palette: crate::palette::Palette,
+    indexed: bool,
+) -> Result<(), B::Error> {
+    use ratatui::buffer::Buffer;
+    use ratatui::layout::Rect;
+    use ratatui::style::{Modifier, Style};
+    use ratatui::text::Line;
+    use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
+    let size = backend.size()?;
+    let width = size.width.min(52);
+    let height = size.height.min(4);
+    if width < 10 || height < 3 {
+        return Ok(());
+    }
+    let area = Rect::new(
+        (size.width - width) / 2,
+        (size.height - height) / 2,
+        width,
+        height,
+    );
+    let mut buffer = Buffer::empty(area);
+    Paragraph::new(vec![
+        Line::styled(
+            "Quitting Tide…",
+            Style::default()
+                .fg(palette.foreground)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Line::styled(
+            "Closing language servers and background work",
+            Style::default().fg(palette.description),
+        ),
+    ])
+    .wrap(Wrap { trim: true })
+    .block(
+        Block::bordered()
+            .padding(ratatui::widgets::Padding::horizontal(1))
+            .border_style(Style::default().fg(palette.modal_border))
+            .style(Style::default().bg(palette.modal_bg)),
+    )
+    .render(area, &mut buffer);
+    if indexed {
+        crate::display::reduce_colors(buffer.content.iter_mut());
+    }
+    let cells = buffer.content.iter().enumerate().map(|(index, cell)| {
+        let (x, y) = buffer.pos_of(index);
+        (x, y, cell)
+    });
+    backend.draw(cells)?;
+    ratatui::backend::Backend::flush(backend)
 }
 
 struct TerminalModeGuard;
@@ -301,7 +395,28 @@ pub async fn run(mut app: App) -> Result<()> {
     let restart = app.should_quit().then_some(app.restart).flatten();
     let workspace = app.workspace.clone();
     let name = app.session_name.clone();
-    app.shutdown().await;
+    // Shutting down can take a couple of seconds; the terminal must not queue mouse
+    // movements for the shell meanwhile.
+    stop_reports();
+    let notice = (app.should_quit() && stopped.is_none() && result.is_ok()).then(|| {
+        (
+            app.palette,
+            app.color_depth() == crate::display::ColorDepth::Indexed,
+        )
+    });
+    {
+        let shutdown = app.shutdown();
+        tokio::pin!(shutdown);
+        tokio::select! {
+            () = &mut shutdown => {}
+            () = tokio::time::sleep(QUIT_NOTICE_AFTER), if notice.is_some() => {
+                if let Some((palette, indexed)) = notice {
+                    let _ = paint_quit_notice(terminal.backend_mut(), palette, indexed);
+                }
+                shutdown.await;
+            }
+        }
+    }
     drop(terminal);
     drop(_mode_guard);
     if let Some((reason, saved)) = stopped {
@@ -390,5 +505,55 @@ mod tests {
         now += ACTIVE_TICK;
         pacer.ticked(now, true);
         assert_eq!(pacer.deadline(), now + ACTIVE_TICK);
+    }
+}
+
+#[cfg(test)]
+mod quit_notice_tests {
+    use super::*;
+    use ratatui::backend::TestBackend;
+
+    #[test]
+    fn the_quit_notice_is_drawn_over_the_last_frame() {
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        terminal
+            .draw(|frame| {
+                frame.render_widget(
+                    ratatui::widgets::Paragraph::new("x".repeat(80 * 20))
+                        .wrap(ratatui::widgets::Wrap { trim: false }),
+                    frame.area(),
+                );
+            })
+            .unwrap();
+        paint_quit_notice(
+            terminal.backend_mut(),
+            crate::palette::Palette::ultra_dusk(),
+            false,
+        )
+        .unwrap();
+        let buffer = terminal.backend().buffer();
+        let rows = (0..20)
+            .map(|y| (0..80).map(|x| buffer[(x, y)].symbol()).collect::<String>())
+            .collect::<Vec<_>>();
+        let text = rows.join("\n");
+        assert!(text.contains("Quitting Tide…"), "{text}");
+        assert!(text.contains("Closing language servers"), "{text}");
+        // Only the middle is painted over.
+        assert_eq!(rows[0], "x".repeat(80));
+        assert_eq!(rows[19], "x".repeat(80));
+        assert!(rows[10].starts_with("xxxxx") && rows[10].ends_with("xxxxx"));
+    }
+
+    #[test]
+    fn a_tiny_terminal_gets_no_quit_notice() {
+        let mut backend = TestBackend::new(8, 2);
+        paint_quit_notice(&mut backend, crate::palette::Palette::ultra_dusk(), true).unwrap();
+        assert!(
+            backend
+                .buffer()
+                .content
+                .iter()
+                .all(|cell| cell.symbol() == " ")
+        );
     }
 }
