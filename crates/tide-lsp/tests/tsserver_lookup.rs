@@ -57,9 +57,12 @@ fn typescript_tsserver_lookup_does_not_block_the_runtime() {
                 );
                 client.shutdown().await;
                 ticker.abort();
+                // A blocked runtime stalls for the whole 2 s the fake npm sleeps. Busy CI
+                // runners stall a 10 ms tick for over half a second on their own, so the
+                // limit sits well between the two.
                 let worst_gap = worst_gap.load(Ordering::Relaxed);
                 assert!(
-                    worst_gap < 500,
+                    worst_gap < 1500,
                     "the runtime stalled for {worst_gap}ms during initialize"
                 );
             });
