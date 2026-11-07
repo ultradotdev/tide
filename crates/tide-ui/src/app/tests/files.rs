@@ -1293,3 +1293,63 @@ fn markdown_open_mode_edit_opens_the_source() {
     app.open_file(&readme);
     assert!(!app.workbench.active_editor().unwrap().is_previewing());
 }
+
+#[test]
+fn each_markdown_tab_keeps_its_own_view_and_the_status_bar_follows_focus() {
+    let (_home, mut app) = test_app();
+    let [a, b, c] = ["a.md", "b.md", "c.md"].map(|name| {
+        let path = app.workspace.join(name);
+        std::fs::write(&path, format!("# {name}\n")).unwrap();
+        path
+    });
+    let status = |app: &mut App| {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(140, 30)).unwrap();
+        terminal.draw(|frame| app.draw(frame)).unwrap();
+        let buffer = terminal.backend().buffer();
+        (0..140)
+            .map(|x| buffer[(x, 29)].symbol())
+            .collect::<String>()
+    };
+    let previewing = |app: &App, path: &Path| {
+        let path = std::fs::canonicalize(path).unwrap();
+        app.workbench
+            .pane_ids()
+            .into_iter()
+            .filter_map(|id| app.workbench.pane(id))
+            .flat_map(|pane| &pane.tabs)
+            .filter_map(Tab::editor)
+            .find(|editor| editor.path() == Some(path.as_path()))
+            .unwrap()
+            .is_previewing()
+    };
+
+    // a.md and b.md share the left pane; c.md is in a pane of its own.
+    app.open_file(&a);
+    app.open_file(&b);
+    let left = app.workbench.focused();
+    app.split(SplitDirection::Vertical);
+    app.open_file(&c);
+    let right = app.workbench.focused();
+
+    // Switching c.md leaves the others alone.
+    app.execute_command(Command::MarkdownTogglePreview);
+    assert!(!previewing(&app, &c));
+    assert!(previewing(&app, &a) && previewing(&app, &b));
+    assert!(status(&mut app).contains("Edit"));
+
+    // Focus the left pane: the status bar shows b.md's view, and switching it
+    // changes b.md only.
+    app.workbench.set_focused(left);
+    assert!(status(&mut app).contains("Preview"));
+    app.execute_command(Command::MarkdownTogglePreview);
+    assert!(!previewing(&app, &b));
+    assert!(previewing(&app, &a) && !previewing(&app, &c));
+
+    // a.md, in the same pane, still opens in its own view.
+    app.activate_tab(left, 1);
+    assert!(previewing(&app, &a));
+    assert!(status(&mut app).contains("Preview"));
+    app.workbench.set_focused(right);
+    assert!(status(&mut app).contains("Edit"));
+}
