@@ -356,6 +356,7 @@ impl App {
                                 if let Some(edit)=&editor.hunk_edit {extra.insert("rustHunkEdit".into(),serde_json::json!({"root":edit.root,"diff":*edit.diff,"hunk":edit.hunk}));}
                                 if let Some(history)=&editor.historical {extra.insert("rustHistory".into(),serde_json::json!(history));}
                                 if let Some(page)=editor.help {extra.insert("rustHelp".into(),serde_json::json!(page.id));}
+                                if editor.is_previewing() {extra.insert("rustMarkdownPreview".into(),serde_json::Value::Bool(true));}
                                 extra
                             },
                         });
@@ -647,6 +648,14 @@ impl App {
             editor.restore_folds(&document.folded_regions);
             if let Some(view) = document.extra.get("rustView") {
                 editor.restore_view_state(view);
+            }
+            if document
+                .extra
+                .get("rustMarkdownPreview")
+                .and_then(serde_json::Value::as_bool)
+                == Some(true)
+            {
+                editor.set_previewing(true);
             }
             if let Some(pane) = panes.get_mut(&pane_id) {
                 if document.is_active_in_pane {

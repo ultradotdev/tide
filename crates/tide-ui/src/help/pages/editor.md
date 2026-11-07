@@ -87,6 +87,10 @@ Tab moves to the buttons, including Replace and Replace All. Regular-expression 
 
 Tide highlights TypeScript, JavaScript, JSON, Python, Rust, Go, C and C++, HTML, CSS, Markdown, YAML, TOML, shell, Ruby, Java, Kotlin, Swift, PHP, SQL, GraphQL, Lua and other common formats. Each built-in theme brings its own syntax colors, independent of the terminal's ANSI palette.
 
+## Markdown preview
+
+Markdown files (`.md` and `.markdown`) open formatted: headings, bold and italic, code, links, lists, quotes and tables, laid out for the pane's width. The status bar shows **Preview**; click it, or run **{{label:markdown.togglePreview}}**, to see the source in the same tab and edit it, and the status bar shows **Edit**. In the preview the arrow keys, Page Up, Page Down, Space, Home, End and the mouse wheel scroll, and typing does nothing. Commands that work on the text, such as find, undo or paste, switch to the source first. Saving from the preview saves the source. `editor.markdown.openMode` ({{setting:editor.markdown.openMode}}) chooses how Markdown files open: `preview` or `edit`. The session remembers which view each tab had.
+
 ## Language servers
 
 Servers start on demand when their executable is on the `PATH`:

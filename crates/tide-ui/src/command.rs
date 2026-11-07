@@ -62,6 +62,7 @@ commands! {
     WorkbenchFocusMainRegion = "workbench.focusMainRegion",
     WorkbenchFocusBottomDock = "workbench.focusBottomDock",
     WorkbenchToggleWordWrap = "workbench.toggleWordWrap",
+    MarkdownTogglePreview = "markdown.togglePreview",
     WorkbenchResetRegionSizes = "workbench.resetRegionSizes",
     WorkbenchCommandPalette = "workbench.commandPalette",
     WorkbenchQuickOpen = "workbench.quickOpen",

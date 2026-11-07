@@ -617,7 +617,8 @@ fn tab_overflow_scrolls_and_picker_reveals_any_selected_tab() {
     assert!(app.workbench.focused_pane().tab_scroll < active);
     click_hit(&mut app, |target| *target == HitTarget::TabOverflow(pane));
     let overlay = app.overlay.as_mut().unwrap();
-    assert_eq!(overlay.base().items.len(), files.len() + 1); // Includes the Welcome tab.
+    // The Welcome tab, then Split Right and Split Down.
+    assert_eq!(overlay.base().items.len(), files.len() + 3);
     let first_index = overlay
         .base()
         .items
@@ -668,4 +669,26 @@ fn a_terminal_tab_only_takes_shell_keys_while_its_region_has_focus() {
         app.overlay.is_some(),
         "Ctrl+K opens the palette from the sidebar"
     );
+}
+
+#[test]
+fn open_tabs_splits_the_pane_right_or_down() {
+    let (_home, mut app) = test_app();
+    let file = app.workspace.join("split.txt");
+    std::fs::write(&file, "text").unwrap();
+    app.open_file(&file);
+    let pane = app.workbench.focused();
+    for (query, count) in [("split right", 2), ("split down", 3)] {
+        app.open_tabs(pane);
+        for ch in query.chars() {
+            app.handle_key(KeyEvent::new(KeyCode::Char(ch), KeyModifiers::NONE));
+        }
+        app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert!(app.overlay.is_none());
+        assert_eq!(app.workbench.pane_ids().len(), count, "{query}");
+        assert_eq!(
+            app.workbench.active_editor().unwrap().path(),
+            Some(std::fs::canonicalize(&file).unwrap().as_path())
+        );
+    }
 }

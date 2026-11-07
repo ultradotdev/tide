@@ -1042,11 +1042,25 @@ impl App {
             }
             let cursor = editor.document.cursor().position;
             let (eol, selected) = editor.document.status_metadata();
-            right.push((
-                format!("Ln {}, Col {}", cursor.line + 1, cursor.column + 1),
-                Command::EditorGotoLine,
-            ));
-            if selected > 0 {
+            // A Markdown file's view, which a click switches.
+            if editor.is_markdown() {
+                right.push((
+                    if editor.is_previewing() {
+                        "Preview"
+                    } else {
+                        "Edit"
+                    }
+                    .into(),
+                    Command::MarkdownTogglePreview,
+                ));
+            }
+            if !editor.is_previewing() {
+                right.push((
+                    format!("Ln {}, Col {}", cursor.line + 1, cursor.column + 1),
+                    Command::EditorGotoLine,
+                ));
+            }
+            if selected > 0 && !editor.is_previewing() {
                 right.push((
                     format!("{selected} selected"),
                     Command::WorkbenchDocumentInfo,

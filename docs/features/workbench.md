@@ -56,7 +56,7 @@ Region traversal skips hidden regions. When it enters the workspace sidebar, foc
 
 Add Tab offers a new file, Quick Open, a terminal, a SQL editor or an AI agent in the focused pane, and can add any sidebar section back. Tabs keep their state when they move. Closing the last pane is refused, and closing a pane with unsaved changes asks first. An empty pane stays until you close it.
 
-Each tab has a `×` close button. When the tabs do not fit, `‹` and `›` scroll the strip and the mouse wheel scrolls it too; `▾` lists every tab.
+Each tab has a `×` close button. When the tabs do not fit, `‹` and `›` scroll the strip and the mouse wheel scrolls it too; `▾` lists every tab, and ends with **Split Right** and **Split Down**, which split that pane without taking room in its tab bar.
 
 ## Responsive layout
 

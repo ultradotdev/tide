@@ -1621,6 +1621,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "markdown.togglePreview",
+      "category": "View",
+      "description": "Show a Markdown file formatted, or as source to edit",
+      "id": "markdown.togglePreview",
+      "label": "Toggle Markdown Preview",
+      "paletteVisible": true
+    },
+    {
       "canonical": "outlinePanel.collapse",
       "category": "Outline",
       "description": null,
@@ -3795,6 +3803,16 @@
           "on",
           "off",
           "relative"
+        ],
+        "type": "string"
+      }
+    },
+    "editor.markdown.openMode": {
+      "default": "preview",
+      "rule": {
+        "enum": [
+          "preview",
+          "edit"
         ],
         "type": "string"
       }
