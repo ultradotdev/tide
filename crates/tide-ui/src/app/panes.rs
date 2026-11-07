@@ -409,8 +409,13 @@ impl App {
             ));
             return;
         }
+        let keys = self.palette_keys(
+            [Command::ViewSplitVertical, Command::ViewSplitHorizontal]
+                .iter()
+                .map(|command| command.as_str()),
+        );
         if let Some(target) = self.workbench.pane(pane) {
-            let items = target
+            let mut items = target
                 .tabs
                 .iter()
                 .enumerate()
@@ -422,7 +427,25 @@ impl App {
                     )
                     .current(index == target.active)
                 })
-                .collect();
+                .collect::<Vec<_>>();
+            // Splitting from here costs the pane no room in its tab bar.
+            for (label, value, command) in [
+                (
+                    "Split Right",
+                    modal::SPLIT_RIGHT,
+                    Command::ViewSplitVertical,
+                ),
+                (
+                    "Split Down",
+                    modal::SPLIT_DOWN,
+                    Command::ViewSplitHorizontal,
+                ),
+            ] {
+                items.push(
+                    ModalItem::new(label, "pane", value)
+                        .hint(keys.get(command.as_str()).cloned().unwrap_or_default()),
+                );
+            }
             self.overlay = Some(modal::tabs(pane, items));
         }
     }

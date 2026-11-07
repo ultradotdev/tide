@@ -22,6 +22,7 @@ Most settings apply at once. `terminal.shell` and `tui.terminal.scrollback` appl
 | `editor.diagnostics.curlyUnderline` | Use squiggly underlines for errors (requires modern terminal) | `true` | `true` or `false` |
 | `editor.insertSpaces` | Use spaces instead of tabs | `true` | `true` or `false` |
 | `editor.lineNumbers` | Line numbers: "on", "off", "relative" | `"on"` | `on`, `off`, `relative` |
+| `editor.markdown.openMode` | How Markdown files open: "preview" (formatted) or "edit" (source); the status bar switches between them | `"preview"` | `preview`, `edit` |
 | `editor.minimap.enabled` | Show the minimap | `true` | `true` or `false` |
 | `editor.tabSize` | Number of spaces per tab | `2` | 1–16 |
 | `editor.undoHistoryLimit` | Maximum undo actions per document | `1000` | 10–10000 |

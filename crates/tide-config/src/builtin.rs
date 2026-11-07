@@ -132,9 +132,9 @@ mod tests {
 
     #[test]
     fn embedded_catalogs_have_their_expected_sizes() {
-        assert_eq!(settings().len(), 57);
+        assert_eq!(settings().len(), 58);
         assert_eq!(keybindings().len(), 209);
-        assert_eq!(commands().len(), 285);
+        assert_eq!(commands().len(), 286);
         assert_eq!(themes().len(), 13);
     }
 

@@ -207,6 +207,12 @@ impl ModalItem {
     }
 
     #[must_use]
+    pub fn hint(mut self, hint: impl Into<String>) -> Self {
+        self.hint = hint.into();
+        self
+    }
+
+    #[must_use]
     pub fn description(mut self, description: impl Into<String>) -> Self {
         self.description = description.into();
         self
@@ -1593,6 +1599,11 @@ pub enum Submitted {
         pane: usize,
         index: usize,
     },
+    /// Split `pane`, from the Open Tabs list.
+    SplitPane {
+        pane: usize,
+        direction: crate::workbench::SplitDirection,
+    },
     MoveTab(usize),
     StatusEntry(String),
 }
@@ -1672,9 +1683,23 @@ impl Submitted {
                     index: index.parse().ok()?,
                 })
             }),
-            ModalKind::Tabs(pane) => value
-                .and_then(|value| value.parse().ok())
-                .map(|index| Self::ActivateTab { pane: *pane, index }),
+            ModalKind::Tabs(pane) => value.and_then(|value| {
+                use crate::workbench::SplitDirection;
+                let direction = match value {
+                    SPLIT_RIGHT => SplitDirection::Vertical,
+                    SPLIT_DOWN => SplitDirection::Horizontal,
+                    index => {
+                        return index
+                            .parse()
+                            .ok()
+                            .map(|index| Self::ActivateTab { pane: *pane, index });
+                    }
+                };
+                Some(Self::SplitPane {
+                    pane: *pane,
+                    direction,
+                })
+            }),
             ModalKind::MoveTab => value
                 .and_then(|value| value.parse().ok())
                 .map(Self::MoveTab),
@@ -2820,6 +2845,10 @@ pub fn command_palette(items: Vec<ModalItem>) -> Box<dyn Modal> {
     modal.base_mut().refilter();
     Box::new(modal)
 }
+
+/// The Open Tabs values that split the pane rather than select a tab.
+pub const SPLIT_RIGHT: &str = "split:right";
+pub const SPLIT_DOWN: &str = "split:down";
 
 pub fn tabs(pane: usize, items: Vec<ModalItem>) -> Box<dyn Modal> {
     struct TabsModal {

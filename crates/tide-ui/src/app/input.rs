@@ -368,6 +368,21 @@ impl App {
             self.with_db(|db, ui| db.handle_key(key, ui));
             return;
         }
+        // A Markdown preview scrolls; it has no cursor and takes no typing.
+        if let Some(editor) = self.workbench.active_editor_mut()
+            && editor.is_previewing()
+        {
+            match key.code {
+                KeyCode::Up => editor.scroll_by(-1),
+                KeyCode::Down => editor.scroll_by(1),
+                KeyCode::PageUp => editor.scroll_by(-20),
+                KeyCode::PageDown | KeyCode::Char(' ') => editor.scroll_by(20),
+                KeyCode::Home => editor.scroll_by(isize::MIN),
+                KeyCode::End => editor.scroll_by(isize::MAX),
+                _ => {}
+            }
+            return;
+        }
         let defaults = self.indent_defaults();
         let relative = self
             .settings

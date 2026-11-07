@@ -1201,3 +1201,155 @@ fn a_new_file_takes_its_line_ending_from_editorconfig() {
     app.save_active();
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "a\r\n");
 }
+
+#[test]
+fn markdown_opens_formatted_and_switches_to_its_source_in_place() {
+    let (_home, mut app) = test_app();
+    let readme = app.workspace.join("README.md");
+    std::fs::write(&readme, "# Title\n\nSome **bold** text\n").unwrap();
+    app.open_file(&readme);
+    let screen = |app: &mut App| {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 30)).unwrap();
+        terminal.draw(|frame| app.draw(frame)).unwrap();
+        let buffer = terminal.backend().buffer();
+        (0..30)
+            .map(|y| {
+                (0..120)
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+    };
+    let tabs = |app: &App| app.workbench.focused_pane().tabs.len();
+    let previewing = |app: &App| app.workbench.active_editor().unwrap().is_previewing();
+
+    // Formatted by default, with the view in the status bar and no cursor position.
+    assert!(previewing(&app));
+    let rows = screen(&mut app);
+    let text = rows.join("\n");
+    assert!(text.contains("Some bold text"), "{text}");
+    assert!(
+        !text.contains("**bold**") && !text.contains("# Title"),
+        "{text}"
+    );
+    let status = rows.last().unwrap();
+    assert!(
+        status.contains("Preview") && !status.contains("Ln 1"),
+        "{status}"
+    );
+
+    // Typing does nothing to the hidden source.
+    let before = tabs(&app);
+    app.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
+    app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    app.handle_key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE));
+    let editor = app.workbench.active_editor().unwrap();
+    assert!(!editor.is_dirty());
+    assert_eq!(editor.document.text(), "# Title\n\nSome **bold** text\n");
+
+    // The status bar item switches to the source in the same tab.
+    click_hit(&mut app, |target| {
+        *target == HitTarget::Command(Command::MarkdownTogglePreview)
+    });
+    assert!(!previewing(&app));
+    assert_eq!(tabs(&app), before);
+    let rows = screen(&mut app);
+    assert!(rows.join("\n").contains("# Title"));
+    assert!(rows.last().unwrap().contains("Edit"));
+
+    // An edit made in source is what saving writes, even from the preview.
+    app.workbench
+        .active_editor_mut()
+        .unwrap()
+        .insert_text("Intro\n");
+    app.execute_command(Command::MarkdownTogglePreview);
+    assert!(previewing(&app));
+    app.execute_command(Command::FileSave);
+    assert_eq!(
+        std::fs::read_to_string(&readme).unwrap(),
+        "Intro\n# Title\n\nSome **bold** text\n"
+    );
+
+    // A command that works on the text shows the source first.
+    app.execute_command(Command::EditSelectAll);
+    assert!(!previewing(&app));
+
+    // Other files have no preview.
+    let notes = app.workspace.join("notes.txt");
+    std::fs::write(&notes, "plain").unwrap();
+    app.open_file(&notes);
+    app.execute_command(Command::MarkdownTogglePreview);
+    assert!(!previewing(&app));
+}
+
+#[test]
+fn markdown_open_mode_edit_opens_the_source() {
+    let (_home, mut app) = test_app();
+    app.settings
+        .set("editor.markdown.openMode", serde_json::json!("edit"));
+    let readme = app.workspace.join("README.md");
+    std::fs::write(&readme, "# Title\n").unwrap();
+    app.open_file(&readme);
+    assert!(!app.workbench.active_editor().unwrap().is_previewing());
+}
+
+#[test]
+fn each_markdown_tab_keeps_its_own_view_and_the_status_bar_follows_focus() {
+    let (_home, mut app) = test_app();
+    let [a, b, c] = ["a.md", "b.md", "c.md"].map(|name| {
+        let path = app.workspace.join(name);
+        std::fs::write(&path, format!("# {name}\n")).unwrap();
+        path
+    });
+    let status = |app: &mut App| {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(140, 30)).unwrap();
+        terminal.draw(|frame| app.draw(frame)).unwrap();
+        let buffer = terminal.backend().buffer();
+        (0..140)
+            .map(|x| buffer[(x, 29)].symbol())
+            .collect::<String>()
+    };
+    let previewing = |app: &App, path: &Path| {
+        let path = std::fs::canonicalize(path).unwrap();
+        app.workbench
+            .pane_ids()
+            .into_iter()
+            .filter_map(|id| app.workbench.pane(id))
+            .flat_map(|pane| &pane.tabs)
+            .filter_map(Tab::editor)
+            .find(|editor| editor.path() == Some(path.as_path()))
+            .unwrap()
+            .is_previewing()
+    };
+
+    // a.md and b.md share the left pane; c.md is in a pane of its own.
+    app.open_file(&a);
+    app.open_file(&b);
+    let left = app.workbench.focused();
+    app.split(SplitDirection::Vertical);
+    app.open_file(&c);
+    let right = app.workbench.focused();
+
+    // Switching c.md leaves the others alone.
+    app.execute_command(Command::MarkdownTogglePreview);
+    assert!(!previewing(&app, &c));
+    assert!(previewing(&app, &a) && previewing(&app, &b));
+    assert!(status(&mut app).contains("Edit"));
+
+    // Focus the left pane: the status bar shows b.md's view, and switching it
+    // changes b.md only.
+    app.workbench.set_focused(left);
+    assert!(status(&mut app).contains("Preview"));
+    app.execute_command(Command::MarkdownTogglePreview);
+    assert!(!previewing(&app, &b));
+    assert!(previewing(&app, &a) && !previewing(&app, &c));
+
+    // a.md, in the same pane, still opens in its own view.
+    app.activate_tab(left, 1);
+    assert!(previewing(&app, &a));
+    assert!(status(&mut app).contains("Preview"));
+    app.workbench.set_focused(right);
+    assert!(status(&mut app).contains("Edit"));
+}

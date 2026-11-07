@@ -9,6 +9,7 @@
   "editor.lineNumbers": "on", // Line numbers: "on", "off", "relative"
   "editor.diagnostics.curlyUnderline": true, // Use squiggly underlines for errors (requires modern terminal)
   "editor.undoHistoryLimit": 1000, // Maximum undo actions per document
+  "editor.markdown.openMode": "preview", // How Markdown files open: "preview" (formatted) or "edit" (source); the status bar switches between them
 
   // Minimap
   "editor.minimap.enabled": true, // Show the minimap

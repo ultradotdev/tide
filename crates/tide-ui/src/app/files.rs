@@ -345,7 +345,10 @@ impl App {
             return;
         }
         match self.documents.open(&path) {
-            Ok(editor) => {
+            Ok(mut editor) => {
+                if self.markdown_opens_in_preview() {
+                    editor.set_previewing(true);
+                }
                 let text = editor.document.text();
                 let version = tide_core::num::saturating_i64(editor.revision());
                 let lossy = editor.document.with(Document::is_lossy);
@@ -365,6 +368,33 @@ impl App {
                 with_ui!(self, |ui| self.git.load_inline_diff(ui));
             }
             Err(error) => self.set_status(format!("Open failed: {error}")),
+        }
+    }
+
+    /// Whether Markdown files open formatted: `editor.markdown.openMode`.
+    pub(super) fn markdown_opens_in_preview(&self) -> bool {
+        self.settings
+            .get("editor.markdown.openMode")
+            .and_then(serde_json::Value::as_str)
+            != Some("edit")
+    }
+
+    /// Shows the active Markdown file formatted, or as source.
+    pub(super) fn set_markdown_preview(&mut self, previewing: bool) {
+        if let Some(editor) = self.workbench.active_editor_mut()
+            && editor.set_previewing(previewing)
+        {
+            self.mark_session_dirty();
+        }
+    }
+
+    pub(super) fn toggle_markdown_preview(&mut self) {
+        match self.workbench.active_editor() {
+            Some(editor) if editor.is_markdown() => {
+                let previewing = !editor.is_previewing();
+                self.set_markdown_preview(previewing);
+            }
+            _ => self.set_status("Markdown preview works on .md and .markdown files"),
         }
     }
 

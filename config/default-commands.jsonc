@@ -105,6 +105,7 @@
   "workbench.resizeDown": { "label": "Move Focused Region Boundary Down", "category": "View" },
   "workbench.resetRegionSizes": { "label": "Reset Workbench Region Sizes", "category": "View" },
   "workbench.toggleWordWrap": { "label": "Toggle Word Wrap", "category": "View" },
+  "markdown.togglePreview": { "label": "Toggle Markdown Preview", "category": "View", "description": "Show a Markdown file formatted, or as source to edit", "keywords": ["markdown preview", "edit markdown", "render markdown"] },
   "workbench.toggleMinimap": { "label": "Toggle Minimap", "category": "View", "description": "Show or hide the minimap beside each editor's scrollbar" },
   "workbench.toggleZenMode": { "label": "Toggle Zen Mode", "category": "View", "description": "Hide the sidebars and the bottom terminal, or bring them back" },
   "workbench.focusNextPane": { "label": "Focus Next Main Pane", "category": "View" },

@@ -14,7 +14,18 @@ impl App {
             self.set_status("Focus the SQL editor to edit the query");
             return;
         }
+        if self.focus == Focus::Main
+            && preview_leaves_for(command)
+            && self
+                .workbench
+                .active_editor()
+                .is_some_and(EditorState::is_previewing)
+        {
+            // Commands that work on the text need the source in view.
+            self.set_markdown_preview(false);
+        }
         match command {
+            Command::MarkdownTogglePreview => self.toggle_markdown_preview(),
             Command::FileSave => self.save_active(),
             Command::FileSaveAs => self.open_save_as_prompt(),
             Command::FileSaveAll => self.save_all(),
@@ -963,4 +974,31 @@ impl App {
             self.accordion.leave_content();
         }
     }
+}
+
+/// Whether `command` works on an editor's text, so a Markdown preview shows the
+/// source before it runs. Moving between tabs and panes does not.
+fn preview_leaves_for(command: Command) -> bool {
+    let id = command.as_str();
+    (id.starts_with("edit.")
+        || id.starts_with("lsp.")
+        || (id.starts_with("editor.")
+            && !matches!(
+                command,
+                Command::EditorSwitchTab
+                    | Command::EditorSwitchTabAllPanes
+                    | Command::EditorMoveTabToPane
+                    | Command::EditorMoveTabToNextPane
+                    | Command::EditorMoveTabToPreviousPane
+                    | Command::EditorNextTab
+                    | Command::EditorPreviousTab
+            ))
+        || matches!(
+            command,
+            Command::SearchFind
+                | Command::SearchFindNext
+                | Command::SearchFindPrevious
+                | Command::SearchReplace
+        ))
+        && command != Command::MarkdownTogglePreview
 }

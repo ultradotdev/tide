@@ -572,6 +572,20 @@ struct HelpView {
     lines: Vec<crate::help::format::Line>,
 }
 
+/// A Markdown file shown formatted in place of its source. The document is never
+/// touched: the preview is laid out from it again whenever it or the width changes.
+#[derive(Debug, Clone, Default)]
+struct MarkdownPreview {
+    revision: Option<u64>,
+    width: usize,
+    lines: Vec<crate::help::format::Line>,
+    scroll: usize,
+    /// The rows the last layout showed.
+    height: usize,
+    /// Where to start once laid out, as a fraction of the source scrolled past.
+    start: Option<f64>,
+}
+
 #[derive(Debug, Clone)]
 struct SearchCache {
     revision: u64,
@@ -614,6 +628,8 @@ pub struct EditorState {
     pub help: Option<&'static crate::help::Page>,
     /// The help page's Markdown and its formatted lines for the current width.
     help_view: Option<HelpView>,
+    /// Set while a Markdown file is shown formatted rather than as source.
+    markdown_preview: Option<MarkdownPreview>,
     pub document: DocumentHandle,
     pub scroll_top: usize,
     pub scroll_left: usize,
@@ -669,6 +685,7 @@ impl Clone for EditorState {
             historical: self.historical.clone(),
             help: self.help,
             help_view: self.help_view.clone(),
+            markdown_preview: self.markdown_preview.clone(),
             document: self.document.fork_view(),
             scroll_top: self.scroll_top,
             scroll_left: self.scroll_left,
@@ -742,6 +759,7 @@ impl EditorState {
             historical: None,
             help: None,
             help_view: None,
+            markdown_preview: None,
             document: DocumentHandle::new(Document::new("")),
             scroll_top: 0,
             scroll_left: 0,
@@ -892,6 +910,7 @@ impl EditorState {
             historical: None,
             help: None,
             help_view: None,
+            markdown_preview: None,
             scroll_top: 0,
             scroll_left: 0,
             language_extension,
@@ -982,6 +1001,11 @@ impl EditorState {
     }
 
     pub fn scroll_by(&mut self, lines: isize) {
+        if let Some(preview) = &mut self.markdown_preview {
+            let max = preview.lines.len().saturating_sub(preview.height.max(1));
+            preview.scroll = preview.scroll.saturating_add_signed(lines).min(max);
+            return;
+        }
         self.follow_cursor = false;
         let max_scroll = self.document.len_lines().saturating_sub(1);
         self.scroll_top = if lines < 0 {
@@ -1337,6 +1361,11 @@ impl EditorState {
         }
         self.text_area = area;
         self.cursor_screen = None;
+        if self.markdown_preview.is_some() {
+            self.minimap_area = Rect::default();
+            self.layout_preview(area);
+            return;
+        }
         if self.help_view.is_some() {
             self.relayout_help((area.width as usize).saturating_sub(HELP_GUTTER + 1));
         }
@@ -1434,6 +1463,10 @@ impl EditorState {
             browser.render(frame, self.inline_area, palette, focused);
         }
         let area = self.text_area;
+        if let Some(preview) = &self.markdown_preview {
+            self.render_preview(frame, preview, palette);
+            return;
+        }
         if self.word_wrap {
             self.render_wrapped(frame, view);
             self.render_minimap(frame, palette, syntax, tab_size);
@@ -1555,6 +1588,121 @@ impl EditorState {
         self.render_minimap(frame, palette, syntax, tab_size);
         self.render_scrollbar(frame, palette);
         self.paint_change_marks(frame, area, palette);
+    }
+
+    /// Whether this is a Markdown file, which can be shown formatted.
+    #[must_use]
+    pub fn is_markdown(&self) -> bool {
+        self.help.is_none()
+            && self.historical.is_none()
+            && self.hunk_edit.is_none()
+            && matches!(self.language_extension.as_str(), "md" | "markdown")
+    }
+
+    /// Whether the Markdown file is shown formatted rather than as source.
+    #[must_use]
+    pub fn is_previewing(&self) -> bool {
+        self.markdown_preview.is_some()
+    }
+
+    /// Shows a Markdown file formatted, or as its source again, keeping roughly the
+    /// same place in it. Returns whether the view changed.
+    pub fn set_previewing(&mut self, previewing: bool) -> bool {
+        if previewing == self.is_previewing() || (previewing && !self.is_markdown()) {
+            return false;
+        }
+        let lines = self.document.len_lines().max(1);
+        if let Some(preview) = self.markdown_preview.take() {
+            // Back to the source at the same fraction of the way through.
+            let shown = preview.lines.len().max(1);
+            #[allow(
+                clippy::cast_precision_loss,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
+            let line = ((preview.scroll as f64 / shown as f64) * lines as f64) as usize;
+            self.scroll_top = line.min(lines - 1);
+            self.follow_cursor = false;
+            self.document.set_cursor(Position::new(self.scroll_top, 0));
+        } else {
+            #[allow(clippy::cast_precision_loss)]
+            let start = self.scroll_top as f64 / lines as f64;
+            self.markdown_preview = Some(MarkdownPreview {
+                start: Some(start),
+                ..MarkdownPreview::default()
+            });
+        }
+        true
+    }
+
+    fn layout_preview(&mut self, area: Rect) {
+        let revision = self.revision();
+        let width = (area.width as usize)
+            .saturating_sub(HELP_GUTTER + 1)
+            .clamp(20, crate::help::format::MAX_WIDTH);
+        let stale = self
+            .markdown_preview
+            .as_ref()
+            .is_some_and(|preview| preview.revision != Some(revision) || preview.width != width);
+        let text = stale.then(|| self.document.text());
+        let Some(preview) = &mut self.markdown_preview else {
+            return;
+        };
+        if let Some(text) = text {
+            preview.lines = crate::help::format::layout(&text, width);
+            preview.revision = Some(revision);
+            preview.width = width;
+        }
+        preview.height = area.height as usize;
+        if let Some(start) = preview.start.take() {
+            #[allow(
+                clippy::cast_precision_loss,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
+            {
+                preview.scroll = (start * preview.lines.len() as f64) as usize;
+            }
+        }
+        preview.scroll = preview
+            .scroll
+            .min(preview.lines.len().saturating_sub(preview.height.max(1)));
+    }
+
+    fn render_preview(&self, frame: &mut Frame, preview: &MarkdownPreview, palette: Palette) {
+        let area = self.text_area;
+        let lines = preview
+            .lines
+            .iter()
+            .skip(preview.scroll)
+            .take(area.height as usize)
+            .map(|line| {
+                let mut spans = vec![Span::raw(" ".repeat(HELP_GUTTER))];
+                spans.extend(line.spans.iter().map(|(range, mark)| {
+                    Span::styled(
+                        line.text[range.clone()].to_owned(),
+                        crate::help::format::style(*mark, &palette),
+                    )
+                }));
+                Line::from(spans)
+            })
+            .collect::<Vec<_>>();
+        frame.render_widget(
+            ratatui::widgets::Paragraph::new(lines).style(
+                Style::default()
+                    .fg(palette.foreground)
+                    .bg(palette.background),
+            ),
+            area,
+        );
+        crate::scrollbar::paint(
+            frame,
+            self.scrollbar_area,
+            preview.lines.len(),
+            preview.height.min(preview.lines.len()),
+            preview.scroll,
+            palette,
+        );
     }
 
     /// Marks lines changed since the last commit in the gutter's first column: added
@@ -3290,6 +3438,9 @@ impl EditorState {
         clicks: u8,
     ) {
         use crossterm::event::KeyModifiers;
+        if self.markdown_preview.is_some() {
+            return;
+        }
         let numbers = self.line_numbers(numbers);
         if self
             .minimap_area
@@ -3386,6 +3537,9 @@ impl EditorState {
         self.follow_cursor = false;
     }
     pub fn mouse_drag(&mut self, area: Rect, x: u16, y: u16, numbers: bool, tab_size: usize) {
+        if self.markdown_preview.is_some() {
+            return;
+        }
         let numbers = self.line_numbers(numbers);
         if self.drag_minimap {
             self.minimap_to(y);

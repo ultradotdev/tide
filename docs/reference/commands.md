@@ -381,6 +381,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Split Main Pane Down | `Ctrl+Shift+\`, `Ctrl+Alt+H` | `view.splitHorizontal` |
 | Split Main Pane Right | `Ctrl+\` | `view.splitVertical` |
 | Toggle Bottom Terminal | `` Ctrl+` `` | `workbench.toggleTerminal` |
+| Toggle Markdown Preview | — | `markdown.togglePreview` |
 | Toggle Minimap | — | `workbench.toggleMinimap` |
 | Toggle Sidebar | `Ctrl+Shift+B`, `Ctrl+B` | `workbench.toggleSidebar` |
 | Toggle Word Wrap | — | `workbench.toggleWordWrap` |

@@ -389,6 +389,12 @@ impl App {
                 self.save_session_as(&name);
             }
             Submitted::ActivateTab { pane, index } => self.activate_tab(pane, index),
+            Submitted::SplitPane { pane, direction } => {
+                if self.workbench.pane(pane).is_some() {
+                    self.workbench.set_focused(pane);
+                    self.split(direction);
+                }
+            }
             Submitted::MoveTab(destination) => self.move_pending_tab(destination),
             Submitted::StatusEntry(detail) => {
                 self.overlay = Some(modal::info("Status History", &detail));
