@@ -67,20 +67,55 @@ thread_local! {
     static OWNS_TERMINAL: Cell<bool> = const { Cell::new(false) };
 }
 
+/// How long the terminal must stay quiet before Tide trusts it has stopped sending.
+/// Reports sent just before it stopped can still be on their way, over SSH for longer.
+const QUIET: u16 = 30;
+/// The longest Tide waits for that quiet on exit.
+const MAX_SETTLE: Duration = Duration::from_millis(300);
+
+/// Asks the terminal to stop sending mouse movements and focus changes. Tide stops
+/// reading input when it quits, and anything the terminal keeps sending after that
+/// would reach the shell as text.
+fn stop_reports() {
+    let mut stdout = io::stdout();
+    let _ = execute!(stdout, DisableMouseCapture, DisableFocusChange);
+    let _ = stdout.flush();
+}
+
+/// Throws away input Tide never read, such as mouse movements queued while it shut
+/// down, until the terminal has been quiet for a moment, so none of it reaches the
+/// shell. Keys typed while Tide was closing go too.
+fn discard_unread_input() {
+    use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
+    use nix::sys::termios::{FlushArg, tcflush};
+    use std::os::fd::AsFd;
+    let Ok(tty) = std::fs::File::open("/dev/tty") else {
+        return;
+    };
+    let started = Instant::now();
+    loop {
+        let _ = tcflush(&tty, FlushArg::TCIFLUSH);
+        if started.elapsed() >= MAX_SETTLE {
+            break;
+        }
+        let mut fds = [PollFd::new(tty.as_fd(), PollFlags::POLLIN)];
+        if !matches!(poll(&mut fds, PollTimeout::from(QUIET)), Ok(ready) if ready > 0) {
+            break;
+        }
+    }
+}
+
 fn restore_terminal() {
-    let _ = disable_raw_mode();
     let mut stdout = io::stdout();
     // The kitty keyboard protocol keeps one flag stack per screen: pop Tide's flags on the
     // alternate screen, where they were pushed, before leaving it.
     let _ = write!(stdout, "{DISABLE_KEYBOARD}");
-    let _ = execute!(
-        stdout,
-        LeaveAlternateScreen,
-        DisableMouseCapture,
-        DisableFocusChange,
-        DisableBracketedPaste,
-        crossterm::cursor::Show
-    );
+    let _ = execute!(stdout, DisableBracketedPaste);
+    stop_reports();
+    // Still in raw mode, so nothing queued is echoed; then nothing is left to echo.
+    discard_unread_input();
+    let _ = disable_raw_mode();
+    let _ = execute!(stdout, LeaveAlternateScreen, crossterm::cursor::Show);
     let _ = stdout.flush();
 }
 
@@ -301,6 +336,9 @@ pub async fn run(mut app: App) -> Result<()> {
     let restart = app.should_quit().then_some(app.restart).flatten();
     let workspace = app.workspace.clone();
     let name = app.session_name.clone();
+    // Shutting down can take a couple of seconds; the terminal must not queue mouse
+    // movements for the shell meanwhile.
+    stop_reports();
     app.shutdown().await;
     drop(terminal);
     drop(_mode_guard);
