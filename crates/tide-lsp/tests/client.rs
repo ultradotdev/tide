@@ -106,9 +106,18 @@ async fn initializes_requests_and_routes_diagnostics() {
 }
 
 #[tokio::test]
-#[ignore = "needs TypeScript 7 installed globally or in a parent node_modules"]
+#[ignore = "needs TypeScript 7: global, or the npm prefix in TIDE_TEST_TYPESCRIPT7"]
 async fn starts_real_typescript_seven() {
     let workspace = tempfile::tempdir().unwrap();
+    // CI installs TypeScript 5 globally and TypeScript 7 under its own prefix,
+    // which the workspace links to, as a project's own TypeScript would be.
+    if let Some(prefix) = std::env::var_os("TIDE_TEST_TYPESCRIPT7") {
+        std::os::unix::fs::symlink(
+            std::path::Path::new(&prefix).join("node_modules"),
+            workspace.path().join("node_modules"),
+        )
+        .unwrap();
+    }
     std::fs::write(
         workspace.path().join("tsconfig.json"),
         r#"{"compilerOptions":{"target":"ES2022","module":"ESNext"},"include":["*.ts"]}"#,

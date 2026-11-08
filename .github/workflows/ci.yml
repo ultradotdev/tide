@@ -77,11 +77,13 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
       - run: cargo test --locked --workspace
       # Tests that need real language servers or vim are #[ignore] locally and
-      # run here with --ignored. Node is used only to install the TypeScript server.
+      # run here with --ignored. Node is used only to install the TypeScript servers:
+      # TypeScript 5 globally, and TypeScript 7 in a folder of its own for its test.
       - name: Real language servers and full-screen terminal
         run: |
           npm i -g typescript-language-server@5.1.3 typescript@5.9.3
-          cargo test --locked -p tide-lsp --test client starts_real_ -- --ignored
+          npm i --prefix "$RUNNER_TEMP/typescript7" typescript@7.0.2
+          TIDE_TEST_TYPESCRIPT7="$RUNNER_TEMP/typescript7" cargo test --locked -p tide-lsp --test client starts_real_ -- --ignored
           cargo test --locked -p tide-terminal --test fullscreen -- --ignored
       - run: cargo run --locked -q -p tide -- --check-catalogs
       - run: cargo run --locked -q -p tide -- --check-terminal
