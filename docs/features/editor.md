@@ -109,6 +109,8 @@ Servers start on demand when their executable is on the `PATH`:
 | CSS | `vscode-css-language-server --stdio` |
 | SQL | `postgres-language-server lsp-proxy` |
 
+For TypeScript and JavaScript, Tide uses the TypeScript nearest the workspace: the closest `node_modules/typescript` at or above it, then the global one (`npm root -g`). TypeScript 7 is its own language server, so Tide runs its `tsc --lsp --stdio` and typescript-language-server isn't needed. TypeScript 5 runs through typescript-language-server, given that TypeScript's `tsserver.js`. With no TypeScript found, the status bar says so; install one (`npm install -g typescript`) and run **Restart Language Server**.
+
 With a server running you get completion (`Ctrl+Space`), hover (`Ctrl+I`), signature help (`Ctrl+Shift+Space`), go to definition (`Ctrl+Shift+K` or `F12`), go to implementation (`Ctrl+F12`), code actions (`Ctrl+.`), and from the palette **Go to Declaration**, **Go to Type Definition**, **Find All References**, **Rename Symbol**, **Format Document**, **Format Selection** and diagnostics navigation. When a lookup finds several places, a picker lists them; when the server does not offer a feature, the status bar says so. **Restart Language Server** restarts the active file's server and reopens its documents. Without a server, editing and highlighting work as usual. Run `tide --check-lsp` to see which servers are installed.
 
 To use another server or turn one off, add `lsp.servers` to `~/.config/tide/settings.jsonc`. Each key is a language ID from the table's languages (`typescript`, `rust`, `python`, `go`, `ruby`, `c`, `cpp`, `json`, `html`, `css`, `sql` and so on); the value is a command with optional arguments, or `null` to disable that language:

@@ -1,4 +1,5 @@
-//! Runs alone in its own binary because it replaces `PATH` for the process.
+//! Runs alone in its own binary because it replaces `PATH` for the process;
+//! `temp_env` keeps its tests from overlapping.
 
 use std::os::unix::fs::PermissionsExt;
 use std::sync::Arc;
@@ -65,6 +66,42 @@ fn typescript_tsserver_lookup_does_not_block_the_runtime() {
                     worst_gap < 1500,
                     "the runtime stalled for {worst_gap}ms during initialize"
                 );
+            });
+        },
+    );
+}
+
+#[test]
+fn a_workspace_without_typescript_is_told_so_plainly() {
+    let bin = tempfile::tempdir().unwrap();
+    let npm = bin.path().join("npm");
+    std::fs::write(&npm, "#!/bin/sh\necho /nonexistent\n").unwrap();
+    std::fs::set_permissions(&npm, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let path = format!(
+        "{}:{}",
+        bin.path().display(),
+        std::env::var("PATH").unwrap_or_default()
+    );
+    temp_env::with_vars(
+        [("PATH", Some(path.as_str())), ("TIDE_TSSERVER_PATH", None)],
+        || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            runtime.block_on(async {
+                let workspace = tempfile::tempdir().unwrap();
+                let config = tide_lsp::server_for_language("typescript").unwrap();
+                let registry = tide_lsp::LspRegistry::new();
+                let error = registry
+                    .get_or_start(&config, workspace.path(), || {
+                        tokio::sync::mpsc::channel(1).0
+                    })
+                    .await
+                    .err()
+                    .unwrap();
+                assert!(matches!(error, tide_lsp::LspError::NoTypeScript));
+                assert!(error.to_string().contains("npm install -g typescript"));
             });
         },
     );
