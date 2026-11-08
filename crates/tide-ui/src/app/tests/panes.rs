@@ -201,6 +201,14 @@ fn responsive_split_dock_geometry_drag_and_status_targets_remain_actionable() {
         *app.overlay.as_ref().unwrap().kind(),
         ModalKind::StatusHistory
     );
+    // The history is wide and tall, and shows the whole selected message under
+    // the list rather than repeating it beside the row.
+    let history = app.overlay.as_ref().unwrap();
+    let geometry = history.base().geometry(Rect::new(0, 0, 160, 50));
+    assert_eq!((geometry.width, geometry.height), (100, 30));
+    let item = history.base().selected_item().unwrap();
+    assert_eq!(item.description, message);
+    assert!(item.detail.is_empty());
     app.handle_modal_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
     assert_eq!(
         app.overlay.as_ref().unwrap().base().message.as_deref(),

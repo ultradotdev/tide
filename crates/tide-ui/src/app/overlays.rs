@@ -7,9 +7,9 @@ impl App {
             .status_history
             .iter()
             .rev()
-            .enumerate()
-            .map(|(index, message)| {
-                ModalItem::new(truncate_to_width(message, 50), message, index.to_string())
+            .map(|message| {
+                ModalItem::new(truncate_to_width(message, 96), "", message.as_str())
+                    .description(message.as_str())
             })
             .collect();
         self.overlay = Some(modal::picker(
