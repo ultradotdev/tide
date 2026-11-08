@@ -106,6 +106,59 @@ async fn initializes_requests_and_routes_diagnostics() {
 }
 
 #[tokio::test]
+#[ignore = "needs TypeScript 7 installed globally or in a parent node_modules"]
+async fn starts_real_typescript_seven() {
+    let workspace = tempfile::tempdir().unwrap();
+    std::fs::write(
+        workspace.path().join("tsconfig.json"),
+        r#"{"compilerOptions":{"target":"ES2022","module":"ESNext"},"include":["*.ts"]}"#,
+    )
+    .unwrap();
+    let text = "const answer = 42;\nanswer.\n";
+    std::fs::write(workspace.path().join("index.ts"), text).unwrap();
+    assert!(
+        matches!(
+            tide_lsp::typescript_install(workspace.path()),
+            Some(tide_lsp::TypeScriptInstall::NativeLsp(_))
+        ),
+        "no TypeScript 7 found"
+    );
+    let registry = LspRegistry::new();
+    let config = tide_lsp::server_for_language("typescript").unwrap();
+    let client = tokio::time::timeout(
+        Duration::from_secs(20),
+        registry.get_or_start(&config, workspace.path(), quiet_events),
+    )
+    .await
+    .expect("TypeScript 7 startup timeout")
+    .expect("TypeScript 7 start");
+    let uri = tide_lsp::path_to_uri(&workspace.path().join("index.ts")).unwrap();
+    client.did_open(&uri, "typescript", 1, text).await.unwrap();
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(20);
+    loop {
+        let items = client
+            .completion(
+                &uri,
+                Position {
+                    line: 1,
+                    character: 7,
+                },
+            )
+            .await
+            .unwrap();
+        if items.iter().any(|item| item.label == "toFixed") {
+            break;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "TypeScript 7 did not return numeric member completion"
+        );
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    registry.shutdown_all().await;
+}
+
+#[tokio::test]
 #[ignore = "needs typescript-language-server on PATH"]
 async fn starts_real_typescript_language_server() {
     assert!(
@@ -892,6 +945,82 @@ async fn a_crashing_server_restarts_with_backoff() {
     );
     assert!(backoff_errors > 0);
     registry.shutdown_all().await;
+}
+
+#[tokio::test]
+async fn a_server_that_cannot_start_says_so_while_it_waits() {
+    let workspace = tempfile::tempdir().unwrap();
+    let config = ServerConfig::new("rust", "tide-no-such-language-server", Vec::<String>::new());
+    let registry = LspRegistry::new();
+    assert!(matches!(
+        registry
+            .get_or_start(&config, workspace.path(), quiet_events)
+            .await,
+        Err(LspError::Spawn { .. })
+    ));
+    let error = registry
+        .get_or_start(&config, workspace.path(), quiet_events)
+        .await
+        .err()
+        .unwrap();
+    assert!(
+        error
+            .to_string()
+            .starts_with("tide-no-such-language-server could not start; retrying in"),
+        "{error}"
+    );
+}
+
+#[tokio::test]
+async fn typescript_seven_in_the_project_serves_itself() {
+    use std::os::unix::fs::PermissionsExt;
+    let workspace = tempfile::tempdir().unwrap();
+    let package = workspace.path().join("node_modules/typescript");
+    std::fs::create_dir_all(package.join("bin")).unwrap();
+    std::fs::write(
+        package.join("package.json"),
+        r#"{"name":"typescript","version":"7.0.2"}"#,
+    )
+    .unwrap();
+    let args = workspace.path().join("args.txt");
+    let log = workspace.path().join("starts.log");
+    let tsc = package.join("bin/tsc");
+    std::fs::write(
+        &tsc,
+        format!(
+            "#!/bin/sh\necho \"$@\" > '{}'\nexec python3 '{MOCK}' --start-log '{}'\n",
+            args.display(),
+            log.display()
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&tsc, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let typescript = tide_lsp::server_for_language("typescript").unwrap();
+    let tsx = tide_lsp::server_for_language("typescriptreact").unwrap();
+    let registry = LspRegistry::new();
+    let client = registry
+        .get_or_start(&typescript, workspace.path(), quiet_events)
+        .await
+        .unwrap();
+    assert_eq!(
+        std::fs::read_to_string(&args).unwrap().trim(),
+        "--lsp --stdio"
+    );
+    let shared = registry
+        .get_or_start(&tsx, workspace.path(), quiet_events)
+        .await
+        .unwrap();
+    assert!(Arc::ptr_eq(&client, &shared));
+    assert_eq!(start_count(&log), 1);
+    assert!(registry.running(&tsx, workspace.path()).await.is_some());
+    assert!(registry.stop(&typescript, workspace.path()).await);
+    assert!(
+        registry
+            .running(&typescript, workspace.path())
+            .await
+            .is_none()
+    );
+    assert!(!client.is_alive().await);
 }
 
 #[tokio::test]

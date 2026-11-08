@@ -46,8 +46,17 @@ pub enum LspError {
     OutOfOrder,
     #[error("Document was closed")]
     DocumentClosed,
-    #[error("{command} stopped unexpectedly; retrying in {retry_ms}ms")]
-    Backoff { command: String, retry_ms: u128 },
+    #[error("{command} {reason}; retrying in {retry_ms}ms")]
+    Backoff {
+        command: String,
+        reason: &'static str,
+        retry_ms: u128,
+    },
+    /// No TypeScript install that a language server can use.
+    #[error(
+        "no TypeScript found for this workspace. Install TypeScript 5 or 7 in the project or globally (npm install -g typescript), then run Restart Language Server"
+    )]
+    NoTypeScript,
     /// Initialization failed; `stderr` holds the server's last lines.
     #[error("{command} stderr:\n{stderr}: {error}")]
     Initialize {
@@ -80,6 +89,21 @@ pub struct ServerConfig {
     pub command: String,
     #[serde(default)]
     pub args: Vec<String>,
+    /// The `tsserver.js` handed to typescript-language-server.
+    #[serde(skip)]
+    pub tsserver: Tsserver,
+}
+
+/// Which `tsserver.js` a TypeScript server is started with.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+pub enum Tsserver {
+    /// Look for a global TypeScript 5 when the server initializes.
+    #[default]
+    Lookup,
+    /// Use this one.
+    Path(PathBuf),
+    /// Send none: the server finds its own, or needs none.
+    Skip,
 }
 
 impl ServerConfig {
@@ -92,6 +116,7 @@ impl ServerConfig {
             language_id: language_id.into(),
             command: command.into(),
             args: args.into_iter().map(Into::into).collect(),
+            tsserver: Tsserver::Lookup,
         }
     }
 }
@@ -172,6 +197,23 @@ pub fn command_available(command: &str) -> bool {
         let candidate = directory.join(command);
         candidate.is_file()
     })
+}
+
+/// Whether `config` can run in `root`. Like [`command_available`], but
+/// typescript-language-server also counts as available where TypeScript 7 is,
+/// which serves itself: in the project's `node_modules` or as `tsc` on `PATH`.
+/// Never runs `npm`, so it is cheap enough to call from the UI.
+#[must_use]
+pub fn server_available(config: &ServerConfig, root: &Path) -> bool {
+    command_available(&config.command)
+        || (config.command == TYPESCRIPT_LANGUAGE_SERVER
+            && (command_available("tsc")
+                || root.ancestors().any(|directory| {
+                    matches!(
+                        typescript_in(&directory.join("node_modules")),
+                        Some(TypeScriptInstall::NativeLsp(_))
+                    )
+                })))
 }
 
 #[must_use]
@@ -525,6 +567,7 @@ pub struct LspClient {
     event_tx: mpsc::Sender<LspEvent>,
     language_id: String,
     command: String,
+    tsserver: Tsserver,
     root_uri: String,
     tasks: std::sync::Mutex<Vec<JoinHandle<()>>>,
 }
@@ -674,6 +717,7 @@ impl LspClient {
             event_tx,
             language_id: config.language_id,
             command: config.command,
+            tsserver: config.tsserver,
             root_uri,
             tasks: std::sync::Mutex::new(vec![
                 reader_task,
@@ -745,8 +789,19 @@ impl LspClient {
             || self.command == "typescript-language-server"
         {
             let mut options = json!({ "disableAutomaticTypingAcquisition": true });
-            let lookup = tokio::task::spawn_blocking(typescript_tsserver_path);
-            if let Ok(Ok(Some(path))) = tokio::time::timeout(Duration::from_secs(5), lookup).await {
+            let path = match &self.tsserver {
+                Tsserver::Path(path) => Some(path.clone()),
+                Tsserver::Skip => None,
+                Tsserver::Lookup => {
+                    let lookup = tokio::task::spawn_blocking(typescript_tsserver_path);
+                    tokio::time::timeout(LOOKUP_TIMEOUT, lookup)
+                        .await
+                        .ok()
+                        .and_then(Result::ok)
+                        .flatten()
+                }
+            };
+            if let Some(path) = path {
                 options["tsserver"] = json!({ "path": path });
             }
             params["initializationOptions"] = options;
@@ -1302,6 +1357,8 @@ struct ServerSlot {
     started: Option<Instant>,
     failures: u32,
     retry_at: Option<Instant>,
+    /// The last failure was a start that never got going, not a server that exited.
+    start_failed: bool,
 }
 
 const RESTART_BACKOFF: Duration = Duration::from_millis(250);
@@ -1333,12 +1390,54 @@ impl ServerSlot {
 #[derive(Default)]
 pub struct LspRegistry {
     slots: std::sync::Mutex<HashMap<ServerKey, Arc<Mutex<ServerSlot>>>>,
+    /// The server each configured one resolves to for a workspace, such as
+    /// TypeScript 7's own `tsc --lsp` in place of typescript-language-server.
+    resolved: std::sync::Mutex<HashMap<ServerKey, Option<ServerConfig>>>,
 }
 
 impl LspRegistry {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// The server to run for `config` in `root`. `None` when it can't run there,
+    /// such as typescript-language-server with no TypeScript installed.
+    async fn resolve(&self, config: &ServerConfig, root: &Path) -> Option<ServerConfig> {
+        if config.command != TYPESCRIPT_LANGUAGE_SERVER {
+            return Some(config.clone());
+        }
+        let key = ServerKey::new(config, root);
+        if let Some(resolved) = self.resolved.lock().unwrap().get(&key) {
+            return resolved.clone();
+        }
+        let lookup_root = root.to_path_buf();
+        let lookup = tokio::task::spawn_blocking(move || typescript_install(&lookup_root));
+        let install = tokio::time::timeout(LOOKUP_TIMEOUT, lookup)
+            .await
+            .ok()
+            .and_then(Result::ok)
+            .flatten();
+        let resolved = install.map(|install| typescript_server(config, install));
+        self.resolved
+            .lock()
+            .unwrap()
+            .entry(key)
+            .or_insert(resolved)
+            .clone()
+    }
+
+    /// What `resolve` gave for `config`, without looking anything up.
+    fn resolved(&self, config: &ServerConfig, root: &Path) -> Option<ServerConfig> {
+        if config.command != TYPESCRIPT_LANGUAGE_SERVER {
+            return Some(config.clone());
+        }
+        self.resolved
+            .lock()
+            .unwrap()
+            .get(&ServerKey::new(config, root))
+            .cloned()
+            .flatten()
     }
 
     fn slot(&self, config: &ServerConfig, root: &Path) -> Arc<Mutex<ServerSlot>> {
@@ -1359,6 +1458,10 @@ impl LspRegistry {
         root: &Path,
         events: impl FnOnce() -> mpsc::Sender<LspEvent>,
     ) -> Result<Arc<LspClient>> {
+        let Some(resolved) = self.resolve(config, root).await else {
+            return Err(LspError::NoTypeScript);
+        };
+        let config = &resolved;
         let mut slot = self.slot(config, root).lock_owned().await;
         if let Some(client) = slot.client.clone() {
             if client.is_alive().await {
@@ -1366,6 +1469,7 @@ impl LspRegistry {
             }
             slot.client = None;
             slot.record_failure();
+            slot.start_failed = false;
             client.shutdown().await;
         }
         if let Some(retry_at) = slot.retry_at
@@ -1373,6 +1477,11 @@ impl LspRegistry {
         {
             return Err(LspError::Backoff {
                 command: config.command.clone(),
+                reason: if slot.start_failed {
+                    "could not start"
+                } else {
+                    "stopped unexpectedly"
+                },
                 retry_ms: retry_at
                     .saturating_duration_since(Instant::now())
                     .as_millis(),
@@ -1386,7 +1495,10 @@ impl LspRegistry {
                     slot.client = Some(client.clone());
                     slot.started = Some(Instant::now());
                 }
-                Err(_) => slot.record_failure(),
+                Err(_) => {
+                    slot.record_failure();
+                    slot.start_failed = true;
+                }
             }
             result
         })
@@ -1396,12 +1508,21 @@ impl LspRegistry {
 
     /// Shuts down the server for `config` if it is running and forgets its restart
     /// backoff, so the next request starts a fresh server. True when one was running.
+    /// The TypeScript install is looked up again on the next start.
     pub async fn stop(&self, config: &ServerConfig, root: &Path) -> bool {
+        let resolved = self.resolved(config, root);
+        self.resolved
+            .lock()
+            .unwrap()
+            .remove(&ServerKey::new(config, root));
+        let Some(config) = resolved else {
+            return false;
+        };
         let slot = self
             .slots
             .lock()
             .unwrap()
-            .remove(&ServerKey::new(config, root));
+            .remove(&ServerKey::new(&config, root));
         let Some(slot) = slot else {
             return false;
         };
@@ -1416,11 +1537,12 @@ impl LspRegistry {
 
     /// The running client for `config`, without starting one.
     pub async fn running(&self, config: &ServerConfig, root: &Path) -> Option<Arc<LspClient>> {
+        let config = self.resolved(config, root)?;
         let slot = self
             .slots
             .lock()
             .unwrap()
-            .get(&ServerKey::new(config, root))
+            .get(&ServerKey::new(&config, root))
             .cloned()?;
         slot.lock().await.client.clone()
     }
@@ -1433,6 +1555,7 @@ impl LspRegistry {
             .drain()
             .map(|(_, slot)| slot)
             .collect();
+        self.resolved.lock().unwrap().clear();
         for slot in slots {
             let client = slot.lock().await.client.take();
             if let Some(client) = client {
@@ -1440,6 +1563,83 @@ impl LspRegistry {
             }
         }
     }
+}
+
+const TYPESCRIPT_LANGUAGE_SERVER: &str = "typescript-language-server";
+const LOOKUP_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// A TypeScript install a language server can use.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TypeScriptInstall {
+    /// TypeScript 5 or earlier: typescript-language-server runs this `tsserver.js`.
+    Tsserver(PathBuf),
+    /// TypeScript 7 or later: this `tsc` is a language server itself, with `--lsp`.
+    NativeLsp(PathBuf),
+}
+
+/// The TypeScript in `node_modules`, if there is one a server can use.
+fn typescript_in(node_modules: &Path) -> Option<TypeScriptInstall> {
+    let package = node_modules.join("typescript");
+    let tsserver = package.join("lib/tsserver.js");
+    if tsserver.is_file() {
+        return Some(TypeScriptInstall::Tsserver(tsserver));
+    }
+    let tsc = package.join("bin/tsc");
+    let manifest = std::fs::read_to_string(package.join("package.json")).ok()?;
+    let version = serde_json::from_str::<Value>(&manifest).ok()?;
+    let major = version
+        .get("version")?
+        .as_str()?
+        .split('.')
+        .next()?
+        .parse::<u32>()
+        .ok()?;
+    (major >= 7 && tsc.is_file()).then_some(TypeScriptInstall::NativeLsp(tsc))
+}
+
+/// The TypeScript for a workspace: `TIDE_TSSERVER_PATH`, then the nearest
+/// `node_modules` at or above `root`, then the global one. This may run `npm`;
+/// call it from a blocking context.
+#[must_use]
+pub fn typescript_install(root: &Path) -> Option<TypeScriptInstall> {
+    if let Some(path) = std::env::var_os("TIDE_TSSERVER_PATH")
+        && Path::new(&path).is_file()
+    {
+        return Some(TypeScriptInstall::Tsserver(PathBuf::from(path)));
+    }
+    root.ancestors()
+        .find_map(|directory| typescript_in(&directory.join("node_modules")))
+        .or_else(|| typescript_in(&global_node_modules()?))
+}
+
+/// The server to run for typescript-language-server's `config` given `install`.
+fn typescript_server(config: &ServerConfig, install: TypeScriptInstall) -> ServerConfig {
+    match install {
+        TypeScriptInstall::Tsserver(path) => ServerConfig {
+            tsserver: Tsserver::Path(path),
+            ..config.clone()
+        },
+        TypeScriptInstall::NativeLsp(tsc) => ServerConfig {
+            language_id: config.language_id.clone(),
+            command: tsc.to_string_lossy().into_owned(),
+            args: vec!["--lsp".to_owned(), "--stdio".to_owned()],
+            tsserver: Tsserver::Skip,
+        },
+    }
+}
+
+/// `npm root -g`, where global packages are installed. Runs `npm`.
+fn global_node_modules() -> Option<PathBuf> {
+    let output = tide_core::process::scrub_tide_secrets(&mut std::process::Command::new("npm"))
+        .args(["root", "-g"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    Some(PathBuf::from(
+        String::from_utf8_lossy(&output.stdout).trim(),
+    ))
 }
 
 /// Locate a TypeScript 5.x tsserver. TypeScript 7 removed `tsserver.js`, so
@@ -1452,15 +1652,7 @@ pub fn typescript_tsserver_path() -> Option<PathBuf> {
     {
         return Some(PathBuf::from(path));
     }
-    let output = tide_core::process::scrub_tide_secrets(&mut std::process::Command::new("npm"))
-        .args(["root", "-g"])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let root = String::from_utf8_lossy(&output.stdout).trim().to_owned();
-    let candidate = PathBuf::from(root).join("typescript/lib/tsserver.js");
+    let candidate = global_node_modules()?.join("typescript/lib/tsserver.js");
     candidate.is_file().then_some(candidate)
 }
 
@@ -1977,6 +2169,97 @@ mod tests {
         }));
         assert_eq!(edits.len(), 1);
         assert_eq!(edits[0].1[0].new_text, "new");
+    }
+
+    /// Writes a fake TypeScript package of `version` under `dir/node_modules`.
+    fn fake_typescript(dir: &Path, version: &str, tsserver: bool, tsc: bool) {
+        let package = dir.join("node_modules/typescript");
+        std::fs::create_dir_all(package.join("lib")).unwrap();
+        std::fs::create_dir_all(package.join("bin")).unwrap();
+        std::fs::write(
+            package.join("package.json"),
+            format!(r#"{{"name":"typescript","version":"{version}"}}"#),
+        )
+        .unwrap();
+        if tsserver {
+            std::fs::write(package.join("lib/tsserver.js"), "").unwrap();
+        }
+        if tsc {
+            std::fs::write(package.join("bin/tsc"), "").unwrap();
+        }
+    }
+
+    #[test]
+    fn tells_typescript_five_from_seven() {
+        let dir = tempfile::tempdir().unwrap();
+        let five = dir.path().join("five");
+        fake_typescript(&five, "5.9.3", true, true);
+        assert_eq!(
+            typescript_in(&five.join("node_modules")),
+            Some(TypeScriptInstall::Tsserver(
+                five.join("node_modules/typescript/lib/tsserver.js")
+            ))
+        );
+        let seven = dir.path().join("seven");
+        fake_typescript(&seven, "7.0.2", false, true);
+        assert_eq!(
+            typescript_in(&seven.join("node_modules")),
+            Some(TypeScriptInstall::NativeLsp(
+                seven.join("node_modules/typescript/bin/tsc")
+            ))
+        );
+        // A TypeScript with neither tsserver.js nor a TypeScript 7 tsc can't serve.
+        let six = dir.path().join("six");
+        fake_typescript(&six, "6.0.0", false, true);
+        assert_eq!(typescript_in(&six.join("node_modules")), None);
+        let broken = dir.path().join("broken");
+        fake_typescript(&broken, "7.0.2", false, false);
+        assert_eq!(typescript_in(&broken.join("node_modules")), None);
+        assert_eq!(typescript_in(&dir.path().join("none/node_modules")), None);
+    }
+
+    #[test]
+    fn the_nearest_typescript_wins() {
+        temp_env::with_var("TIDE_TSSERVER_PATH", None::<&str>, || {
+            let dir = tempfile::tempdir().unwrap();
+            fake_typescript(dir.path(), "7.0.2", false, true);
+            let app = dir.path().join("packages/app");
+            fake_typescript(&app, "5.9.3", true, false);
+            let other = dir.path().join("packages/other");
+            std::fs::create_dir_all(&other).unwrap();
+            assert_eq!(
+                typescript_install(&app),
+                Some(TypeScriptInstall::Tsserver(
+                    app.join("node_modules/typescript/lib/tsserver.js")
+                ))
+            );
+            assert_eq!(
+                typescript_install(&other),
+                Some(TypeScriptInstall::NativeLsp(
+                    dir.path().join("node_modules/typescript/bin/tsc")
+                ))
+            );
+            let tls = server_for_language("typescript").unwrap();
+            assert!(server_available(&tls, &other));
+        });
+    }
+
+    #[test]
+    fn typescript_seven_serves_itself_and_five_gets_its_tsserver() {
+        let config = server_for_language("javascript").unwrap();
+        let seven = typescript_server(
+            &config,
+            TypeScriptInstall::NativeLsp(PathBuf::from("/p/node_modules/typescript/bin/tsc")),
+        );
+        assert_eq!(seven.command, "/p/node_modules/typescript/bin/tsc");
+        assert_eq!(seven.args, ["--lsp", "--stdio"]);
+        assert_eq!(seven.language_id, "javascript");
+        assert_eq!(seven.tsserver, Tsserver::Skip);
+        let tsserver = PathBuf::from("/p/node_modules/typescript/lib/tsserver.js");
+        let five = typescript_server(&config, TypeScriptInstall::Tsserver(tsserver.clone()));
+        assert_eq!(five.command, "typescript-language-server");
+        assert_eq!(five.args, ["--stdio"]);
+        assert_eq!(five.tsserver, Tsserver::Path(tsserver));
     }
 
     #[test]

@@ -13,8 +13,8 @@ use tide_core::{Document, Position};
 use tide_lsp::{
     CodeActionItem, CompletionItem, Diagnostic, DocumentLease, Location, LspClient, LspError,
     LspEvent as ServerEvent, LspRegistry, Position as LspPosition, Range as LspRange, Result,
-    ServerConfig, SymbolItem, TextEdit, command_available, language_id_for_path,
-    parse_document_symbols, parse_workspace_symbols, path_to_uri, server_for_language, uri_to_path,
+    ServerConfig, SymbolItem, TextEdit, language_id_for_path, parse_document_symbols,
+    parse_workspace_symbols, path_to_uri, server_available, server_for_language, uri_to_path,
 };
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
@@ -252,7 +252,7 @@ impl LspController {
             let (_, kind) = self.pending.take().unwrap();
             let available = active_document(ui)
                 .and_then(|document| server_for(ui.settings, &document.language))
-                .is_some_and(|server| command_available(&server.command));
+                .is_some_and(|server| server_available(&server, ui.workspace));
             if available {
                 self.request(kind, ui);
                 sent = true;
@@ -660,7 +660,7 @@ impl LspController {
             ));
             return;
         };
-        if !command_available(&server.command) {
+        if !server_available(&server, ui.workspace) {
             ui.status(format!("Language server not installed: {}", server.command));
             return;
         }
@@ -747,7 +747,7 @@ impl LspController {
             ui.status(format!("No language server configured for {language}"));
             return;
         };
-        if !command_available(&server.command) {
+        if !server_available(&server, ui.workspace) {
             ui.status(format!("Language server not installed: {}", server.command));
             return;
         }
@@ -828,7 +828,7 @@ impl LspController {
         let Some(server) = server_for(settings, language) else {
             return;
         };
-        if !command_available(&server.command) {
+        if !server_available(&server, workspace) {
             self.status
                 .insert(status_key(&server), "missing".to_owned());
             return;
@@ -948,7 +948,7 @@ impl LspController {
         let Some(server) = server_for(ui.settings, &document.language) else {
             return;
         };
-        if !command_available(&server.command) {
+        if !server_available(&server, ui.workspace) {
             return;
         }
         let lease = self.leases.entry(document.uri.clone()).or_default().clone();
