@@ -603,11 +603,10 @@ impl ModalBase {
         }
         let (width, height) = match &self.kind {
             ModalKind::CommandPalette => (76, 20),
-            ModalKind::Tabs(_)
-            | ModalKind::AllTabs
-            | ModalKind::MoveTab
-            | ModalKind::AddPanel
-            | ModalKind::StatusHistory => (60, 20),
+            ModalKind::Tabs(_) | ModalKind::AllTabs | ModalKind::MoveTab | ModalKind::AddPanel => {
+                (60, 20)
+            }
+            ModalKind::StatusHistory => (100, 30),
             ModalKind::QuickOpen => (70, 20),
             ModalKind::SearchResults => (70, 20),
             ModalKind::ThemePicker => (60, 20),
@@ -1705,7 +1704,7 @@ impl Submitted {
                 .map(Self::MoveTab),
             ModalKind::StatusHistory => base
                 .selected_item()
-                .map(|item| Self::StatusEntry(item.detail.clone())),
+                .map(|item| Self::StatusEntry(item.value.clone())),
             ModalKind::RowInsert
             | ModalKind::ConnectionForm
             | ModalKind::SchemaTables
