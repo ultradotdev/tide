@@ -40,7 +40,7 @@ Most settings apply at once. `terminal.shell` and `tui.terminal.scrollback` appl
 
 | Setting | Description | Default | Accepted values |
 | --- | --- | --- | --- |
-| `workbench.colorTheme` | Color theme name | `"ultra-dusk"` | Text |
+| `workbench.colorTheme` | Color theme name | `"ultra-vivid"` | Text |
 | `workbench.startupEditor` | Opening Welcome: "welcomeOnFirstRun" (the first start without a file or session), "welcome" (every such start) or "none" | `"welcomeOnFirstRun"` | `welcomeOnFirstRun`, `welcome`, `none` |
 
 ### Layout and panels

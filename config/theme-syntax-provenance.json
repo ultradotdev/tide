@@ -108,5 +108,29 @@
     "translationPolicy": "direct-ultra-native-token-mapping",
     "translatedFile": "config/syntax-themes/ultra-dusk.json",
     "translatedSha256": "10273e863cb3cf4bdb6d472f9dce5059c42fc301775a70ee015801dfab623f70"
+  },
+  {
+    "themeIds": ["ultra-vivid"],
+    "sourceKind": "original",
+    "sourceProject": "Ultra Design System (ultra-design-tokens)",
+    "revision": "v1.0.0",
+    "sourceFormat": "ultra-design-tokens-theme-v1",
+    "sourceFiles": [{ "path": "themes/vivid.json", "sha256": "585e8e4b808e73165e0184e20a74d481670c9594ae13f2df6b34b019a73090b0" }],
+    "license": "Apache-2.0",
+    "translationPolicy": "direct-ultra-design-token-export",
+    "translatedFile": "config/syntax-themes/ultra-vivid.json",
+    "translatedSha256": "7839e56413816ede24578681a53351dac490c9db720c7b1be32348c9281980b8"
+  },
+  {
+    "themeIds": ["ultra-broadcast"],
+    "sourceKind": "original",
+    "sourceProject": "Ultra Design System (ultra-design-tokens)",
+    "revision": "v1.0.0",
+    "sourceFormat": "ultra-design-tokens-theme-v1",
+    "sourceFiles": [{ "path": "themes/broadcast.json", "sha256": "cc8e2991c4a8732f4cfc456cad06d4f17b581e5ad444be76bce21f7eebd5ac1a" }],
+    "license": "Apache-2.0",
+    "translationPolicy": "direct-ultra-design-token-export",
+    "translatedFile": "config/syntax-themes/ultra-broadcast.json",
+    "translatedSha256": "93a672cd3ce658b3cfd4d0283332f690c277e4c64cd430f2cf47199bc57364e9"
   }
 ]

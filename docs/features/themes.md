@@ -1,7 +1,7 @@
 <!-- Generated from crates/tide-ui/src/help/pages/themes.md by `cargo xtask generate-rust-reference --write`. Edit the template, not this file. -->
 # Themes and Customization
 
-One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk. In a terminal without 24-bit color, Tide shows each theme color as the nearest of the 256-color palette; see `tui.colorMode` in [Settings Reference](../reference/configuration.md).
+One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Vivid. Tide also ships the other Ultra themes, Ultra Broadcast and Ultra Dusk. In a terminal without 24-bit color, Tide shows each theme color as the nearest of the 256-color palette; see `tui.colorMode` in [Settings Reference](../reference/configuration.md).
 
 ## Choose a theme
 
@@ -27,7 +27,9 @@ The change applies immediately and is saved as `workbench.colorTheme` in `~/.con
 | Solarized Dark | `solarized-dark` | dark |
 | Solarized Light | `solarized-light` | light |
 | Tokyo Night | `tokyo-night` | dark |
+| Ultra Broadcast | `ultra-broadcast` | dark |
 | Ultra Dusk | `ultra-dusk` | dark |
+| Ultra Vivid | `ultra-vivid` | dark |
 
 The bundled palettes from other projects keep their attribution and pinned provenance; see [theme attribution](../THEME_ATTRIBUTION.md).
 

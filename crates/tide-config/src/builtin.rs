@@ -57,10 +57,21 @@ const THEME_JSON: &[(&str, &str)] = &[
         include_str!("../../../config/themes/tokyo-night.json"),
     ),
     (
+        "ultra-broadcast",
+        include_str!("../../../config/themes/ultra-broadcast.json"),
+    ),
+    (
         "ultra-dusk",
         include_str!("../../../config/themes/ultra-dusk.json"),
     ),
+    (
+        "ultra-vivid",
+        include_str!("../../../config/themes/ultra-vivid.json"),
+    ),
 ];
+
+/// The theme fresh installs use, and the fallback for an unknown theme id.
+pub const DEFAULT_THEME: &str = "ultra-vivid";
 
 /// Built-in settings, parsed from the checked-in JSONC authority.
 pub fn settings() -> Settings {
@@ -106,15 +117,15 @@ pub fn themes() -> ThemeCatalog {
         let source: ThemeSource = crate::parse_jsonc(text).expect("built-in theme must parse");
         catalog.insert((*id).to_owned(), Theme::from_source(*id, source));
     }
-    ThemeCatalog::new(catalog, "ultra-dusk")
+    ThemeCatalog::new(catalog, DEFAULT_THEME)
 }
 
-/// The built-in Ultra Dusk theme, used when a catalog has no themes.
+/// The built-in default theme, used when a catalog has no themes.
 pub(crate) fn fallback_theme() -> Theme {
     let (id, text) = THEME_JSON
         .iter()
-        .find(|(id, _)| *id == "ultra-dusk")
-        .expect("Ultra Dusk is built in");
+        .find(|(id, _)| *id == DEFAULT_THEME)
+        .expect("the default theme is built in");
     let source: ThemeSource = crate::parse_jsonc(text).expect("built-in theme must parse");
     Theme::from_source(*id, source)
 }
@@ -135,7 +146,7 @@ mod tests {
         assert_eq!(settings().len(), 58);
         assert_eq!(keybindings().len(), 209);
         assert_eq!(commands().len(), 286);
-        assert_eq!(themes().len(), 13);
+        assert_eq!(themes().len(), 15);
     }
 
     #[test]

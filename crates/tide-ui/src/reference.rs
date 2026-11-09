@@ -90,6 +90,6 @@ mod tests {
             reference["externalCliProviders"].as_array().unwrap().len(),
             5
         );
-        assert_eq!(reference["themes"].as_array().unwrap().len(), 13);
+        assert_eq!(reference["themes"].as_array().unwrap().len(), 15);
     }
 }

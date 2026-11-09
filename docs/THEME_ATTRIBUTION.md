@@ -19,10 +19,18 @@ Exact source revisions are recorded in
 | Solarized Dark | `solarized-dark` | [Solarized](https://github.com/altercation/solarized) | MIT |
 | Solarized Light | `solarized-light` | [Solarized](https://github.com/altercation/solarized) | MIT |
 | Rosé Pine | `rose-pine` | [Rosé Pine Palette](https://github.com/rose-pine/rose-pine-palette) | MIT |
+| Ultra Vivid | `ultra-vivid` | Original Ultra design | Apache-2.0 |
+| Ultra Broadcast | `ultra-broadcast` | Original Ultra design | Apache-2.0 |
 | Ultra Dusk | `ultra-dusk` | Original Ultra design | Apache-2.0 |
 
 Full notice text is bundled in [ATTRIBUTIONS.md](ATTRIBUTIONS.md). Exact pinned license sources are recorded in `config/theme-license-notices.json`.
 
-Ultra Dusk is an original Zorz LLC design. Its complete design response and
+Ultra Vivid, Ultra Broadcast and Ultra Dusk are original Zorz LLC designs.
+Ultra Vivid and Ultra Broadcast are generated from the Ultra Design System's
+token exports (`ultra-design-tokens` v1.0.0) by
+[`scripts/import-ultra-themes.py`](../scripts/import-ultra-themes.py); every
+color comes from a design token.
+
+Ultra Dusk's complete design response and
 derivation review are recorded in
 [`docs/theme-builder/ultra-dusk-design-response.json`](theme-builder/ultra-dusk-design-response.json).
