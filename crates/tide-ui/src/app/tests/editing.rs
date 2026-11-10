@@ -74,7 +74,7 @@ async fn completed_background_syntax_requests_a_redraw_without_user_input() {
     loop {
         if terminal.backend().buffer().content.windows(5).any(|cells| {
             cells.iter().map(|cell| cell.symbol()).collect::<String>() == "const"
-                && cells[0].fg == ratatui::style::Color::Rgb(192, 171, 245)
+                && cells[0].fg == ratatui::style::Color::Rgb(173, 140, 255)
         }) {
             break;
         }
@@ -107,14 +107,14 @@ async fn native_typescript_document_receives_background_token_colors() {
             assert!(
                 spans
                     .iter()
-                    .any(|span| span.text == "const" && span.fg.as_deref() == Some("#c0abf5")),
+                    .any(|span| span.text == "const" && span.fg.as_deref() == Some("#ad8cff")),
                 "{spans:?}"
             );
             terminal.draw(|frame| app.draw(frame)).unwrap();
             let buffer = terminal.backend().buffer();
             let found = buffer.content.windows(5).any(|cells| {
                 cells.iter().map(|c| c.symbol()).collect::<String>() == "const"
-                    && cells[0].fg == ratatui::style::Color::Rgb(192, 171, 245)
+                    && cells[0].fg == ratatui::style::Color::Rgb(173, 140, 255)
             });
             assert!(
                 found,

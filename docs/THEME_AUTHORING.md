@@ -39,4 +39,4 @@ Use the same multi-language samples when comparing themes. Check focused and unf
 
 ## Attribution
 
-Retain the source license and copyright when adapting a theme. Built-in palette provenance is in [theme attribution](THEME_ATTRIBUTION.md); bundled notice text is in [ATTRIBUTIONS.md](ATTRIBUTIONS.md). Ultra Dusk is Tide's original Zorz LLC design.
+Retain the source license and copyright when adapting a theme. Built-in palette provenance is in [theme attribution](THEME_ATTRIBUTION.md); bundled notice text is in [ATTRIBUTIONS.md](ATTRIBUTIONS.md). Ultra Vivid, Ultra Broadcast and Ultra Dusk are Tide's original Zorz LLC designs.

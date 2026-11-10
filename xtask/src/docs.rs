@@ -278,7 +278,7 @@ pub fn verify_tide_docs(root: &Path) -> Result<()> {
             .map(Json::as_array)
             .unwrap_or_default()
             .len()
-            == 13
+            == 15
             && runtime
                 .get("settings")
                 .map(Json::entries)

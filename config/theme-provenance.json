@@ -116,5 +116,27 @@
     "license": "Apache-2.0",
     "attribution": "Original Ultra theme by Zorz LLC",
     "variant": "Dusk"
+  },
+  {
+    "themeId": "ultra-vivid",
+    "sourceKind": "original",
+    "sourceProject": "Ultra Design System (ultra-design-tokens)",
+    "revision": "v1.0.0",
+    "sourcePath": "themes/vivid.json",
+    "sourceSha256": "585e8e4b808e73165e0184e20a74d481670c9594ae13f2df6b34b019a73090b0",
+    "license": "Apache-2.0",
+    "attribution": "Original Ultra theme by Zorz LLC",
+    "variant": "Vivid"
+  },
+  {
+    "themeId": "ultra-broadcast",
+    "sourceKind": "original",
+    "sourceProject": "Ultra Design System (ultra-design-tokens)",
+    "revision": "v1.0.0",
+    "sourcePath": "themes/broadcast.json",
+    "sourceSha256": "cc8e2991c4a8732f4cfc456cad06d4f17b581e5ad444be76bce21f7eebd5ac1a",
+    "license": "Apache-2.0",
+    "attribution": "Original Ultra theme by Zorz LLC",
+    "variant": "Broadcast"
   }
 ]

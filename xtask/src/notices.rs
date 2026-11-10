@@ -261,7 +261,7 @@ pub fn render(root: &Path, inputs: &NoticeInputs<'_>) -> Result<(String, usize, 
     let mut theme_rows = Vec::new();
     for theme in themes.as_array().into_iter().flatten() {
         let id = theme["themeId"].as_str().unwrap_or_default();
-        if id == "ultra-dusk" {
+        if id.starts_with("ultra-") {
             continue;
         }
         let entries = theme_notices[id]
@@ -327,7 +327,7 @@ Tide is a native Rust application. This standalone file includes notices from th
 
 Native terminal integration uses portable-pty and alacritty_terminal. Ratatui/Crossterm render and route input; Ropey supplies text storage; Syntect and two-face supply syntax grammars.
 
-The thirteen Tide themes retain the upstream palette licenses and provenance recorded in config/theme-provenance.json and docs/THEME_ATTRIBUTION.md. Ultra Dusk is an original Zorz LLC design under Tide's license. Upstream projects do not endorse Tide.
+The fifteen Tide themes retain the upstream palette licenses and provenance recorded in config/theme-provenance.json and docs/THEME_ATTRIBUTION.md. Ultra Vivid, Ultra Broadcast and Ultra Dusk are original Zorz LLC designs under Tide's license. Upstream projects do not endorse Tide.
 
 Generated with `cargo xtask generate-rust-notices` from Cargo.lock and the compiled grammar notice exporter. Exact source revisions for missing crate-root notices are retained in config/rust-license-overrides.json.
 

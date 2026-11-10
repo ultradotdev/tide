@@ -2,8 +2,8 @@
 source: crates/tide-ui/src/app/tests/render.rs
 expression: summary
 ---
-explorer header: "E" fg=Rgb(230, 219, 209) bg=Rgb(77, 75, 97) BOLD
-sidebar body: " " fg=Reset bg=Rgb(48, 49, 61) NONE
-active tab: "m" fg=Rgb(192, 171, 245) bg=Rgb(57, 58, 71) BOLD
-line number: "1" fg=Rgb(176, 161, 166) bg=Rgb(65, 66, 82) NONE
-status bar: ">" fg=Rgb(202, 186, 183) bg=Rgb(70, 70, 83) NONE
+explorer header: "E" fg=Rgb(239, 241, 255) bg=Rgb(41, 39, 67) BOLD
+sidebar body: " " fg=Reset bg=Rgb(11, 12, 24) NONE
+active tab: "m" fg=Rgb(173, 140, 255) bg=Rgb(20, 22, 37) BOLD
+line number: "1" fg=Rgb(137, 139, 156) bg=Rgb(11, 12, 24) NONE
+status bar: ">" fg=Rgb(180, 182, 200) bg=Rgb(29, 31, 47) NONE

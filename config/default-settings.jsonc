@@ -23,7 +23,7 @@
   },
 
   // Workbench
-  "workbench.colorTheme": "ultra-dusk", // Color theme name
+  "workbench.colorTheme": "ultra-vivid", // Color theme name
   "workbench.startupEditor": "welcomeOnFirstRun", // Opening Welcome: "welcomeOnFirstRun" (the first start without a file or session), "welcome" (every such start) or "none"
 
   // Updates

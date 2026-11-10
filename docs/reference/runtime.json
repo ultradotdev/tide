@@ -4170,7 +4170,7 @@
       }
     },
     "workbench.colorTheme": {
-      "default": "ultra-dusk",
+      "default": "ultra-vivid",
       "rule": {
         "maxLength": 1024,
         "type": "string"
@@ -4238,8 +4238,16 @@
       "name": "Tokyo Night"
     },
     {
+      "id": "ultra-broadcast",
+      "name": "Ultra Broadcast"
+    },
+    {
       "id": "ultra-dusk",
       "name": "Ultra Dusk"
+    },
+    {
+      "id": "ultra-vivid",
+      "name": "Ultra Vivid"
     }
   ],
   "version": "0.13.2"

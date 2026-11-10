@@ -102,7 +102,7 @@ impl ThemeCatalog {
         let selected = if themes.contains_key(&selected) {
             selected
         } else {
-            "ultra-dusk".to_owned()
+            crate::builtin::DEFAULT_THEME.to_owned()
         };
         Self { themes, selected }
     }
@@ -124,7 +124,7 @@ impl ThemeCatalog {
                 (id, theme)
             })
             .collect();
-        Self::new(themes, "ultra-dusk")
+        Self::new(themes, crate::builtin::DEFAULT_THEME)
     }
 
     #[must_use]
@@ -142,14 +142,14 @@ impl ThemeCatalog {
         self.themes.get(id)
     }
 
-    /// The selected theme. An empty catalog falls back to the built-in Ultra Dusk.
+    /// The selected theme. An empty catalog falls back to the built-in default theme.
     #[must_use]
     pub fn selected(&self) -> &Theme {
         static FALLBACK: std::sync::LazyLock<Theme> =
             std::sync::LazyLock::new(crate::builtin::fallback_theme);
         self.themes
             .get(&self.selected)
-            .or_else(|| self.themes.get("ultra-dusk"))
+            .or_else(|| self.themes.get(crate::builtin::DEFAULT_THEME))
             .or_else(|| self.themes.values().next())
             .unwrap_or(&FALLBACK)
     }
@@ -368,6 +368,6 @@ mod tests {
     fn an_empty_catalog_still_selects_a_theme() {
         let catalog = ThemeCatalog::parse("{}").unwrap();
         assert!(catalog.is_empty());
-        assert_eq!(catalog.selected().id, "ultra-dusk");
+        assert_eq!(catalog.selected().id, "ultra-vivid");
     }
 }

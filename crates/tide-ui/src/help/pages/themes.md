@@ -1,6 +1,6 @@
 # Themes and Customization
 
-One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Dusk. In a terminal without 24-bit color, Tide shows each theme color as the nearest of the 256-color palette; see `tui.colorMode` in {{help:settings}}.
+One semantic theme colors the workbench, the syntax highlighting and the terminal palette. Fresh installs use Ultra Vivid. Tide also ships the other Ultra themes, Ultra Broadcast and Ultra Dusk. In a terminal without 24-bit color, Tide shows each theme color as the nearest of the 256-color palette; see `tui.colorMode` in {{help:settings}}.
 
 ## Choose a theme
 
