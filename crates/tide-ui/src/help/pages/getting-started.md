@@ -10,6 +10,8 @@ Prebuilt releases support macOS 14 or later (Apple silicon and Intel) and Linux 
 
 **{{label:help.checkForUpdates}}** asks GitHub for the latest release and, when it is newer, shows the update step for this installation. Tide also makes the same request at most once a day when it starts, and says in the status bar when a newer release is out. Set `update.checkAutomatically` to `false` to turn that off, or set `TIDE_NO_UPDATE_CHECK=1` in the environment.
 
+The first time a newer Tide starts, it opens that version's release notes. Set `update.showReleaseNotes` to `false` to turn that off; **{{label:help.releaseNotes}}** opens them any time.
+
 ## Install with Homebrew
 
 ```sh

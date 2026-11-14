@@ -1,14 +1,14 @@
 ---
 source: crates/tide-ui/src/app/tests/render.rs
-assertion_line: 319
+assertion_line: 409
 expression: "snapshot_modal(120, 40, |app|\n{\n    std::fs::write(app.workspace.join(\"README.md\"), \"# Tide\").unwrap();\n    app.open_save_as_prompt();\n})"
 ---
  ▼ Explorer  [1]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
-   README.md                      │Tide
+   README.md                      │
+                                   │  Tide X.Y.Z
+                                   │  A terminal-native code editor  ·  workspace
                                    │
-                                   │A terminal-native code editor.
-                                   │
-                                   │Ctrl+P  quick open    Ctrl+K  commands
+                                   │  Start
                          ┌ Save As ───────────────────────────────────────────────────────────┐
                          │> untitled.txt                                                      │
                          │────────────────────────────────────────────────────────────────────│
@@ -17,7 +17,7 @@ expression: "snapshot_modal(120, 40, |app|\n{\n    std::fs::write(app.workspace.
                          │                                                                    │
                          │                                                                    │
                          │                                                                    │
-                         │                                                                    │
+                         │                                                                    │cuts    Themes
                          │                                                                    │
                          │                                                                    │
                          │                                                                    │

@@ -32,6 +32,7 @@ pub const SUPPORTED: &[&str] = &[
     "workbench.colorTheme",
     "workbench.startupEditor",
     "update.checkAutomatically",
+    "update.showReleaseNotes",
     "tui.sidebar.width",
     "tui.sidebar.visible",
     "tui.sidebar.location",

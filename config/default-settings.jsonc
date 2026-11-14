@@ -28,6 +28,7 @@
 
   // Updates
   "update.checkAutomatically": true, // Check GitHub for a newer release at most once a day at startup, and say so in the status bar; Help: Check for Updates works either way
+  "update.showReleaseNotes": true, // After Tide is updated, open the new version's release notes the first time it starts; Help: Release Notes opens them any time
 
   // TUI Sidebar
   "tui.sidebar.width": 36, // Sidebar width in characters

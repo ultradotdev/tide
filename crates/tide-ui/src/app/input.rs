@@ -410,6 +410,10 @@ impl App {
         let command = key
             .modifiers
             .intersects(KeyModifiers::SUPER | KeyModifiers::META);
+        if matches!(self.workbench.active_tab(), Some(Tab::Welcome)) {
+            self.handle_start_key(key);
+            return;
+        }
         match self.workbench.active_tab_mut() {
             Some(Tab::Editor(editor)) => match key.code {
                 // Emacs and readline word keys, which macOS terminals send for Option+Left,

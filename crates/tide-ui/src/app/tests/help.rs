@@ -95,7 +95,7 @@ fn a_first_launch_with_a_file_points_to_welcome_and_keeps_it_for_later() {
 fn startup_editor_welcome_opens_it_on_every_empty_start() {
     let home = tempfile::tempdir().unwrap();
     startup_editor(home.path(), "welcome");
-    crate::help::record_welcome(&Paths::from_env(home.path(), |_| None));
+    welcome_seen(&Paths::from_env(home.path(), |_| None));
     assert_eq!(
         active_help(&launch(home.path(), None, false)),
         Some("welcome")
@@ -283,18 +283,41 @@ fn online_help_opens_the_browser_and_reports_failures() {
     );
 }
 
+fn screen(app: &mut App, width: u16, height: u16) -> String {
+    let mut terminal =
+        ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let buffer = terminal.backend().buffer();
+    (0..buffer.area.height)
+        .map(|y| {
+            (0..buffer.area.width)
+                .map(|x| buffer[(x, y)].symbol())
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 #[test]
-fn the_start_screen_shows_the_live_keys() {
+fn the_start_page_shows_the_live_keys_and_runs_its_items() {
     let (_home, mut app) = test_app();
-    assert_eq!(
-        app.start_hints(),
-        [
-            "Ctrl+P  quick open    Ctrl+K  commands",
-            "Ctrl+`  terminal      Ctrl+\\  split pane",
-            "",
-            "New here? Run “Help: Welcome” from the command palette.",
-        ]
+    app.focus = Focus::Main;
+    let text = screen(&mut app, 120, 40);
+    assert!(
+        text.contains(&format!("Tide {}", env!("CARGO_PKG_VERSION"))),
+        "{text}"
     );
+    let open = text
+        .lines()
+        .find(|line| line.contains("Open a file…"))
+        .unwrap();
+    assert!(open.trim_end().ends_with("Ctrl+P"), "{open}");
+    assert!(text.contains("Welcome guide"), "{text}");
+    assert!(
+        !text.contains("Recent files") && !text.contains("Saved sessions"),
+        "{text}"
+    );
+
     app.user_keybindings.push(Keybinding {
         key: "f2".into(),
         command: "workbench.quickOpen".into(),
@@ -308,9 +331,168 @@ fn the_start_screen_shows_the_live_keys() {
         when: None,
         args: None,
     });
-    let hints = app.start_hints();
-    assert_eq!(hints[0], "F2  quick open        Ctrl+K  commands");
-    assert_eq!(hints[3], "New here? Ctrl+Alt+W opens the Welcome guide.");
+    let text = screen(&mut app, 120, 40);
+    let open = text
+        .lines()
+        .find(|line| line.contains("Open a file…"))
+        .unwrap();
+    assert!(open.trim_end().ends_with("F2"), "{open}");
+    assert!(text.contains("Welcome guide (Ctrl+Alt+W)"), "{text}");
+
+    // The arrow keys move through the items, and Enter runs one.
+    let learn = app
+        .start_items()
+        .iter()
+        .position(|item| matches!(item, StartItem::Learn(Command::HelpThemes, _)))
+        .unwrap();
+    for _ in 0..learn {
+        app.handle_main_key(KeyEvent::from(KeyCode::Down));
+    }
+    app.handle_main_key(KeyEvent::from(KeyCode::Enter));
+    assert_eq!(active_help(&app), Some("themes"));
+}
+
+#[test]
+fn the_start_page_lists_recent_files_and_opens_one_with_a_click() {
+    let (_home, mut app) = test_app();
+    let first = app.workspace.join("first.txt");
+    let second = app.workspace.join("src/second.rs");
+    std::fs::create_dir_all(second.parent().unwrap()).unwrap();
+    std::fs::write(&first, "one\n").unwrap();
+    std::fs::write(&second, "two\n").unwrap();
+    app.open_file(&first);
+    app.open_file(&second);
+    app.execute_command(Command::ViewSplitVertical);
+    app.workbench.insert_tab_focused(Tab::Welcome);
+    app.focus = Focus::Main;
+    let text = screen(&mut app, 140, 40);
+    assert!(text.contains("Recent files"), "{text}");
+    let recent = text
+        .lines()
+        .skip_while(|line| !line.contains("Recent files"))
+        .skip(1)
+        .take(2)
+        .map(|line| line.split('│').nth(2).unwrap_or_default().trim().to_owned())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        recent,
+        ["src/second.rs", "first.txt"],
+        "newest first: {text}"
+    );
+
+    let target = app
+        .layout
+        .hits
+        .iter()
+        .find_map(|(rect, target)| match target {
+            HitTarget::StartItem(_, index)
+                if app.start_items().get(*index)
+                    == Some(&StartItem::File(std::fs::canonicalize(&first).unwrap())) =>
+            {
+                Some(*rect)
+            }
+            _ => None,
+        })
+        .expect("a click target for first.txt");
+    app.handle_mouse(MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: target.x + 3,
+        row: target.y,
+        modifiers: KeyModifiers::NONE,
+    });
+    assert_eq!(
+        app.workbench.active_tab().map(Tab::title).as_deref(),
+        Some("first.txt")
+    );
+}
+
+#[test]
+fn the_start_page_stacks_its_columns_in_a_narrow_pane() {
+    let (_home, mut app) = test_app();
+    let file = app.workspace.join("a-file-with-a-long-name.txt");
+    std::fs::write(&file, "a\n").unwrap();
+    app.open_file(&file);
+    app.workbench.insert_tab_focused(Tab::Welcome);
+    let text = screen(&mut app, 70, 40);
+    let start = text
+        .lines()
+        .position(|line| line.contains("Start"))
+        .unwrap();
+    let recent = text
+        .lines()
+        .position(|line| line.contains("Recent files"))
+        .unwrap();
+    assert!(recent > start, "{text}");
+}
+
+#[test]
+fn release_notes_open_once_after_an_upgrade() {
+    let home = tempfile::tempdir().unwrap();
+    let paths = Paths::from_env(home.path(), |_| None);
+    // A first start shows Welcome, not release notes, and records the version.
+    let first = launch(home.path(), None, false);
+    assert_eq!(active_help(&first), Some("welcome"));
+    drop(first);
+    assert_eq!(
+        std::fs::read_to_string(crate::help::version_marker(&paths)).unwrap(),
+        env!("CARGO_PKG_VERSION")
+    );
+    assert_eq!(active_help(&launch(home.path(), None, false)), None);
+
+    // An older version recorded: the notes open once, over a restored file too.
+    std::fs::write(crate::help::version_marker(&paths), "0.0.1").unwrap();
+    let file = home.path().join("workspace/a.txt");
+    std::fs::write(&file, "a\n").unwrap();
+    let upgraded = launch(home.path(), Some(file.clone()), false);
+    assert_eq!(active_help(&upgraded), Some("release-notes"));
+    assert!(
+        upgraded
+            .workbench
+            .active_editor()
+            .unwrap()
+            .document
+            .text()
+            .starts_with(&format!(
+                "Tide v{} Release Notes",
+                env!("CARGO_PKG_VERSION")
+            ))
+    );
+    assert!(tab_titles(&upgraded).contains(&"a.txt".to_owned()));
+    drop(upgraded);
+    assert_eq!(active_help(&launch(home.path(), None, false)), None);
+
+    // A newer version recorded (an older Tide started after a newer one) shows nothing.
+    std::fs::write(crate::help::version_marker(&paths), "999.0.0").unwrap();
+    assert_eq!(active_help(&launch(home.path(), None, false)), None);
+}
+
+#[test]
+fn release_notes_open_for_a_tide_installed_before_versions_were_recorded() {
+    let home = tempfile::tempdir().unwrap();
+    let paths = Paths::from_env(home.path(), |_| None);
+    crate::help::record_welcome(&paths);
+    assert_eq!(
+        active_help(&launch(home.path(), None, false)),
+        Some("release-notes")
+    );
+}
+
+#[test]
+fn release_notes_can_be_turned_off_and_opened_from_the_palette() {
+    let home = tempfile::tempdir().unwrap();
+    let paths = Paths::from_env(home.path(), |_| None);
+    crate::help::record_welcome(&paths);
+    std::fs::create_dir_all(&paths.config_dir).unwrap();
+    std::fs::write(
+        &paths.settings_file,
+        serde_json::json!({ "update.showReleaseNotes": false }).to_string(),
+    )
+    .unwrap();
+    let mut app = launch(home.path(), None, false);
+    assert_eq!(active_help(&app), None);
+    assert!(crate::help::version_marker(&paths).is_file());
+    app.execute_command(Command::HelpReleaseNotes);
+    assert_eq!(active_help(&app), Some("release-notes"));
 }
 
 #[test]

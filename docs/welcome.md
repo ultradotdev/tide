@@ -83,7 +83,8 @@ Install and sign in to an agent outside Tide. Tide finds it on the `PATH` it was
 - **Themes:** `Ctrl+Alt+R` picks one of the built-in themes; your own go in `~/.config/tide/themes`. See [Themes and Customization](features/themes.md).
 - **File icons:** Tide shows Nerd Font file and folder icons in Ghostty, kitty and WezTerm, which bundle the glyphs, and plain text elsewhere. If your terminal font is a Nerd Font, set `tui.iconStyle` to `nerd` to get the icons in any terminal.
 - **Colors:** Tide uses 24-bit color where the terminal says it supports it, and the nearest of 256 colors elsewhere, such as Terminal.app before macOS 26. If colors look wrong, set `tui.colorMode` to `truecolor` or `256`.
-- **This page:** `workbench.startupEditor` (`welcomeOnFirstRun`) decides when Welcome opens by itself: `welcomeOnFirstRun` the first time Tide starts without a file or session, `welcome` every time it does, and `none` never.
+- **This page:** `workbench.startupEditor` (`welcomeOnFirstRun`) decides when Welcome opens by itself: `welcomeOnFirstRun` the first time Tide starts without a file or session, `welcome` every time it does, and `none` never. Otherwise an empty pane shows the start page: common actions with your keys, recent files, this folder's saved sessions and the guides.
+- **Release notes:** the first time a newer Tide starts, it opens that version's release notes; set `update.showReleaseNotes` to `false` to turn that off. **Help: Release Notes** opens them any time.
 
 ## Updating and uninstalling
 

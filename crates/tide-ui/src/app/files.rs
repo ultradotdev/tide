@@ -340,12 +340,14 @@ impl App {
         };
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         if self.workbench.focus_editor_in_focused(&path) {
+            self.remember_recent_file(&path);
             self.focus = Focus::Main;
             with_ui!(self, |ui| self.git.load_inline_diff(ui));
             return;
         }
         match self.documents.open(&path) {
             Ok(mut editor) => {
+                self.remember_recent_file(&path);
                 if self.markdown_opens_in_preview() {
                     editor.set_previewing(true);
                 }

@@ -138,6 +138,7 @@ impl App {
         } else {
             self.set_status(format!("Session: deleted {name}"));
         }
+        self.refresh_start_sessions();
     }
 
     pub(super) fn open_named_session(&mut self, name: &str) {
@@ -185,7 +186,10 @@ impl App {
         }
         self.session_name = Some(name.to_owned());
         match self.adopt_session() {
-            Ok(()) => self.set_status(format!("Session: saved {name}")),
+            Ok(()) => {
+                self.refresh_start_sessions();
+                self.set_status(format!("Session: saved {name}"));
+            }
             Err(error) => self.set_status(format!("Session save failed: {error:#}")),
         }
     }
@@ -1011,7 +1015,7 @@ pub(super) fn convert_session_layout(
 }
 
 /// How long ago `millis` was, coarsely.
-fn age(millis: u128) -> String {
+pub(super) fn age(millis: u128) -> String {
     let minutes = millis / 60_000;
     match minutes {
         0 => "just now".to_owned(),

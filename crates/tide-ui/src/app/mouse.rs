@@ -458,6 +458,11 @@ impl App {
             }
             HitTarget::Agents => self.focus = Focus::Agents,
             HitTarget::Status => self.focus = Focus::Status,
+            HitTarget::StartItem(pane, index) => {
+                self.workbench.set_focused(pane);
+                self.focus = Focus::Main;
+                self.activate_start_item(index);
+            }
         }
     }
 

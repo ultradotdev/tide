@@ -1378,7 +1378,7 @@ fn welcome_opens_once_and_help_follows_the_palette_and_user_keys() {
     let mut session = PtySession::spawn(fixture.config(&fixture.workspace)).unwrap();
     let mut screen = TerminalEmulator::new(120, 40, 1000);
     let start = wait_screen(&session, &mut screen, |s| {
-        s.text().contains("Ctrl+Alt+W opens the Welcome guide")
+        s.text().contains("Welcome guide (Ctrl+Alt+W)")
     });
     assert!(!start.text().contains("Welcome to Tide 0"));
     session.write(b"\x1b\x17").unwrap();

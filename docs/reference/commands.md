@@ -230,6 +230,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Help: Keyboard Shortcuts | — | `help.keyboardShortcuts` |
 | Help: Online Documentation | — | `help.documentation` |
 | Help: PostgreSQL | — | `help.database` |
+| Help: Release Notes | — | `help.releaseNotes` |
 | Help: Report an Issue | — | `help.reportIssue` |
 | Help: Settings Reference | — | `help.settings` |
 | Help: Terminals | — | `help.terminal` |

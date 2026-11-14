@@ -1,13 +1,14 @@
 ---
 source: crates/tide-ui/src/app/tests/render.rs
+assertion_line: 390
 expression: "snapshot_modal(120, 40, |app| { app.open_quick_open(); app.settle(); })"
 ---
  ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
-No files · . hidden · Enter expand/│Tide
+No files · . hidden · Enter expand/│
+                                   │  Tide X.Y.Z
+                                   │  A terminal-native code editor  ·  workspace
                                    │
-                                   │A terminal-native code editor.
-                                   │
-                                   │Ctrl+P  quick open    Ctrl+K  commands
+                                   │  Start
                          ┌ Quick Open ────────────────────────────────────────────────────────┐
                          │>                                                                   │
                          │────────────────────────────────────────────────────────────────────│
@@ -16,7 +17,7 @@ No files · . hidden · Enter expand/│Tide
                          │                                                                    │
                          │                                                                    │
                          │                                                                    │
-                         │                                                                    │
+                         │                                                                    │cuts    Themes
                          │                                                                    │
                          │                                                                    │
                          │                                                                    │

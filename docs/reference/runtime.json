@@ -1453,6 +1453,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "help.releaseNotes",
+      "category": "Help",
+      "description": "What's new in this version of Tide",
+      "id": "help.releaseNotes",
+      "label": "Help: Release Notes",
+      "paletteVisible": true
+    },
+    {
       "canonical": "help.reportIssue",
       "category": "Help",
       "description": "Open a new GitHub issue with version and platform filled in",
@@ -4164,6 +4172,12 @@
       }
     },
     "update.checkAutomatically": {
+      "default": true,
+      "rule": {
+        "type": "boolean"
+      }
+    },
+    "update.showReleaseNotes": {
       "default": true,
       "rule": {
         "type": "boolean"
