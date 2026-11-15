@@ -381,6 +381,7 @@ Every command is in the command palette (`Ctrl+K` or `Ctrl+Shift+P`): type part 
 | Show Problems | — | `lsp.showDiagnostics` |
 | Split Main Pane Down | `Ctrl+Shift+\`, `Ctrl+Alt+H` | `view.splitHorizontal` |
 | Split Main Pane Right | `Ctrl+\` | `view.splitVertical` |
+| Start Page | — | `workbench.startPage` |
 | Toggle Bottom Terminal | `` Ctrl+` `` | `workbench.toggleTerminal` |
 | Toggle Markdown Preview | — | `markdown.togglePreview` |
 | Toggle Minimap | — | `workbench.toggleMinimap` |

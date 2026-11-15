@@ -412,6 +412,7 @@ impl App {
             }
             Command::WorkbenchToggleMinimap => self.toggle_minimap(),
             Command::WorkbenchToggleZenMode => self.toggle_zen_mode(),
+            Command::WorkbenchStartPage => self.open_start_page(),
             Command::SearchFindPrevious => self.find_previous(),
             Command::SessionSaveAs => {
                 let initial = self.session_name.clone().unwrap_or_default();

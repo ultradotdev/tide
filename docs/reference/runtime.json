@@ -2581,6 +2581,14 @@
       "paletteVisible": true
     },
     {
+      "canonical": "workbench.startPage",
+      "category": "View",
+      "description": "Open the start page: common actions, recent files, saved sessions and the guides",
+      "id": "workbench.startPage",
+      "label": "Start Page",
+      "paletteVisible": true
+    },
+    {
       "canonical": "workbench.statusHistory",
       "category": "Workbench",
       "description": null,

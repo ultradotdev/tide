@@ -3,7 +3,7 @@ source: crates/tide-ui/src/app/tests/render.rs
 assertion_line: 420
 expression: "snapshot_modal(120, 40, |app|\n{\n    app.overlay =\n    Some(modal::confirm(ConfirmAction::CloseDirty, \"Unsaved Changes\",\n    \"Discard changes in this tab?\",));\n})"
 ---
- ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Start Page ×                                                               ▾  ←
 No files · . hidden · Enter expand/│
                                    │  Tide X.Y.Z
                                    │  A terminal-native code editor  ·  workspace

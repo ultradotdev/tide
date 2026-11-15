@@ -3,7 +3,7 @@ source: crates/tide-ui/src/app/tests/render.rs
 assertion_line: 401
 expression: "snapshot_modal(120, 40, |app| app.open_goto_prompt())"
 ---
- ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Start Page ×                                                               ▾  ←
 No files · . hidden · Enter expand/│
                                    │  Tide X.Y.Z
                                    │  A terminal-native code editor  ·  workspace
