@@ -874,7 +874,7 @@ impl App {
                     ));
                 }
             }
-            Tab::Welcome => render_welcome(frame, content_area, self.palette, &self.start_hints()),
+            Tab::Welcome => self.render_start(frame, content_area, id, out),
         }
     }
 
@@ -1702,66 +1702,6 @@ impl App {
     pub(super) fn key_hint(&self, command: Command) -> Option<String> {
         crate::help::primary_key(&self.keybindings, &self.user_keybindings, command.as_str())
     }
-
-    /// The start screen's shortcut hints, from the live keymap.
-    pub(super) fn start_hints(&self) -> Vec<String> {
-        let pairs = [
-            (Command::WorkbenchQuickOpen, "quick open"),
-            (Command::WorkbenchCommandPalette, "commands"),
-            (Command::WorkbenchToggleTerminal, "terminal"),
-            (Command::ViewSplitVertical, "split pane"),
-        ]
-        .into_iter()
-        .filter_map(|(command, label)| Some(format!("{}  {label}", self.key_hint(command)?)))
-        .collect::<Vec<_>>();
-        let width = pairs
-            .iter()
-            .map(|pair| display_width(pair))
-            .max()
-            .unwrap_or(0)
-            + 4;
-        let mut lines = pairs
-            .chunks(2)
-            .map(|row| match row {
-                [left, right] => format!(
-                    "{left}{}{right}",
-                    " ".repeat(width.saturating_sub(display_width(left)))
-                ),
-                [only] => only.clone(),
-                _ => String::new(),
-            })
-            .collect::<Vec<_>>();
-        lines.push(String::new());
-        lines.push(match self.key_hint(Command::HelpWelcome) {
-            Some(key) => format!("New here? {key} opens the Welcome guide."),
-            None => "New here? Run “Help: Welcome” from the command palette.".to_owned(),
-        });
-        lines
-    }
-}
-
-pub(super) fn render_welcome(frame: &mut Frame, area: Rect, palette: Palette, hints: &[String]) {
-    let mut lines = vec![
-        Line::from(Span::styled(
-            "Tide",
-            Style::default()
-                .fg(palette.accent)
-                .add_modifier(Modifier::BOLD),
-        )),
-        Line::raw(""),
-        Line::from(Span::styled(
-            "A terminal-native code editor.",
-            Style::default().fg(palette.foreground),
-        )),
-        Line::raw(""),
-    ];
-    lines.extend(hints.iter().map(|hint| {
-        Line::from(Span::styled(
-            hint.clone(),
-            Style::default().fg(palette.muted),
-        ))
-    }));
-    frame.render_widget(Paragraph::new(lines), area);
 }
 
 pub(super) fn render_diff(

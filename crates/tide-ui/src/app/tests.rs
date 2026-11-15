@@ -1,5 +1,6 @@
 use super::input::key_string;
 use super::session::{convert_session_layout, session_layout};
+use super::start::StartItem;
 use super::*;
 use crate::connection_form::ConnectionAction;
 use crate::controllers::ai::normalize_workspace_sessions;
@@ -80,6 +81,7 @@ pub(super) fn no_agents(_: &Path, _: &(dyn Fn(ProviderDiscovery) + Sync)) -> Dis
 /// Marks Welcome as already shown, so a test starts from the plain start screen.
 pub(super) fn welcome_seen(paths: &Paths) {
     crate::help::record_welcome(paths);
+    crate::help::record_version(paths);
 }
 
 /// An app whose background work waits for [`App::settle`] and starts no language servers.
@@ -204,5 +206,6 @@ pub(super) fn snapshot_modal(width: u16, height: u16, open: impl FnOnce(&mut App
     let backend = ratatui::backend::TestBackend::new(width, height);
     let mut terminal = ratatui::Terminal::new(backend).unwrap();
     terminal.draw(|frame| app.draw(frame)).unwrap();
-    crate::test_support::screen_text(&terminal)
+    // The start page shows the version; keep snapshots the same across releases.
+    crate::test_support::screen_text(&terminal).replace(env!("CARGO_PKG_VERSION"), "X.Y.Z")
 }

@@ -85,6 +85,7 @@ mod preferences;
 mod render;
 mod replace;
 mod session;
+mod start;
 mod terminals;
 
 pub(crate) use self::files::resolve_path;
@@ -150,6 +151,8 @@ pub enum HitTarget {
     DockTab(usize),
     DockTerminal(Rect),
     Status,
+    /// An item on a pane's start page, by its index in `App::start_items`.
+    StartItem(PaneId, usize),
 }
 
 const DOCK_PANE: PaneId = usize::MAX;
@@ -437,6 +440,12 @@ pub struct App {
     /// No snapshot is written until the user saves or opens a session.
     session_ephemeral: bool,
     sessions_generation: u64,
+    /// Files opened most recently, newest first, for the start page.
+    recent_files: Vec<PathBuf>,
+    /// The named sessions saved for this folder, for the start page.
+    start_sessions: Vec<crate::session_store::SavedSession>,
+    /// The start page item the arrow keys are on.
+    start_selected: usize,
     events_tx: tokio::sync::mpsc::Sender<AppEvent>,
     events_rx: Option<tokio::sync::mpsc::Receiver<AppEvent>>,
     watcher: Option<notify::RecommendedWatcher>,
@@ -599,6 +608,9 @@ impl App {
             session_write_blocked: false,
             session_ephemeral: config.ephemeral_session,
             sessions_generation: 0,
+            recent_files: Vec::new(),
+            start_sessions: Vec::new(),
+            start_selected: 0,
             events_tx,
             events_rx: Some(events_rx),
             watcher: None,
@@ -688,6 +700,16 @@ impl App {
                 None
             }
         };
+        match &restored {
+            Some(session) => app.seed_recent_files(session),
+            None if config.session_name.is_none() => {
+                if let Ok(Some(last)) = app.session_store.load_last() {
+                    app.seed_recent_files(&last);
+                }
+            }
+            None => {}
+        }
+        app.refresh_start_sessions();
         let had_session = if let Some(session) = restored {
             match app.restore_session(session) {
                 Ok(()) => true,
@@ -703,6 +725,8 @@ impl App {
         if let Some(folder) = &config.initial_folder {
             app.file_tree.reveal(folder);
         }
+        // Read before Welcome records its first showing, which would look like an upgrade.
+        let upgraded = crate::help::record_version(&app.paths);
         let initial_file = config.initial_file;
         if had_session {
             if let Some(file) = initial_file {
@@ -732,6 +756,9 @@ impl App {
         }
         if app.workbench.active_tab().is_none() {
             app.workbench.insert_tab_focused(Tab::Welcome);
+        }
+        if upgraded {
+            app.show_release_notes();
         }
         if !config_errors.is_empty() {
             app.show_config_problems(&config_errors);

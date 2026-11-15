@@ -442,6 +442,7 @@ const NEXT_START: &[&str] = &[
     "session.restoreOnStartup",
     "workbench.startupEditor",
     "update.checkAutomatically",
+    "update.showReleaseNotes",
     "tui.outline.collapsedOnStartup",
     "tui.timeline.collapsedOnStartup",
 ];

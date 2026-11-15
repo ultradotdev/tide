@@ -321,6 +321,7 @@ commands! {
     HelpSettings = "help.settings",
     HelpTroubleshooting = "help.troubleshooting",
     HelpAbout = "help.about",
+    HelpReleaseNotes = "help.releaseNotes",
     HelpDocumentation = "help.documentation",
     HelpReportIssue = "help.reportIssue",
     HelpCheckForUpdates = "help.checkForUpdates",

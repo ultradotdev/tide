@@ -622,6 +622,7 @@ impl App {
             | Command::HelpSettings
             | Command::HelpTroubleshooting
             | Command::HelpAbout
+            | Command::HelpReleaseNotes
             | Command::HelpDocumentation
             | Command::HelpReportIssue
             | Command::HelpCheckForUpdates => self.run_help(command),

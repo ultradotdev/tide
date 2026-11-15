@@ -107,6 +107,18 @@ pub static PAGES: &[Page] = &[
         Some("docs/troubleshooting.md")
     ),
     page!("about", HelpAbout, "Help: About Tide", None),
+    // This version's release notes, written for each release.
+    Page {
+        id: "release-notes",
+        command: Command::HelpReleaseNotes,
+        title: "Release Notes",
+        doc: None,
+        template: include_str!(concat!(
+            "../../../../docs/v",
+            env!("CARGO_PKG_VERSION"),
+            ".md"
+        )),
+    },
 ];
 
 #[must_use]
@@ -168,6 +180,38 @@ pub(crate) fn record_welcome(paths: &tide_config::Paths) {
     if let Err(error) = written {
         tracing::warn!(%error, "could not record that Welcome was shown");
     }
+}
+
+/// The file recording the last Tide version that started.
+#[must_use]
+pub fn version_marker(paths: &tide_config::Paths) -> PathBuf {
+    paths.state_dir.join("last-version")
+}
+
+/// Records this version as the last one started, and returns whether that is an upgrade: a
+/// newer version than the one recorded, or, with nothing recorded, a Tide that has shown
+/// Welcome before (one installed before versions were recorded). A first start is not.
+pub(crate) fn record_version(paths: &tide_config::Paths) -> bool {
+    let current = env!("CARGO_PKG_VERSION");
+    let marker = version_marker(paths);
+    let previous = std::fs::read_to_string(&marker)
+        .ok()
+        .map(|text| text.trim().to_owned());
+    if previous.as_deref() == Some(current) {
+        return false;
+    }
+    let upgraded = match previous.as_deref() {
+        Some(previous) => is_newer(current, previous),
+        None => welcome_marker(paths).exists(),
+    };
+    let written = marker
+        .parent()
+        .map_or(Ok(()), std::fs::create_dir_all)
+        .and_then(|()| std::fs::write(&marker, current));
+    if let Err(error) = written {
+        tracing::warn!(%error, "could not record the version that started");
+    }
+    upgraded
 }
 
 /// How often the automatic update check may ask GitHub.
