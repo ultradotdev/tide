@@ -6,7 +6,7 @@
 
 **Description:** Code, Git, databases, terminal, editing, agent CLIs and more, all in one terminal-native workspace.
 
-Use **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version 0.14.0 as the current release.
+Use **Tide** as the product name and **Tide by Ultra.dev** as the endorsement. Label version 0.14.1 as the current release.
 
 ## Permitted claims
 
@@ -23,4 +23,4 @@ Treat product identity, release status, platform support, artifact filenames, co
 
 ## Verification
 
-Generated from source content hash `5f602f58b002aa083ec91a1b1500191b1dd1e1e23d178691f6cc44c7d26dad86` and last verified against Git `f74f3de726d25657a92a68cfd9b7f26f412f060c`.
+Generated from source content hash `94da584ea1bbb2f08461ff893b6d7f55ef8368c4939689c1b7b9734a691179fe` and last verified against Git `dd52242aee9000c652bee4cd1f3e4007bf4af347`.
