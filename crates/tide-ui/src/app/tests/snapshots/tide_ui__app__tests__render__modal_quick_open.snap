@@ -3,7 +3,7 @@ source: crates/tide-ui/src/app/tests/render.rs
 assertion_line: 390
 expression: "snapshot_modal(120, 40, |app| { app.open_quick_open(); app.settle(); })"
 ---
- ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Start Page ×                                                               ▾  ←
 No files · . hidden · Enter expand/│
                                    │  Tide X.Y.Z
                                    │  A terminal-native code editor  ·  workspace

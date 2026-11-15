@@ -302,6 +302,7 @@ commands! {
     EditorFoldLevel3 = "editor.foldLevel3",
     WorkbenchToggleMinimap = "workbench.toggleMinimap",
     WorkbenchToggleZenMode = "workbench.toggleZenMode",
+    WorkbenchStartPage = "workbench.startPage",
     SearchFindPrevious = "search.findPrevious",
     SessionSaveAs = "session.saveAs",
     SessionOpen = "session.open",

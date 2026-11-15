@@ -3,7 +3,7 @@ source: crates/tide-ui/src/app/tests/render.rs
 assertion_line: 382
 expression: "snapshot_modal(120, 40, |app| app.open_command_palette())"
 ---
- ▼ Explorer  [0]                 ▾ │ ←  Welcome ×                                                                  ▾  ←
+ ▼ Explorer  [0]                 ▾ │ ←  Start Page ×                                                               ▾  ←
 No files · . hidden · Enter expand/│
                                    │  Tide X.Y.Z
                                    │  A terminal-native code editor  ·  workspace
@@ -27,7 +27,7 @@ Enter open · ←/→ folde│ Browse Schema                                    
                       │ Delete Connection                                 Database               │
                       │ Describe Table                                    Database               │
                       │                           Open   Cancel [Esc]                            │
-                      │Enter open   Esc cancel                                          300 items│
+                      │Enter open   Esc cancel                                          301 items│
                       └──────────────────────────────────────────────────────────────────────────┘
                                    │
                                    │

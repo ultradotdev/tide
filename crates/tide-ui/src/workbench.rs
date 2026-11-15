@@ -79,7 +79,7 @@ impl Tab {
             Self::Terminal(terminal) => terminal.title.clone(),
             Self::Diff(diff) => diff.title.clone(),
             Self::Sql(sql) => sql.title.clone(),
-            Self::Welcome => "Welcome".to_owned(),
+            Self::Welcome => "Start Page".to_owned(),
         }
     }
 

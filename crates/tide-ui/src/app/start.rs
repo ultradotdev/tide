@@ -109,6 +109,33 @@ impl App {
         self.start_sessions = self.session_store.workspace_sessions();
     }
 
+    /// Shows the start page: switches to it where it is already open, or opens
+    /// it as a new tab in the focused pane.
+    pub(super) fn open_start_page(&mut self) {
+        self.refresh_start_sessions();
+        self.start_selected = 0;
+        self.focus = Focus::Main;
+        let open = self.workbench.pane_ids().into_iter().find_map(|id| {
+            let index = self
+                .workbench
+                .pane(id)?
+                .tabs
+                .iter()
+                .position(|tab| matches!(tab, Tab::Welcome))?;
+            Some((id, index))
+        });
+        match open {
+            Some((id, index)) => {
+                self.workbench.set_focused(id);
+                if let Some(pane) = self.workbench.pane_mut(id) {
+                    pane.active = index;
+                }
+            }
+            None => self.workbench.insert_tab_focused(Tab::Welcome),
+        }
+        self.mark_session_dirty();
+    }
+
     pub(super) fn handle_start_key(&mut self, key: KeyEvent) {
         if key
             .modifiers

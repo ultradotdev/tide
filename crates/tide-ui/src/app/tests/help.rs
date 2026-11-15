@@ -645,3 +645,32 @@ fn a_file_on_the_command_line_opens_over_a_restored_session() {
         Some(std::fs::canonicalize(&second_file).unwrap().as_path())
     );
 }
+
+#[test]
+fn the_start_page_command_reopens_it_and_switches_to_an_open_one() {
+    let (_home, mut app) = test_app();
+    assert!(matches!(app.workbench.active_tab(), Some(Tab::Welcome)));
+    assert_eq!(Tab::Welcome.title(), "Start Page");
+
+    // Closing it leaves an empty pane; the command brings it back.
+    app.workbench.close_active_tab();
+    assert!(app.workbench.active_tab().is_none());
+    app.execute_command(Command::WorkbenchStartPage);
+    assert!(matches!(app.workbench.active_tab(), Some(Tab::Welcome)));
+    assert_eq!(app.focus, Focus::Main);
+
+    // With it already open behind another tab, the command switches to it
+    // rather than opening a second one.
+    app.execute_command(Command::FileNew);
+    assert!(!matches!(app.workbench.active_tab(), Some(Tab::Welcome)));
+    app.execute_command(Command::WorkbenchStartPage);
+    assert!(matches!(app.workbench.active_tab(), Some(Tab::Welcome)));
+    let open = app
+        .workbench
+        .focused_pane()
+        .tabs
+        .iter()
+        .filter(|tab| matches!(tab, Tab::Welcome))
+        .count();
+    assert_eq!(open, 1);
+}
